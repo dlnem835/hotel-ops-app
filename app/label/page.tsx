@@ -2,8 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Suspense } from "react";
 
-export default function LabelUploadPage() {
+export function LabelUploadPageContent() {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("id");
 
@@ -116,5 +117,12 @@ export default function LabelUploadPage() {
         )}
       </div>
     </main>
+  );
+}
+export default function LabelUploadPage() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <LabelUploadPageContent />
+    </Suspense>
   );
 }
