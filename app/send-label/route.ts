@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
   try {
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "One Eyrie <support@oneeyrie.com>",
       to: email,
       subject: "Your Lost Item",
       html: `<p>Your item (${item}) is ready to be shipped.</p>`,
