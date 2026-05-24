@@ -107,7 +107,7 @@ export function LabelUploadPageContent() {
             border: "none",
           }}
         >
-          Upload Label
+          Submit 
         </button>
 
         {message && (
