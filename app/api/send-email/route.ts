@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     console.log("ITEM ID:", itemId);
 
     const result = await resend.emails.send({
-      from: "Front Desk <onboarding@resend.dev>",
+      from: "Front Desk One Eyrie <support@oneeyrie.com>",
       to: email,
       subject: "Shipping Label Request",
       html: `
