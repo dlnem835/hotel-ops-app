@@ -20,47 +20,72 @@ export async function POST(req: Request) {
       to: email,
       subject: "Shipping Label Request",
       html: `
-        <h2>Shipping Label Request</h2>
+<div style="background:#f4f1ed;padding:24px;font-family:Arial,sans-serif;color:#111;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #ddd;">
+    
+    <!-- Header -->
+    <div style="background:#080808;text-align:center;padding:22px;border-bottom:4px solid #C8A96A;">
+      <div style="color:#fff;font-size:34px;font-weight:bold;letter-spacing:2px;">ONE</div>
+      <div style="color:#C8A96A;font-size:13px;letter-spacing:6px;">— EYRIE —</div>
+    </div>
 
-        <p>Hello,</p>
+    <!-- Body -->
+    <div style="padding:28px;">
+      <h2 style="text-align:center;margin:0 0 22px;font-size:24px;">
+        Your Lost Item Shipping Label
+      </h2>
 
-        <p>We've located your item.</p>
+      <p>Hello,</p>
 
-        <p>Please create a prepaid shipping label using UPS or FedEx below:</p>
+      <p style="line-height:1.5;">
+        We've located your item. Please create a prepaid shipping label using UPS or FedEx below.
+      </p>
 
-        <p>
-          <a href="https://www.ups.com/ship/guided/origin"
-            style="display:inline-block;padding:12px 18px;background:#0070f3;color:white;border-radius:6px;text-decoration:none;margin-right:10px;">
-            Create UPS Label
-          </a>
+      <!-- Buttons -->
+      <div style="margin:18px 0;">
+        <a href="https://www.ups.com/ship/guided/origin"
+          style="display:inline-block;padding:10px 16px;background:#0070f3;color:white;border-radius:6px;text-decoration:none;margin-right:8px;">
+          UPS
+        </a>
 
-          <a href="https://www.fedex.com/en-us/shipping.html"
-            style="display:inline-block;padding:12px 18px;background:#ff6600;color:white;border-radius:6px;text-decoration:none;">
-            Create FedEx Label
-          </a>
-        </p>
+        <a href="https://www.fedex.com/en-us/shipping.html"
+          style="display:inline-block;padding:10px 16px;background:#ff6600;color:white;border-radius:6px;text-decoration:none;">
+          FedEx
+        </a>
+      </div>
 
-        <p>Once completed, upload your label here:</p>
+      <!-- Upload -->
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${link}"
+          style="background:#C8A96A;color:#111;text-decoration:none;padding:14px 26px;border-radius:6px;font-weight:bold;display:inline-block;">
+          Upload Shipping Label
+        </a>
+      </div>
 
-        <p>
-          <a href="${link}"
-            style="display:inline-block;padding:14px 20px;background:black;color:white;border-radius:6px;text-decoration:none;">
-            Upload Shipping Label
-          </a>
-        </p>
+      <p style="font-size:13px;color:#666;text-align:center;">
+        This link will expire in 7 days.
+      </p>
 
-        <hr />
+      <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;" />
 
-        <p>
-          <strong>Ship To Address:</strong><br/>
-          SpringHill Suites Tampa Suncoast Parkway<br/>
-          16615 Crosspointe Run<br/>
-          Land O Lakes, FL 34638<br/>
-          Phone: 813-536-1900
-        </p>
+      <!-- Address -->
+      <p>
+        <strong>Shipping From:</strong><br/>
+        SpringHill Suites Tampa Suncoast Parkway<br/>
+        16615 Crosspointe Run<br/>
+        Land O Lakes, FL 34638<br/>
+        Phone: 813-536-1900
+      </p>
 
-        <p>Thank you,<br/>Front Desk Team</p>
-      `,
+      <p style="margin-top:20px;">
+        Thank you,<br/>
+        <strong>Front Desk Team</strong>
+      </p>
+    </div>
+  </div>
+</div>
+`,
+
     });
 
     if (result.error) {

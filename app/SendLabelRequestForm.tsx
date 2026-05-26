@@ -2,7 +2,12 @@
 
 import { supabase } from "./supabaseClient";
 
-export default function SendLabelRequestForm({ itemId }: { itemId: number }) {
+export default function SendLabelRequestForm({ 
+  itemId, 
+  id, 
+}: { 
+  itemId: number;
+id?: string; }) {
   async function sendEmail(e: any) {
     e.preventDefault();
 
@@ -41,32 +46,47 @@ export default function SendLabelRequestForm({ itemId }: { itemId: number }) {
   }
 
   return (
-    <form onSubmit={sendEmail} style={{ display: "flex", gap: "10px" }}>
-      <input
-        name="email"
-        placeholder="Enter guest email"
-        required
-        style={{
-          padding: "8px",
-          borderRadius: "6px",
-          border: "1px solid #ccc",
-        }}
-      />
+   <form
+  onSubmit={sendEmail}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "6px", // tighter spacing
+  }}
+>
+  <input
+    name="email"
+    type="email"
+    placeholder="Guest email"
+    required
+    style={{
+      background: "#0B0B0B",
+      color: "#fff",
+      border: "1px solid #2A2A2A",
+      borderRadius: "8px",
+      padding: "6px 8px", // smaller
+      fontSize: "12px",
+      width: "140px", // tighter width
+      outline: "none",
+    }}
+  />
 
-      <button
-        type="submit"
-        style={{
-          backgroundColor: "#0070f3",
-          color: "white",
-          padding: "8px 14px",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontWeight: "bold",
-        }}
-      >
-        Send Label Link
-      </button>
-    </form>
+  <button
+    type="submit"
+    style={{
+      background: "#2563EB", // clean blue
+      color: "#fff",
+      border: "none",
+      borderRadius: "8px",
+      padding: "6px 10px",
+      fontSize: "12px",
+      fontWeight: "500",
+      cursor: "pointer",
+    }}
+  >
+    Send
+  </button>
+</form>
+ 
   );
 }
