@@ -74,13 +74,13 @@ id?: string; }) {
   <button
     type="submit"
     style={{
-      background: "#2563EB", // clean blue
-      color: "#fff",
+      background: "#C8A96A", // clean blue
+      color: "#111",
       border: "none",
       borderRadius: "8px",
       padding: "6px 10px",
       fontSize: "12px",
-      fontWeight: "500",
+      fontWeight: "bold",
       cursor: "pointer",
     }}
   >

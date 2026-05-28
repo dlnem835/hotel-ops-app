@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "./SendLabelRequestForm";
-import { Trash2, Send, Eye } from "lucide-react";
+import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -182,7 +182,17 @@ export default function Home() {
               <p style={bigNumber}>{readyToShipCount}</p>
               <p style={mutedText}>Items ready for shipping</p>
             </div>
-            <div style={iconBox}>□</div>
+            <div
+  style={{
+    ...iconBox,
+    background: "rgba(34,197,94,0.12)",
+    color: "#22C55E",
+    fontSize: "24px",
+    boxShadow: "0 0 18px rgba(34,197,94,0.18)",
+  }}
+>
+  📦
+</div>
           </div>
 
           <div style={cardStyle}>
@@ -191,7 +201,17 @@ export default function Home() {
               <p style={bigNumber}>{readyToDiscardCount}</p>
               <p style={mutedText}>Items older than 6 months</p>
             </div>
-            <div style={iconBox}>⌫</div>
+            <div
+  style={{
+    ...iconBox,
+    background: "rgba(239,68,68,0.12)",
+    color: "#EF4444",
+    fontSize: "22px",
+    boxShadow: "0 0 18px rgba(239,68,68,0.15)",
+  }}
+>
+  🗑️
+</div>
           </div>
         </div>
 
@@ -222,181 +242,303 @@ export default function Home() {
             <option>Closed</option>
           </select>
 
-          <button type="submit" style={goldButton}>
+          <button
+  type="submit"
+  style={goldButton}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "scale(1.04)";
+    e.currentTarget.style.boxShadow = "0 0 14px rgba(200,169,106,0.35)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.boxShadow = "none";
+  }}
+>
             Add Item
           </button>
         </form>
 
         {/* SEARCH/FILTER */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "18px" }}>
-          <input
-            type="text"
-            placeholder="Search guest, room, item, or status..."
-            value={searchterm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ ...inputStyle, flex: 1 }}
-          />
+<div style={{ display: "flex", gap: "12px", marginBottom: "18px", alignItems: "center" }}>
+  <input
+    type="text"
+    placeholder="Search guest, room, item, or status..."
+    value={searchterm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    style={{ ...inputStyle, flex: 1 }}
+  />
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={inputStyle}
-          >
-            <option>All</option>
-            <option>Stored</option>
-            <option>Ready to be shipped</option>
-            <option>Label sent</option>
-            <option>Shipped</option>
-            <option>Closed</option>
-          </select>
+  <details style={{ position: "relative" }}>
+    <summary
+      style={{
+        listStyle: "none",
+        cursor: "pointer",
+        height: "48px",
+        padding: "0 18px",
+        borderRadius: "10px",
+        border: "1px solid #C8A96A",
+        color: "#fff",
+        background: "#111111",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        fontWeight: "bold",
+      }}
+    >
+      <SlidersHorizontal size={18} />
+      Filters
+    </summary>
 
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={inputStyle}
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-          </select>
-        </div>
+    <div
+      style={{
+        position: "absolute",
+        right: 0,
+        top: "56px",
+        width: "260px",
+        background: "#1A1A1A",
+        border: "1px solid #2A2A2A",
+        borderRadius: "14px",
+        padding: "18px",
+        zIndex: 50,
+        boxShadow: "0 18px 40px rgba(0,0,0,0.55)",
+      }}
+    >
+      <div style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
+        SORT BY
+      </div>
+
+      <button onClick={() => setSortOrder("newest")} style={filterMenuButton}>
+        Newest First {sortOrder === "newest" ? "✓" : ""}
+      </button>
+
+      <button onClick={() => setSortOrder("oldest")} style={filterMenuButton}>
+        Oldest First {sortOrder === "oldest" ? "✓" : ""}
+      </button>
+
+      <div style={{ height: "1px", background: "#2A2A2A", margin: "14px 0" }} />
+
+      <div style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
+        FILTER BY STATUS
+      </div>
+
+      {["All", "Stored", "Label sent", "Ready to be shipped", "Shipped", "Closed"].map((status) => (
+        <button
+          key={status}
+          onClick={() => setStatusFilter(status)}
+          style={filterMenuButton}
+        >
+          {status} {statusFilter === status ? "✓" : ""}
+        </button>
+      ))}
+    </div>
+  </details>
+</div>
+
+  
 
         {/* TABLE */}
-        <div
+<div
+  style={{
+    border: "1px solid #2A2A2A",
+    borderRadius: "14px",
+    overflow: "hidden",
+    background: "#111111",
+  }}
+>
+  {!lostItems.length ? (
+    <p style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
+  ) : !filteredItems.length ? (
+    <p style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
+  ) : (
+    <table
+      style={{
+        width: "100%",
+        borderCollapse: "collapse",
+        fontSize: "13px",
+        tableLayout: "auto",
+      }}
+    >
+      <thead>
+        <tr
           style={{
-            border: "1px solid #2A2A2A",
-            borderRadius: "14px",
-            overflow: "hidden",
-            background: "#111111",
+            color: "#E5E7EB",
+            textAlign: "left",
+            borderBottom: "1px solid #2A2A2A",
+            textTransform: "uppercase",
+            fontSize: "11px",
+            letterSpacing: "0.6px",
           }}
         >
-          {!lostItems.length ? (
-            <p style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
-          ) : !filteredItems.length ? (
-            <p style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
-          ) : (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-                tableLayout: "fixed",
-              }} 
-            >
-              <thead>
-                <tr style={{ color: "#9CA3AF", textAlign: "left" }}>
-                  <th style={{ width: "40px" }} aria-label="Delete"></th>
-<th style={{ width: "120px" }}>Guest</th>
-<th style={{ width: "80px" }}>Room</th>
-<th style={{ width: "160px" }}>Item</th>
-<th style={{ width: "180px" }}>Status</th>
-<th style={{ width: "320px" }}>Send Label</th>
-<th style={{ width: "120px" }}>Date Sent</th>
-<th style={{ width: "220px" }}>Comments</th>
-<th style={{ width: "120px" }}>Label</th>
-                </tr>
-              </thead>
+          <th style={thStyle}></th>
+          <th style={thStyle}>Guest</th>
+          <th style={thStyle}>Room</th>
+          <th style={thStyle}>Item</th>
+          <th style={thStyle}>Status</th>
+          <th style={thStyle}>Send Label</th>
+          <th style={thStyle}>Date Sent</th>
+          <th style={thStyle}>Comments</th>
+          <th style={thStyle}>Label</th>
+          <th style={{ ...thStyle, textAlign: "center" }}>Actions</th>
+        </tr>
+      </thead>
 
-              <tbody>
-                {displayItems.map((item, index) => (
-                 <tr
+      <tbody>
+        {displayItems.map((item, index) => (
+          <tr
   key={item.id}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "scale(1.002)";
+    e.currentTarget.style.background = "#1B1B1B";
+    e.currentTarget.style.boxShadow =
+      "0 0 12px rgba(200,169,106,0.10)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.background =
+      index % 2 === 0 ? "#111111" : "#151515";
+    e.currentTarget.style.boxShadow = "none";
+  }}
   style={{
     borderTop: "1px solid #2A2A2A",
     background: index % 2 === 0 ? "#111111" : "#151515",
+    transition: "all 0.15s ease",
   }}
 >
-  {/* Delete Icon */}
-  <td style={tdStyle}>
-    <button onClick={() => deleteItem(item.id)} style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: "9CA3AF"
-    }}
-    >
-      🗑
-    </button>
-  </td>
+            <td style={tdStyle}>
+              <span style={{ color: "#9CA3AF" }}>▾</span>
+            </td>
 
-  {/* Guest */}
-  <td style={tdStyle}>{item.guest_last_name}</td>
+            <td style={tdStyle}>{item.guest_last_name}</td>
+            <td style={tdStyle}>{item.room_number}</td>
+            <td style={tdStyle}>{item.item_name}</td>
 
-  {/* Room */}
-  <td style={tdStyle}>{item.room_number}</td>
+            <td style={tdStyle}>
+              <select
+                value={item.status}
+                onChange={(e) => updateStatus(item.id, e.target.value)}
+                style={{
+                  ...statusStyle(item.status),
+                  borderRadius: "999px",
+                  padding: "7px 12px",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  width: "175px",
+                }}
+              >
+                <option>Stored</option>
+                <option>Ready to be shipped</option>
+                <option>Label sent</option>
+                <option>Shipped</option>
+                <option>Closed</option>
+              </select>
+            </td>
 
-  {/* Item */}
-  <td style={tdStyle}>{item.item_name}</td>
+            <td style={tdStyle}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <SendLabelRequestForm itemId={item.id} />
+              </div>
+            </td>
 
-  {/* Status */}
-  <td style={tdStyle}>
-    <select
-      value={item.status}
-      onChange={(e) => updateStatus(item.id, e.target.value)}
-      style={{
-        ...statusStyle(item.status),
-        borderRadius: "999px",
-        padding: "6px 10px",
-        fontWeight: "bold",
-        fontSize: "12px",
-      }}
-    >
-      <option>Stored</option>
-      <option>Ready to be shipped</option>
-      <option>Label sent</option>
-      <option>Shipped</option>
-      <option>Closed</option>
-    </select>
-  </td>
+            <td style={{ ...tdStyle, color: "#E5E7EB", whiteSpace: "nowrap" }}>
+              {item.created_at
+                ? new Date(item.created_at).toLocaleDateString()
+                : "—"}
+            </td>
 
-  {/* Send Label */}
-  <td style={tdStyle}>
-  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-    <SendLabelRequestForm itemId={item.id} />
-  </div>
-</td>
+            <td style={tdStyle}>
+              <input
+                type="text"
+                value={item.comments || ""}
+                placeholder="Add comment..."
+                onChange={(e) => updateComments(item.id, e.target.value)}
+                style={{
+                  ...inputStyle,
+                  width: "180px",
+                  padding: "8px 10px",
+                }}
+              />
+            </td>
 
-  <td style={{ ...tdStyle, color: "#9CA3AF" }}>
-  {item.created_at
-    ? new Date(item.created_at).toLocaleDateString()
-    : "--"}
-</td>
+            <td style={tdStyle}>
+              {item.label_url ? (
+                <a
+                  href={item.label_url}
+                  target="_blank"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    color: "#E5E7EB",
+                    textDecoration: "none",
+                    fontWeight: "bold",
+                    fontSize: "12px",
+                  }}
+                >
+                  <span style={{ color: "#22C55E" }}>✓</span>
+                  Label
+                </a>
+              ) : (
+                <span style={{ color: "#6B7280" }}>—</span>
+              )}
+            </td>
 
-  {/* Comments */}
-  <td style={tdStyle}>
-    <input
-      type="text"
-      value={item.comments || ""}
-      placeholder="Add comment..."
-      onChange={(e) => updateComments(item.id, e.target.value)}
-      style={{
-        ...inputStyle,
-        width: "180px",
-        padding: "8px 10px",
-      }}
-    />
-  </td>
+            <td style={{ ...tdStyle, textAlign: "center", position: "relative" }}>
+              <details style={{ position: "relative" }}>
+                <summary
+                  style={{
+                    listStyle: "none",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    color: "#9CA3AF",
+                    fontSize: "20px",
+                  }}
+                >
+                  ⋮
+                </summary>
 
-  {/* Label */}
-  <td style={tdStyle}>
-    {item.label_url ? (
-      <a
-        href={item.label_url}
-        target="_blank"
-        style={{ color: "gold", fontWeight: "bold" }}
-      >
-        View Label
-      </a>
-    ) : (
-      <span style={{ color: "#555" }}>—</span>
-    )}
-  </td>
-</tr>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "26px",
+                    background: "#1A1A1A",
+                    border: "1px solid #2A2A2A",
+                    borderRadius: "10px",
+                    padding: "8px",
+                    width: "145px",
+                    zIndex: 20,
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  {item.label_url && (
+                    <a
+                      href={item.label_url}
+                      target="_blank"
+                      style={actionMenuItem}
+                    >
+                      <Eye size={14} /> View
+                    </a>
+                  )}
 
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                  <button style={actionMenuButton}>
+  <Edit2 size={14} /> Edit
+</button>
+
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    style={{ ...actionMenuButton, color: "#F87171" }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </details>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
       </section>
     </main>
   );
@@ -463,6 +605,41 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "14px 12px",
+  padding: "16px 14px",
   verticalAlign: "middle",
+  fontSize: "13px",
+};
+const actionMenuItem: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "9px 10px",
+  color: "#E5E7EB",
+  textDecoration: "none",
+  fontSize: "13px",
+};
+
+const actionMenuButton: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  width: "100%",
+  padding: "9px 10px",
+  background: "transparent",
+  border: "none",
+  color: "#E5E7EB",
+  fontSize: "13px",
+  cursor: "pointer",
+  textAlign: "left",
+};
+const filterMenuButton: React.CSSProperties = {
+  width: "100%",
+  background: "transparent",
+  border: "none",
+  color: "#fff",
+  padding: "10px 0",
+  textAlign: "left",
+  fontSize: "14px",
+  fontWeight: "bold",
+  cursor: "pointer",
 };
