@@ -17,10 +17,13 @@ export default function Home() {
   const [searchterm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
+  const [foundby, setFoundBy] = useState("");
 
   const readyToShipCount = lostItems.filter(
     (item) => item.status === "Ready to be shipped"
   ).length;
+
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -72,6 +75,7 @@ export default function Home() {
         item_name: formData.get("item_name"),
         room_number: formData.get("room_number"),
         guest_last_name: formData.get("guest_last_name"),
+        found_by: foundby,
         status: formData.get("status"),
       },
     ]);
@@ -82,6 +86,7 @@ export default function Home() {
     }
 
     form.reset();
+    setFoundBy ("");
     fetchItems();
   }
 
@@ -220,7 +225,7 @@ export default function Home() {
           onSubmit={addItem}
           style={{
             display: "grid",
-            gridTemplateColumns: "1.4fr 1fr 1.4fr 1.4fr auto",
+            gridTemplateColumns: "1.2fr 0.8fr 1.2fr 1fr 0.8fr auto",
             gap: "10px",
             marginBottom: "18px",
           }}
@@ -233,6 +238,14 @@ export default function Home() {
             required
             style={inputStyle}
           />
+         <input
+  name="found_by"
+  type="text"
+  placeholder="Found By"
+  value={foundby}
+  onChange={(e) => setFoundBy(e.target.value)}
+  style={inputStyle}
+/> 
 
           <select name="status" defaultValue="Stored" style={inputStyle}>
             <option>Stored</option>
@@ -371,14 +384,14 @@ export default function Home() {
         >
           <th style={thStyle}></th>
           <th style={thStyle}>Guest</th>
-          <th style={thStyle}>Room</th>
+          <th style={thStyle}>Location</th>
           <th style={thStyle}>Item</th>
           <th style={thStyle}>Status</th>
           <th style={thStyle}>Send Label</th>
-          <th style={thStyle}>Date Sent</th>
+          <th style={thStyle}>Date</th>
           <th style={thStyle}>Comments</th>
           <th style={thStyle}>Label</th>
-          <th style={{ ...thStyle, textAlign: "center" }}>Actions</th>
+          <th style={{ ...thStyle, textAlign: "center" }}>View Details</th>
         </tr>
       </thead>
 
@@ -391,6 +404,8 @@ export default function Home() {
     e.currentTarget.style.background = "#1B1B1B";
     e.currentTarget.style.boxShadow =
       "0 0 12px rgba(200,169,106,0.10)";
+    e.currentTarget.style.position = "relative"
+    e.currentTarget.style.zIndex = "5" ;
   }}
   onMouseLeave={(e) => {
     e.currentTarget.style.transform = "scale(1)";
@@ -405,8 +420,20 @@ export default function Home() {
   }}
 >
             <td style={tdStyle}>
-              <span style={{ color: "#9CA3AF" }}>▾</span>
-            </td>
+  <button
+    onClick={() => deleteItem(item.id)}
+    style={{
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      color: "#9CA3AF",
+      padding: 0,
+    }}
+    title="Delete item"
+  >
+    <Trash2 size={16} />
+  </button>
+</td>
 
             <td style={tdStyle}>{item.guest_last_name}</td>
             <td style={tdStyle}>{item.room_number}</td>
@@ -419,10 +446,10 @@ export default function Home() {
                 style={{
                   ...statusStyle(item.status),
                   borderRadius: "999px",
-                  padding: "7px 12px",
+                  padding: "6px 10px",
                   fontWeight: "bold",
                   fontSize: "12px",
-                  width: "175px",
+                  width: "150px",
                 }}
               >
                 <option>Stored</option>
@@ -434,7 +461,7 @@ export default function Home() {
             </td>
 
             <td style={tdStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
                 <SendLabelRequestForm itemId={item.id} />
               </div>
             </td>
@@ -482,63 +509,89 @@ export default function Home() {
               )}
             </td>
 
-            <td style={{ ...tdStyle, textAlign: "center", position: "relative" }}>
-              <details style={{ position: "relative" }}>
-                <summary
-                  style={{
-                    listStyle: "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    color: "#9CA3AF",
-                    fontSize: "20px",
-                  }}
-                >
-                  ⋮
-                </summary>
-
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "26px",
-                    background: "#1A1A1A",
-                    border: "1px solid #2A2A2A",
-                    borderRadius: "10px",
-                    padding: "8px",
-                    width: "145px",
-                    zIndex: 20,
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  {item.label_url && (
-                    <a
-                      href={item.label_url}
-                      target="_blank"
-                      style={actionMenuItem}
-                    >
-                      <Eye size={14} /> View
-                    </a>
-                  )}
-
-                  <button style={actionMenuButton}>
-  <Edit2 size={14} /> Edit
-</button>
-
-                  <button
-                    onClick={() => deleteItem(item.id)}
-                    style={{ ...actionMenuButton, color: "#F87171" }}
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              </details>
-            </td>
+            <td style={{ ...tdStyle, textAlign: "center" }}>
+  <button
+    onClick={() => setSelectedItem(item)}
+    style={{
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      color: "#9CA3AF",
+      padding: 0,
+    }}
+    title="View details"
+  >
+    <Eye size={18} />
+  </button>
+</td>
           </tr>
         ))}
       </tbody>
     </table>
   )}
 </div>
+{selectedItem && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.65)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        background: "#111111",
+        border: "1px solid #2A2A2A",
+        borderRadius: "16px",
+        padding: "24px",
+        width: "420px",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+      }}
+    >
+      <h2 style={{ marginTop: 0, color: gold }}>Item Details</h2>
+
+      <p><strong>Guest:</strong> {selectedItem.guest_last_name}</p>
+      <p><strong>Location:</strong> {selectedItem.room_number}</p>
+      <p><strong>Item:</strong> {selectedItem.item_name}</p>
+      <p><strong>Status:</strong> {selectedItem.status}</p>
+      <p><strong>Found By:</strong> {selectedItem.found_by || "Not recorded yet"}</p>
+      <p><strong>Created By:</strong> {selectedItem.created_by || "Not recorded yet"}</p>
+      <p>
+  <strong>Date Created:</strong>{" "}
+  {selectedItem.created_at
+    ? new Date(selectedItem.created_at).toLocaleString()
+    : "Not recorded"}
+</p>
+
+<p>
+  <strong>Label Sent:</strong>{" "}
+  {selectedItem.label_sent_at
+    ? new Date(selectedItem.label_sent_at).toLocaleString()
+    : "Not sent yet"}
+</p>
+
+      <button
+        onClick={() => setSelectedItem(null)}
+        style={{
+          marginTop: "16px",
+          background: gold,
+          color: "#111111",
+          border: "none",
+          borderRadius: "10px",
+          padding: "10px 16px",
+          fontWeight: "bold",
+          cursor: "pointer",
+        }}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
       </section>
     </main>
   );

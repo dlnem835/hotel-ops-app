@@ -34,9 +34,12 @@ id?: string; }) {
 
     if (data.success) {
   await supabase
-    .from("lost_items")
-    .update({ status: "Label sent" })
-    .eq("id", itemId);
+  .from("lost_items")
+  .update({
+    status: "Label sent",
+    label_sent_at: new Date().toISOString(),
+  })
+  .eq("id", itemId);
 
   alert("✅ Email sent successfully!");
   window.location.reload();
@@ -66,7 +69,7 @@ id?: string; }) {
       borderRadius: "8px",
       padding: "6px 8px", // smaller
       fontSize: "12px",
-      width: "140px", // tighter width
+      width: "180px", // tighter width
       outline: "none",
     }}
   />
