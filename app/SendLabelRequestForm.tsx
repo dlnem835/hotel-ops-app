@@ -32,7 +32,7 @@ id?: string; }) {
 
     const data = await res.json();
 
-    if (data.success) {
+    if (res.ok) {
   await supabase
   .from("lost_items")
   .update({

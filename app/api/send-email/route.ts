@@ -1,12 +1,22 @@
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const resendApiKey = process.env.RESEND_API_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey || !resendApiKey) {
+  throw new Error("Missing environment variables");
+}
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  supabaseUrl,
+  supabaseAnonKey
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(resendApiKey);
+
 
 export async function POST(req: Request) {
   try {
