@@ -225,7 +225,7 @@ export default function Home() {
           onSubmit={addItem}
           style={{
             display: "grid",
-            gridTemplateColumns: "1.2fr 0.8fr 1.2fr 1fr 0.8fr auto",
+            gridTemplateColumns: "1fr 0.65fr 1fr .85fr 0.7fr auto",
             gap: "10px",
             marginBottom: "18px",
           }}
@@ -645,10 +645,13 @@ const goldButton: React.CSSProperties = {
   background: gold,
   color: "#111111",
   border: "none",
-  borderRadius: "10px",
-  padding: "11px 18px",
-  fontWeight: "bold",
+  borderRadius: "12px",
+  padding: "12px 24px",
+  minWidth: "120px",
+  fontWeight: "14PX",
+  letterSpacing: "0.3px",
   cursor: "pointer",
+  transition: "all 0.2s ease",
 };
 
 const thStyle: React.CSSProperties = {
