@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Eye, MessageCircle, Trash2 } from "lucide-react";
+import { Search, Plus, Trash2, Edit2 } from "lucide-react";
+import Link  from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,70 +12,80 @@ const supabase = createClient(
 
 const gold = "#C8A96A";
 
-export default function PassOnLog() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [searchterm, setSearchTerm] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+export default function PassOnLogPage() {
+  const [entries, setEntries] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [subject, setSubject] = useState("");
+  const [author, setAuthor] = useState("");
+  const [priority, setPriority] = useState("Normal");
+  const [message, setMessage] = useState("");
 
-  async function fetchLogs() {
+  async function fetchEntries() {
     const { data } = await supabase
-      .from("pass_on_logs")
+      .from("pass_on_log")
       .select("*")
       .order("created_at", { ascending: false });
 
-    setLogs(data || []);
+    setEntries(data || []);
   }
 
   useEffect(() => {
-    fetchLogs();
+    fetchEntries();
   }, []);
 
-  async function addTestEntry() {
-    await supabase.from("pass_on_logs").insert([
+  async function addEntry(e: any) {
+    e.preventDefault();
+
+    if (!subject || !message) {
+      alert("Please enter a subject and message.");
+      return;
+    }
+
+    const { error } = await supabase.from("pass_on_log").insert([
       {
-        shift: "PM Shift",
-        subject: "Guest Concern",
-        entry:
-          "Mr. Rabsatt in RM 510 stopped by the desk letting me know he noticed a crack across the ceiling and the bathroom fan is loud. Maintenance should check after checkout.",
-        priority: "High",
-        author: "Front Desk",
-        status: "New",
+        subject,
+        author,
+        priority,
+        message,
       },
     ]);
 
-    fetchLogs();
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setSubject("");
+    setAuthor("");
+    setPriority("Normal");
+    setMessage("");
+    fetchEntries();
   }
 
-  async function deleteLog(id: string) {
-    if (!confirm("Delete this entry?")) return;
-    await supabase.from("pass_on_logs").delete().eq("id", id);
-    fetchLogs();
+  async function deleteEntry(id: number) {
+    if (!confirm("Delete this pass-on entry?")) return;
+
+    await supabase.from("pass_on_log").delete().eq("id", id);
+    fetchEntries();
   }
 
-  const filteredLogs = logs.filter((log) =>
-    `${log.shift} ${log.subject} ${log.entry} ${log.author} ${log.priority}`
+  const filteredEntries = entries.filter((entry) =>
+    `${entry.subject} ${entry.author} ${entry.message} ${entry.priority}`
       .toLowerCase()
-      .includes(searchterm.toLowerCase())
+      .includes(search.toLowerCase())
   );
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: "#0B0B0B",
-        color: "white",
+        background: "#050505",
+        color: "#FFFFFF",
         fontFamily: "Arial, sans-serif",
         display: "flex",
       }}
     >
-      <aside
-        style={{
-          width: "245px",
-          borderRight: "1px solid #2A2A2A",
-          background: "#080808",
-          padding: "28px 18px",
-        }}
-      >
+      <aside style={sidebarStyle}>
         <div style={{ marginBottom: "42px" }}>
           <div style={{ color: gold, fontSize: "28px", fontWeight: "bold" }}>
             ONE
@@ -93,159 +104,169 @@ export default function PassOnLog() {
                 borderRadius: "10px",
                 marginBottom: "8px",
                 background: item === "Pass-On Log" ? gold : "transparent",
-                color: item === "Pass-On Log" ? "#111" : "#fff",
+                color: item === "Pass-On Log" ? "#111111" : "#FFFFFF",
                 fontWeight: item === "Pass-On Log" ? "bold" : "normal",
               }}
             >
-              {item}
+              <Link
+  href={
+    item === "Lost & Found"
+      ? "/"
+      : item === "Pass-On Log"
+      ? "/pass-on-log"
+      : "#"
+  }
+  style={{
+    color: "inherit",
+    textDecoration: "none",
+    display: "block",
+    width: "100%",
+  }}
+>
+  {item}
+</Link>
             </div>
           )
         )}
       </aside>
 
       <section style={{ flex: 1, padding: "34px 40px" }}>
-        <div style={{ marginBottom: "28px" }}>
-          <h1 style={{ margin: 0, fontSize: "30px" }}>Pass-On Log</h1>
-          <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
-            Shift notes and hotel communication
-          </p>
-        </div>
-
-        <div
-          style={{
-            maxWidth: "1120px",
-            margin: "0 auto",
-            border: "1px solid #2A2A2A",
-            borderRadius: "14px",
-            background: "#111111",
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ maxWidth: "980px", margin: "0 auto" }}>
           <div
             style={{
-              padding: "18px",
-              borderBottom: "1px solid #2A2A2A",
               display: "flex",
-              gap: "12px",
+              justifyContent: "space-between",
               alignItems: "center",
+              marginBottom: "24px",
             }}
           >
-            <input
-              placeholder="Search by keyword, subject, or employee..."
-              value={searchterm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ ...inputStyle, flex: 1 }}
-            />
+            <div>
+              <h1 style={{ margin: 0, fontSize: "30px" }}>Pass-On Log</h1>
+              <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
+                Shift notes and hotel communication
+              </p>
+            </div>
 
-            <button onClick={addTestEntry} style={goldButton}>
-              + Create Entry
+            <button style={newButton}>
+              <Plus size={16} /> New
             </button>
           </div>
 
-          <div style={{ padding: "18px" }}>
-            <h3 style={{ color: gold, marginTop: 0 }}>Today</h3>
+          <div style={panelStyle}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ position: "relative", flex: 1 }}>
+                <Search
+                  size={16}
+                  color="#9CA3AF"
+                  style={{ position: "absolute", left: "14px", top: "14px" }}
+                />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search pass-on entries..."
+                  style={{
+                    ...inputStyle,
+                    width: "100%",
+                    paddingLeft: "40px",
+                  }}
+                />
+              </div>
+            </div>
 
-            {!filteredLogs.length ? (
-              <p style={{ color: "#9CA3AF" }}>No entries yet.</p>
-            ) : (
-              filteredLogs.map((log) => {
-                const expanded = expandedId === log.id;
+            <form onSubmit={addEntry} style={formStyle}>
+              <input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject"
+                style={inputStyle}
+              />
 
-                return (
-                  <div
-                    key={log.id}
-                    onClick={() => setExpandedId(expanded ? null : log.id)}
-                    style={{
-                      border: "1px solid #2A2A2A",
-                      borderLeft: `4px solid ${gold}`,
-                      borderRadius: "10px",
-                      padding: "16px",
-                      marginBottom: "12px",
-                      cursor: "pointer",
-                      background: expanded ? "#1A1A1A" : "#0B0B0B",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
+              <input
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="Author"
+                style={inputStyle}
+              />
+
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                style={inputStyle}
+              >
+                <option>Normal</option>
+                <option>Important</option>
+                <option>Urgent</option>
+              </select>
+
+              <button type="submit" style={goldButton}>
+                Add Entry
+              </button>
+
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Write pass-on note..."
+                style={{
+                  ...inputStyle,
+                  gridColumn: "1 / -1",
+                  minHeight: "90px",
+                  resize: "vertical",
+                }}
+              />
+            </form>
+
+            <div style={{ marginTop: "26px" }}>
+              {!filteredEntries.length ? (
+                <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
+              ) : (
+                filteredEntries.map((entry) => (
+                  <div key={entry.id} style={entryCard}>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <div>
-                        <h3 style={{ margin: 0 }}>{log.shift}</h3>
-                        <p style={{ margin: "6px 0", fontWeight: "bold" }}>
-                          Subject: {log.subject || "No subject"}
+                        <div style={priorityPill(entry.priority)}>
+                          {entry.priority || "Normal"}
+                        </div>
+
+                        <h3 style={{ margin: "10px 0 6px" }}>
+                          {entry.subject}
+                        </h3>
+
+                        <p style={{ margin: "0 0 10px", color: "#9CA3AF" }}>
+                          {entry.author || "Unknown"} •{" "}
+                          {entry.created_at
+                            ? new Date(entry.created_at).toLocaleString()
+                            : ""}
                         </p>
-                        <p style={{ margin: 0, color: "#E5E7EB" }}>
-                          {expanded
-                            ? log.entry
-                            : `${log.entry?.slice(0, 130)}${
-                                log.entry?.length > 130 ? "..." : ""
-                              }`}
-                        </p>
                       </div>
 
-                      <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                        {new Date(log.created_at).toLocaleString()}
-                      </div>
-                    </div>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button style={iconButton}>
+                          <Edit2 size={15} />
+                        </button>
 
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div style={{ display: "flex", gap: "18px", color: "#9CA3AF" }}>
-                        <span>
-                          <Eye size={14} /> {log.views || 0}
-                        </span>
-                        <span>
-                          <MessageCircle size={14} /> 0
-                        </span>
-                        <span>Priority: {log.priority}</span>
-                        <span>Author: {log.author || "Not recorded"}</span>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "10px" }}>
-                        <button style={smallButton}>Edit</button>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteLog(log.id);
-                          }}
-                          style={smallButton}
+                          onClick={() => deleteEntry(entry.id)}
+                          style={iconButton}
                         >
-                          Delete
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </div>
 
-                    {expanded && (
-                      <div
-                        style={{
-                          marginTop: "16px",
-                          borderTop: "1px solid #2A2A2A",
-                          paddingTop: "14px",
-                        }}
-                      >
-                        <p style={{ color: "#9CA3AF", marginBottom: "8px" }}>
-                          Viewed by: Not built yet
-                        </p>
-
-                        <p style={{ color: "#9CA3AF", marginBottom: "8px" }}>
-                          Replies: No replies yet
-                        </p>
-
-                        <input
-                          placeholder="Write a reply..."
-                          style={{ ...inputStyle, width: "100%" }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    )}
+                    <p style={{ margin: 0, color: "#E5E7EB", lineHeight: 1.6 }}>
+                      {entry.message}
+                    </p>
                   </div>
-                );
-              })
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -253,12 +274,33 @@ export default function PassOnLog() {
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const sidebarStyle: React.CSSProperties = {
+  width: "245px",
+  borderRight: "1px solid #2A2A2A",
+  background: "#080808",
+  padding: "28px 18px",
+};
+
+const panelStyle: React.CSSProperties = {
   background: "#0B0B0B",
+  border: "1px solid #2A2A2A",
+  borderRadius: "18px",
+  padding: "24px",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+};
+
+const formStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1.2fr 1fr 0.8fr 130px",
+  gap: "12px",
+};
+
+const inputStyle: React.CSSProperties = {
+  background: "#050505",
   color: "#FFFFFF",
   border: "1px solid #2A2A2A",
   borderRadius: "10px",
-  padding: "11px 12px",
+  padding: "12px 14px",
   outline: "none",
 };
 
@@ -266,17 +308,58 @@ const goldButton: React.CSSProperties = {
   background: gold,
   color: "#111111",
   border: "none",
-  borderRadius: "10px",
-  padding: "11px 18px",
+  borderRadius: "12px",
+  padding: "12px 18px",
   fontWeight: "bold",
   cursor: "pointer",
 };
 
-const smallButton: React.CSSProperties = {
+const newButton: React.CSSProperties = {
+  background: "transparent",
+  color: gold,
+  border: `1px solid ${gold}`,
+  borderRadius: "999px",
+  padding: "10px 16px",
+  fontWeight: "bold",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+};
+
+const iconButton: React.CSSProperties = {
   background: "transparent",
   color: "#E5E7EB",
   border: "1px solid #2A2A2A",
   borderRadius: "8px",
-  padding: "7px 12px",
+  padding: "8px",
   cursor: "pointer",
 };
+
+const entryCard: React.CSSProperties = {
+  background: "#111111",
+  border: "1px solid #2A2A2A",
+  borderLeft: `4px solid ${gold}`,
+  borderRadius: "14px",
+  padding: "18px",
+  marginBottom: "14px",
+};
+
+function priorityPill(priority: string): React.CSSProperties {
+  const color =
+    priority === "Urgent"
+      ? "#F87171"
+      : priority === "Important"
+      ? gold
+      : "#22C55E";
+
+  return {
+    display: "inline-block",
+    color,
+    border: `1px solid ${color}`,
+    borderRadius: "999px",
+    padding: "5px 10px",
+    fontSize: "12px",
+    fontWeight: "bold",
+  };
+}

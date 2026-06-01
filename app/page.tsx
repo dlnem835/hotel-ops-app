@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "./SendLabelRequestForm";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package } from "lucide-react";
+import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -164,7 +165,23 @@ export default function Home() {
                 fontWeight: item === "Lost & Found" ? "bold" : "normal",
               }}
             >
-              {item}
+              <Link
+  href={
+    item === "Lost & Found"
+      ? "/"
+      : item === "Pass-On Log"
+      ? "/pass-on-log"
+      : "#"
+  }
+  style={{
+    color: "inherit",
+    textDecoration: "none",
+    display: "block",
+    width: "100%",
+  }}
+>
+  {item}
+</Link>
             </div>
           )
         )}
