@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Search, Plus, Trash2, Edit2 } from "lucide-react";
+import { Search, Plus, Trash2, Edit2, Eye, MessageCircle } from "lucide-react";
 import Link  from "next/link";
 
 const supabase = createClient(
@@ -19,11 +19,20 @@ export default function PassOnLogPage() {
   const [author, setAuthor] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [message, setMessage] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedViews, setSelectedViews] = useState<any[]>([]);
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedReplies, setSelectedReplies] = useState<any[]>([]);
+  const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
+
 
   async function fetchEntries() {
     const { data } = await supabase
       .from("pass_on_log")
-      .select("*")
+      .select("*, pass_on_log_replies(*)")
       .order("created_at", { ascending: false });
 
     setEntries(data || []);
@@ -35,6 +44,8 @@ export default function PassOnLogPage() {
 
   async function addEntry(e: any) {
     e.preventDefault();
+  
+  
 
     if (!subject || !message) {
       alert("Please enter a subject and message.");
@@ -44,7 +55,7 @@ export default function PassOnLogPage() {
     const { error } = await supabase.from("pass_on_log").insert([
       {
         subject,
-        author,
+        author: "Douglas",
         priority,
         message,
       },
@@ -55,18 +66,95 @@ export default function PassOnLogPage() {
       return;
     }
 
-    setSubject("");
-    setAuthor("");
-    setPriority("Normal");
-    setMessage("");
-    fetchEntries();
+   setSubject("");
+setPriority("Normal");
+setMessage("");
+setShowForm(false);
+fetchEntries();
   }
+
+  async function openReplies(entryId: number) {
+  setSelectedEntryId(entryId);
+
+  const { data } = await supabase
+    .from("pass_on_log_replies")
+    .select("*")
+    .eq("entry_id", entryId)
+    .order("created_at", { ascending: true });
+
+  setSelectedReplies(data || []);
+  setReplyModalOpen(true);
+}
+
+async function addReply() {
+  if (!selectedEntryId || !replyMessage) return;
+
+  await supabase.from("pass_on_log_replies").insert([
+    {
+      entry_id: selectedEntryId,
+      reply_author: "Douglas",
+      reply_message: replyMessage,
+    },
+  ]);
+
+  setReplyMessage("");
+  openReplies(selectedEntryId);
+}
+
+
+  async function openViews(entryId: number) {
+  const viewerName = "Douglas";
+
+  const { data: existingView } = await supabase
+    .from("pass_on_log_views")
+    .select("*")
+    .eq("entry_id", entryId)
+    .eq("viewer_name", viewerName)
+    .maybeSingle();
+
+  if (!existingView) {
+    await supabase.from("pass_on_log_views").insert([
+      {
+        entry_id: entryId,
+        viewer_name: viewerName,
+      },
+    ]);
+  }
+
+  const { data } = await supabase
+    .from("pass_on_log_views")
+    .select("*")
+    .eq("entry_id", entryId)
+    .order("created_at", { ascending: false });
+
+  setSelectedViews(data || []);
+  setViewModalOpen(true);
+}
 
   async function deleteEntry(id: number) {
     if (!confirm("Delete this pass-on entry?")) return;
 
     await supabase.from("pass_on_log").delete().eq("id", id);
     fetchEntries();
+
+  async function openViews(entryId: number) {
+  await supabase.from("pass_on_log_views").insert([
+    {
+      entry_id: entryId,
+      viewer_name: "Douglas",
+    },
+  ]);
+
+  const { data } = await supabase
+    .from("pass_on_log_views")
+    .select("*")
+    .eq("entry_id", entryId)
+    .order("created_at", { ascending: false });
+
+  setSelectedViews(data || []);
+  setViewModalOpen(true);
+}
+
   }
 
   const filteredEntries = entries.filter((entry) =>
@@ -147,7 +235,7 @@ export default function PassOnLogPage() {
               </p>
             </div>
 
-            <button style={newButton}>
+            <button style={newButton} onClick={() => setShowForm(true)}>
               <Plus size={16} /> New
             </button>
           </div>
@@ -180,18 +268,34 @@ export default function PassOnLogPage() {
               </div>
             </div>
 
-            <form onSubmit={addEntry} style={formStyle}>
-              <input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject"
-                style={inputStyle}
-              />
+        {showForm && (
+              <div style={modalOverlay}>
+  <div style={modalBox}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
+      }}
+    >
+      <h2 style={{ margin: 0 }}>New Pass-On Entry</h2>
 
-              <input
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Author"
+      <button
+        type="button"
+        onClick={() => setShowForm(false)}
+        style={closeButton}
+      >
+        ×
+      </button>
+    </div>
+
+    <form onSubmit={addEntry} style={formStyle}>
+
+                <input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject"
                 style={inputStyle}
               />
 
@@ -216,61 +320,257 @@ export default function PassOnLogPage() {
                 style={{
                   ...inputStyle,
                   gridColumn: "1 / -1",
-                  minHeight: "90px",
+                  minHeight: "110px",
                   resize: "vertical",
+                  boxSizing: "border-box",
                 }}
               />
             </form>
-
-            <div style={{ marginTop: "26px" }}>
-              {!filteredEntries.length ? (
-                <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
-              ) : (
-                filteredEntries.map((entry) => (
-                  <div key={entry.id} style={entryCard}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={priorityPill(entry.priority)}>
-                          {entry.priority || "Normal"}
-                        </div>
-
-                        <h3 style={{ margin: "10px 0 6px" }}>
-                          {entry.subject}
-                        </h3>
-
-                        <p style={{ margin: "0 0 10px", color: "#9CA3AF" }}>
-                          {entry.author || "Unknown"} •{" "}
-                          {entry.created_at
-                            ? new Date(entry.created_at).toLocaleString()
-                            : ""}
-                        </p>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button style={iconButton}>
-                          <Edit2 size={15} />
-                        </button>
-
-                        <button
-                          onClick={() => deleteEntry(entry.id)}
-                          style={iconButton}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p style={{ margin: 0, color: "#E5E7EB", lineHeight: 1.6 }}>
-                      {entry.message}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
         </div>
+       )}
+
+           <div style={{ marginTop: "26px" }}>
+  {!filteredEntries.length ? (
+    <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
+  ) : (
+    filteredEntries.map((entry) => (
+      <div key={entry.id} style={entryCard}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <div style={priorityPill(entry.priority)}>
+              {entry.priority || "Normal"}
+            </div>
+
+            <h3 style={{ margin: "10px 0 6px" }}>{entry.subject}</h3>
+
+            <p style={{ margin: "0 0 10px", color: "#9CA3AF" }}>
+              {entry.author || "Unknown"} ·{" "}
+              {entry.created_at
+                ? new Date(entry.created_at).toLocaleString()
+                : ""}
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button style={iconButton}>
+              <Edit2 size={15} />
+            </button>
+
+            <button onClick={() => deleteEntry(entry.id)} style={iconButton}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        <p style={{ margin: 0, color: "#E5E7EB", lineHeight: 1.6 }}>
+          {entry.message}
+        </p>
+
+{entry.pass_on_log_replies?.length > 0 && (
+  <div
+    style={{
+      marginTop: "12px",
+      paddingLeft: "12px",
+      borderLeft: "2px solid #C8A96A",
+    }}
+  >
+    {entry.pass_on_log_replies.slice(0, 2).map((reply: any) => (
+      <div
+        key={reply.id}
+        style={{
+          marginBottom: "8px",
+          color: "#E5E7EB",
+          fontSize: "14px",
+        }}
+      >
+        <strong>{reply.reply_author}</strong>: {reply.reply_message}
+      </div>
+    ))}
+  </div>
+)}
+
+
+       <div
+  style={{
+    display: "flex",
+    gap: "24px",
+    marginTop: "14px",
+    color: "#FFFFFF",
+    fontSize: "15px",
+    fontWeight: 600,
+  }}
+>
+  <button
+    type="button"
+    onClick={() => openViews(entry.id)}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      background: "transparent",
+      border: "none",
+      color: "#FFFFFF",
+      fontSize: "15px",
+      fontWeight: 600,
+      cursor: "pointer",
+      padding: 0,
+    }}
+  >
+    <Eye size={18} />
+    <span>Views</span>
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setExpandedEntry(
+      expandedEntry === entry.id ? null : entry.id
+    )
+  }
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      background: "transparent",
+      border: "none",
+      color: "#FFFFFF",
+      fontSize: "15px",
+      fontWeight: 600,
+      cursor: "pointer",
+      padding: 0,
+    }}
+  >
+    <MessageCircle size={18} />
+    <span>{entry.pass_on_log_replies ? entry.pass_on_log_replies.length : 0} Replies</span>
+  </button>
+  {expandedEntry === entry.id && (
+  <div
+    style={{
+      marginTop: "12px",
+      paddingTop: "12px",
+      borderTop: "1px solid #444",
+    }}
+  >
+    {entry.pass_on_log_replies?.map((reply: any) => (
+      <div
+        key={reply.id}
+        style={{
+          marginBottom: "10px",
+          color: "#E5E7EB",
+        }}
+      >
+        <strong>{reply.reply_author}</strong>: {reply.reply_message}
+      </div>
+    ))}
+  </div>
+)}
+
+</div>
+
+        </div>
+    ))
+  )}
+</div>
+ 
+            </div>
+          </div>
       </section>
-    </main>
+{viewModalOpen && (
+  <div style={modalOverlay}>
+    <div style={modalBox}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "18px",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Viewed By</h2>
+
+        <button
+          onClick={() => setViewModalOpen(false)}
+          style={closeButton}
+        >
+          ×
+        </button>
+      </div>
+
+      {!selectedViews.length ? (
+        <p>No views yet.</p>
+      ) : (
+        selectedViews.map((view) => (
+          <p key={view.id}>
+            {view.viewer_name} —{" "}
+            {new Date(view.created_at).toLocaleString()}
+          </p>
+        ))
+      )}
+    </div>
+  </div>
+)}
+
+{replyModalOpen && (
+  <div style={modalOverlay}>
+    <div style={{ ...modalBox, width: "620px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "18px" }}>
+        <h2 style={{ margin: 0 }}>Replies</h2>
+        <button onClick={() => setReplyModalOpen(false)} style={closeButton}>
+          ×
+        </button>
+      </div>
+
+      <div style={{ maxHeight: "260px", overflowY: "auto", marginBottom: "18px" }}>
+        {!selectedReplies.length ? (
+          <p style={{ color: "#9CA3AF" }}>No replies yet.</p>
+        ) : (
+          selectedReplies.map((reply: any) => (
+            <div
+              key={reply.id}
+              style={{
+                background: "#111111",
+                border: "1px solid #2A2A2A",
+                borderRadius: "12px",
+                padding: "14px",
+                marginBottom: "12px",
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>{reply.reply_author}</div>
+              <div style={{ marginTop: "6px", color: "#E5E7EB" }}>
+                {reply.reply_message}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <textarea
+        value={replyMessage}
+        onChange={(e) => setReplyMessage(e.target.value)}
+        placeholder="Write a reply..."
+        style={{
+          ...inputStyle,
+          width: "100%",
+          minHeight: "90px",
+          resize: "vertical",
+          boxSizing: "border-box",
+          marginBottom: "14px",
+        }}
+      />
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button onClick={() => setReplyModalOpen(false)} style={iconButton}>
+          Cancel
+        </button>
+
+        <button onClick={addReply} style={goldButton}>
+          Add Reply
+        </button>
+      </div>
+    </div>
+  </div>
+
+)}
+</main>
   );
 }
 
@@ -363,3 +663,29 @@ function priorityPill(priority: string): React.CSSProperties {
     fontWeight: "bold",
   };
 }
+const modalOverlay = {
+  position: "fixed" as const,
+  inset: 0,
+  background: "rgba(0,0,0,0.75)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 999,
+};
+
+const modalBox = {
+  width: "720px",
+  maxWidth: "90%",
+  background: "#111111",
+  border: "1px solid #C8A96A",
+  borderRadius: "16px",
+  padding: "24px",
+};
+
+const closeButton = {
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
+  fontSize: "28px",
+  cursor: "pointer",
+};
