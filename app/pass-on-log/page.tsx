@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Search, Plus, Trash2, Edit2, Eye, MessageCircle } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Trash2,
+  Edit2,
+  Eye,
+  MessageCircle,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+} from "lucide-react";
 import Link from "next/link";
 
 const supabase = createClient(
@@ -18,15 +28,22 @@ export default function PassOnLogPage() {
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [message, setMessage] = useState("");
+  const [entryDate, setEntryDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [showForm, setShowForm] = useState(false);
+  const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
   const [expandedReplyEntry, setExpandedReplyEntry] = useState<number | null>(null);
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
+
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
 
   async function fetchEntries() {
     const { data } = await supabase
       .from("pass_on_log")
       .select("*, pass_on_log_replies(*), pass_on_log_views(*)")
+      .order("entry_date", { ascending: false })
       .order("created_at", { ascending: false });
 
     setEntries(data || []);
@@ -44,12 +61,21 @@ export default function PassOnLogPage() {
       return;
     }
 
+    const now = new Date();
+    const selectedDateTime = new Date(
+      `${entryDate}T${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}:00`
+    ).toISOString();
+
     const { error } = await supabase.from("pass_on_log").insert([
       {
         subject,
         author: "Douglas",
         priority,
         message,
+        created_at: selectedDateTime,
+        entry_date: entryDate,
       },
     ]);
 
@@ -61,6 +87,7 @@ export default function PassOnLogPage() {
     setSubject("");
     setPriority("Normal");
     setMessage("");
+    setEntryDate(new Date().toISOString().split("T")[0]);
     setShowForm(false);
     fetchEntries();
   }
@@ -77,10 +104,7 @@ export default function PassOnLogPage() {
 
     if (!existingView) {
       await supabase.from("pass_on_log_views").insert([
-        {
-          entry_id: entryId,
-          viewer_name: viewerName,
-        },
+        { entry_id: entryId, viewer_name: viewerName },
       ]);
     }
 
@@ -90,7 +114,6 @@ export default function PassOnLogPage() {
 
   async function addInlineReply(entryId: number) {
     const text = replyMessages[entryId]?.trim();
-
     if (!text) return;
 
     await supabase.from("pass_on_log_replies").insert([
@@ -107,18 +130,26 @@ export default function PassOnLogPage() {
 
   async function deleteEntry(id: number) {
     if (!confirm("Delete this pass-on entry?")) return;
-
     await supabase.from("pass_on_log").delete().eq("id", id);
     fetchEntries();
   }
 
+  function formatDateTime(value: string) {
+    return new Date(value).toLocaleString([], {
+      month: "numeric",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
   const filteredEntries = entries.filter((entry) =>
     `${entry.subject} ${entry.author} ${entry.message} ${entry.priority}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
-
-  return (
+  .toLowerCase()
+  .includes(search.toLowerCase())
+);
+      return (
     <main style={mainStyle}>
       <style>
         {`
@@ -127,21 +158,13 @@ export default function PassOnLogPage() {
             color: #C8A96A !important;
           }
 
-          .entry-card {
-            transition: all 0.18s ease;
-          }
-
-          .entry-card:hover {
-            border-color: rgba(200, 169, 106, 0.55) !important;
+          .entry-row:hover {
+            border-color: rgba(200, 169, 106, 0.65) !important;
             transform: translateY(-1px);
-            box-shadow: 0 18px 48px rgba(0,0,0,0.42);
+            box-shadow: 0 14px 38px rgba(0,0,0,0.38);
           }
 
-          .icon-button:hover {
-            border-color: rgba(200, 169, 106, 0.75) !important;
-            color: #C8A96A !important;
-          }
-
+          .icon-button:hover,
           .section-button:hover {
             color: #C8A96A !important;
           }
@@ -234,9 +257,9 @@ export default function PassOnLogPage() {
           <div style={panelStyle}>
             <div style={searchWrap}>
               <Search
-                size={22}
+                size={20}
                 color="#E5E7EB"
-                style={{ position: "absolute", left: "22px", top: "19px" }}
+                style={{ position: "absolute", left: "20px", top: "17px" }}
               />
               <input
                 value={search}
@@ -245,8 +268,8 @@ export default function PassOnLogPage() {
                 style={searchInput}
               />
             </div>
-
- {showForm && (
+  
+   {showForm && (
               <div style={modalOverlay}>
                 <div style={modalBox}>
                   <div style={modalHeader}>
@@ -279,6 +302,24 @@ export default function PassOnLogPage() {
                       <option>Urgent</option>
                     </select>
 
+<div style={dateInputWrap}>
+  <button
+    type="button"
+    onClick={() => dateInputRef.current?.showPicker?.()}
+    style={calendarButton}
+  >
+    <Calendar size={17} />
+  </button>
+
+  <input
+    ref={dateInputRef}
+    type="date"
+    value={entryDate}
+    onChange={(e) => setEntryDate(e.target.value)}
+    style={dateInput}
+  />
+</div>
+
                     <button type="submit" className="gold-button" style={goldButton}>
                       Add Entry
                     </button>
@@ -300,150 +341,180 @@ export default function PassOnLogPage() {
               </div>
             )}
 
-            <div style={{ marginTop: "26px" }}>
+            <div style={{ marginTop: "18px" }}>
               {!filteredEntries.length ? (
                 <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
               ) : (
-                filteredEntries.map((entry) => (
-                  <div key={entry.id} className="entry-card" style={entryCard}>
-                    <div style={cardTopRow}>
-                      <div>
+                filteredEntries.map((entry) => {
+                  const isOpen = expandedEntry === entry.id;
+                  const replyCount = entry.pass_on_log_replies?.length || 0;
+                  const viewCount = entry.pass_on_log_views?.length || 0;
+
+                  return (
+                    <div key={entry.id} className="entry-row" style={entryRow}>
+                      <div style={collapsedRow}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedEntry(isOpen ? null : entry.id)
+                          }
+                          style={expandButton}
+                        >
+                          {isOpen ? (
+                            <ChevronDown size={17} />
+                          ) : (
+                            <ChevronRight size={17} />
+                          )}
+                        </button>
+
                         <div style={priorityPill(entry.priority)}>
                           {entry.priority || "Normal"}
                         </div>
 
-                        <h3 style={entryTitle}>{entry.subject}</h3>
-
-                        <p style={entryMeta}>
-                          {entry.author || "Unknown"} ·{" "}
-                          {entry.created_at
-                            ? new Date(entry.created_at).toLocaleString()
-                            : ""}
-                        </p>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button className="icon-button" style={iconButton}>
-                          <Edit2 size={15} />
-                        </button>
-
-                        <button
-                          className="icon-button"
-                          onClick={() => deleteEntry(entry.id)}
-                          style={iconButton}
-                        >
-                          <Trash2 size={15
-                          } />
-                        </button>
-                      </div>
-                    </div>
-
-
-                    <div style={originalPostBox}>
-                      {entry.message}
-                    </div>
-
-                    {entry.pass_on_log_replies?.length > 0 && (
-                      <div style={{ marginTop: "10px" }}>
-                        {entry.pass_on_log_replies.map((reply: any) => (
-                          <div key={reply.id} style={replyPreviewBox}>
-                            <strong>{reply.reply_author}:</strong>{" "}
-                            {reply.reply_message}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-<div style={{
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "34px",
-  marginTop: "18px",
-}}
->
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => toggleViews(entry.id)}
-                          className="section-button"
-                          style={sectionButton}
-                        >
-                        
-                          <Eye size={18} />
-                          <span>Views</span>
-                        </button>
-
-                        {expandedViewsEntry ===entry.id && (
-                          <div style={viewsList}>
-                            {!entry.pass_on_log_views?.length ? (
-                              <div style={{ color: "#9CA3AF" }}>No views yet</div>
-                            ) : (
-                              entry.pass_on_log_views.map((view: any) => (
-                                <div key={view.id} style={viewRow}>
-                                  <span style={{ color: "#F4D03F" }}>•</span>
-                                  <strong>{view.viewer_name}</strong>
-                                  <span>
-                                    {new Date(view.created_at).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <button
-                          type="button"
+                        <div
                           onClick={() =>
-                            setExpandedReplyEntry(
-                              expandedReplyEntry === entry.id ? null : entry.id
-                            )
+                            setExpandedEntry(isOpen ? null : entry.id)
                           }
-                          className="section-button"
-                          style={sectionButton}
+                          style={{ flex: 1, cursor: "pointer" }}
                         >
-                          <MessageCircle size={18} />
-                          <span>Replies</span>
-                        </button>
+                          <div style={rowSubject}>{entry.subject}</div>
+                          <div style={rowMeta}>
+                            {entry.author || "Unknown"} ·{" "}
+                            {entry.created_at ? formatDateTime(entry.created_at) : ""}
+                          </div>
+                        </div>
 
-                        {expandedReplyEntry === entry.id && (
-                          <div className="reply-input-wrap" style={replyInputWrap}>
-                             <textarea
-  value={replyMessages[entry.id] || ""}
-  onChange={(e) => setReplyMessages((prev) => ({
-    ...prev,
-    [entry.id]: e.target.value
-  }))}
-  placeholder="Write a reply..."
-  style={{
-    width: "100%",
-    minHeight: "80px",
-    background: "#111111",
-    color: "#FFFFFF",
-    border: "1px solid #3A3A3A",
-    borderRadius: "10px",
-    padding: "12px",
-    fontSize: "14px",
-    resize: "vertical",
-    boxSizing: "border-box",
-    outline: "none",
-  }}
-></textarea>
+                        <div style={rowCounts}>
+                          <button
+                            type="button"
+                            onClick={() => toggleViews(entry.id)}
+                            className="section-button"
+                            style={smallActionButton}
+                          >
+                            <Eye size={15} />
+                            <span>{viewCount}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExpandedEntry(entry.id);
+                              setExpandedReplyEntry(
+                                expandedReplyEntry === entry.id ? null : entry.id
+                              );
+                            }}
+                            className="section-button"
+                            style={smallActionButton}
+                          >
+                            <MessageCircle size={15} />
+                            <span>{replyCount}</span>
+                          </button>
+                        </div>
+
+                        <div style={rowIcons}>
+                          <button className="icon-button" style={iconButton}>
+                            <Edit2 size={14} />
+                          </button>
+
+                          <button
+                            className="icon-button"
+                            onClick={() => deleteEntry(entry.id)}
+                            style={iconButton}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+ {isOpen && (
+                        <div style={expandedArea}>
+                          <div style={originalPostBox}>{entry.message}</div>
+
+                          {entry.pass_on_log_replies?.length > 0 && (
+                            <div style={{ marginTop: "8px" }}>
+                              {entry.pass_on_log_replies.map((reply: any) => (
+                                <div key={reply.id} style={replyPreviewBox}>
+                                  <strong>{reply.reply_author}:</strong>{" "}
+                                  {reply.reply_message}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {expandedViewsEntry === entry.id && (
+                            <div style={viewsList}>
+                              {!entry.pass_on_log_views?.length ? (
+                                <div style={{ color: "#9CA3AF" }}>
+                                  No views yet
+                                </div>
+                              ) : (
+                                entry.pass_on_log_views.map((view: any) => (
+                                  <div key={view.id} style={viewRow}>
+                                    <span style={{ color: "#F4D03F" }}>•</span>
+                                    <strong>{view.viewer_name}</strong>
+                                    <span>
+                                      {new Date(view.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+
+                          <div style={expandedActions}>
                             <button
                               type="button"
-                              onClick={() => addInlineReply(entry.id)}
-                              className="plus-submit"
-                              style={smallPlusButton}
+                              onClick={() => toggleViews(entry.id)}
+                              className="section-button"
+                              style={sectionButton}
                             >
-                              +
+                              <Eye size={16} />
+                              <span>Views</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedReplyEntry(
+                                  expandedReplyEntry === entry.id ? null : entry.id
+                                )
+                              }
+                              className="section-button"
+                              style={sectionButton}
+                            >
+                              <MessageCircle size={16} />
+                              <span>Replies</span>
                             </button>
                           </div>
-                        )}
-                      </div>
+
+                          {expandedReplyEntry === entry.id && (
+                            <div className="reply-input-wrap" style={replyInputWrap}>
+                              <textarea
+                                value={replyMessages[entry.id] || ""}
+                                onChange={(e) =>
+                                  setReplyMessages((prev) => ({
+                                    ...prev,
+                                    [entry.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="Write a reply..."
+                                style={replyTextarea}
+                              ></textarea>
+
+                              <button
+                                type="button"
+                                onClick={() => addInlineReply(entry.id)}
+                                className="plus-submit"
+                                style={smallPlusButton}
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -452,7 +523,6 @@ export default function PassOnLogPage() {
     </main>
   );
 }
-
 const mainStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#050505",
@@ -480,30 +550,29 @@ const panelStyle: React.CSSProperties = {
   border: "1px solid #2A2A2A",
   borderRadius: "18px",
   padding: "24px",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
 };
 
 const searchWrap: React.CSSProperties = {
   position: "relative",
-  marginBottom: "24px",
+  marginBottom: "18px",
 };
 
 const searchInput: React.CSSProperties = {
   width: "100%",
-  height: "62px",
+  height: "56px",
   background: "#06080C",
   color: "#FFFFFF",
   border: "1px solid #2A3345",
-  borderRadius: "16px",
-  padding: "0 20px 0 62px",
+  borderRadius: "14px",
+  padding: "0 20px 0 56px",
   outline: "none",
-  fontSize: "20px",
+  fontSize: "18px",
   boxSizing: "border-box",
 };
 
 const formStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1.2fr 1fr 130px",
+  gridTemplateColumns: "1.2fr 1fr 1fr 130px",
   gap: "12px",
 };
 
@@ -541,6 +610,70 @@ const newButton: React.CSSProperties = {
   transition: "all 0.18s ease",
 };
 
+const entryRow: React.CSSProperties = {
+  background: "#151515",
+  border: "1px solid #2A3345",
+  borderLeft: `4px solid ${gold}`,
+  borderRadius: "12px",
+  marginBottom: "8px",
+  padding: "10px 12px",
+  transition: "all 0.18s ease",
+};
+
+const collapsedRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+};
+
+const expandButton: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  color: "#E5E7EB",
+  cursor: "pointer",
+  padding: 0,
+  display: "flex",
+  alignItems: "center",
+};
+
+const rowSubject: React.CSSProperties = {
+  fontSize: "16px",
+  fontWeight: 700,
+  color: "#FFFFFF",
+};
+
+const rowMeta: React.CSSProperties = {
+  marginTop: "3px",
+  fontSize: "12px",
+  color: "#B8C1D1",
+};
+
+const rowCounts: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  minWidth: "86px",
+};
+
+const smallActionButton: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  background: "transparent",
+  border: "none",
+  color: "#E5E7EB",
+  fontSize: "13px",
+  fontWeight: 700,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const rowIcons: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+};
+
 const iconButton: React.CSSProperties = {
   background: "transparent",
   color: "#E5E7EB",
@@ -551,38 +684,9 @@ const iconButton: React.CSSProperties = {
   transition: "all 0.18s ease",
 };
 
-const entryCard: React.CSSProperties = {
-  background: "linear-gradient(135deg, #161616",
-  border: "1px solid #2A3345",
-  borderLeft: `4px solid ${gold}`,
-  borderRadius: "14px",
-  padding: "14px",
-  marginBottom: "10px",
-};
-
-const cardTopRow: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "18px",
-};
-
-const entryTitle: React.CSSProperties = {
-  margin: "16px 0 8px",
-  marginBottom: "5px",
-  fontSize: "18px",
-};
-
-const entryMeta: React.CSSProperties = {
-  margin: "0 0 7px",
-  color: "#B8C1D1",
-  fontSize: "12px",
-};
-
-const messageText: React.CSSProperties = {
-  margin: "0 0 12px",
-  color: "#E5E7EB",
-  lineHeight: 1.6,
-  fontSize: "10px",
+const expandedArea: React.CSSProperties = {
+  marginTop: "10px",
+  paddingLeft: "30px",
 };
 
 const originalPostBox: React.CSSProperties = {
@@ -592,9 +696,9 @@ const originalPostBox: React.CSSProperties = {
   borderBottom: "1px solid #2A2A2A",
   borderLeft: `3px solid ${gold}`,
   borderRadius: "8px",
-  padding: "12px 14px",
+  padding: "10px 12px",
   color: "#FFFFFF",
-  marginTop: "12px",
+  fontSize: "14px",
 };
 
 const replyPreviewBox: React.CSSProperties = {
@@ -602,22 +706,19 @@ const replyPreviewBox: React.CSSProperties = {
   border: "1px solid #2A3345",
   borderLeft: "3px solid #6B7280",
   borderRadius: "8px",
-  padding: "8px 12px",
-  marginBottom: "6px",
+  padding: "7px 10px",
+  marginBottom: "5px",
   color: "#E5E7EB",
   fontSize: "13px",
-  marginLeft: "24px",
+  marginLeft: "18px",
 };
 
-const interactionGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1px 2fr",
-  gap: "34px",
-  marginTop: "24px",
-  alignItems: "start",
+const expandedActions: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "18px",
+  marginTop: "10px",
 };
-
-
 
 const sectionButton: React.CSSProperties = {
   display: "inline-flex",
@@ -626,7 +727,7 @@ const sectionButton: React.CSSProperties = {
   background: "transparent",
   border: "none",
   color: "#FFFFFF",
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   cursor: "pointer",
   padding: 0,
@@ -635,7 +736,7 @@ const sectionButton: React.CSSProperties = {
 
 const viewsList: React.CSSProperties = {
   marginTop: "8px",
-  paddingLeft: "-12px",
+  paddingLeft: "18px",
   display: "grid",
   gap: "6px",
   color: "#D1D5DB",
@@ -647,41 +748,46 @@ const viewRow: React.CSSProperties = {
   gridTemplateColumns: "14px auto auto",
   alignItems: "center",
   gap: "8px",
-  marginLeft: "5px",
 };
 
 const replyInputWrap: React.CSSProperties = {
   marginTop: "10px",
   display: "flex",
   alignItems: "stretch",
-  width: "700px",
+  width: "100%",
   background: "#080B10",
   border: "1px solid #2A3345",
   borderRadius: "14px",
   padding: "8px",
   transition: "all 0.18s ease",
+  boxSizing: "border-box",
 };
 
-const replyInput: React.CSSProperties = {
+const replyTextarea: React.CSSProperties = {
   flex: 1,
-  background: "transparent",
-  border: "none",
+  minHeight: "70px",
+  background: "#111111",
   color: "#FFFFFF",
+  border: "1px solid #3A3A3A",
+  borderRadius: "10px",
+  padding: "10px",
+  fontSize: "14px",
+  resize: "vertical",
+  boxSizing: "border-box",
   outline: "none",
-  fontSize: "16px",
-  padding: "10px 12px",
 };
 
 const smallPlusButton: React.CSSProperties = {
-  width: "44px",
-  height: "44px",
+  width: "42px",
+  height: "42px",
   borderRadius: "10px",
   border: `1px solid ${gold}`,
   background: "transparent",
   color: gold,
-  fontSize: "28px",
+  fontSize: "26px",
   cursor: "pointer",
   transition: "all 0.18s ease",
+  marginLeft: "8px",
 };
 
 function priorityPill(priority: string): React.CSSProperties {
@@ -697,9 +803,10 @@ function priorityPill(priority: string): React.CSSProperties {
     color,
     border: `1px solid ${color}`,
     borderRadius: "999px",
-    padding: "6px 14px",
-    fontSize: "13px",
+    padding: "4px 10px",
+    fontSize: "12px",
     fontWeight: "bold",
+    whiteSpace: "nowrap",
   };
 }
 
@@ -714,7 +821,7 @@ const modalOverlay: React.CSSProperties = {
 };
 
 const modalBox: React.CSSProperties = {
-  width: "720px",
+  width: "760px",
   maxWidth: "90%",
   background: "#111111",
   border: "1px solid #C8A96A",
@@ -735,4 +842,33 @@ const closeButton: React.CSSProperties = {
   color: "#FFFFFF",
   fontSize: "28px",
   cursor: "pointer",
+};
+
+const dateInputWrap: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  background: "#050505",
+  border: "1px solid #2A2A2A",
+  borderRadius: "10px",
+  padding: "0 12px",
+};
+
+const dateInput: React.CSSProperties = {
+  flex: 1,
+  background: "transparent",
+  color: "#FFFFFF",
+  border: "none",
+  outline: "none",
+  padding: "12px 0",
+};
+
+const calendarButton: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  color: gold,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  padding: 0,
 };
