@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
+  SlidersHorizontal
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,9 +29,7 @@ export default function PassOnLogPage() {
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [message, setMessage] = useState("");
-  const [entryDate, setEntryDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [entryDate, setEntryDate] = useState(getLocalDateString());
   const [showForm, setShowForm] = useState(false);
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
@@ -38,6 +37,52 @@ export default function PassOnLogPage() {
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const [dateFilter, setDateFilter] = useState("All");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [editingMessage, setEditingMessage] = useState("");
+
+ async function updateEntry(id: number) {
+  const text = editingMessage.trim();
+
+  console.log("Saving entry:", id, text);
+
+  if (!text) {
+    alert("Entry cannot be blank.");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("pass_on_log")
+    .update({ message: text,
+    edited_at: new Date().toISOString(),
+     })
+    .eq("id", id)
+    .select();
+
+    console.log("Updated entry", data);
+    console.log("Updat error:", error);
+
+
+  if (error) {
+    console.error("Update failed:", error);
+    alert(error.message);
+    return;
+  }
+
+  console.log("Updated entry:", data);
+
+  setEntries((prev) =>
+    prev.map((entry) =>
+      entry.id === id ? { ...entry, message: text } : entry
+    )
+  );
+
+  setEditingEntryId(null);
+  setEditingMessage("");
+}
+
 
   async function fetchEntries() {
     const { data } = await supabase
@@ -153,11 +198,49 @@ export default function PassOnLogPage() {
     });
   }
 
-  const filteredEntries = entries.filter((entry) =>
-    `${entry.subject} ${entry.author} ${entry.message} ${entry.priority}`
-  .toLowerCase()
-  .includes(search.toLowerCase())
-);
+  const filteredEntries = entries.filter((entry) => {
+  const matchesSearch = `${entry.subject} ${entry.author} ${entry.message} ${entry.priority}`
+    .toLowerCase()
+    .includes(search.toLowerCase());
+
+  const today = getLocalDateString(new Date());
+
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrow = getLocalDateString(tomorrowDate);
+
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = getLocalDateString(yesterdayDate);
+
+  let matchesDate = true;
+
+  if (dateFilter === "Today") {
+    matchesDate = entry.entry_date === today;
+  }
+
+  if (dateFilter === "Tomorrow") {
+    matchesDate = entry.entry_date === tomorrow;
+  }
+
+  if (dateFilter === "Yesterday") {
+    matchesDate = entry.entry_date === yesterday;
+  }
+
+  if (dateFilter === "Scheduled") {
+    matchesDate = entry.entry_date > tomorrow;
+  }
+
+  if (dateFilter === "Custom") {
+    matchesDate = entry.entry_date === entryDate;
+  }
+
+  if (dateFilter === "All") {
+    matchesDate = true;
+  }
+
+  return matchesSearch && matchesDate;
+});
 
 const groupedEntries = filteredEntries.reduce((acc: any, entry: any) => {
   const date = entry.entry_date;
@@ -233,6 +316,18 @@ function dateHeader(dateString: string) {
             border-color: rgba(200,169,106,0.75) !important;
             box-shadow: 0 0 0 3px rgba(200,169,106,0.08);
           }
+          .reply-preview-box:hover {
+          border: 2px solid C8A96A !important;
+          box-shadow: 0 0 20px rgba(200,169,106,0.35);
+          transform: translateY(-1px);
+}  
+         .original-post-box:hover {
+  border-color: rgba(200,169,106,0.65) !important;
+  box-shadow: 0 0 12px rgba(200,169,106,0.15);
+}
+         .message-text-box:hover {
+         border-color: C8A96A !important;
+         box-shadow: 0 0 16px rgba(200,169,106,0.25);}
         `}
       </style>
 
@@ -308,19 +403,69 @@ function dateHeader(dateString: string) {
           </div>
 
           <div style={panelStyle}>
-            <div style={searchWrap}>
-              <Search
-                size={20}
-                color="#E5E7EB"
-                style={{ position: "absolute", left: "20px", top: "17px" }}
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search pass-on entries..."
-                style={searchInput}
-              />
-            </div>
+  <div style={searchHeaderRow}>
+    <div style={searchWrap}>
+      <Search
+        size={20}
+        color="#E5E7EB"
+        style={{ position: "absolute", left: "20px", top: "17px" }}
+      />
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search pass-on entries..."
+        style={searchInput}
+      />
+    </div>
+
+    <button
+      type="button"
+      style={calendarIconButton}
+      onClick={() => {
+        if (showCalendar) {
+          setShowCalendar(false);
+          return;
+        }
+
+        setShowCalendar(true);
+
+        setTimeout(() => {
+          dateInputRef.current?.showPicker?.();
+        }, 50);
+      }}
+    >
+      <Calendar size={15} />
+    </button>
+
+    {showCalendar && (
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={entryDate}
+        onChange={(e) => {
+          setEntryDate(e.target.value);
+          setDateFilter("Custom");
+          setShowCalendar(false);
+        }}
+        onBlur={() => {
+          setTimeout(() => setShowCalendar(false), 150);
+        }}
+        style={calendarPopupInput}
+      />
+    )}
+
+    <select
+  value={dateFilter}
+  onChange={(e) => setDateFilter(e.target.value)}
+  style={filterDropdown}
+>
+  <option value="All">All</option>
+  <option value="Today">Today</option>
+  <option value="Tomorrow">Tomorrow</option>
+  <option value="Scheduled">Scheduled</option>
+  <option value="Yesterday">Yesterday</option>
+</select>
+  </div>
   
    {showForm && (
               <div style={modalOverlay}>
@@ -358,8 +503,8 @@ function dateHeader(dateString: string) {
 <div style={dateInputWrap}>
   <button
     type="button"
-    onClick={() => dateInputRef.current?.showPicker?.()}
     style={calendarButton}
+    onClick={() => dateInputRef.current?.showPicker?.()}
   >
     <Calendar size={17} />
   </button>
@@ -414,8 +559,13 @@ function dateHeader(dateString: string) {
           <div style={collapsedRow}>
             <button
               type="button"
-              onClick={() => setExpandedEntry(isOpen ? null : entry.id)}
-              style={expandButton}
+              onClick={() => {
+  setExpandedEntry(isOpen ? null : entry.id);
+
+  if (!isOpen) {
+    toggleViews(entry.id);
+  }
+}}
             >
               {isOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
             </button>
@@ -425,15 +575,26 @@ function dateHeader(dateString: string) {
             </div>
 
             <div
-              onClick={() => setExpandedEntry(isOpen ? null : entry.id)}
+              onClick={() => {
+  setExpandedEntry(isOpen ? null : entry.id);
+
+  if (!isOpen) {
+    toggleViews(entry.id);
+  }
+}}
               style={{ flex: 1, cursor: "pointer" }}
             >
               <div style={rowSubject}>{entry.subject}</div>
               <div style={rowMeta}>
-                {entry.author || "Unknown"} ·{" "}
-                {entry.created_at ? formatDateTime(entry.created_at) : ""}
-              </div>
-            </div>
+  {entry.author || "Unknown"} · {formatDateTime(entry.created_at)}
+</div>
+
+{entry.edited_at && (
+  <div style={{ fontSize: "11px", color: "#C8A96A", marginTop: "2px" }}>
+    ✎ Edited {formatDateTime(entry.edited_at)}
+  </div>
+)}
+</div>
 
             <div style={rowCounts}>
               <button
@@ -462,9 +623,23 @@ function dateHeader(dateString: string) {
             </div>
 
             <div style={rowIcons}>
-              <button className="icon-button" style={iconButton}>
-                <Edit2 size={14} />
-              </button>
+              <button
+  type="button"
+  className="icon-button"
+  style={iconButton}
+  onClick={() => {
+  if (editingEntryId === entry.id) {
+    setEditingEntryId(null);
+    setEditingMessage("");
+  } else {
+    setEditingEntryId(entry.id);
+    setEditingMessage(entry.message || "");
+    setExpandedEntry(entry.id);
+  }
+  }}
+>
+  <Edit2 size={14} />
+</button>
 
               <button
                 className="icon-button"
@@ -479,7 +654,67 @@ function dateHeader(dateString: string) {
           {isOpen && (
             <div style={expandedArea}>
               <div style={messageRowBox}>
-  <div style={messageTextBox}>{entry.message}</div>
+  <div className="original-post-box"
+  style={messageTextBox}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.borderColor = "#C8A96A";
+    e.currentTarget.style.boxShadow =
+      "0 0 18px rgba(200,169,106,0.30)";
+  }}
+ onMouseLeave={(e) => {
+  e.currentTarget.style.borderTopColor = "#2A3345";
+  e.currentTarget.style.borderRightColor = "#2A3345";
+  e.currentTarget.style.borderBottomColor = "#2A3345";
+  e.currentTarget.style.borderLeftColor = gold;
+  e.currentTarget.style.boxShadow = "none";
+}} 
+>
+  {editingEntryId === entry.id ? (
+  <div style={{ width: "100%" }}>
+    <textarea
+  value={editingMessage}
+  onChange={(e) => setEditingMessage(e.target.value)}
+  style={{
+    width: "100%",
+    minHeight: "120px",
+    background: "#111111",
+    color: "#FFFFFF",
+    border: "1px solid #C8A96A",
+    borderRadius: "10px",
+    padding: "12px",
+    fontSize: "15px",
+    lineHeight: "1.5",
+    resize: "vertical",
+  }}
+/>
+
+    <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+      <button
+        type="button"
+        style={replyPillButton}
+        onClick={() => updateEntry(entry.id)}
+      >
+        Save
+      </button>
+
+      <button
+        type="button"
+        style={replyPillButton}
+        onClick={() => {
+          setEditingEntryId(null);
+          setEditingMessage("");
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+) : (
+  entry.message
+)}
+</div>
+
+
 
   <button
     type="button"
@@ -489,16 +724,41 @@ function dateHeader(dateString: string) {
       )
     }
     style={replyPillButton}
+    onMouseEnter={(e) => {
+  e.currentTarget.style.background = "rgba(200,169,106,0.12)";
+  e.currentTarget.style.boxShadow =
+    "0 0 16px rgba(200,169,106,0.35)";
+}}
+
+onMouseLeave={(e) => {
+  e.currentTarget.style.background = "transparent";
+  e.currentTarget.style.boxShadow = "none";
+}}
   >
     + Reply
   </button>
 </div>
 
 
+
               {entry.pass_on_log_replies?.length > 0 && (
                 <div style={{ marginTop: "8px" }}>
                   {entry.pass_on_log_replies.map((reply: any) => (
-                    <div key={reply.id} style={replyPreviewBox}>
+                      <div
+  key={reply.id}
+  className="reply-preview-box"
+  style={replyPreviewBox}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.borderColor = "#C8A96A";
+    e.currentTarget.style.boxShadow =
+      "0 0 12px rgba(200,169,106,0.15)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.borderColor = "#2A3345";
+    e.currentTarget.style.boxShadow = "none";
+  }}
+>
+
                       <strong>{reply.reply_author}:</strong>{" "}
                       {reply.reply_message}
                     </div>
@@ -540,6 +800,15 @@ function dateHeader(dateString: string) {
 </div>
   </div>
 )}
+
+{entry.pass_on_log_views?.length > 0 && (
+  <div style={viewedByRow}>
+    <strong>Viewed by:</strong>{" "}
+    {entry.pass_on_log_views
+      .map((view: any) => view.viewer_name)
+      .join(", ")}
+  </div>
+)} 
  
               
             </div>
@@ -569,7 +838,7 @@ const mainStyle: React.CSSProperties = {
 const sidebarStyle: React.CSSProperties = {
   width: "245px",
   borderRight: "1px solid #2A2A2A",
-  background: "#080808",
+  background: "#211F1B",
   padding: "28px 18px",
 };
 
@@ -589,20 +858,21 @@ const panelStyle: React.CSSProperties = {
 
 const searchWrap: React.CSSProperties = {
   position: "relative",
-  marginBottom: "18px",
+  flex: 1,
 };
 
 const searchInput: React.CSSProperties = {
   width: "100%",
   height: "56px",
-  background: "#06080C",
+  background: "#111111",
   color: "#FFFFFF",
-  border: "1px solid #2A3345",
+  border: `1px solid ${gold}`,
   borderRadius: "14px",
   padding: "0 20px 0 56px",
   outline: "none",
   fontSize: "18px",
   boxSizing: "border-box",
+  boxShadow: "0 0 8px rgba(200,169,106,0.25)"
 };
 
 const formStyle: React.CSSProperties = {
@@ -646,13 +916,14 @@ const newButton: React.CSSProperties = {
 };
 
 const entryRow: React.CSSProperties = {
-  background: "#151515",
+  background: "#302D28",
   border: "1px solid #2A3345",
   borderLeft: `4px solid ${gold}`,
   borderRadius: "12px",
   marginBottom: "8px",
   padding: "10px 12px",
   transition: "all 0.18s ease",
+ 
 };
 
 const collapsedRow: React.CSSProperties = {
@@ -734,12 +1005,13 @@ const originalPostBox: React.CSSProperties = {
   padding: "10px 12px",
   color: "#FFFFFF",
   fontSize: "14px",
+  transition: "all 0.18s ease",
 };
 
 const replyPreviewBox: React.CSSProperties = {
   background: "#0D0D0D",
   border: "1px solid #2A3345",
-  borderLeft: "3px solid #6B7280",
+  borderLeft: "3px solid #2A3345",
   borderRadius: "8px",
   padding: "7px 10px",
   marginBottom: "5px",
@@ -790,7 +1062,7 @@ const replyInputWrap: React.CSSProperties = {
   display: "flex",
   alignItems: "stretch",
   width: "100%",
-  background: "#080B10",
+  background: "#2A2723",
   border: "1px solid #2A3345",
   borderRadius: "14px",
   padding: "8px",
@@ -860,7 +1132,7 @@ const modalOverlay: React.CSSProperties = {
 const modalBox: React.CSSProperties = {
   width: "760px",
   maxWidth: "90%",
-  background: "#111111",
+  background: "#302D28",
   border: "1px solid #C8A96A",
   borderRadius: "16px",
   padding: "24px",
@@ -935,6 +1207,7 @@ const replySendButton: React.CSSProperties = {
   background: "transparent",
   border: "1px solid #C8A96A",
   color: gold,
+
   borderRadius: "16px",
   padding: "8px 14px",
   fontWeight: 700,
@@ -947,14 +1220,6 @@ const replySendButton: React.CSSProperties = {
 };
 
 const messageRowBox: React.CSSProperties = {
-  background: "#0D0D0D",
-  borderTop: "1px solid #2A2A2A",
-  borderRight: "1px solid #2A2A2A",
-  borderBottom: "1px solid #2A2A2A",
-  borderLeft: `3px solid ${gold}`,
-  borderRadius: "8px",
-  padding: "10px 12px",
-  color: "#FFFFFF",
   marginTop: "12px",
   display: "flex",
   alignItems: "center",
@@ -964,7 +1229,15 @@ const messageRowBox: React.CSSProperties = {
 
 const messageTextBox: React.CSSProperties = {
   flex: 1,
-  lineHeight: 1.5,
+  width: "100%",
+  background: "#0D0D0D",
+  border: "1px solid #2A3345",
+  borderLeft: `4px solid ${gold}`,
+  borderRadius: "8px",
+  padding: "12px 14px",
+  color: "#FFFFFF",
+  lineHeight: "1.5",
+  transition: "all 0.18s ease",
 };
 
 const replyPillButton: React.CSSProperties = {
@@ -977,4 +1250,57 @@ const replyPillButton: React.CSSProperties = {
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
+  transition: "all 0.18s ease"
+};
+
+const viewedByRow: React.CSSProperties = {
+  marginTop: "12px",
+  paddingTop: "10px",
+  borderTop: "1px solid #2A2A2A",
+  color: "#9CA3AF",
+  fontSize: "12px",
+};
+
+const searchHeaderRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  position: "relative"
+};
+
+const calendarIconButton: React.CSSProperties = {
+  background: "#302D28",
+  border: "1px solid #C8A96A",
+  color: "#FFFFFF",
+  borderRadius: "10px",
+  width: "42px",
+  height: "42px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  transition: "all 0.18s ease",
+};
+
+const calendarPopupInput: React.CSSProperties = {
+  position: "absolute",
+  top: "48px",
+  right: "125px",
+  width: "34px",
+  height: "34px",
+  opacity: 0.01,
+  zIndex: 1000,
+};
+
+const filterDropdown: React.CSSProperties = {
+  background: "#302D28",
+  border: "1px solid #C8A96A",
+  color: "#FFFFFF",
+  borderRadius: "999px",
+  height: "42px",
+  padding: "0 16px",
+  cursor: "pointer",
+  fontWeight: 600,
+  fontSize: "14px",
+  outline: "none",
 };

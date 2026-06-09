@@ -139,7 +139,7 @@ export default function Home() {
         style={{
           width: "245px",
           borderRight: "1px solid #2A2A2A",
-          background: "#080808",
+          background: "#211F1B",
           padding: "28px 18px",
         }}
       >
@@ -427,12 +427,12 @@ export default function Home() {
   onMouseLeave={(e) => {
     e.currentTarget.style.transform = "scale(1)";
     e.currentTarget.style.background =
-      index % 2 === 0 ? "#111111" : "#151515";
+      index % 2 === 0 ? "#302D28" : "#151515";
     e.currentTarget.style.boxShadow = "none";
   }}
   style={{
     borderTop: "1px solid #2A2A2A",
-    background: index % 2 === 0 ? "#111111" : "#151515",
+    background: index % 2 === 0 ? "#302D28" : "#151515",
     transition: "all 0.15s ease",
   }}
 >
@@ -616,7 +616,7 @@ export default function Home() {
 
 const cardStyle: React.CSSProperties = {
   flex: 1,
-  background: "linear-gradient(135deg, #1A1A1A, #111111)",
+  background: "linear-gradient(135deg, #211F1B, #211F1B)",
   border: "1px solid #2A2A2A",
   borderRadius: "16px",
   padding: "22px",
