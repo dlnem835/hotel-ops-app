@@ -171,6 +171,8 @@ export default function Home() {
       ? "/"
       : item === "Pass-On Log"
       ? "/pass-on-log"
+      : item === "Settings"
+      ? "/settings"
       : "#"
   }
   style={{

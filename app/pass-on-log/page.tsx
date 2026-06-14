@@ -368,7 +368,10 @@ function dateHeader(dateString: string) {
                   ? "/"
                   : item === "Pass-On Log"
                   ? "/pass-on-log"
+                  : item === "Settings"
+                  ? "/settings"
                   : "#"
+
               }
               style={{
                 color: "inherit",
