@@ -244,6 +244,10 @@ useEffect(() => {
         department: "Front Desk",
         role: "Front Desk",
         status: "Active",
+
+        can_login: "false",
+        username: "",
+        tempPassword: "",
       };
     }
 
@@ -293,56 +297,82 @@ useEffect(() => {
     return `${year}-${month}-${day}`;
   }
 
-    function saveItem() {
-    if (!modalType) return;
+async function saveItem() {
+  if (!modalType) return;
 
-    const newItem = {
-      ...draft,
-      id: editingId ?? Date.now(),
+  if (modalType === "team") {
+    const payload = {
+      first_name: draft.firstName || "",
+      last_name: draft.lastName || "",
+      email: draft.email || "",
+      phone: draft.phone || "",
+      department: draft.department || "Front Desk",
+      role: draft.role || "Front Desk",
+      status: draft.status || "Active",
+      can_login: draft.can_login === "true",
+      username: draft.username || "",
+      tempPassword: draft.tempPassword || "",
     };
 
-    if (modalType === "team") {
-      setTeamMembers((prev) =>
-        editingId
-          ? prev.map((item) => (item.id === editingId ? newItem : item))
-          : [...prev, newItem]
-      );
+    const response = await fetch("/api/create-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error || "Unable to create user");
+      return;
     }
 
-    if (modalType === "buildings") {
-      setBuildings((prev) =>
-        editingId
-          ? prev.map((item) => (item.id === editingId ? newItem : item))
-          : [...prev, newItem]
-      );
-    }
-
-    if (modalType === "templates") {
-      setTemplates((prev) =>
-        editingId
-          ? prev.map((item) => (item.id === editingId ? newItem : item))
-          : [...prev, newItem]
-      );
-    }
-
-    if (modalType === "tasks") {
-      setTasks((prev) =>
-        editingId
-          ? prev.map((item) => (item.id === editingId ? newItem : item))
-          : [...prev, newItem]
-      );
-    }
-
-    if (modalType === "roles") {
-      setRoles((prev) =>
-        editingId
-          ? prev.map((item) => (item.id === editingId ? newItem : item))
-          : [...prev, newItem]
-      );
-    }
-
+    await fetchTeamMembers();
     closeModal();
+    return;
   }
+
+  const newItem = {
+    ...draft,
+    id: editingId ?? Date.now(),
+  };
+
+  if (modalType === "buildings") {
+    setBuildings((prev) =>
+      editingId
+        ? prev.map((item) => (item.id === editingId ? newItem : item))
+        : [...prev, newItem]
+    );
+  }
+
+  if (modalType === "templates") {
+    setTemplates((prev) =>
+      editingId
+        ? prev.map((item) => (item.id === editingId ? newItem : item))
+        : [...prev, newItem]
+    );
+  }
+
+  if (modalType === "tasks") {
+    setTasks((prev) =>
+      editingId
+        ? prev.map((item) => (item.id === editingId ? newItem : item))
+        : [...prev, newItem]
+    );
+  }
+
+  if (modalType === "roles") {
+    setRoles((prev) =>
+      editingId
+        ? prev.map((item) => (item.id === editingId ? newItem : item))
+        : [...prev, newItem]
+    );
+  }
+
+  closeModal();
+}
 
   function deleteItem(type: ModalType, id: number) {
     if (!type) return;
@@ -564,6 +594,45 @@ useEffect(() => {
             <option>Active</option>
             <option>Inactive</option>
           </select>
+
+          <label
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    color: "#FFFFFF",
+    fontWeight: 700,
+    marginTop: "6px",
+  }}
+>
+  <input
+    type="checkbox"
+    checked={draft.can_login === "true"}
+    onChange={(e) =>
+      updateDraft("can_login", e.target.checked ? "true" : "false")
+    }
+  />
+  Allow Login
+</label>
+
+{draft.can_login === "true" && (
+  <div style={twoCol}>
+    <input
+      value={draft.username || ""}
+      onChange={(e) => updateDraft("username", e.target.value)}
+      placeholder="Username"
+      style={input}
+    />
+
+    <input
+      type="password"
+      value={draft.tempPassword || ""}
+      onChange={(e) => updateDraft("tempPassword", e.target.value)}
+      placeholder="Temporary Password"
+      style={input}
+    />
+  </div>
+)}
         </>
       );
     }
