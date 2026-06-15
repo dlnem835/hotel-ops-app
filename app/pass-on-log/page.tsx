@@ -42,7 +42,7 @@ export default function PassOnLogPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
   const [editingMessage, setEditingMessage] = useState("");
-
+  const [currentUserName, setCurrentUserName] = useState("Unknown");
  async function updateEntry(id: number) {
   const text = editingMessage.trim();
 
@@ -95,8 +95,33 @@ export default function PassOnLogPage() {
   }
 
   useEffect(() => {
+  async function checkAuth() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const { data: teamMember } = await supabase
+      .from("team_members")
+      .select("first_name, last_name")
+      .eq("auth_user_id", session.user.id)
+      .single();
+
+    if (teamMember) {
+      setCurrentUserName(
+        `${teamMember.first_name || ""} ${teamMember.last_name || ""}`.trim()
+      );
+    }
+
     fetchEntries();
-  }, []);
+  }
+
+  checkAuth();
+}, []);
 
   function getLocalDateString(date = new Date()) {
   const year = date.getFullYear();
@@ -125,7 +150,7 @@ export default function PassOnLogPage() {
     const { error } = await supabase.from("pass_on_log").insert([
       {
         subject,
-        author: "Douglas",
+        author: currentUserName,
         priority,
         message,
         created_at: selectedDateTime,

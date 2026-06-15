@@ -70,7 +70,20 @@ export default function SettingsPage() {
 }
 
 useEffect(() => {
+  async function checkAuth() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login";
+      return;
+    }
+
     fetchTeamMembers();
+  }
+
+  checkAuth();
 }, []);
 
   const [buildings, setBuildings] = useState<AnyRecord[]>([
@@ -236,6 +249,7 @@ useEffect(() => {
 
   function getEmptyDraft(type: ModalType): Record<string, string> {
     if (type === "team") {
+      
       return {
         firstName: "",
         lastName: "",
@@ -301,6 +315,10 @@ async function saveItem() {
   if (!modalType) return;
 
   if (modalType === "team") {
+    if (editingId) {
+        alert("Editing team members will be added next. For now, create new users only.");
+        return;
+    }
     const payload = {
       first_name: draft.firstName || "",
       last_name: draft.lastName || "",

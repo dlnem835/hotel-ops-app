@@ -62,8 +62,21 @@ export default function Home() {
   }
 
   useEffect(() => {
+  async function checkAuth() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login";
+      return;
+    }
+
     fetchItems();
-  }, []);
+  }
+
+  checkAuth();
+}, []);
 
   async function addItem(e: any) {
     e.preventDefault();
