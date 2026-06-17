@@ -43,6 +43,7 @@ export default function PassOnLogPage() {
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
   const [editingMessage, setEditingMessage] = useState("");
   const [currentUserName, setCurrentUserName] = useState("Unknown");
+  const [teamMembers, setTeamMembers] = useState<any[]>([])
  async function updateEntry(id: number) {
   const text = editingMessage.trim();
 
@@ -94,6 +95,32 @@ export default function PassOnLogPage() {
     setEntries(data || []);
   }
 
+async function markAsViewed(entryId: number) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  console.log("SESSION:", session);
+
+  if (!session) return;
+
+  const result = await supabase
+    .from("pass_on_log_views")
+    .upsert(
+      {
+        entry_id: entryId,
+        auth_user_id: session.user.id,
+        viewed_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "entry_id,auth_user_id",
+      }
+    );
+
+  console.log("VIEW RESULT:", result);
+
+  fetchEntries();
+}
+
   useEffect(() => {
   async function checkAuth() {
     const {
@@ -107,16 +134,22 @@ export default function PassOnLogPage() {
 
     const { data: teamMember } = await supabase
       .from("team_members")
-      .select("first_name, last_name")
+      .select("first_name, last_name, username")
       .eq("auth_user_id", session.user.id)
       .single();
 
     if (teamMember) {
       setCurrentUserName(
-        `${teamMember.first_name || ""} ${teamMember.last_name || ""}`.trim()
+        teamMember.username || "unknown"
       );
     }
 
+   const { data: allTeamMembers } = await supabase
+  .from("team_members")
+  .select("auth_user_id, first_name, last_name, username");
+
+setTeamMembers(allTeamMembers || []);
+    
     fetchEntries();
   }
 
@@ -171,25 +204,9 @@ export default function PassOnLogPage() {
     fetchEntries();
   }
 
-  async function toggleViews(entryId: number) {
-    const viewerName = "Douglas";
-
-    const { data: existingView } = await supabase
-      .from("pass_on_log_views")
-      .select("*")
-      .eq("entry_id", entryId)
-      .eq("viewer_name", viewerName)
-      .maybeSingle();
-
-    if (!existingView) {
-      await supabase.from("pass_on_log_views").insert([
-        { entry_id: entryId, viewer_name: viewerName },
-      ]);
-    }
-
-    setExpandedViewsEntry(expandedViewsEntry === entryId ? null : entryId);
-    fetchEntries();
-  }
+ async function toggleViews(entryId: number) {
+  setExpandedViewsEntry(expandedViewsEntry === entryId ? null : entryId);
+}
 
   async function addInlineReply(entryId: number) {
     const text = replyMessages[entryId]?.trim();
@@ -198,7 +215,7 @@ export default function PassOnLogPage() {
     await supabase.from("pass_on_log_replies").insert([
       {
         entry_id: entryId,
-        reply_author: "Douglas",
+        reply_author: currentUserName,
         reply_message: text,
       },
     ]);
@@ -385,6 +402,8 @@ function dateHeader(dateString: string) {
               color: item === "Pass-On Log" ? "#111111" : "#FFFFFF",
               fontWeight: item === "Pass-On Log" ? "bold" : "normal",
               transition: "all 0.18s ease",
+
+              
             }}
           >
             <Link
@@ -398,17 +417,20 @@ function dateHeader(dateString: string) {
                   : "#"
 
               }
+
               style={{
                 color: "inherit",
                 textDecoration: "none",
                 display: "block",
                 width: "100%",
               }}
+
             >
               {item}
             </Link>
           </div>
         ))}
+        
       </aside>
 
       <section style={{ flex: 1, padding: "34px 40px" }}>
@@ -421,13 +443,51 @@ function dateHeader(dateString: string) {
               </p>
             </div>
 
-            <button
-              className="new-button"
-              style={newButton}
-              onClick={() => setShowForm(true)}
-            >
-              <Plus size={16} /> New
-            </button>
+           <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  }}
+>
+  <button
+    className="new-button"
+    style={newButton}
+    onClick={() => setShowForm(true)}
+  >
+    <Plus size={16} /> New
+  </button>
+
+  <div style={{ textAlign: "right" }}>
+    <div
+      style={{
+        color: "#FFFFFF",
+        fontWeight: 700,
+        fontSize: "14px",
+      }}
+    >
+      {currentUserName}
+    </div>
+
+    <button
+      onClick={async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/login";
+      }}
+      style={{
+        background: "transparent",
+        border: "none",
+        color: "#C8A96A",
+        cursor: "pointer",
+        fontSize: "12px",
+        padding: 0,
+      }}
+    >
+      Logout
+    </button>
+  </div>
+</div>
+
           </div>
 
           <div style={panelStyle}>
@@ -591,7 +651,7 @@ function dateHeader(dateString: string) {
   setExpandedEntry(isOpen ? null : entry.id);
 
   if (!isOpen) {
-    toggleViews(entry.id);
+    markAsViewed(entry.id);
   }
 }}
             >
@@ -607,7 +667,7 @@ function dateHeader(dateString: string) {
   setExpandedEntry(isOpen ? null : entry.id);
 
   if (!isOpen) {
-    toggleViews(entry.id);
+    markAsViewed(entry.id);
   }
 }}
               style={{ flex: 1, cursor: "pointer" }}
@@ -638,8 +698,14 @@ function dateHeader(dateString: string) {
               <button
                 type="button"
                 onClick={() => {
-                  setExpandedEntry(isOpen ? null : entry.id);
-                  setExpandedReplyEntry(isOpen ? null : entry.id);
+  const isOpening = expandedEntry !== entry.id;
+
+  setExpandedEntry(isOpening ? entry.id : null);
+
+  if (isOpening) {
+    markAsViewed(entry.id);
+  }
+
               
                 }}
                 className="section-button"
@@ -833,10 +899,17 @@ onMouseLeave={(e) => {
   <div style={viewedByRow}>
     <strong>Viewed by:</strong>{" "}
     {entry.pass_on_log_views
-      .map((view: any) => view.viewer_name)
+      .map((view: any) => {
+        const member = teamMembers.find(
+  (person: any) =>
+    String(person.auth_user_id).trim() === String(view.auth_user_id).trim()
+);
+
+        return member?.username || "Unknown";
+      })
       .join(", ")}
   </div>
-)} 
+)}
  
               
             </div>

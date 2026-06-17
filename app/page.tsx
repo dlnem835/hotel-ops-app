@@ -19,6 +19,8 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
   const [foundby, setFoundBy] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const readyToShipCount = lostItems.filter(
     (item) => item.status === "Ready to be shipped"
@@ -61,6 +63,11 @@ export default function Home() {
     setLostItems(data || []);
   }
 
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
   useEffect(() => {
   async function checkAuth() {
     const {
@@ -71,7 +78,24 @@ export default function Home() {
       window.location.href = "/login";
       return;
     }
+const { data: teamMember } = await supabase
+  .from("team_members")
+  .select("first_name, last_name, username")
+  .eq("auth_user_id", session.user.id)
+  .single();
 
+if (teamMember) {
+  setCurrentUserName(
+    teamMember.username ||
+      `${teamMember.first_name || ""} ${teamMember.last_name || ""}`.trim()
+  );
+}
+
+const { data: allTeamMembers } = await supabase
+  .from("team_members")
+  .select("auth_user_id, first_name, last_name, username");
+
+setTeamMembers(allTeamMembers || []);
     fetchItems();
   }
 
@@ -84,20 +108,21 @@ export default function Home() {
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
-    const { error } = await supabase.from("lost_items").insert([
+    const {
+  data: { session },
+} = await supabase.auth.getSession();
+    await supabase.from("lost_items").insert([
       {
+      
         item_name: formData.get("item_name"),
         room_number: formData.get("room_number"),
         guest_last_name: formData.get("guest_last_name"),
         found_by: foundby,
         status: formData.get("status"),
+        created_by: session?.user?.id || null,
       },
     ]);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
 
     form.reset();
     setFoundBy ("");
@@ -204,12 +229,43 @@ export default function Home() {
 
       {/* MAIN CONTENT */}
       <section style={{ flex: 1, padding: "34px 40px" }}>
-        <div style={{ marginBottom: "28px" }}>
-          <h1 style={{ margin: 0, fontSize: "30px" }}>Lost & Found</h1>
-          <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
-            Track, manage, and return guest items
-          </p>
-        </div>
+        <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "28px",
+  }}
+>
+  <div>
+    <h1 style={{ margin: 0, fontSize: "30px" }}>
+      Lost & Found
+    </h1>
+    <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
+      Track, manage, and return guest items
+    </p>
+  </div>
+
+  <div style={{ textAlign: "right" }}>
+    <div style={{ fontWeight: 600 }}>
+      {currentUserName}
+    </div>
+
+    <button
+      onClick={logout}
+      style={{
+        background: "none",
+        border: "none",
+        color: "#C8A96A",
+        cursor: "pointer",
+        padding: 0,
+        marginTop: "4px",
+      }}
+    >
+      Logout
+    </button>
+  </div>
+</div>
 
         {/* STATS */}
         <div style={{ display: "flex", gap: "18px", marginBottom: "22px" }}>
@@ -591,7 +647,19 @@ export default function Home() {
       <p><strong>Item:</strong> {selectedItem.item_name}</p>
       <p><strong>Status:</strong> {selectedItem.status}</p>
       <p><strong>Found By:</strong> {selectedItem.found_by || "Not recorded yet"}</p>
-      <p><strong>Created By:</strong> {selectedItem.created_by || "Not recorded yet"}</p>
+      Created By: {
+  (() => {
+    const member = teamMembers.find(
+      (person: any) =>
+        String(person.auth_user_id).trim() === String(selectedItem.created_by).trim()
+    );
+
+    return member
+      ? member.username ||
+          `${member.first_name || ""} ${member.last_name || ""}`.trim()
+      : "Not recorded yet";
+  })()
+}
       <p>
   <strong>Date Created:</strong>{" "}
   {selectedItem.created_at
