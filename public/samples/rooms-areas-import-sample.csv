@@ -1,0 +1,5 @@
+name,area_type,floor_location,status
+101,Guest Room,Floor 1,Active
+102,Guest Room,Floor 1,Active
+Lobby,Public Area,Main Level,Active
+Pool,Public Area,Exterior,Active

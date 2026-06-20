@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { FLAT_RED, FOREST } from "@/app/lib/oneEyrieColors";
 import {
   Search,
   Plus,
@@ -1203,14 +1204,21 @@ const smallPlusButton: React.CSSProperties = {
 function priorityPill(priority: string): React.CSSProperties {
   const color =
     priority === "Urgent"
-      ? "#F87171"
+      ? FLAT_RED.border
       : priority === "Important"
       ? gold
-      : "#22C55E";
+      : FOREST.border;
+
+  const textColor =
+    priority === "Urgent"
+      ? FLAT_RED.text
+      : priority === "Important"
+      ? gold
+      : FOREST.text;
 
   return {
     display: "inline-block",
-    color,
+    color: textColor,
     border: `1px solid ${color}`,
     borderRadius: "999px",
     padding: "4px 10px",

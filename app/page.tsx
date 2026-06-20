@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "./SendLabelRequestForm";
+import { FLAT_RED, FOREST } from "@/app/lib/oneEyrieColors";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package } from "lucide-react";
 import Link from "next/link";
 
@@ -148,7 +149,11 @@ setTeamMembers(allTeamMembers || []);
 
   function statusStyle(status: string) {
     if (status === "Ready to be shipped") {
-      return { background: "#14532D", color: "#DCFCE7", border: "1px solid #22C55E" };
+      return {
+        background: FOREST.bgSoft,
+        color: FOREST.text,
+        border: `1px solid ${FOREST.border}`,
+      };
     }
 
     if (status === "Label sent") {
@@ -278,10 +283,10 @@ setTeamMembers(allTeamMembers || []);
             <div
   style={{
     ...iconBox,
-    background: "rgba(34,197,94,0.12)",
-    color: "#22C55E",
+    background: "rgba(28, 52, 40, 0.35)",
+    color: FOREST.text,
     fontSize: "24px",
-    boxShadow: "0 0 18px rgba(34,197,94,0.18)",
+    boxShadow: "0 0 18px rgba(61, 107, 79, 0.2)",
   }}
 >
   📦
@@ -297,10 +302,10 @@ setTeamMembers(allTeamMembers || []);
             <div
   style={{
     ...iconBox,
-    background: "rgba(239,68,68,0.12)",
-    color: "#EF4444",
+    background: "rgba(139, 82, 82, 0.15)",
+    color: FLAT_RED.text,
     fontSize: "22px",
-    boxShadow: "0 0 18px rgba(239,68,68,0.15)",
+    boxShadow: "0 0 18px rgba(139, 82, 82, 0.18)",
   }}
 >
   🗑️
@@ -589,7 +594,7 @@ setTeamMembers(allTeamMembers || []);
                     fontSize: "12px",
                   }}
                 >
-                  <span style={{ color: "#22C55E" }}>✓</span>
+                  <span style={{ color: FOREST.text }}>✓</span>
                   Label
                 </a>
               ) : (

@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
 import {
   ArrowLeft,
   Building2,
@@ -19,6 +20,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
+import RoomsAreasSection from "./components/RoomsAreasSection";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,12 +32,12 @@ const supabase = createClient(
 type SectionId =
   | "home"
   | "team"
-  | "buildings"
+  | "roomsAreas"
   | "templates"
   | "tasks"
   | "roles";
 
-type ModalType = Exclude<SectionId, "home"> | null;
+type ModalType = Exclude<SectionId, "home" | "roomsAreas" | "templates"> | null;
 
 type AnyRecord = {
   id: number;
@@ -86,51 +89,6 @@ useEffect(() => {
   checkAuth();
 }, []);
 
-  const [buildings, setBuildings] = useState<AnyRecord[]>([
-    {
-      id: 1,
-      name: "Room 101",
-      type: "Guest Room",
-      location: "Floor 1",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Lobby",
-      type: "Public Area",
-      location: "Main Level",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Laundry",
-      type: "Back Of House",
-      location: "First Floor",
-      status: "Active",
-    },
-  ]);
-
-  const [templates, setTemplates] = useState<AnyRecord[]>([
-    {
-      id: 1,
-      name: "Vacant Ready",
-      category: "Guest Room",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "RPM",
-      category: "Room Preventive Maintenance",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Public Area",
-      category: "Public Area",
-      status: "Active",
-    },
-  ]);
-
   const [tasks, setTasks] = useState<AnyRecord[]>([
     {
       id: 1,
@@ -165,8 +123,26 @@ useEffect(() => {
     },
     {
       id: 3,
-      name: "Front Desk",
+      name: "Front Desk Agent",
       access: "Lost & Found + Pass-On Log",
+      status: "Active",
+    },
+    {
+      id: 4,
+      name: "Housekeeper",
+      access: "Inspections Only",
+      status: "Active",
+    },
+    {
+      id: 5,
+      name: "Inspector",
+      access: "Inspections Only",
+      status: "Active",
+    },
+    {
+      id: 6,
+      name: "RPM/Maintenance",
+      access: "Maintenance Only",
       status: "Active",
     },
   ]);
@@ -179,9 +155,9 @@ useEffect(() => {
       icon: <Users size={26} />,
     },
     {
-      id: "buildings" as SectionId,
-      title: "Buildings & Areas",
-      subtitle: "Configure rooms, public areas, and back-of-house locations.",
+      id: "roomsAreas" as SectionId,
+      title: "Rooms & Areas",
+      subtitle: "Set up guest rooms, public areas, and hotel locations.",
       icon: <Building2 size={26} />,
     },
     {
@@ -210,8 +186,6 @@ useEffect(() => {
     let rows: AnyRecord[] = [];
 
     if (activeSection === "team") rows = teamMembers;
-    if (activeSection === "buildings") rows = buildings;
-    if (activeSection === "templates") rows = templates;
     if (activeSection === "tasks") rows = tasks;
     if (activeSection === "roles") rows = roles;
 
@@ -220,7 +194,7 @@ useEffect(() => {
     return rows.filter((item) =>
       JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
     );
-  }, [activeSection, search, teamMembers, buildings, templates, tasks, roles]);
+  }, [activeSection, search, teamMembers, tasks, roles]);
 
   function openNew(type: ModalType) {
     setModalType(type);
@@ -228,10 +202,26 @@ useEffect(() => {
     setDraft(getEmptyDraft(type));
   }
 
+  function teamMemberToDraft(item: AnyRecord): Record<string, string> {
+    return {
+      firstName: item.first_name || item.firstName || "",
+      lastName: item.last_name || item.lastName || "",
+      email: item.email || "",
+      phone: item.phone || "",
+      department: item.department || "Front Desk",
+      role: item.role || "Front Desk Agent",
+      status: item.status || "Active",
+      can_login:
+        item.can_login === true || item.can_login === "true" ? "true" : "false",
+      username: item.username || "",
+      tempPassword: "",
+    };
+  }
+
   function openEdit(type: ModalType, item: AnyRecord) {
     setModalType(type);
     setEditingId(item.id);
-    setDraft({ ...item });
+    setDraft(type === "team" ? teamMemberToDraft(item) : { ...item });
   }
 
   function closeModal() {
@@ -256,29 +246,12 @@ useEffect(() => {
         email: "",
         phone: "",
         department: "Front Desk",
-        role: "Front Desk",
+        role: "Front Desk Agent",
         status: "Active",
 
         can_login: "false",
         username: "",
         tempPassword: "",
-      };
-    }
-
-    if (type === "buildings") {
-      return {
-        name: "",
-        type: "Guest Room",
-        location: "",
-        status: "Active",
-      };
-    }
-
-    if (type === "templates") {
-      return {
-        name: "",
-        category: "Guest Room",
-        status: "Active",
       };
     }
 
@@ -315,35 +288,37 @@ async function saveItem() {
   if (!modalType) return;
 
   if (modalType === "team") {
-    if (editingId) {
-        alert("Editing team members will be added next. For now, create new users only.");
-        return;
-    }
     const payload = {
       first_name: draft.firstName || "",
       last_name: draft.lastName || "",
       email: draft.email || "",
       phone: draft.phone || "",
       department: draft.department || "Front Desk",
-      role: draft.role || "Front Desk",
+      role: draft.role || "Front Desk Agent",
       status: draft.status || "Active",
       can_login: draft.can_login === "true",
       username: draft.username || "",
       tempPassword: draft.tempPassword || "",
     };
 
-    const response = await fetch("/api/create-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      editingId ? "/api/update-user" : "/api/create-user",
+      {
+        method: editingId ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
+      }
+    );
 
     const result = await response.json();
 
     if (!response.ok) {
-      alert(result.error || "Unable to create user");
+      alert(
+        result.error ||
+          (editingId ? "Unable to update user" : "Unable to create user")
+      );
       return;
     }
 
@@ -356,22 +331,6 @@ async function saveItem() {
     ...draft,
     id: editingId ?? Date.now(),
   };
-
-  if (modalType === "buildings") {
-    setBuildings((prev) =>
-      editingId
-        ? prev.map((item) => (item.id === editingId ? newItem : item))
-        : [...prev, newItem]
-    );
-  }
-
-  if (modalType === "templates") {
-    setTemplates((prev) =>
-      editingId
-        ? prev.map((item) => (item.id === editingId ? newItem : item))
-        : [...prev, newItem]
-    );
-  }
 
   if (modalType === "tasks") {
     setTasks((prev) =>
@@ -399,14 +358,6 @@ async function saveItem() {
       setTeamMembers((prev) => prev.filter((item) => item.id !== id));
     }
 
-    if (type === "buildings") {
-      setBuildings((prev) => prev.filter((item) => item.id !== id));
-    }
-
-    if (type === "templates") {
-      setTemplates((prev) => prev.filter((item) => item.id !== id));
-    }
-
     if (type === "tasks") {
       setTasks((prev) => prev.filter((item) => item.id !== id));
     }
@@ -418,8 +369,6 @@ async function saveItem() {
 
   function getNewButtonLabel() {
     if (activeSection === "team") return "New User";
-    if (activeSection === "buildings") return "New Area";
-    if (activeSection === "templates") return "New Template";
     if (activeSection === "tasks") return "New Task";
     if (activeSection === "roles") return "New Role";
 
@@ -490,16 +439,12 @@ async function saveItem() {
 
             <div style={rowText}>
               {activeSection === "team" && item.role}
-              {activeSection === "buildings" && item.type}
-              {activeSection === "templates" && item.category}
               {activeSection === "tasks" && item.frequency}
               {activeSection === "roles" && item.access}
             </div>
 
             <div style={rowText}>
               {activeSection === "team" && item.department}
-              {activeSection === "buildings" && item.location}
-              {activeSection === "templates" && "Inspection"}
               {activeSection === "tasks" && item.assignedTo}
               {activeSection === "roles" && "System"}
             </div>
@@ -508,8 +453,8 @@ async function saveItem() {
               <span
                 style={{
                   ...statusPill,
-                  borderColor: item.status === "Active" ? "#7CFF6B" : "#E57373",
-                  color: item.status === "Active" ? "#7CFF6B" : "#E57373",
+                  borderColor: item.status === "Active" ? FOREST.border : NEUTRAL_PILL.border,
+                  color: item.status === "Active" ? FOREST.text : NEUTRAL_PILL.text,
                 }}
               >
                 {item.status}
@@ -591,15 +536,16 @@ async function saveItem() {
             </select>
 
             <select
-              value={draft.role || "Front Desk"}
+              value={draft.role || "Front Desk Agent"}
               onChange={(e) => updateDraft("role", e.target.value)}
               style={input}
             >
               <option>Admin / GM</option>
               <option>Manager</option>
-              <option>Front Desk</option>
-              <option>Housekeeping</option>
-              <option>Maintenance</option>
+              <option>Front Desk Agent</option>
+              <option>Housekeeper</option>
+              <option>Inspector</option>
+              <option>RPM/Maintenance</option>
               <option>Read Only</option>
             </select>
           </div>
@@ -646,88 +592,11 @@ async function saveItem() {
       type="password"
       value={draft.tempPassword || ""}
       onChange={(e) => updateDraft("tempPassword", e.target.value)}
-      placeholder="Temporary Password"
+      placeholder={editingId ? "New Password (optional)" : "Temporary Password"}
       style={input}
     />
   </div>
 )}
-        </>
-      );
-    }
-
-    if (modalType === "buildings") {
-      return (
-        <>
-          <input
-            value={draft.name || ""}
-            onChange={(e) => updateDraft("name", e.target.value)}
-            placeholder="Name — Room 101, Lobby, Pool, Laundry..."
-            style={input}
-          />
-
-          <div style={twoCol}>
-            <select
-              value={draft.type || "Guest Room"}
-              onChange={(e) => updateDraft("type", e.target.value)}
-              style={input}
-            >
-              <option>Guest Room</option>
-              <option>Public Area</option>
-              <option>Back Of House</option>
-            </select>
-
-            <input
-              value={draft.location || ""}
-              onChange={(e) => updateDraft("location", e.target.value)}
-              placeholder="Floor / Location"
-              style={input}
-            />
-          </div>
-
-          <select
-            value={draft.status || "Active"}
-            onChange={(e) => updateDraft("status", e.target.value)}
-            style={input}
-          >
-            <option>Active</option>
-            <option>Out of Inventory</option>
-            <option>Inactive</option>
-          </select>
-        </>
-      );
-    }
-
-    if (modalType === "templates") {
-      return (
-        <>
-          <input
-            value={draft.name || ""}
-            onChange={(e) => updateDraft("name", e.target.value)}
-            placeholder="Template Name"
-            style={input}
-          />
-
-          <select
-            value={draft.category || "Guest Room"}
-            onChange={(e) => updateDraft("category", e.target.value)}
-            style={input}
-          >
-            <option>Guest Room</option>
-            <option>Room Preventive Maintenance</option>
-            <option>Public Area</option>
-            <option>Brand Walk</option>
-            <option>Laundry</option>
-            <option>Custom</option>
-          </select>
-
-          <select
-            value={draft.status || "Active"}
-            onChange={(e) => updateDraft("status", e.target.value)}
-            style={input}
-          >
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
         </>
       );
     }
@@ -946,7 +815,63 @@ async function saveItem() {
               </div>
             </div>
 
-            {renderTable()}
+            {activeSection === "roomsAreas" ? (
+              <RoomsAreasSection
+                styles={{
+                  sectionPanel,
+                  sectionToolbar,
+                  searchWrap,
+                  searchInput,
+                  primaryButton,
+                  secondaryButton,
+                  tableHeader,
+                  tableRow,
+                  rowTitle,
+                  rowText,
+                  statusPill,
+                  actionCell,
+                  iconButton,
+                  emptyState,
+                  modalOverlay,
+                  modalBox,
+                  modalHeader,
+                  closeButton,
+                  formStack,
+                  twoCol,
+                  input,
+                  modalFooter,
+                }}
+              />
+            ) : activeSection === "templates" ? (
+              <InspectionTemplatesSection
+                styles={{
+                  sectionPanel,
+                  sectionToolbar,
+                  searchWrap,
+                  searchInput,
+                  primaryButton,
+                  secondaryButton,
+                  tableHeader,
+                  tableRow,
+                  rowTitle,
+                  rowText,
+                  statusPill,
+                  actionCell,
+                  iconButton,
+                  emptyState,
+                  modalOverlay,
+                  modalBox,
+                  modalHeader,
+                  closeButton,
+                  formStack,
+                  twoCol,
+                  input,
+                  modalFooter,
+                }}
+              />
+            ) : (
+              renderTable()
+            )}
           </>
         )}
 
@@ -957,8 +882,6 @@ async function saveItem() {
                 <h2 style={{ margin: 0 }}>
                   {editingId ? "Edit" : "New"}{" "}
                   {modalType === "team" && "Team Member"}
-                  {modalType === "buildings" && "Building / Area"}
-                  {modalType === "templates" && "Inspection Template"}
                   {modalType === "tasks" && "Recurring Task"}
                   {modalType === "roles" && "Role"}
                 </h2>
@@ -1334,4 +1257,9 @@ const secondaryButton: React.CSSProperties = {
   height: "46px",
   cursor: "pointer",
   fontWeight: 800,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontSize: "14px",
 };
