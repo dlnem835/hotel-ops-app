@@ -3,9 +3,17 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "./SendLabelRequestForm";
-import { FLAT_RED, FOREST } from "@/app/lib/oneEyrieColors";
+import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package } from "lucide-react";
-import Link from "next/link";
+import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import {
+  forestHoverHandlers,
+  forestOutlineHoverHandlers,
+  FOREST_OUTLINE_BUTTON,
+  PRIMARY_BUTTON,
+} from "@/app/lib/oneEyrieButtons";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -168,111 +176,22 @@ setTeamMembers(allTeamMembers || []);
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#0B0B0B",
-        color: "white",
-        fontFamily: "Arial, sans-serif",
-        display: "flex",
-      }}
-    >
-      {/* SIDEBAR */}
-      <aside
-        style={{
-          width: "245px",
-          borderRight: "1px solid #2A2A2A",
-          background: "#211F1B",
-          padding: "28px 18px",
-        }}
-      >
-        <div style={{ marginBottom: "42px" }}>
-          <div style={{ color: gold, fontSize: "28px", fontWeight: "bold" }}>
-            ONE
-          </div>
-          <div style={{ color: gold, letterSpacing: "4px", fontSize: "13px" }}>
-            — EYRIE —
-          </div>
-        </div>
+    <main style={APP_SHELL}>
+      <OneEyrieSidebar active="Lost & Found" />
 
-        {["Dashboard", "Lost & Found", "Pass-On Log", "Inspections", "Maintenance", "Settings"].map(
-          (item) => (
-            <div
-              key={item}
-              style={{
-                padding: "14px 16px",
-                borderRadius: "10px",
-                marginBottom: "8px",
-                background: item === "Lost & Found" ? gold : "transparent",
-                color: item === "Lost & Found" ? "#111" : "#fff",
-                fontWeight: item === "Lost & Found" ? "bold" : "normal",
-              }}
-            >
-              <Link
-              href={
-    item === "Lost & Found"
-      ? "/"
-      : item === "Pass-On Log"
-      ? "/pass-on-log"
-      : item === "Inspections"
-      ? "/inspections"
-      : item === "Settings"
-      ? "/settings"
-      : "#"
-  }
-  style={{
-    color: "inherit",
-    textDecoration: "none",
-    display: "block",
-    width: "100%",
-  }}
->
-  {item}
-</Link>
+      <section style={MAIN_CONTENT}>
+        <OneEyriePageHeader
+          title="Lost & Found"
+          subtitle="Track, manage, and return guest items"
+          actions={
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 600 }}>{currentUserName}</div>
+              <button type="button" onClick={logout} className="one-eyrie-text-btn" style={{ padding: 0, marginTop: "4px" }}>
+                Logout
+              </button>
             </div>
-          )
-        )}
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <section style={{ flex: 1, padding: "34px 40px" }}>
-        <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "28px",
-  }}
->
-  <div>
-    <h1 style={{ margin: 0, fontSize: "30px" }}>
-      Lost & Found
-    </h1>
-    <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
-      Track, manage, and return guest items
-    </p>
-  </div>
-
-  <div style={{ textAlign: "right" }}>
-    <div style={{ fontWeight: 600 }}>
-      {currentUserName}
-    </div>
-
-    <button
-      onClick={logout}
-      style={{
-        background: "none",
-        border: "none",
-        color: "#C8A96A",
-        cursor: "pointer",
-        padding: 0,
-        marginTop: "4px",
-      }}
-    >
-      Logout
-    </button>
-  </div>
-</div>
+          }
+        />
 
         {/* STATS */}
         <div style={{ display: "flex", gap: "18px", marginBottom: "22px" }}>
@@ -351,17 +270,10 @@ setTeamMembers(allTeamMembers || []);
           </select>
 
           <button
-  type="submit"
-  style={goldButton}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "scale(1.04)";
-    e.currentTarget.style.boxShadow = "0 0 14px rgba(200,169,106,0.35)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.boxShadow = "none";
-  }}
->
+            type="submit"
+            style={FOREST_OUTLINE_BUTTON}
+            {...forestOutlineHoverHandlers()}
+          >
             Add Item
           </button>
         </form>
@@ -377,22 +289,7 @@ setTeamMembers(allTeamMembers || []);
   />
 
   <details style={{ position: "relative" }}>
-    <summary
-      style={{
-        listStyle: "none",
-        cursor: "pointer",
-        height: "48px",
-        padding: "0 18px",
-        borderRadius: "10px",
-        border: "1px solid #C8A96A",
-        color: "#fff",
-        background: "#111111",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        fontWeight: "bold",
-      }}
-    >
+    <summary className="one-eyrie-filter-btn">
       <SlidersHorizontal size={18} />
       Filters
     </summary>
@@ -415,11 +312,11 @@ setTeamMembers(allTeamMembers || []);
         SORT BY
       </div>
 
-      <button onClick={() => setSortOrder("newest")} style={filterMenuButton}>
+      <button type="button" onClick={() => setSortOrder("newest")} className="one-eyrie-menu-item" style={filterMenuButton}>
         Newest First {sortOrder === "newest" ? "✓" : ""}
       </button>
 
-      <button onClick={() => setSortOrder("oldest")} style={filterMenuButton}>
+      <button type="button" onClick={() => setSortOrder("oldest")} className="one-eyrie-menu-item" style={filterMenuButton}>
         Oldest First {sortOrder === "oldest" ? "✓" : ""}
       </button>
 
@@ -432,7 +329,9 @@ setTeamMembers(allTeamMembers || []);
       {["All", "Stored", "Label sent", "Ready to be shipped", "Shipped", "Closed"].map((status) => (
         <button
           key={status}
+          type="button"
           onClick={() => setStatusFilter(status)}
+          className="one-eyrie-menu-item"
           style={filterMenuButton}
         >
           {status} {statusFilter === status ? "✓" : ""}
@@ -458,14 +357,7 @@ setTeamMembers(allTeamMembers || []);
   ) : !filteredItems.length ? (
     <p style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
   ) : (
-    <table
-      style={{
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: "13px",
-        tableLayout: "auto",
-      }}
-    >
+    <table className="one-eyrie-table" style={{ fontSize: "13px", tableLayout: "auto" }}>
       <thead>
         <tr
           style={{
@@ -491,39 +383,20 @@ setTeamMembers(allTeamMembers || []);
       </thead>
 
       <tbody>
-        {displayItems.map((item, index) => (
+        {displayItems.map((item) => (
           <tr
-  key={item.id}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "scale(1.002)";
-    e.currentTarget.style.background = "#1B1B1B";
-    e.currentTarget.style.boxShadow =
-      "0 0 12px rgba(200,169,106,0.10)";
-    e.currentTarget.style.position = "relative"
-    e.currentTarget.style.zIndex = "5" ;
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.background =
-      index % 2 === 0 ? "#302D28" : "#151515";
-    e.currentTarget.style.boxShadow = "none";
-  }}
-  style={{
-    borderTop: "1px solid #2A2A2A",
-    background: index % 2 === 0 ? "#302D28" : "#151515",
-    transition: "all 0.15s ease",
-  }}
->
+            key={item.id}
+            className={
+              selectedItem?.id === item.id
+                ? "one-eyrie-table-row one-eyrie-table-row--selected"
+                : "one-eyrie-table-row"
+            }
+          >
             <td style={tdStyle}>
   <button
+    type="button"
     onClick={() => deleteItem(item.id)}
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: "#9CA3AF",
-      padding: 0,
-    }}
+    className="one-eyrie-icon-btn"
     title="Delete item"
   >
     <Trash2 size={16} />
@@ -606,14 +479,9 @@ setTeamMembers(allTeamMembers || []);
 
             <td style={{ ...tdStyle, textAlign: "center" }}>
   <button
+    type="button"
     onClick={() => setSelectedItem(item)}
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: "#9CA3AF",
-      padding: 0,
-    }}
+    className="one-eyrie-icon-btn"
     title="View details"
   >
     <Eye size={18} />
@@ -682,17 +550,10 @@ setTeamMembers(allTeamMembers || []);
 </p>
 
       <button
+        type="button"
         onClick={() => setSelectedItem(null)}
-        style={{
-          marginTop: "16px",
-          background: gold,
-          color: "#111111",
-          border: "none",
-          borderRadius: "10px",
-          padding: "10px 16px",
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
+        style={{ ...PRIMARY_BUTTON, height: "auto", padding: "10px 16px", marginTop: "16px" }}
+        {...forestHoverHandlers()}
       >
         Close
       </button>
@@ -748,19 +609,6 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
-const goldButton: React.CSSProperties = {
-  background: gold,
-  color: "#111111",
-  border: "none",
-  borderRadius: "12px",
-  padding: "12px 24px",
-  minWidth: "120px",
-  fontWeight: "14PX",
-  letterSpacing: "0.3px",
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
 const thStyle: React.CSSProperties = {
   padding: "14px 12px",
   fontSize: "12px",
@@ -800,7 +648,7 @@ const filterMenuButton: React.CSSProperties = {
   background: "transparent",
   border: "none",
   color: "#fff",
-  padding: "10px 0",
+  padding: 0,
   textAlign: "left",
   fontSize: "14px",
   fontWeight: "bold",

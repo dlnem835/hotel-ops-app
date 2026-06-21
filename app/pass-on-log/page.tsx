@@ -15,7 +15,13 @@ import {
   Calendar,
   SlidersHorizontal
 } from "lucide-react";
-import Link from "next/link";
+import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import {
+  forestOutlineHoverHandlers,
+  FOREST_OUTLINE_BUTTON,
+} from "@/app/lib/oneEyrieButtons";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -329,30 +335,18 @@ function dateHeader(dateString: string) {
 
 
       return (
-    <main style={mainStyle}>
+    <main style={APP_SHELL}>
       <style>
         {`
-          .nav-item:hover {
-            background: rgba(200, 169, 106, 0.14) !important;
-            color: #C8A96A !important;
-          }
-
-          .entry-row:hover {
-            border-color: rgba(200, 169, 106, 0.65) !important;
-            transform: translateY(-1px);
-            box-shadow: 0 14px 38px rgba(0,0,0,0.38);
-          }
-
           .icon-button:hover,
           .section-button:hover {
             color: #C8A96A !important;
           }
 
-          .new-button:hover,
           .gold-button:hover,
           .plus-submit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 8px 22px rgba(200,169,106,0.25);
+            box-shadow: 0 8px 22px rgba(61, 107, 79, 0.25);
           }
 
           .reply-input-wrap:focus-within {
@@ -374,124 +368,56 @@ function dateHeader(dateString: string) {
         `}
       </style>
 
-      <aside style={sidebarStyle}>
-        <div style={{ marginBottom: "42px" }}>
-          <div style={{ color: gold, fontSize: "28px", fontWeight: "bold" }}>
-            ONE
-          </div>
-          <div style={{ color: gold, letterSpacing: "4px", fontSize: "13px" }}>
-            — EYRIE —
-          </div>
-        </div>
+      <OneEyrieSidebar active="Pass-On Log" />
 
-        {[
-          "Dashboard",
-          "Lost & Found",
-          "Pass-On Log",
-          "Inspections",
-          "Maintenance",
-          "Settings",
-        ].map((item) => (
-          <div
-            key={item}
-            className="nav-item"
-            style={{
-              padding: "14px 16px",
-              borderRadius: "10px",
-              marginBottom: "8px",
-              background: item === "Pass-On Log" ? gold : "transparent",
-              color: item === "Pass-On Log" ? "#111111" : "#FFFFFF",
-              fontWeight: item === "Pass-On Log" ? "bold" : "normal",
-              transition: "all 0.18s ease",
-
-              
-            }}
-          >
-            <Link
-              href={
-                item === "Lost & Found"
-                  ? "/"
-                  : item === "Pass-On Log"
-                  ? "/pass-on-log"
-                  : item === "Inspections"
-                  ? "/inspections"
-                  : item === "Settings"
-                  ? "/settings"
-                  : "#"
-
-              }
-
-              style={{
-                color: "inherit",
-                textDecoration: "none",
-                display: "block",
-                width: "100%",
-              }}
-
-            >
-              {item}
-            </Link>
-          </div>
-        ))}
-        
-      </aside>
-
-      <section style={{ flex: 1, padding: "34px 40px" }}>
+      <section style={{ ...MAIN_CONTENT, maxWidth: "100%" }}>
         <div style={{ maxWidth: "1120px", margin: "0 auto" }}>
-          <div style={pageHeader}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: "34px" }}>Pass-On Log</h1>
-              <p style={{ marginTop: "6px", color: "#9CA3AF" }}>
-                Shift notes and hotel communication
-              </p>
-            </div>
+          <OneEyriePageHeader
+            title="Pass-On Log"
+            subtitle="Shift notes and hotel communication"
+            align="center"
+            actions={
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <button
+                  type="button"
+                  style={newPassOnButton}
+                  onClick={() => setShowForm(true)}
+                  {...forestOutlineHoverHandlers()}
+                >
+                  <Plus size={18} /> New
+                </button>
 
-           <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  }}
->
-  <button
-    className="new-button"
-    style={newButton}
-    onClick={() => setShowForm(true)}
-  >
-    <Plus size={16} /> New
-  </button>
-
-  <div style={{ textAlign: "right" }}>
-    <div
-      style={{
-        color: "#FFFFFF",
-        fontWeight: 700,
-        fontSize: "14px",
-      }}
-    >
-      {currentUserName}
-    </div>
-
-    <button
-      onClick={async () => {
-        await supabase.auth.signOut();
-        window.location.href = "/login";
-      }}
-      style={{
-        background: "transparent",
-        border: "none",
-        color: "#C8A96A",
-        cursor: "pointer",
-        fontSize: "12px",
-        padding: 0,
-      }}
-    >
-      Logout
-    </button>
-  </div>
-</div>
-
-          </div>
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: 700,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {currentUserName}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      window.location.href = "/login";
+                    }}
+                    className="one-eyrie-text-btn"
+                    style={{ fontSize: "12px", padding: 0, marginTop: "2px" }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            }
+          />
 
           <div style={panelStyle}>
   <div style={searchHeaderRow}>
@@ -646,7 +572,11 @@ function dateHeader(dateString: string) {
       const viewCount = entry.pass_on_log_views?.length || 0;
 
       return (
-        <div key={entry.id} className="entry-row" style={entryRow}>
+        <div
+          key={entry.id}
+          className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}`}
+          style={{ marginBottom: "8px", padding: "10px 12px" }}
+        >
           <div style={collapsedRow}>
             <button
               type="button"
@@ -691,7 +621,7 @@ function dateHeader(dateString: string) {
               <button
                 type="button"
                 onClick={() => toggleViews(entry.id)}
-                className="section-button"
+                className="one-eyrie-icon-btn section-button"
                 style={smallActionButton}
               >
                 <Eye size={15} />
@@ -711,7 +641,7 @@ function dateHeader(dateString: string) {
 
               
                 }}
-                className="section-button"
+                className="one-eyrie-icon-btn section-button"
                 style={smallActionButton}
               >
                 <MessageCircle size={15} />
@@ -721,10 +651,10 @@ function dateHeader(dateString: string) {
 
             <div style={rowIcons}>
               <button
-  type="button"
-  className="icon-button"
-  style={iconButton}
-  onClick={() => {
+                type="button"
+                className="one-eyrie-icon-btn"
+                style={iconButton}
+                onClick={() => {
   if (editingEntryId === entry.id) {
     setEditingEntryId(null);
     setEditingMessage("");
@@ -739,7 +669,8 @@ function dateHeader(dateString: string) {
 </button>
 
               <button
-                className="icon-button"
+                type="button"
+                className="one-eyrie-icon-btn"
                 onClick={() => deleteEntry(entry.id)}
                 style={iconButton}
               >
@@ -931,28 +862,6 @@ onMouseLeave={(e) => {
   );
 }
    
-const mainStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#050505",
-  color: "#FFFFFF",
-  fontFamily: "Arial, sans-serif",
-  display: "flex",
-};
-
-const sidebarStyle: React.CSSProperties = {
-  width: "245px",
-  borderRight: "1px solid #2A2A2A",
-  background: "#211F1B",
-  padding: "28px 18px",
-};
-
-const pageHeader: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "24px",
-};
-
 const panelStyle: React.CSSProperties = {
   background: "#0B0B0B",
   border: "1px solid #2A2A2A",
@@ -994,6 +903,15 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
+const newPassOnButton: React.CSSProperties = {
+  ...FOREST_OUTLINE_BUTTON,
+  borderRadius: "999px",
+  padding: "12px 22px",
+  fontSize: "14px",
+  gap: "8px",
+  minHeight: "44px",
+};
+
 const goldButton: React.CSSProperties = {
   background: gold,
   color: "#111111",
@@ -1003,31 +921,6 @@ const goldButton: React.CSSProperties = {
   fontWeight: "bold",
   cursor: "pointer",
   transition: "all 0.18s ease",
-};
-
-const newButton: React.CSSProperties = {
-  background: "transparent",
-  color: gold,
-  border: `1px solid ${gold}`,
-  borderRadius: "999px",
-  padding: "10px 16px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  transition: "all 0.18s ease",
-};
-
-const entryRow: React.CSSProperties = {
-  background: "#302D28",
-  border: "1px solid #2A3345",
-  borderLeft: `4px solid ${gold}`,
-  borderRadius: "12px",
-  marginBottom: "8px",
-  padding: "10px 12px",
-  transition: "all 0.18s ease",
- 
 };
 
 const collapsedRow: React.CSSProperties = {

@@ -2,8 +2,23 @@
 
 import { createClient } from "@supabase/supabase-js";
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
+import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import {
+  APP_SHELL,
+  MAIN_CONTENT,
+  SECTION_SUBTITLE,
+  SECTION_TITLE,
+} from "@/app/lib/oneEyrieLayout";
+import {
+  forestHoverHandlers,
+  PRIMARY_BUTTON,
+  secondaryHoverHandlers,
+  SECONDARY_BUTTON,
+  SETTINGS_BUTTON_BASE,
+  settingsCardHoverHandlers,
+} from "@/app/lib/oneEyrieButtons";
 import {
   ArrowLeft,
   Building2,
@@ -412,6 +427,7 @@ async function saveItem() {
             type="button"
             style={primaryButton}
             onClick={() => openNew(activeSection as ModalType)}
+            {...forestHoverHandlers()}
           >
             <Plus size={16} />
             {getNewButtonLabel()}
@@ -699,71 +715,14 @@ async function saveItem() {
   }
 
     return (
-    <div style={appShell}>
-      <aside style={sidebarStyle}>
-        <div style={{ marginBottom: "42px" }}>
-          <div style={{ color: gold, fontSize: "28px", fontWeight: "bold" }}>
-            ONE
-          </div>
-          <div style={{ color: gold, letterSpacing: "4px", fontSize: "13px" }}>
-            — EYRIE —
-          </div>
-        </div>
+    <div style={APP_SHELL}>
+      <OneEyrieSidebar active="Settings" />
 
-        {[
-          "Dashboard",
-          "Lost & Found",
-          "Pass-On Log",
-          "Inspections",
-          "Maintenance",
-          "Settings",
-        ].map((item) => (
-          <div
-            key={item}
-            className="nav-item"
-            style={{
-              padding: "14px 16px",
-              borderRadius: "10px",
-              marginBottom: "8px",
-              background: item === "Settings" ? gold : "transparent",
-              color: item === "Settings" ? "#111111" : "#FFFFFF",
-              fontWeight: item === "Settings" ? "bold" : "normal",
-              transition: "all 0.18s ease",
-            }}
-          >
-            <Link
-              href={
-                item === "Lost & Found"
-                  ? "/"
-                  : item === "Pass-On Log"
-                  ? "/pass-on-log"
-                  : item === "Settings"
-                  ? "/settings"
-                  : "#"
-
-              }
-              style={{
-                color: "inherit",
-                textDecoration: "none",
-                display: "block",
-                width: "100%",
-              }}
-            >
-              {item}
-            </Link>
-          </div>
-        ))}
-      </aside>
-
-      <main style={mainStyle}>
-        <div style={pageHeader}>
-          <div>
-            <h1 style={title}>Settings</h1>
-            <p style={subtitle}>
-              Configure One Eyrie platform settings
-            </p>
-          </div>
-        </div>
+      <main style={MAIN_CONTENT}>
+        <OneEyriePageHeader
+          title="Settings"
+          subtitle="Configure One Eyrie platform settings"
+        />
 
         {activeSection === "home" ? (
           <div style={settingsList}>
@@ -776,15 +735,8 @@ async function saveItem() {
                   setSearch("");
                   setActiveSection(card.id);
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = gold;
-                  e.currentTarget.style.boxShadow =
-                    "0 0 18px rgba(200,169,106,0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#3A352E";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                onMouseEnter={settingsCardHoverHandlers().onMouseEnter}
+                onMouseLeave={settingsCardHoverHandlers().onMouseLeave}
               >
                 <div style={cardIcon}>{card.icon}</div>
                 <div style={{ flex: 1 }}>
@@ -811,8 +763,8 @@ async function saveItem() {
               </button>
 
               <div>
-                <h2 style={sectionTitleStyle}>{sectionTitle?.title}</h2>
-                <p style={sectionSubtitleStyle}>{sectionTitle?.subtitle}</p>
+                <h2 style={SECTION_TITLE}>{sectionTitle?.title}</h2>
+                <p style={SECTION_SUBTITLE}>{sectionTitle?.subtitle}</p>
               </div>
             </div>
 
@@ -895,11 +847,21 @@ async function saveItem() {
               <div style={formStack}>{renderModalFields()}</div>
 
               <div style={modalFooter}>
-                <button type="button" style={secondaryButton} onClick={closeModal}>
+                <button
+                  type="button"
+                  style={secondaryButton}
+                  onClick={closeModal}
+                  {...secondaryHoverHandlers()}
+                >
                   Cancel
                 </button>
 
-                <button type="button" style={primaryButton} onClick={saveItem}>
+                <button
+                  type="button"
+                  style={primaryButton}
+                  onClick={saveItem}
+                  {...forestHoverHandlers()}
+                >
                   Save
                 </button>
               </div>
@@ -1103,19 +1065,7 @@ const searchInput: React.CSSProperties = {
 };
 
 const primaryButton: React.CSSProperties = {
-  background: gold,
-  border: "1px solid #E0C47B",
-  color: "#211F1B",
-  borderRadius: "12px",
-  padding: "0 18px",
-  height: "46px",
-  cursor: "pointer",
-  fontWeight: 800,
-  fontSize: "14px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
+  ...PRIMARY_BUTTON,
 };
 
 const tableHeader: React.CSSProperties = {
@@ -1250,17 +1200,5 @@ const modalFooter: React.CSSProperties = {
 };
 
 const secondaryButton: React.CSSProperties = {
-  background: "transparent",
-  border: `1px solid ${gold}`,
-  color: gold,
-  borderRadius: "12px",
-  padding: "0 18px",
-  height: "46px",
-  cursor: "pointer",
-  fontWeight: 800,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  fontSize: "14px",
+  ...SECONDARY_BUTTON,
 };

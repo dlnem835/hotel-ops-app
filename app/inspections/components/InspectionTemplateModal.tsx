@@ -36,7 +36,9 @@ import {
 } from "../standards/types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
+  forestHoverHandlers,
   goldHoverHandlers,
+  secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 
@@ -352,7 +354,7 @@ export default function InspectionTemplateModal({
                 style={toolbarButton}
                 onClick={handleSave}
                 disabled={saving}
-                {...goldHoverHandlers("secondary", saving)}
+                {...secondaryHoverHandlers(saving)}
               >
                 <Save size={15} />
                 Save
@@ -362,7 +364,7 @@ export default function InspectionTemplateModal({
               type="button"
               style={toolbarButton}
               onClick={handlePrint}
-              {...goldHoverHandlers("secondary")}
+              {...secondaryHoverHandlers()}
             >
               <Printer size={15} />
               Print
@@ -375,7 +377,7 @@ export default function InspectionTemplateModal({
                 color: language === "es" ? ONE_EYRIE.gold : undefined,
               }}
               onClick={() => setLanguage((prev) => (prev === "en" ? "es" : "en"))}
-              {...goldHoverHandlers("secondary")}
+              {...secondaryHoverHandlers()}
             >
               <Languages size={15} />
               {language === "en" ? "Spanish" : "English"}
@@ -386,7 +388,7 @@ export default function InspectionTemplateModal({
                 style={toolbarButton}
                 onClick={handleRestoreStandard}
                 disabled={saving}
-                {...goldHoverHandlers("secondary", saving)}
+                {...secondaryHoverHandlers(saving)}
               >
                 <RotateCcw size={15} />
                 Restore Standard
@@ -633,7 +635,7 @@ export default function InspectionTemplateModal({
               type="button"
               style={{ ...secondaryButton, ...buttonBase }}
               onClick={onClose}
-              {...goldHoverHandlers("secondary")}
+              {...secondaryHoverHandlers()}
             >
               Close
             </button>
@@ -643,7 +645,7 @@ export default function InspectionTemplateModal({
                 style={{ ...primaryButton, ...buttonBase }}
                 onClick={handleSave}
                 disabled={saving}
-                {...goldHoverHandlers("primary", saving)}
+                {...forestHoverHandlers(saving)}
               >
                 {saving ? "Saving..." : "Save Template"}
               </button>

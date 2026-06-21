@@ -27,7 +27,9 @@ import {
   StandardTemplateSummary,
 } from "@/app/inspections/standards/types";
 import {
+  forestHoverHandlers,
   goldHoverHandlers,
+  secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
   SETTINGS_CARD_TRANSITION,
   settingsCardHoverHandlers,
@@ -370,7 +372,7 @@ export default function InspectionTemplatesSection({
                       fontSize: "13px",
                     }}
                     onClick={() => openStandardPreview(standard.key)}
-                    {...goldHoverHandlers("secondary")}
+                    {...secondaryHoverHandlers()}
                   >
                     <Eye size={14} />
                     Preview
@@ -398,7 +400,7 @@ export default function InspectionTemplatesSection({
                       }}
                       onClick={() => activateStandard(standard.key)}
                       disabled={saving}
-                      {...goldHoverHandlers("primary", saving)}
+                      {...forestHoverHandlers(saving)}
                     >
                       <Sparkles size={14} />
                       Activate

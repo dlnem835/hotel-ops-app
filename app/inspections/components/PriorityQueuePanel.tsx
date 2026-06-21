@@ -1,10 +1,10 @@
 "use client";
 
 import { PriorityQueueItem } from "../lib/inspection-types";
-import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestOutlineHoverHandlers,
-  SETTINGS_BUTTON_BASE,
+  FOREST_OUTLINE_BUTTON,
 } from "@/app/settings/lib/settings-ui-interactions";
 
 type PriorityQueuePanelProps = {
@@ -97,18 +97,7 @@ export default function PriorityQueuePanel({
               <button
                 type="button"
                 onClick={() => onInspectRoom(item.areaId)}
-                style={{
-                  ...SETTINGS_BUTTON_BASE,
-                  background: "transparent",
-                  border: `1px solid ${FOREST.border}`,
-                  color: FOREST.text,
-                  borderRadius: "8px",
-                  padding: "6px 10px",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
-                }}
+                style={FOREST_OUTLINE_BUTTON}
                 {...forestOutlineHoverHandlers()}
               >
                 Inspect

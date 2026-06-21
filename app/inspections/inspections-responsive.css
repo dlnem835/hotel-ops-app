@@ -130,4 +130,47 @@
     min-height: 44px !important;
     padding: 10px 14px !important;
   }
+
+  .inspection-review-header {
+    padding: 18px 16px 22px !important;
+  }
+
+  .inspection-review-header h1 {
+    font-size: 22px !important;
+  }
+
+  .inspection-review-body {
+    padding: 20px 16px 32px !important;
+  }
+}
+
+@media print {
+  .one-eyrie-sidebar,
+  .inspection-review-no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  .inspection-review-print-root {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .inspection-review-header,
+  .inspection-review-body {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .inspection-mobile-session-body {
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+  }
+
+  .inspection-mobile-category-block > div:last-child {
+    display: block !important;
+  }
 }

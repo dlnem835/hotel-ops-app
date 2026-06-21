@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, Check, Minus, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import CompletedInspectionReview from "../../components/CompletedInspectionReview";
 import FailedItemDetails from "../../components/FailedItemDetails";
 import InspectionCategorySection from "../../components/InspectionCategorySection";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
@@ -35,7 +36,11 @@ function itemKey(categoryKey: string, itemKeyValue: string) {
 export default function InspectionSessionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const sessionId = Number(params.id);
+  const fromHistory = searchParams.get("from") === "history";
+  const historyRoomId = searchParams.get("roomId");
+  const historyRoomName = searchParams.get("roomName");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +53,13 @@ export default function InspectionSessionPage() {
   const [sessionNotes, setSessionNotes] = useState("");
   const [status, setStatus] = useState<string>("in_progress");
   const [roomName, setRoomName] = useState("");
+  const [program, setProgram] = useState("");
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [inspectorName, setInspectorName] = useState<string | null>(null);
+  const [associateName, setAssociateName] = useState<string | null>(null);
+  const [earnedPoints, setEarnedPoints] = useState(0);
+  const [possiblePoints, setPossiblePoints] = useState(0);
+  const [scorePercent, setScorePercent] = useState<number | null>(null);
   const [completedScore, setCompletedScore] = useState<string | null>(null);
   const [expandedCategoryKey, setExpandedCategoryKey] = useState<string | null>(null);
   const isMobileLayout = useIsMobileInspectionLayout();
@@ -81,9 +93,47 @@ export default function InspectionSessionPage() {
       setContent(snapshot.content || null);
       setStatus(result.session.status);
       setSessionNotes(result.session.session_notes || "");
+      setProgram(String(result.session.inspection_program || ""));
+      setCompletedAt(result.session.completed_at || null);
+      setEarnedPoints(Number(result.session.earned_points) || 0);
+      setPossiblePoints(Number(result.session.possible_points) || 0);
+      setScorePercent(
+        result.session.score_percent === null
+          ? null
+          : Number(result.session.score_percent)
+      );
 
       if (result.session.status === "completed" && result.session.score_percent !== null) {
         setCompletedScore(`${Math.round(Number(result.session.score_percent))}%`);
+      }
+
+      const memberIds = [
+        result.session.inspector_id,
+        result.session.associate_id,
+      ].filter(Boolean) as string[];
+
+      if (memberIds.length > 0) {
+        const { data: members } = await supabase
+          .from("team_members")
+          .select("id, first_name, last_name, username")
+          .in("id", memberIds);
+
+        const nameById = new Map<string, string>();
+        for (const member of members || []) {
+          nameById.set(
+            String(member.id),
+            member.username ||
+              `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+              "Unknown"
+          );
+        }
+
+        if (result.session.inspector_id) {
+          setInspectorName(nameById.get(String(result.session.inspector_id)) || null);
+        }
+        if (result.session.associate_id) {
+          setAssociateName(nameById.get(String(result.session.associate_id)) || null);
+        }
       }
 
       const initial: ResponseMap = {};
@@ -281,10 +331,66 @@ export default function InspectionSessionPage() {
     router.push("/inspections");
   }
 
+  function handleReviewBack() {
+    if (fromHistory && historyRoomId) {
+      const roomQuery = historyRoomName
+        ? `&roomName=${encodeURIComponent(historyRoomName)}`
+        : "";
+      router.push(`/inspections?historyRoom=${historyRoomId}${roomQuery}`);
+      return;
+    }
+    router.push("/inspections");
+  }
+
   if (loading) {
     return (
       <main style={{ minHeight: "100vh", background: ONE_EYRIE.black, color: ONE_EYRIE.text, padding: 40 }}>
         Loading inspection...
+      </main>
+    );
+  }
+
+  if (isCompleted && content) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          background: ONE_EYRIE.black,
+          color: ONE_EYRIE.text,
+          display: "flex",
+        }}
+      >
+        <OneEyrieSidebar active="Inspections" />
+
+        <section style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          <CompletedInspectionReview
+            roomName={roomName}
+            templateName={templateName}
+            program={program}
+            completedAt={completedAt}
+            inspectorName={inspectorName}
+            associateName={associateName}
+            scorePercent={scorePercent}
+            earnedPoints={earnedPoints}
+            possiblePoints={possiblePoints}
+            sessionNotes={sessionNotes || null}
+            content={content}
+            responses={responses}
+            notes={notes}
+            photos={photos}
+            isMobileLayout={isMobileLayout}
+            expandedCategoryKey={expandedCategoryKey}
+            onToggleCategory={toggleCategory}
+            onBack={handleReviewBack}
+            backLabel={
+              fromHistory && historyRoomName
+                ? `Back to Room ${historyRoomName} history`
+                : fromHistory
+                  ? "Back to inspection history"
+                  : "Back to dashboard"
+            }
+          />
+        </section>
       </main>
     );
   }
@@ -332,7 +438,6 @@ export default function InspectionSessionPage() {
             <div style={{ flex: 1 }}>
               <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800 }}>
                 Room {roomName || "—"} · {templateName}
-                {isCompleted ? " · Completed" : ""}
               </h1>
               <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", marginTop: "6px" }}>
                 {answeredItems}/{totalItems} items answered

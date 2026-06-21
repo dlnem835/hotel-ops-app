@@ -1,0 +1,207 @@
+.one-eyrie-sidebar {
+  width: 245px;
+  flex-shrink: 0;
+  border-right: 1px solid #2a2a2a;
+  background: #211f1b;
+  padding: 28px 18px;
+}
+
+.one-eyrie-logo-block {
+  margin-bottom: 42px;
+}
+
+.one-eyrie-logo-title {
+  color: #c8a96a;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.one-eyrie-logo-subtitle {
+  color: #c8a96a;
+  letter-spacing: 4px;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.one-eyrie-nav-item {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  background: transparent;
+}
+
+.one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--active) {
+  background: rgba(200, 169, 106, 0.12);
+  color: #e0c47b;
+}
+
+.one-eyrie-nav-item--active {
+  background: #c8a96a;
+  color: #111111;
+  font-weight: 800;
+}
+
+.one-eyrie-nav-item--active:hover {
+  background: #c8a96a;
+  color: #111111;
+}
+
+/* ── Shared list / table row interactions ── */
+
+.one-eyrie-list-row {
+  background: #302d28;
+  border: 1px solid #3a352e;
+  border-radius: 12px;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.one-eyrie-list-row:hover {
+  background-color: #3a3630;
+  transform: translateY(-1px);
+  border-color: rgba(200, 169, 106, 0.28);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-list-row--selected {
+  background-color: #3a3630;
+  border-color: rgba(200, 169, 106, 0.55);
+  box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.32);
+}
+
+.one-eyrie-list-row--selected:hover {
+  border-color: rgba(200, 169, 106, 0.65);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(200, 169, 106, 0.38);
+}
+
+.one-eyrie-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.one-eyrie-table .one-eyrie-table-row {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.one-eyrie-table .one-eyrie-table-row td {
+  border-top: 1px solid #2a2a2a;
+}
+
+.one-eyrie-table .one-eyrie-table-row:nth-child(odd) td {
+  background-color: #302d28;
+}
+
+.one-eyrie-table .one-eyrie-table-row:nth-child(even) td {
+  background-color: #151515;
+}
+
+.one-eyrie-table .one-eyrie-table-row:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+  position: relative;
+  z-index: 1;
+}
+
+.one-eyrie-table .one-eyrie-table-row--selected td:first-child {
+  box-shadow: inset 3px 0 0 #c8a96a;
+}
+
+.one-eyrie-table .one-eyrie-table-row--selected:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Shared interactive controls ── */
+
+.one-eyrie-icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.one-eyrie-icon-btn:hover {
+  color: #c8a96a;
+  background: rgba(200, 169, 106, 0.1);
+  box-shadow: 0 0 10px rgba(200, 169, 106, 0.2);
+  transform: translateY(-1px);
+}
+
+.one-eyrie-filter-btn {
+  list-style: none;
+  cursor: pointer;
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid #c8a96a;
+  color: #ffffff;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  transition: all 0.18s ease;
+}
+
+.one-eyrie-filter-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(200, 169, 106, 0.28);
+  border-color: #e0c47b;
+}
+
+.one-eyrie-menu-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.18s ease;
+}
+
+.one-eyrie-menu-item:hover {
+  background: rgba(200, 169, 106, 0.1);
+  color: #e0c47b;
+}
+
+.one-eyrie-text-btn {
+  background: none;
+  border: none;
+  color: #c8a96a;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.18s ease;
+}
+
+.one-eyrie-text-btn:hover {
+  color: #e0c47b;
+  text-shadow: 0 0 10px rgba(200, 169, 106, 0.25);
+}

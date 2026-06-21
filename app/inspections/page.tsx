@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import {
   DashboardPayload,
   InspectionPeriod,
@@ -230,6 +232,28 @@ export default function InspectionsPage() {
     setHistory(response.ok ? result.history || [] : []);
   }
 
+  useEffect(() => {
+    if (!dashboard || historyOpen || typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const historyRoomId = params.get("historyRoom");
+    if (!historyRoomId) {
+      return;
+    }
+
+    const room = dashboard.rooms.find(
+      (entry) => String(entry.areaId) === historyRoomId
+    );
+    if (!room) {
+      return;
+    }
+
+    void openRoomHistory(room);
+    window.history.replaceState({}, "", "/inspections");
+  }, [dashboard, historyOpen]);
+
   async function startInspection(areaId?: number) {
     const roomId = areaId ?? selectedRoomId;
     const templateId = effectiveTemplateId;
@@ -263,33 +287,18 @@ export default function InspectionsPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: ONE_EYRIE.black,
-        color: ONE_EYRIE.text,
-        display: "flex",
-        fontFamily:
-          "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-      }}
-    >
+    <main style={APP_SHELL}>
       <OneEyrieSidebar active="Inspections" />
 
       <section
         className="inspections-mobile-page-content"
-        style={{ flex: 1, padding: "34px 40px", overflowX: "hidden" }}
+        style={MAIN_CONTENT}
       >
-        <div style={{ marginBottom: "24px" }}>
-          <h1
-            className="inspections-mobile-page-title"
-            style={{ margin: 0, fontSize: "30px", fontWeight: 800 }}
-          >
-            Inspections
-          </h1>
-          <p style={{ marginTop: "6px", color: ONE_EYRIE.textSubtle }}>
-            Coverage snapshot and priority-driven inspection workflow
-          </p>
-        </div>
+        <OneEyriePageHeader
+          title="Inspections"
+          subtitle="Coverage snapshot and priority-driven inspection workflow"
+          titleClassName="inspections-mobile-page-title"
+        />
 
         <div
           className="inspections-mobile-filter-row"

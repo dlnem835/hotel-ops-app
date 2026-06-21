@@ -16,7 +16,10 @@ import { FLAT_RED, FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
 import { formatSetupResult, GOLD, parseCsvRows } from "../lib/buildings-areas";
 import {
   applyGoldHover,
+  forestHoverHandlers,
+  goldHoverHandlers,
   resetButtonHover,
+  secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "../lib/settings-ui-interactions";
 
@@ -686,8 +689,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           style={{ ...secondaryButton, ...buttonBase }}
           onClick={openWizard}
           disabled={saving}
-          onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-          onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+          {...secondaryHoverHandlers()}
         >
           <Wand2 size={16} />
           Bulk Manage
@@ -698,8 +700,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           style={{ ...primaryButton, ...buttonBase }}
           onClick={openNew}
           disabled={saving}
-          onMouseEnter={(e) => applyGoldHover(e, "primary")}
-          onMouseLeave={(e) => resetButtonHover(e, "primary")}
+          {...forestHoverHandlers()}
         >
           <Plus size={16} />
           New Area
@@ -801,8 +802,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Active")}
             disabled={saving}
-            onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-            onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+            {...secondaryHoverHandlers()}
           >
             Mark Active
           </button>
@@ -812,8 +812,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Out of Service")}
             disabled={saving}
-            onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-            onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+            {...secondaryHoverHandlers()}
           >
             Mark Out of Service
           </button>
@@ -823,8 +822,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Inactive")}
             disabled={saving}
-            onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-            onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+            {...secondaryHoverHandlers()}
           >
             Mark Inactive
           </button>
@@ -834,8 +832,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={clearSelection}
             disabled={saving}
-            onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-            onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+            {...secondaryHoverHandlers()}
           >
             Clear Selection
           </button>
@@ -1009,8 +1006,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 type="button"
                 style={{ ...secondaryButton, ...buttonBase }}
                 onClick={closeEditModal}
-                onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-                onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+                {...secondaryHoverHandlers()}
               >
                 Cancel
               </button>
@@ -1019,8 +1015,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 style={{ ...primaryButton, ...buttonBase }}
                 onClick={saveArea}
                 disabled={saving}
-                onMouseEnter={(e) => applyGoldHover(e, "primary")}
-                onMouseLeave={(e) => resetButtonHover(e, "primary")}
+                {...forestHoverHandlers(saving)}
               >
                 {saving ? "Saving..." : "Save"}
               </button>
@@ -1072,8 +1067,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                   type="button"
                   style={{ ...primaryButton, ...buttonBase, height: "38px" }}
                   onClick={addRoomRange}
-                  onMouseEnter={(e) => applyGoldHover(e, "primary")}
-                  onMouseLeave={(e) => resetButtonHover(e, "primary")}
+                  {...forestHoverHandlers(saving)}
                 >
                   <Plus size={16} />
                   Add Floor
@@ -1252,8 +1246,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                   type="button"
                   style={{ ...secondaryButton, ...buttonBase }}
                   onClick={() => csvInputRef.current?.click()}
-                  onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-                  onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+                  {...secondaryHoverHandlers()}
                 >
                   <FileUp size={16} />
                   Choose CSV File
@@ -1280,8 +1273,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                       fontSize: "13px",
                     }}
                     onClick={resetWizardImport}
-                    onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-                    onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+                    {...secondaryHoverHandlers()}
                   >
                     Clear File
                   </button>
@@ -1350,8 +1342,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 type="button"
                 style={{ ...secondaryButton, ...buttonBase }}
                 onClick={closeWizard}
-                onMouseEnter={(e) => applyGoldHover(e, "secondary")}
-                onMouseLeave={(e) => resetButtonHover(e, "secondary")}
+                {...secondaryHoverHandlers()}
               >
                 Cancel
               </button>
@@ -1360,10 +1351,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 style={{ ...primaryButton, ...buttonBase }}
                 onClick={runWizard}
                 disabled={saving || !canRunWizard}
-                onMouseEnter={(e) => {
-                  if (!saving && canRunWizard) applyGoldHover(e, "primary");
-                }}
-                onMouseLeave={(e) => resetButtonHover(e, "primary")}
+                {...forestHoverHandlers(saving || !canRunWizard)}
               >
                 {saving ? "Setting up..." : "Run Setup"}
               </button>

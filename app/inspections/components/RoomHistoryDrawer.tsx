@@ -241,14 +241,24 @@ export default function RoomHistoryDrawer({
                 )}
 
                 <Link
-                  href={`/inspections/session/${entry.id}`}
+                  href={`/inspections/session/${entry.id}?from=history&roomId=${room.areaId}&roomName=${encodeURIComponent(room.name)}`}
+                  onClick={onClose}
                   style={{
-                    display: "inline-block",
-                    marginTop: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    marginTop: "12px",
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: `1px solid ${ONE_EYRIE.gold}`,
+                    background: "transparent",
                     color: ONE_EYRIE.gold,
-                    fontSize: "12px",
-                    fontWeight: 700,
+                    fontSize: "13px",
+                    fontWeight: 800,
                     textDecoration: "none",
+                    transition: "all 0.18s ease",
                   }}
                 >
                   Open full inspection review →
