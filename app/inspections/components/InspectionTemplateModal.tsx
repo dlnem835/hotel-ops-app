@@ -34,7 +34,7 @@ import {
   TEMPLATE_TYPES,
   TemplateLanguage,
 } from "../standards/types";
-import { GOLD } from "@/app/settings/lib/buildings-areas";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   goldHoverHandlers,
   SETTINGS_BUTTON_BASE,
@@ -242,6 +242,43 @@ export default function InspectionTemplateModal({
     gap: "6px",
   };
 
+  const categoryCard: React.CSSProperties = {
+    border: `1px solid ${ONE_EYRIE.border}`,
+    borderRadius: "12px",
+    padding: "16px",
+    background: ONE_EYRIE.surface,
+  };
+
+  const categoryHeader: React.CSSProperties = {
+    color: ONE_EYRIE.gold,
+    fontWeight: 800,
+    fontSize: "14px",
+    letterSpacing: "0.3px",
+    marginBottom: "12px",
+  };
+
+  const columnHeader: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 90px 80px",
+    gap: "8px",
+    color: ONE_EYRIE.gold,
+    fontSize: "11px",
+    fontWeight: 800,
+    marginBottom: "8px",
+    padding: "0 4px",
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
+  };
+
+  const metaLine: React.CSSProperties = {
+    color: ONE_EYRIE.textSubtle,
+    fontSize: "12px",
+    marginTop: "6px",
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+  };
+
   return (
     <>
       <div style={modalOverlay} className="inspection-template-overlay">
@@ -257,34 +294,35 @@ export default function InspectionTemplateModal({
           }}
           className="inspection-template-modal"
         >
-          <div style={modalHeader}>
+          <div style={{ ...modalHeader, marginBottom: "12px" }}>
             <div>
-              <h2 style={{ margin: 0 }}>
+              <h2 style={{ margin: 0, color: ONE_EYRIE.text, fontWeight: 800 }}>
                 {readOnly ? `Standard: ${draft.name}` : draft.name || "Inspection Template"}
               </h2>
-              <div
-                style={{
-                  color: "#9CA3AF",
-                  fontSize: "12px",
-                  marginTop: "6px",
-                  display: "flex",
-                  gap: "12px",
-                  flexWrap: "wrap",
-                }}
-              >
+              <div style={metaLine}>
                 {standardMeta && (
-                  <span>Standard v{standardMeta.version}</span>
+                  <span>
+                    Standard{" "}
+                    <span style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}>
+                      v{standardMeta.version}
+                    </span>
+                  </span>
                 )}
                 {propertyTemplate && (
                   <>
-                    <span>Property v{propertyTemplate.property_version}</span>
+                    <span>
+                      Property{" "}
+                      <span style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}>
+                        v{propertyTemplate.property_version}
+                      </span>
+                    </span>
                     <span>
                       Last modified: {formatTemplateDate(propertyTemplate.last_modified_at)}
                     </span>
                   </>
                 )}
                 <span>
-                  {itemCount} items · {totalPoints} points
+                  {itemCount} items · {totalPoints} pts max · weighted % score
                 </span>
               </div>
             </div>
@@ -302,9 +340,9 @@ export default function InspectionTemplateModal({
             style={{
               display: "flex",
               gap: "8px",
-              padding: "0 24px 12px",
+              paddingBottom: "12px",
               flexWrap: "wrap",
-              borderBottom: "1px solid #3A352E",
+              borderBottom: `1px solid ${ONE_EYRIE.border}`,
             }}
             className="no-print"
           >
@@ -333,8 +371,8 @@ export default function InspectionTemplateModal({
               type="button"
               style={{
                 ...toolbarButton,
-                borderColor: language === "es" ? GOLD : undefined,
-                color: language === "es" ? GOLD : undefined,
+                borderColor: language === "es" ? ONE_EYRIE.gold : undefined,
+                color: language === "es" ? ONE_EYRIE.gold : undefined,
               }}
               onClick={() => setLanguage((prev) => (prev === "en" ? "es" : "en"))}
               {...goldHoverHandlers("secondary")}
@@ -371,9 +409,11 @@ export default function InspectionTemplateModal({
                 style={{
                   padding: "12px 14px",
                   borderRadius: "10px",
-                  border: "1px solid #3A352E",
-                  color: "#C9C9C9",
+                  border: `1px solid ${ONE_EYRIE.gold}`,
+                  background: ONE_EYRIE.surfacePanel,
+                  color: ONE_EYRIE.textMuted,
                   fontSize: "13px",
+                  lineHeight: 1.5,
                 }}
               >
                 Built-in One Eyrie standard — read only. Activate to create an
@@ -423,113 +463,172 @@ export default function InspectionTemplateModal({
             )}
 
             <div
-              style={{ color: GOLD, fontWeight: 800, fontSize: "14px" }}
+              style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "14px" }}
               className="print-template-title"
             >
               {draft.name} {language === "es" ? "(Español)" : ""}
             </div>
 
             {draft.categories.map((category) => (
-              <div
-                key={category.clientId}
-                style={{
-                  border: "1px solid #3A352E",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  background: "#211F1B",
-                }}
-              >
-                <input
-                  value={getDraftCategoryName(category, language)}
-                  onChange={(e) =>
-                    updateCategory(
-                      category.clientId,
-                      setDraftCategoryName(category, language, e.target.value)
-                    )
-                  }
-                  placeholder="Category name"
-                  style={{ ...input, marginBottom: "12px", fontWeight: 700 }}
-                  readOnly={readOnly}
-                />
+              <div key={category.clientId} style={categoryCard}>
+                {readOnly ? (
+                  <div style={categoryHeader}>
+                    {getDraftCategoryName(category, language) || "Category"}
+                  </div>
+                ) : (
+                  <input
+                    value={getDraftCategoryName(category, language)}
+                    onChange={(e) =>
+                      updateCategory(
+                        category.clientId,
+                        setDraftCategoryName(category, language, e.target.value)
+                      )
+                    }
+                    placeholder="Category name"
+                    style={{
+                      ...input,
+                      marginBottom: "12px",
+                      fontWeight: 800,
+                      color: ONE_EYRIE.gold,
+                      borderColor: ONE_EYRIE.border,
+                    }}
+                    readOnly={readOnly}
+                  />
+                )}
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 90px 80px",
-                    gap: "8px",
-                    color: "#9CA3AF",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    marginBottom: "8px",
-                    padding: "0 4px",
-                  }}
-                >
+                <div style={columnHeader}>
                   <div>{language === "es" ? "Pregunta" : "Item / Question"}</div>
-                  <div>{language === "es" ? "Puntos" : "Points"}</div>
+                  <div>{language === "es" ? "Peso" : "Weight"}</div>
                   <div>{language === "es" ? "Requerido" : "Required"}</div>
                 </div>
 
-                {category.items.map((item) => (
-                  <div
-                    key={item.clientId}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 90px 80px",
-                      gap: "8px",
-                      marginBottom: "8px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <input
-                      value={getDraftLabel(item, language)}
-                      onChange={(e) =>
-                        updateItem(
-                          category.clientId,
-                          item.clientId,
-                          setDraftLabel(item, language, e.target.value)
-                        )
-                      }
-                      style={input}
-                      readOnly={readOnly}
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      value={item.pointValue}
-                      onChange={(e) =>
-                        updateItem(category.clientId, item.clientId, {
-                          pointValue: Number(e.target.value),
-                        })
-                      }
-                      style={input}
-                      readOnly={readOnly}
-                    />
-                    <label
+                {category.items.map((item, itemIndex) =>
+                  readOnly ? (
+                    <div
+                      key={item.clientId}
                       style={{
-                        display: "flex",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 90px 80px",
+                        gap: "8px",
+                        marginBottom: "6px",
                         alignItems: "center",
-                        justifyContent: "center",
-                        color: "#fff",
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        background:
+                          itemIndex % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
+                        border: `1px solid ${ONE_EYRIE.borderDivider}`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: ONE_EYRIE.textRow,
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {getDraftLabel(item, language)}
+                      </div>
+                      <div
+                        style={{
+                          color: ONE_EYRIE.gold,
+                          fontWeight: 800,
+                          fontSize: "14px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {item.pointValue}
+                      </div>
+                      <div
+                        style={{
+                          color: ONE_EYRIE.textSubtle,
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          textAlign: "center",
+                        }}
+                      >
+                        {item.required ? "Yes" : "—"}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      key={item.clientId}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 90px 80px",
+                        gap: "8px",
+                        marginBottom: "8px",
+                        alignItems: "center",
+                        padding: "4px",
+                        borderRadius: "8px",
+                        background:
+                          itemIndex % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
                       }}
                     >
                       <input
-                        type="checkbox"
-                        checked={item.required}
+                        value={getDraftLabel(item, language)}
+                        onChange={(e) =>
+                          updateItem(
+                            category.clientId,
+                            item.clientId,
+                            setDraftLabel(item, language, e.target.value)
+                          )
+                        }
+                        style={input}
+                        readOnly={readOnly}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        value={item.pointValue}
                         onChange={(e) =>
                           updateItem(category.clientId, item.clientId, {
-                            required: e.target.checked,
+                            pointValue: Number(e.target.value),
                           })
                         }
-                        disabled={readOnly}
+                        style={{
+                          ...input,
+                          color: ONE_EYRIE.gold,
+                          fontWeight: 800,
+                          textAlign: "center",
+                        }}
+                        readOnly={readOnly}
                       />
-                    </label>
-                  </div>
-                ))}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: ONE_EYRIE.text,
+                        }}
+                        className="inspection-template-checkbox"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={item.required}
+                          onChange={(e) =>
+                            updateItem(category.clientId, item.clientId, {
+                              required: e.target.checked,
+                            })
+                          }
+                          disabled={readOnly}
+                        />
+                      </label>
+                    </div>
+                  )
+                )}
               </div>
             ))}
           </div>
 
-          <div style={modalFooter} className="no-print">
+          <div
+            style={{
+              ...modalFooter,
+              borderTop: `1px solid ${ONE_EYRIE.border}`,
+              paddingTop: "16px",
+            }}
+            className="no-print"
+          >
             <button
               type="button"
               style={{ ...secondaryButton, ...buttonBase }}
@@ -554,6 +653,18 @@ export default function InspectionTemplateModal({
       </div>
 
       <style jsx global>{`
+        .inspection-template-modal select option {
+          background: ${ONE_EYRIE.surface};
+          color: ${ONE_EYRIE.text};
+        }
+
+        .inspection-template-checkbox input[type="checkbox"] {
+          accent-color: ${ONE_EYRIE.gold};
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+        }
+
         @media print {
           body * {
             visibility: hidden;
@@ -570,6 +681,9 @@ export default function InspectionTemplateModal({
             background: white !important;
             color: black !important;
             padding: 24px !important;
+          }
+          .print-template-title {
+            color: black !important;
           }
           .inspection-template-print-area input {
             border: none !important;

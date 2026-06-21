@@ -27,6 +27,8 @@ export type {
   TemplateLanguage,
   TemplateStatus,
   TemplateType,
+  InspectionItemOutcome,
+  InspectionScore,
 } from "./types";
 
 export const STANDARD_TEMPLATE_LIBRARY: StandardTemplateDefinition[] = [

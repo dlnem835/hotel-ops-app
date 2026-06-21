@@ -209,11 +209,13 @@ setTeamMembers(allTeamMembers || []);
               }}
             >
               <Link
-  href={
+              href={
     item === "Lost & Found"
       ? "/"
       : item === "Pass-On Log"
       ? "/pass-on-log"
+      : item === "Inspections"
+      ? "/inspections"
       : item === "Settings"
       ? "/settings"
       : "#"

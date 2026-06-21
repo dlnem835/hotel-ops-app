@@ -14,7 +14,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
+import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import InspectionTemplateModal from "@/app/inspections/components/InspectionTemplateModal";
 import { formatTemplateDate } from "@/app/inspections/lib/template-draft";
 import { countContentItems } from "@/app/inspections/standards/builders";
@@ -26,7 +26,6 @@ import {
   PropertyInspectionTemplate,
   StandardTemplateSummary,
 } from "@/app/inspections/standards/types";
-import { GOLD } from "../lib/buildings-areas";
 import {
   goldHoverHandlers,
   SETTINGS_BUTTON_BASE,
@@ -282,10 +281,10 @@ export default function InspectionTemplatesSection({
   const buttonBase = SETTINGS_BUTTON_BASE;
   const tableGrid = "1.3fr 0.9fr 0.7fr 0.7fr 1fr 1.1fr";
   const standardCardBase = {
-    border: "1px solid #3A352E",
+    border: `1px solid ${ONE_EYRIE.border}`,
     borderRadius: "14px",
     padding: "18px",
-    background: "#211F1B",
+    background: ONE_EYRIE.surface,
     transition: SETTINGS_CARD_TRANSITION,
   } as const;
 
@@ -297,8 +296,8 @@ export default function InspectionTemplatesSection({
             marginBottom: "14px",
             padding: "12px 14px",
             borderRadius: "10px",
-            border: `1px solid ${GOLD}`,
-            color: GOLD,
+            border: `1px solid ${ONE_EYRIE.gold}`,
+            color: ONE_EYRIE.gold,
             fontWeight: 700,
           }}
         >
@@ -308,18 +307,18 @@ export default function InspectionTemplatesSection({
 
       <div
         style={{
-          border: `1px solid ${GOLD}`,
+          border: `1px solid ${ONE_EYRIE.gold}`,
           borderRadius: "16px",
           padding: "24px",
-          background: "#1A1815",
+          background: ONE_EYRIE.surfacePanel,
           marginBottom: "18px",
         }}
       >
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ color: GOLD, fontWeight: 800, fontSize: "18px" }}>
+          <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "18px" }}>
             One Eyrie Standard Library
           </div>
-          <p style={{ color: "#C9C9C9", margin: "8px 0 0", lineHeight: 1.6 }}>
+          <p style={{ color: ONE_EYRIE.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
             Built-in master templates ship with the app and cannot be edited.
             Activate a template to create your property copy in Supabase.
           </p>
@@ -342,13 +341,13 @@ export default function InspectionTemplatesSection({
                 style={standardCardBase}
                 {...settingsCardHoverHandlers()}
               >
-                <div style={{ color: "#fff", fontWeight: 800 }}>{standard.name}</div>
-                <div style={{ color: GOLD, fontSize: "12px", marginTop: "4px" }}>
+                <div style={{ color: ONE_EYRIE.text, fontWeight: 800 }}>{standard.name}</div>
+                <div style={{ color: ONE_EYRIE.gold, fontSize: "12px", marginTop: "4px" }}>
                   {standard.templateType} · Standard v{standard.version}
                 </div>
                 <div
                   style={{
-                    color: "#C9C9C9",
+                    color: ONE_EYRIE.textMuted,
                     fontSize: "13px",
                     marginTop: "10px",
                     lineHeight: 1.5,
@@ -356,7 +355,7 @@ export default function InspectionTemplatesSection({
                 >
                   {standard.description}
                 </div>
-                <div style={{ color: "#9CA3AF", fontSize: "12px", marginTop: "8px" }}>
+                <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "8px" }}>
                   {standard.categoryCount} categories · {standard.itemCount} items
                 </div>
 
@@ -428,7 +427,7 @@ export default function InspectionTemplatesSection({
         </div>
       </div>
 
-      <div style={{ color: GOLD, fontWeight: 800, fontSize: "15px", marginBottom: "12px" }}>
+      <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px", marginBottom: "12px" }}>
         Property Templates
       </div>
 
@@ -461,7 +460,7 @@ export default function InspectionTemplatesSection({
             >
               <div>
                 <div style={rowTitle}>{template.name}</div>
-                <div style={{ color: "#C9C9C9", fontSize: "12px", marginTop: "3px" }}>
+                <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", marginTop: "3px" }}>
                   {template.standard_key ? "Based on standard" : "Custom copy"} ·
                   Modified {formatTemplateDate(template.last_modified_at)}
                 </div>

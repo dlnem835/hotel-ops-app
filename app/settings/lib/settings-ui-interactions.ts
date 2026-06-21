@@ -53,6 +53,48 @@ export function resetButtonHover(
   e.currentTarget.style.color = "#FFFFFF";
 }
 
+export function forestOutlineHoverHandlers(
+  disabled = false
+): Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> {
+  if (disabled) return {};
+
+  return {
+    onMouseEnter: (e) => {
+      e.currentTarget.style.background = "rgba(28, 52, 40, 0.85)";
+      e.currentTarget.style.boxShadow = "0 0 14px rgba(61, 107, 79, 0.35)";
+      e.currentTarget.style.borderColor = "#4D8B66";
+      e.currentTarget.style.transform = "translateY(-1px)";
+    },
+    onMouseLeave: (e) => {
+      e.currentTarget.style.background = "transparent";
+      e.currentTarget.style.boxShadow = "none";
+      e.currentTarget.style.borderColor = "#3D6B4F";
+      e.currentTarget.style.transform = "translateY(0)";
+    },
+  };
+}
+
+export function forestHoverHandlers(
+  disabled = false
+): Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> {
+  if (disabled) return {};
+
+  return {
+    onMouseEnter: (e) => {
+      e.currentTarget.style.background = "#234A38";
+      e.currentTarget.style.boxShadow = "0 0 16px rgba(61, 107, 79, 0.45)";
+      e.currentTarget.style.borderColor = "#4D8B66";
+      e.currentTarget.style.transform = "translateY(-1px)";
+    },
+    onMouseLeave: (e) => {
+      e.currentTarget.style.background = "#1C3428";
+      e.currentTarget.style.boxShadow = "none";
+      e.currentTarget.style.borderColor = "#3D6B4F";
+      e.currentTarget.style.transform = "translateY(0)";
+    },
+  };
+}
+
 export function goldHoverHandlers(
   variant: GoldButtonVariant,
   disabled = false

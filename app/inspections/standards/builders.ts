@@ -51,10 +51,15 @@ export function countContentItems(content: PropertyTemplateContent): number {
   return content.categories.reduce((sum, cat) => sum + cat.items.length, 0);
 }
 
+/** Max points if every item passes; templates are not required to total 100. */
 export function countContentPoints(content: PropertyTemplateContent): number {
   return content.categories.reduce(
     (sum, cat) =>
-      sum + cat.items.reduce((itemSum, item) => itemSum + item.pointValue, 0),
+      sum +
+      cat.items.reduce(
+        (itemSum, item) => itemSum + Math.max(0, Number(item.pointValue) || 0),
+        0
+      ),
     0
   );
 }

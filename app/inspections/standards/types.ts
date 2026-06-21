@@ -79,5 +79,15 @@ export type StandardTemplateSummary = {
   description: string;
   categoryCount: number;
   itemCount: number;
+  /** Sum of item weights if all pass; not required to equal 100. */
   totalPoints: number;
+};
+
+/** Pass earns full item weight; fail earns 0; N/A is excluded from possible points. */
+export type InspectionItemOutcome = "pass" | "fail" | "na";
+
+export type InspectionScore = {
+  earnedPoints: number;
+  possiblePoints: number;
+  scorePercent: number | null;
 };

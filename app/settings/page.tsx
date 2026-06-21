@@ -163,7 +163,8 @@ useEffect(() => {
     {
       id: "templates" as SectionId,
       title: "Inspection Templates",
-      subtitle: "Create inspection templates and checklist categories.",
+      subtitle:
+        "Weighted checklists — score is earned ÷ possible × 100 (no fixed total).",
       icon: <ClipboardCheck size={26} />,
     },
     {
