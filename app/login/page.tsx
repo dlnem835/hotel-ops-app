@@ -1,7 +1,9 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { consumeInactivityLogoutMessage } from "@/app/lib/inactivity-logout";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +13,11 @@ const supabase = createClient(
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [logoutMessage, setLogoutMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLogoutMessage(consumeInactivityLogoutMessage());
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +61,23 @@ export default function LoginPage() {
       >
         <h1 style={{ marginTop: 0 }}>One Eyrie</h1>
         <p style={{ color: "#C8A96A" }}>Staff Login</p>
+
+        {logoutMessage && (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: `1px solid ${ONE_EYRIE.gold}`,
+              background: "rgba(200, 169, 106, 0.12)",
+              color: ONE_EYRIE.text,
+              fontSize: "14px",
+              lineHeight: 1.45,
+            }}
+          >
+            {logoutMessage}
+          </div>
+        )}
 
         <input
           value={username}

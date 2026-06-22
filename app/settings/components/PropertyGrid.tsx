@@ -6,6 +6,7 @@ import {
   getTileLabel,
   getTileStyle,
   GOLD,
+  sortPropertyGridAreas,
 } from "../lib/buildings-areas";
 
 type PropertyGridProps = {
@@ -54,15 +55,7 @@ export function StatusLegend() {
 }
 
 export default function PropertyGrid({ areas, onTileClick }: PropertyGridProps) {
-  const guestRooms = areas
-    .filter((area) => area.area_type === "Guest Room")
-    .sort((a, b) => Number(a.name) - Number(b.name));
-
-  const otherAreas = areas
-    .filter((area) => area.area_type !== "Guest Room")
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const sortedAreas = [...guestRooms, ...otherAreas];
+  const sortedAreas = sortPropertyGridAreas(areas);
 
   if (sortedAreas.length === 0) {
     return (

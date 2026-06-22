@@ -13,7 +13,7 @@ import {
   FLOOR_LOCATIONS,
 } from "../lib/buildings-types";
 import { FLAT_RED, FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
-import { formatSetupResult, GOLD, parseCsvRows } from "../lib/buildings-areas";
+import { formatSetupResult, formatStandardAreasResult, getMissingStandardAreas, GOLD, parseCsvRows } from "../lib/buildings-areas";
 import {
   applyGoldHover,
   forestHoverHandlers,
@@ -202,6 +202,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
   const [roomRanges, setRoomRanges] = useState<RoomRangeRow[]>([createRoomRange(0)]);
   const [addStandardAreas, setAddStandardAreas] = useState(true);
+  const [generateRooms, setGenerateRooms] = useState(true);
 
   const [importFileName, setImportFileName] = useState("");
   const [importPreview, setImportPreview] = useState<BuildingAreaInput[]>([]);
@@ -309,8 +310,19 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
   const someVisibleSelected =
     visibleSelectedCount > 0 && visibleSelectedCount < filteredAreas.length;
 
+  const hasExistingGuestRooms = useMemo(
+    () => areas.some((area) => area.area_type === "Guest Room"),
+    [areas]
+  );
+
+  const missingStandardAreas = useMemo(
+    () => getMissingStandardAreas(areas),
+    [areas]
+  );
+
   const hasValidRoomRanges = useMemo(
     () =>
+      generateRooms &&
       roomRanges.some((range) => {
         const start = Number(range.startRoom);
         const end = Number(range.endRoom);
@@ -321,7 +333,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           !Number.isNaN(end)
         );
       }),
-    [roomRanges]
+    [roomRanges, generateRooms]
   );
 
   const hasValidCsvImport =
@@ -333,7 +345,22 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
     hasValidRoomRanges || addStandardAreas || hasValidCsvImport;
 
   function openWizard() {
-    setRoomRanges([createRoomRange(0)]);
+    const hasRooms = areas.some((area) => area.area_type === "Guest Room");
+    setGenerateRooms(!hasRooms);
+    setRoomRanges(
+      hasRooms
+        ? [
+            {
+              id: `range-${Date.now()}`,
+              startRoom: "",
+              endRoom: "",
+              floor: "Floor 1",
+              areaType: "Guest Room" as AreaType,
+              skipRooms: "",
+            },
+          ]
+        : [createRoomRange(0)]
+    );
     setAddStandardAreas(true);
     resetWizardImport();
     setWizardOpen(true);
@@ -367,9 +394,45 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
   function closeWizard() {
     setWizardOpen(false);
+    setGenerateRooms(true);
     setRoomRanges([createRoomRange(0)]);
     setAddStandardAreas(true);
     resetWizardImport();
+  }
+
+  async function addMissingStandardAreas() {
+    if (missingStandardAreas.length === 0) {
+      showToast("All standard hotel areas are already in your property.", "warning");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch("/api/buildings-areas/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "standard" }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to add standard areas");
+      }
+
+      await fetchAreas();
+      showToast(
+        formatStandardAreasResult(
+          result.created ?? 0,
+          result.skipped ?? 0,
+          result.addedNames ?? []
+        ),
+        result.created > 0 ? "success" : "warning"
+      );
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : "Unable to add standard areas");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function updateDraft<K extends keyof AreaDraft>(key: K, value: AreaDraft[K]) {
@@ -566,24 +629,26 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
   async function runWizard() {
     setSaving(true);
 
-    const validRanges = roomRanges
-      .filter((range) => {
-        const start = Number(range.startRoom);
-        const end = Number(range.endRoom);
-        return (
-          range.startRoom.trim() !== "" &&
-          range.endRoom.trim() !== "" &&
-          !Number.isNaN(start) &&
-          !Number.isNaN(end)
-        );
-      })
-      .map((range) => ({
-        startRoom: Number(range.startRoom),
-        endRoom: Number(range.endRoom),
-        floor: range.floor,
-        areaType: range.areaType,
-        skipRooms: range.skipRooms.trim(),
-      }));
+    const validRanges = generateRooms
+      ? roomRanges
+          .filter((range) => {
+            const start = Number(range.startRoom);
+            const end = Number(range.endRoom);
+            return (
+              range.startRoom.trim() !== "" &&
+              range.endRoom.trim() !== "" &&
+              !Number.isNaN(start) &&
+              !Number.isNaN(end)
+            );
+          })
+          .map((range) => ({
+            startRoom: Number(range.startRoom),
+            endRoom: Number(range.endRoom),
+            floor: range.floor,
+            areaType: range.areaType,
+            skipRooms: range.skipRooms.trim(),
+          }))
+      : [];
 
     const body = {
       action: "wizard",
@@ -687,9 +752,30 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
         <button
           type="button"
           style={{ ...secondaryButton, ...buttonBase }}
+          onClick={() => void addMissingStandardAreas()}
+          disabled={saving}
+          title={
+            missingStandardAreas.length === 0
+              ? "All standard hotel areas are already added"
+              : `Add ${missingStandardAreas.length} missing standard area${
+                  missingStandardAreas.length === 1 ? "" : "s"
+                } without changing guest rooms`
+          }
+          {...secondaryHoverHandlers(saving)}
+        >
+          <Plus size={16} />
+          Add Standard Areas
+          {missingStandardAreas.length > 0
+            ? ` (${missingStandardAreas.length})`
+            : ""}
+        </button>
+
+        <button
+          type="button"
+          style={{ ...secondaryButton, ...buttonBase }}
           onClick={openWizard}
           disabled={saving}
-          {...secondaryHoverHandlers()}
+          {...secondaryHoverHandlers(saving)}
         >
           <Wand2 size={16} />
           Bulk Manage
@@ -1041,10 +1127,31 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
             </div>
 
             <p style={{ color: "#C9C9C9", marginTop: 0 }}>
-              Set up your hotel in one step — generate rooms, add standard areas, or import a CSV.
+              Set up your hotel in one step — generate rooms, add standard areas, or
+              import a CSV. Existing locations are never changed or removed.
             </p>
 
             <div style={formStack}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={generateRooms}
+                  onChange={(e) => setGenerateRooms(e.target.checked)}
+                />
+                Generate guest rooms
+                {hasExistingGuestRooms ? " (optional — existing rooms are kept)" : ""}
+              </label>
+
+              {generateRooms && (
+                <>
               <div
                 style={{
                   display: "flex",
@@ -1189,6 +1296,8 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                   margin: "6px 0",
                 }}
               />
+                </>
+              )}
 
               <label
                 style={{
@@ -1206,6 +1315,15 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 />
                 Add Standard Hotel Areas (Lobby, Pool, Hallways, etc.)
               </label>
+              <p style={{ color: "#9CA3AF", margin: "6px 0 0", fontSize: "12px" }}>
+                Adds only missing areas from the One Eyrie standard list — including
+                Hotel / Building / Main — without changing existing guest rooms.
+                {missingStandardAreas.length > 0
+                  ? ` ${missingStandardAreas.length} area${
+                      missingStandardAreas.length === 1 ? "" : "s"
+                    } available to add.`
+                  : " All standard areas are already present."}
+              </p>
 
               <div
                 style={{

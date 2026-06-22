@@ -9,7 +9,10 @@ export const GOLD = "#C8A96A";
 export const ROW = "#302D28";
 export const BLACK = "#111111";
 
+export const PROPERTY_UTILITY_AREA_NAME = "Hotel / Building / Main";
+
 export const STANDARD_HOTEL_AREAS: BuildingAreaInput[] = [
+  { name: "Hotel / Building / Main", area_type: "Back Of House", floor_location: "Building", status: "Active" },
   { name: "Lobby", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
   { name: "Breakfast Area", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
   { name: "Market Area", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
@@ -100,6 +103,24 @@ export function getTileLabel(name: string, areaType: AreaType): string {
   return name;
 }
 
+export function sortPropertyGridAreas<T extends { name: string; area_type: AreaType }>(
+  areas: T[]
+): T[] {
+  const utility = areas.filter((area) => area.name === PROPERTY_UTILITY_AREA_NAME);
+  const guestRooms = areas
+    .filter((area) => area.area_type === "Guest Room")
+    .sort((a, b) => Number(a.name) - Number(b.name));
+  const otherAreas = areas
+    .filter(
+      (area) =>
+        area.area_type !== "Guest Room" &&
+        area.name !== PROPERTY_UTILITY_AREA_NAME
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...utility, ...guestRooms, ...otherAreas];
+}
+
 export function getTileStyle(areaType: AreaType, status: AreaStatus) {
   const forestBg = "rgba(28, 52, 40, 0.72)";
   const forestBgMuted = "rgba(24, 44, 34, 0.55)";
@@ -173,6 +194,41 @@ export function formatSetupResult(created: number, skipped: number): string {
     return `Created ${created} location${created === 1 ? "" : "s"}. Skipped ${skipped} duplicate${skipped === 1 ? "" : "s"}.`;
   }
   return `Created ${created} location${created === 1 ? "" : "s"}.`;
+}
+
+export function formatStandardAreasResult(
+  created: number,
+  skipped: number,
+  addedNames: string[] = []
+): string {
+  if (created === 0) {
+    return "All standard hotel areas are already in your property.";
+  }
+
+  const preview =
+    addedNames.length > 0
+      ? ` Added: ${addedNames.slice(0, 5).join(", ")}${
+          addedNames.length > 5 ? ` +${addedNames.length - 5} more` : ""
+        }.`
+      : "";
+
+  if (skipped > 0) {
+    return `Added ${created} standard area${created === 1 ? "" : "s"}.${preview} Skipped ${skipped} existing.`;
+  }
+
+  return `Added ${created} standard area${created === 1 ? "" : "s"}.${preview}`;
+}
+
+export function getMissingStandardAreas(
+  existing: Array<{ name: string; area_type: AreaType }>
+): BuildingAreaInput[] {
+  const existingKeys = new Set(
+    existing.map((row) => getNameKey(row.name, row.area_type))
+  );
+
+  return STANDARD_HOTEL_AREAS.filter(
+    (area) => !existingKeys.has(getNameKey(area.name, area.area_type))
+  );
 }
 
 function normalizeStatus(value: string): AreaStatus | null {

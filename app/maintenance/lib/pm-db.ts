@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { derivePmCategory } from "./pm-category";
 import {
   AreaPmGridSummary,
   PmAssignmentSchedule,
@@ -246,21 +247,53 @@ export async function fetchPmTemplateById(
   return { template, assignment };
 }
 
+async function resolveTemplateCategory(
+  supabase: SupabaseClient,
+  input: PmTemplateInput
+): Promise<PmTemplate["category"]> {
+  if (input.category) {
+    return input.category;
+  }
+
+  let areaType: string | null = null;
+  let areaName: string | null = null;
+
+  if (input.assignment.area_id) {
+    const { data } = await supabase
+      .from("buildings_and_areas")
+      .select("area_type, name")
+      .eq("id", input.assignment.area_id)
+      .maybeSingle();
+
+    areaType = data?.area_type ? String(data.area_type) : null;
+    areaName = data?.name ? String(data.name) : null;
+  }
+
+  return derivePmCategory({
+    areaType,
+    areaName,
+    customAreaLabel: input.assignment.asset_label,
+    templateName: input.name,
+  });
+}
+
 export async function createPmTemplate(
   supabase: SupabaseClient,
   input: PmTemplateInput
 ) {
+  const category = await resolveTemplateCategory(supabase, input);
+
   const { data: templateRow, error: templateError } = await supabase
     .from("pm_templates")
     .insert({
       name: input.name,
       description: input.description || null,
-      category: input.category,
+      category,
       frequency: input.frequency,
       estimated_minutes: input.estimated_minutes ?? null,
-      assigned_role: input.assigned_role || null,
+      assigned_role: input.assigned_role || "Maintenance",
       assigned_member_id: input.assigned_member_id || null,
-      applies_to: input.applies_to,
+      applies_to: input.applies_to || "asset",
       checklist: input.checklist,
       status: input.status || "Active",
     })
@@ -303,17 +336,19 @@ export async function updatePmTemplate(
   id: number,
   input: PmTemplateInput
 ) {
+  const category = await resolveTemplateCategory(supabase, input);
+
   const { error: templateError } = await supabase
     .from("pm_templates")
     .update({
       name: input.name,
       description: input.description || null,
-      category: input.category,
+      category,
       frequency: input.frequency,
       estimated_minutes: input.estimated_minutes ?? null,
-      assigned_role: input.assigned_role || null,
+      assigned_role: input.assigned_role || "Maintenance",
       assigned_member_id: input.assigned_member_id || null,
-      applies_to: input.applies_to,
+      applies_to: input.applies_to || "asset",
       checklist: input.checklist,
       status: input.status || "Active",
       updated_at: new Date().toISOString(),

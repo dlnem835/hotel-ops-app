@@ -56,7 +56,7 @@ async function insertRecords(
   const newRecords = toInsert.map(normalizeRecord);
 
   if (newRecords.length === 0) {
-    return { created: 0, skipped, areas: [] };
+    return { created: 0, skipped, areas: [], addedNames: [] as string[] };
   }
 
   const { data, error } = await supabaseAdmin
@@ -72,6 +72,7 @@ async function insertRecords(
     created: data?.length || 0,
     skipped,
     areas: data || [],
+    addedNames: toInsert.map((record) => record.name),
   };
 }
 

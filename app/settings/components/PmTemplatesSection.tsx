@@ -14,6 +14,7 @@ import {
   PmFrequency,
   PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
+import { formatPmAreaLabel } from "@/app/maintenance/lib/pm-category";
 import { normalizeChecklist } from "@/app/maintenance/lib/pm-checklist-draft";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -29,9 +30,10 @@ type PmTemplatesSectionProps = {
 };
 
 function areaLabel(schedule: PmAssignmentSchedule): string {
-  if (schedule.areaName) return schedule.areaName;
-  if (schedule.assetLabel) return schedule.assetLabel;
-  return "Entire Property";
+  return formatPmAreaLabel({
+    areaName: schedule.areaName,
+    customAreaLabel: schedule.assetLabel,
+  });
 }
 
 export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) {
@@ -113,7 +115,6 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         entry.templateName,
         entry.areaName,
         entry.assetLabel,
-        entry.category,
         PM_FREQUENCY_LABELS[entry.frequency],
       ]
         .filter(Boolean)
@@ -162,11 +163,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         id: templateId,
         name: result.template.name,
         description: result.template.description,
-        category: result.template.category,
         frequency: result.template.frequency,
-        assigned_role: result.template.assigned_role,
-        assigned_member_id: result.template.assigned_member_id,
-        applies_to: result.template.applies_to,
         checklist: normalizeChecklist(result.template.checklist),
         status: result.template.status,
         assignment: result.assignment
@@ -405,7 +402,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                         >
                           <div>
                             <div style={rowTitle}>{schedule.templateName}</div>
-                            <div style={rowText}>{schedule.category}</div>
+                            <div style={rowText}>
+                              {PM_FREQUENCY_LABELS[schedule.frequency]}
+                            </div>
                           </div>
                           <div style={rowText}>{areaLabel(schedule)}</div>
                           <div style={rowText}>

@@ -154,12 +154,12 @@ export type AreaPmGridSummary = {
 export type PmTemplateInput = {
   name: string;
   description?: string | null;
-  category: PmCategory;
+  category?: PmCategory;
   frequency: PmFrequency;
   estimated_minutes?: number | null;
   assigned_role?: string | null;
   assigned_member_id?: string | null;
-  applies_to: PmAppliesTo;
+  applies_to?: PmAppliesTo;
   checklist: PmChecklist;
   status?: PmTemplateStatus;
   assignment: {
