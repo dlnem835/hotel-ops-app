@@ -22,12 +22,11 @@ import {
 import {
   ArrowLeft,
   Building2,
-  CalendarClock,
   ChevronRight,
   ClipboardCheck,
   Pencil,
   Plus,
-  Repeat,
+  Wrench,
   Search,
   Settings,
   ShieldCheck,
@@ -36,6 +35,7 @@ import {
   X,
 } from "lucide-react";
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
+import PmTemplatesSection from "./components/PmTemplatesSection";
 import RoomsAreasSection from "./components/RoomsAreasSection";
 
 const supabase = createClient(
@@ -49,10 +49,13 @@ type SectionId =
   | "team"
   | "roomsAreas"
   | "templates"
-  | "tasks"
+  | "pmTemplates"
   | "roles";
 
-type ModalType = Exclude<SectionId, "home" | "roomsAreas" | "templates"> | null;
+type ModalType = Exclude<
+  SectionId,
+  "home" | "roomsAreas" | "templates" | "pmTemplates"
+> | null;
 
 type AnyRecord = {
   id: number;
@@ -104,24 +107,6 @@ useEffect(() => {
   checkAuth();
 }, []);
 
-  const [tasks, setTasks] = useState<AnyRecord[]>([
-    {
-      id: 1,
-      name: "RPM Inspection",
-      frequency: "Every 90 Days",
-      assignedTo: "Housekeeping",
-      nextDue: "2026-07-01",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Pool Inspection",
-      frequency: "Daily",
-      assignedTo: "Maintenance",
-      nextDue: "2026-06-09",
-      status: "Active",
-    },
-  ]);
 
   const [roles, setRoles] = useState<AnyRecord[]>([
     {
@@ -183,10 +168,11 @@ useEffect(() => {
       icon: <ClipboardCheck size={26} />,
     },
     {
-      id: "tasks" as SectionId,
-      title: "Recurring Tasks / Scheduler",
-      subtitle: "Set up recurring hotel tasks like Outlook calendar events.",
-      icon: <Repeat size={26} />,
+      id: "pmTemplates" as SectionId,
+      title: "PM Templates",
+      subtitle:
+        "Preventive maintenance checklists, schedules, and area assignments.",
+      icon: <Wrench size={26} />,
     },
     {
       id: "roles" as SectionId,
@@ -202,7 +188,6 @@ useEffect(() => {
     let rows: AnyRecord[] = [];
 
     if (activeSection === "team") rows = teamMembers;
-    if (activeSection === "tasks") rows = tasks;
     if (activeSection === "roles") rows = roles;
 
     if (!search.trim()) return rows;
@@ -210,7 +195,7 @@ useEffect(() => {
     return rows.filter((item) =>
       JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
     );
-  }, [activeSection, search, teamMembers, tasks, roles]);
+  }, [activeSection, search, teamMembers, roles]);
 
   function openNew(type: ModalType) {
     setModalType(type);
@@ -268,16 +253,6 @@ useEffect(() => {
         can_login: "false",
         username: "",
         tempPassword: "",
-      };
-    }
-
-    if (type === "tasks") {
-      return {
-        name: "",
-        frequency: "Weekly",
-        assignedTo: "Maintenance",
-        nextDue: getLocalDateString(),
-        status: "Active",
       };
     }
 
@@ -348,14 +323,6 @@ async function saveItem() {
     id: editingId ?? Date.now(),
   };
 
-  if (modalType === "tasks") {
-    setTasks((prev) =>
-      editingId
-        ? prev.map((item) => (item.id === editingId ? newItem : item))
-        : [...prev, newItem]
-    );
-  }
-
   if (modalType === "roles") {
     setRoles((prev) =>
       editingId
@@ -374,10 +341,6 @@ async function saveItem() {
       setTeamMembers((prev) => prev.filter((item) => item.id !== id));
     }
 
-    if (type === "tasks") {
-      setTasks((prev) => prev.filter((item) => item.id !== id));
-    }
-
     if (type === "roles") {
       setRoles((prev) => prev.filter((item) => item.id !== id));
     }
@@ -385,7 +348,6 @@ async function saveItem() {
 
   function getNewButtonLabel() {
     if (activeSection === "team") return "New User";
-    if (activeSection === "tasks") return "New Task";
     if (activeSection === "roles") return "New Role";
 
     return "New";
@@ -449,20 +411,15 @@ async function saveItem() {
               {activeSection === "team" && (
                 <div style={rowSub}>{item.email || "No email"}</div>
               )}
-              {activeSection === "tasks" && (
-                <div style={rowSub}>Next due: {item.nextDue}</div>
-              )}
             </div>
 
             <div style={rowText}>
               {activeSection === "team" && item.role}
-              {activeSection === "tasks" && item.frequency}
               {activeSection === "roles" && item.access}
             </div>
 
             <div style={rowText}>
               {activeSection === "team" && item.department}
-              {activeSection === "tasks" && item.assignedTo}
               {activeSection === "roles" && "System"}
             </div>
 
@@ -618,64 +575,6 @@ async function saveItem() {
       );
     }
 
-    if (modalType === "tasks") {
-      return (
-        <>
-          <input
-            value={draft.name || ""}
-            onChange={(e) => updateDraft("name", e.target.value)}
-            placeholder="Task Name"
-            style={input}
-          />
-
-          <div style={twoCol}>
-            <select
-              value={draft.frequency || "Weekly"}
-              onChange={(e) => updateDraft("frequency", e.target.value)}
-              style={input}
-            >
-              <option>Daily</option>
-              <option>Weekly</option>
-              <option>Monthly</option>
-              <option>Quarterly</option>
-              <option>Semi Annual</option>
-              <option>Annual</option>
-              <option>Every 90 Days</option>
-            </select>
-
-            <select
-              value={draft.assignedTo || "Maintenance"}
-              onChange={(e) => updateDraft("assignedTo", e.target.value)}
-              style={input}
-            >
-              <option>Management</option>
-              <option>Front Desk</option>
-              <option>Housekeeping</option>
-              <option>Maintenance</option>
-              <option>Sales</option>
-            </select>
-          </div>
-
-          <input
-            type="date"
-            value={draft.nextDue || getLocalDateString()}
-            onChange={(e) => updateDraft("nextDue", e.target.value)}
-            style={input}
-          />
-
-          <select
-            value={draft.status || "Active"}
-            onChange={(e) => updateDraft("status", e.target.value)}
-            style={input}
-          >
-            <option>Active</option>
-            <option>Paused</option>
-            <option>Inactive</option>
-          </select>
-        </>
-      );
-    }
-
     if (modalType === "roles") {
       return (
         <>
@@ -822,6 +721,33 @@ async function saveItem() {
                   modalFooter,
                 }}
               />
+            ) : activeSection === "pmTemplates" ? (
+              <PmTemplatesSection
+                styles={{
+                  sectionPanel,
+                  sectionToolbar,
+                  searchWrap,
+                  searchInput,
+                  primaryButton,
+                  secondaryButton,
+                  tableHeader,
+                  tableRow,
+                  rowTitle,
+                  rowText,
+                  statusPill,
+                  actionCell,
+                  iconButton,
+                  emptyState,
+                  modalOverlay,
+                  modalBox,
+                  modalHeader,
+                  closeButton,
+                  formStack,
+                  twoCol,
+                  input,
+                  modalFooter,
+                }}
+              />
             ) : (
               renderTable()
             )}
@@ -835,7 +761,6 @@ async function saveItem() {
                 <h2 style={{ margin: 0 }}>
                   {editingId ? "Edit" : "New"}{" "}
                   {modalType === "team" && "Team Member"}
-                  {modalType === "tasks" && "Recurring Task"}
                   {modalType === "roles" && "Role"}
                 </h2>
 

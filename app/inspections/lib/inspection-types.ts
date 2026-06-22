@@ -66,6 +66,8 @@ export type RoomGridTile = {
   gridState: GridState;
   scorePercent: number | null;
   lastCompletedAt: string | null;
+  operationalLastCompletedAt: string | null;
+  neverInspectedForProgram: boolean;
   openDeficiencyCount: number;
   neverInspectedInPeriod: boolean;
   inspectorName: string | null;
@@ -84,14 +86,9 @@ export type HousekeeperRanking = {
 export type PriorityQueueItem = {
   areaId: number;
   name: string;
-  priorityScore: number;
+  lastCompletedAt: string | null;
   daysSinceInspection: number | null;
   neverInspected: boolean;
-  lastScorePercent: number | null;
-  openDeficiencyCount: number;
-  recurringDeficiencyCount: number;
-  lastFailedItemCount: number;
-  reasons: string[];
 };
 
 export type InspectionSession = {

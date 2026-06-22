@@ -1,6 +1,7 @@
 "use client";
 
 import { PriorityQueueItem } from "../lib/inspection-types";
+import { formatInspectionAgeLabel } from "../lib/inspection-age";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestOutlineHoverHandlers,
@@ -14,15 +15,7 @@ type PriorityQueuePanelProps = {
 };
 
 function statusLine(item: PriorityQueueItem): string {
-  if (item.neverInspected) {
-    return "Never inspected";
-  }
-  if (item.daysSinceInspection !== null && item.daysSinceInspection > 0) {
-    return `Last inspected ${item.daysSinceInspection} day${
-      item.daysSinceInspection === 1 ? "" : "s"
-    } ago`;
-  }
-  return "Never inspected";
+  return formatInspectionAgeLabel(item.neverInspected, item.lastCompletedAt);
 }
 
 export default function PriorityQueuePanel({
@@ -47,7 +40,7 @@ export default function PriorityQueuePanel({
           Priority Queue
         </div>
         <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
-          {program === "VR" ? "Vacant Ready / Stayover" : "RPM"} · Recommended next
+          {program === "VR" ? "Vacant Ready / Stayover" : "RPM"} · Most overdue
         </div>
       </div>
 
@@ -88,11 +81,6 @@ export default function PriorityQueuePanel({
                 >
                   {statusLine(item)}
                 </div>
-                {item.reasons.length > 0 && (
-                  <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "4px" }}>
-                    {item.reasons.join(" · ")}
-                  </div>
-                )}
               </div>
               <button
                 type="button"

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { RoomGridTile } from "../lib/inspection-types";
 import { formatScoreLabel } from "../lib/grid-state";
+import { formatInspectionAgeLabel } from "../lib/inspection-age";
 import { getGridTileStyle } from "../lib/grid-styles";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_CARD_TRANSITION } from "@/app/settings/lib/settings-ui-interactions";
@@ -21,26 +22,21 @@ const LEGEND = [
   { label: "Out of Service", state: "oos" as const },
 ];
 
-function formatTooltipDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function buildTooltipLines(room: RoomGridTile): string[] {
   const lines = [`Room ${room.name}`];
 
-  if (room.neverInspectedInPeriod || !room.lastCompletedAt) {
-    lines.push("Never inspected");
+  lines.push(
+    formatInspectionAgeLabel(
+      room.neverInspectedForProgram,
+      room.operationalLastCompletedAt
+    )
+  );
+
+  if (room.neverInspectedInPeriod) {
+    lines.push("Not inspected this period");
     return lines;
   }
 
-  lines.push(`Last inspection: ${formatTooltipDate(room.lastCompletedAt)}`);
   lines.push(`Score: ${formatScoreLabel(room.scorePercent)}`);
   lines.push(`Inspector: ${room.inspectorName || "—"}`);
   lines.push(`Associate: ${room.associateName || "—"}`);

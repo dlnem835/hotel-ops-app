@@ -391,6 +391,13 @@ export async function buildDashboard(
       const programSummary = summaries.find((entry) =>
         programMatchesDashboard(String(entry.inspection_program) as never, program)
       );
+      const neverInspectedForProgram = programSummary
+        ? Boolean(programSummary.never_inspected) ||
+          !programSummary.last_completed_at
+        : true;
+      const operationalLastCompletedAt = programSummary?.last_completed_at
+        ? String(programSummary.last_completed_at)
+        : null;
       const openDeficiencyCount = summaries.reduce(
         (sum, entry) => sum + Number(entry.open_deficiency_count || 0),
         0
@@ -409,6 +416,8 @@ export async function buildDashboard(
         }),
         scorePercent: inPeriod?.scorePercent ?? null,
         lastCompletedAt: inPeriod?.completed_at ?? null,
+        operationalLastCompletedAt,
+        neverInspectedForProgram,
         openDeficiencyCount,
         neverInspectedInPeriod: !inPeriod,
         inspectorName: inPeriod?.inspector_id
@@ -439,13 +448,6 @@ export async function buildDashboard(
       last_completed_at: match?.last_completed_at
         ? String(match.last_completed_at)
         : null,
-      last_score_percent:
-        match?.last_score_percent === null || match?.last_score_percent === undefined
-          ? null
-          : Number(match.last_score_percent),
-      last_failed_item_count: Number(match?.last_failed_item_count || 0),
-      open_deficiency_count: Number(match?.open_deficiency_count || 0),
-      recurring_deficiency_count: Number(match?.recurring_deficiency_count || 0),
       never_inspected: match ? Boolean(match.never_inspected) : true,
     };
   });

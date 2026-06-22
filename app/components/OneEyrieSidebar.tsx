@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { label: "Lost & Found", href: "/" },
   { label: "Pass-On Log", href: "/pass-on-log" },
   { label: "Inspections", href: "/inspections" },
-  { label: "Maintenance", href: "#" },
+  { label: "Maintenance", href: "/maintenance" },
   { label: "Settings", href: "/settings" },
 ] as const;
 

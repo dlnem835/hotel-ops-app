@@ -476,29 +476,28 @@ export default function InspectionSessionPage() {
                 const key = itemKey(category.key, item.key);
                 const outcome = responses[key];
                 return (
-                  <div
-                    key={item.key}
-                    className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
-                    style={{
-                      padding: "12px",
-                      borderRadius: "8px",
-                      marginBottom: "8px",
-                      background: index % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
-                      border: `1px solid ${
-                        outcome === "fail" ? "#8B5252" : ONE_EYRIE.borderDivider
-                      }`,
-                    }}
-                  >
+                  <div key={item.key} style={{ marginBottom: "8px" }}>
                     <div
-                      className={isMobileLayout ? "inspection-mobile-item-row" : undefined}
+                      className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
                       style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        background: index % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
+                        border: `1px solid ${
+                          outcome === "fail" ? "#8B5252" : ONE_EYRIE.borderDivider
+                        }`,
                       }}
                     >
+                      <div
+                        className={isMobileLayout ? "inspection-mobile-item-row" : undefined}
+                        style={{
+                          display: "flex",
+                          gap: "12px",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          flexWrap: "wrap",
+                        }}
+                      >
                       <div style={{ flex: 1, minWidth: "200px" }}>
                         <div
                           className={isMobileLayout ? "inspection-mobile-item-label" : undefined}
@@ -574,6 +573,7 @@ export default function InspectionSessionPage() {
                           {outcome === "na" ? "N/A" : outcome}
                         </div>
                       )}
+                    </div>
                     </div>
 
                     {outcome === "fail" && (

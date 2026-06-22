@@ -1,12 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { Camera, Loader2, X } from "lucide-react";
-import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  forestOutlineHoverHandlers,
-  SETTINGS_BUTTON_BASE,
-} from "@/app/settings/lib/settings-ui-interactions";
+import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
+import { useInspectionBreakpoint } from "../lib/use-inspection-breakpoint";
 
 type FailedItemDetailsProps = {
   notes: string;
@@ -18,6 +16,9 @@ type FailedItemDetailsProps = {
   onPhotoRemove: () => void;
 };
 
+const NOTE_MAX_LENGTH = 240;
+const PHOTO_TOOLTIP = "Add photo (optional)";
+
 export default function FailedItemDetails({
   notes,
   photoUrl,
@@ -27,8 +28,11 @@ export default function FailedItemDetails({
   onPhotoSelect,
   onPhotoRemove,
 }: FailedItemDetailsProps) {
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const breakpoint = useInspectionBreakpoint();
+  const preferCamera = breakpoint === "mobile" || breakpoint === "tablet";
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -50,164 +54,187 @@ export default function FailedItemDetails({
     onPhotoRemove();
   }
 
+  function openPhotoPicker() {
+    if (uploading) return;
+    if (preferCamera) {
+      cameraInputRef.current?.click();
+      return;
+    }
+    fileInputRef.current?.click();
+  }
+
   const displayUrl = photoUrl || previewUrl;
+
+  const noteFieldStyle: CSSProperties = {
+    width: "100%",
+    minWidth: 0,
+    height: "44px",
+    background: ONE_EYRIE.black,
+    color: ONE_EYRIE.text,
+    border: `1px solid ${ONE_EYRIE.borderInput}`,
+    borderRadius: "8px",
+    padding: "0 40px 0 12px",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    lineHeight: 1.3,
+    boxSizing: "border-box",
+  };
 
   return (
     <div
+      className="inspection-failed-details"
       style={{
-        marginTop: "12px",
-        padding: "12px",
-        borderRadius: "10px",
-        border: `1px solid ${FLAT_RED.border}`,
-        background: FLAT_RED.bg,
+        marginTop: "8px",
+        padding: "8px 10px",
+        borderRadius: "8px",
+        border: `1px solid ${ONE_EYRIE.border}`,
+        borderLeft: `3px solid ${ONE_EYRIE.gold}`,
+        background: ONE_EYRIE.surfacePanel,
       }}
     >
-      <div
-        style={{
-          color: FLAT_RED.text,
-          fontWeight: 800,
-          fontSize: "12px",
-          marginBottom: "10px",
-          letterSpacing: "0.02em",
-          textTransform: "uppercase",
-        }}
-      >
-        Deficiency Details
-      </div>
-
-      <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-          Comment
-        </span>
-        {readOnly ? (
+      {readOnly ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <div
             style={{
               color: notes ? ONE_EYRIE.text : ONE_EYRIE.textMuted,
               fontSize: "13px",
-              lineHeight: 1.5,
-              whiteSpace: "pre-wrap",
+              lineHeight: 1.35,
             }}
           >
-            {notes || "No comment provided."}
+            {notes || "No deficiency note."}
           </div>
-        ) : (
-          <textarea
-            value={notes}
-            onChange={(event) => onNotesChange(event.target.value)}
-            placeholder="Describe the deficiency..."
-            rows={3}
-            style={{
-              width: "100%",
-              background: ONE_EYRIE.black,
-              color: ONE_EYRIE.text,
-              border: `1px solid ${ONE_EYRIE.borderInput}`,
-              borderRadius: "8px",
-              padding: "10px 12px",
-              resize: "vertical",
-              fontFamily: "inherit",
-              fontSize: "13px",
-              lineHeight: 1.45,
-            }}
-          />
-        )}
-      </label>
-
-      <div style={{ marginTop: "12px" }}>
-        <div
-          style={{
-            color: ONE_EYRIE.textSubtle,
-            fontSize: "12px",
-            fontWeight: 700,
-            marginBottom: "8px",
-          }}
-        >
-          Photo {readOnly ? "" : "(optional)"}
-        </div>
-
-        {displayUrl ? (
-          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-            <a
-              href={displayUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: "block", flexShrink: 0 }}
-            >
+          {displayUrl ? (
+            <a href={displayUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block" }}>
               <img
                 src={displayUrl}
                 alt="Deficiency photo"
+                className="inspection-failed-details-thumb"
                 style={{
-                  width: "96px",
-                  height: "96px",
+                  width: "44px",
+                  height: "44px",
                   objectFit: "cover",
-                  borderRadius: "8px",
+                  borderRadius: "6px",
                   border: `1px solid ${ONE_EYRIE.border}`,
                 }}
               />
             </a>
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                disabled={uploading}
-                style={{
-                  ...SETTINGS_BUTTON_BASE,
-                  background: "transparent",
-                  border: `1px solid ${FLAT_RED.border}`,
-                  color: FLAT_RED.text,
-                  borderRadius: "8px",
-                  padding: "6px 10px",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  opacity: uploading ? 0.6 : 1,
-                }}
-              >
-                <X size={14} />
-                Remove
-              </button>
-            )}
-          </div>
-        ) : readOnly ? (
-          <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px" }}>No photo attached.</div>
-        ) : (
-          <>
+          ) : (
+            <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px" }}>No photo attached.</div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="inspection-failed-details-field" style={{ position: "relative" }}>
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-              capture="environment"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
+              type="text"
+              value={notes}
+              maxLength={NOTE_MAX_LENGTH}
+              onChange={(event) => onNotesChange(event.target.value)}
+              placeholder="Brief deficiency note…"
+              className={
+                displayUrl
+                  ? "inspection-failed-details-note inspection-failed-details-note--has-photo"
+                  : "inspection-failed-details-note"
+              }
+              style={noteFieldStyle}
             />
+
+            {displayUrl && (
+              <div className="inspection-failed-details-thumb-wrap">
+                <a
+                  href={displayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="View photo"
+                  style={{ display: "block", lineHeight: 0 }}
+                >
+                  <img
+                    src={displayUrl}
+                    alt="Deficiency photo"
+                    className="inspection-failed-details-thumb"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      border: `1px solid ${ONE_EYRIE.border}`,
+                    }}
+                  />
+                </a>
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  disabled={uploading}
+                  title="Remove photo"
+                  aria-label="Remove photo"
+                  style={{
+                    ...SETTINGS_BUTTON_BASE,
+                    position: "absolute",
+                    top: "-6px",
+                    right: "-6px",
+                    width: "16px",
+                    height: "16px",
+                    padding: 0,
+                    borderRadius: "999px",
+                    border: `1px solid ${FLAT_RED.border}`,
+                    background: FLAT_RED.bg,
+                    color: FLAT_RED.text,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: uploading ? 0.6 : 1,
+                  }}
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
-              className="inspection-failed-photo-btn"
-              onClick={() => fileInputRef.current?.click()}
+              className="inspection-failed-photo-icon-btn"
+              onClick={openPhotoPicker}
               disabled={uploading}
+              title={PHOTO_TOOLTIP}
+              aria-label={PHOTO_TOOLTIP}
               style={{
                 ...SETTINGS_BUTTON_BASE,
+                width: "32px",
+                height: "32px",
+                padding: 0,
+                border: "none",
+                borderRadius: "6px",
                 background: "transparent",
-                border: `1px solid ${FOREST.border}`,
-                color: FOREST.text,
-                borderRadius: "8px",
-                padding: "8px 12px",
-                fontSize: "12px",
-                fontWeight: 800,
+                color: displayUrl ? ONE_EYRIE.goldLight : ONE_EYRIE.gold,
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                justifyContent: "center",
                 opacity: uploading ? 0.6 : 1,
               }}
-              {...forestOutlineHoverHandlers(uploading)}
             >
-              {uploading ? <Loader2 size={14} /> : <Camera size={14} />}
-              {uploading ? "Uploading..." : "Add Photo"}
+              {uploading ? <Loader2 size={16} className="inspection-failed-spin" /> : <Camera size={16} />}
             </button>
-          </>
-        )}
-      </div>
+          </div>
+
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+            aria-hidden
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+            aria-hidden
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -501,34 +501,29 @@ export default function CompletedInspectionReview({
                 if (!outcome) return null;
 
                 return (
-                  <div
-                    key={item.key}
-                    className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
-                    style={{
-                      padding: "12px 14px",
-                      borderRadius: "10px",
-                      marginBottom: "8px",
-                      background:
-                        outcome === "fail"
-                          ? FLAT_RED.bg
-                          : index % 2 === 0
-                            ? ONE_EYRIE.row
-                            : ONE_EYRIE.surfaceInset,
-                      border: `1px solid ${
-                        outcome === "fail" ? FLAT_RED.border : ONE_EYRIE.borderDivider
-                      }`,
-                    }}
-                  >
+                  <div key={item.key} style={{ marginBottom: "8px" }}>
                     <div
-                      className={isMobileLayout ? "inspection-mobile-item-row" : undefined}
+                      className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
                       style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
+                        padding: "12px 14px",
+                        borderRadius: "10px",
+                        background:
+                          index % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
+                        border: `1px solid ${
+                          outcome === "fail" ? FLAT_RED.border : ONE_EYRIE.borderDivider
+                        }`,
                       }}
                     >
+                      <div
+                        className={isMobileLayout ? "inspection-mobile-item-row" : undefined}
+                        style={{
+                          display: "flex",
+                          gap: "12px",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          flexWrap: "wrap",
+                        }}
+                      >
                       <div style={{ flex: 1, minWidth: "180px" }}>
                         <div
                           className={isMobileLayout ? "inspection-mobile-item-label" : undefined}
@@ -549,18 +544,17 @@ export default function CompletedInspectionReview({
                       </div>
                       <OutcomeBadge outcome={outcome} />
                     </div>
+                    </div>
 
                     {outcome === "fail" && (notes[key] || photos[key]) && (
-                      <div style={{ marginTop: "10px" }}>
-                        <FailedItemDetails
+                      <FailedItemDetails
                           notes={notes[key] || ""}
                           photoUrl={photos[key] || null}
                           readOnly
                           onNotesChange={() => {}}
                           onPhotoSelect={() => {}}
                           onPhotoRemove={() => {}}
-                        />
-                      </div>
+                      />
                     )}
                   </div>
                 );
