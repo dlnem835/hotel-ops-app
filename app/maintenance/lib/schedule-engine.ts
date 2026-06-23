@@ -14,6 +14,8 @@ function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+export { parseDate, formatDate };
+
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -33,6 +35,9 @@ export function advanceDueDate(dateIso: string, frequency: PmFrequency): string 
       break;
     case "monthly":
       date.setMonth(date.getMonth() + 1);
+      break;
+    case "bimonthly":
+      date.setMonth(date.getMonth() + 2);
       break;
     case "quarterly":
       date.setMonth(date.getMonth() + 3);

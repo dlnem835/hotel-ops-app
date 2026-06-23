@@ -16,6 +16,7 @@ import { BuildingArea } from "../lib/buildings-types";
 type PmAssignmentGridProps = {
   areas: BuildingArea[];
   summaries: AreaPmGridSummary[];
+  onAreaClick?: (areaId: number) => void;
 };
 
 function MarkerDot({ marker }: { marker: AreaPmGridSummary["marker"] }) {
@@ -134,6 +135,7 @@ export function PmGridLegend() {
 export default function PmAssignmentGrid({
   areas,
   summaries,
+  onAreaClick,
 }: PmAssignmentGridProps) {
   const summaryByArea = new Map(summaries.map((entry) => [entry.areaId, entry]));
 
@@ -166,9 +168,12 @@ export default function PmAssignmentGrid({
         };
 
         return (
-          <div
+          <button
             key={area.id}
+            type="button"
             title={buildTooltip(summary)}
+            onClick={() => onAreaClick?.(area.id)}
+            className="one-eyrie-pm-grid-tile"
             style={{
               ...tile,
               position: "relative",
@@ -177,6 +182,7 @@ export default function PmAssignmentGrid({
               color: style.color,
               flexDirection: "column",
               gap: "2px",
+              cursor: onAreaClick ? "pointer" : "default",
             }}
           >
             <MarkerDot marker={summary.marker} />
@@ -184,7 +190,7 @@ export default function PmAssignmentGrid({
               <span style={typeBadge}>{abbrev}</span>
             )}
             <span style={tileLabel}>{label}</span>
-          </div>
+          </button>
         );
       })}
     </div>
@@ -213,6 +219,9 @@ const tile: React.CSSProperties = {
   padding: "6px 4px",
   fontWeight: 700,
   fontSize: "13px",
+  fontFamily: "inherit",
+  textAlign: "center",
+  transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
 };
 
 const tileLabel: React.CSSProperties = {

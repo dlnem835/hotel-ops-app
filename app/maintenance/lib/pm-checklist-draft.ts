@@ -1,14 +1,15 @@
 import {
+  PM_DEFAULT_CATEGORY_KEY,
+  PM_DEFAULT_CATEGORY_NAME,
   PmChecklist,
-  PmChecklistCategory,
   PmChecklistStep,
-} from "@/app/maintenance/lib/pm-types";
+} from "./pm-types";
 
 function newClientId() {
   return `pm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function emptyChecklistStep(sortOrder: number): PmChecklistStep {
+export function emptyChecklistStep(sortOrder = 0): PmChecklistStep {
   return {
     key: `step-${sortOrder}`,
     label: "",
@@ -18,47 +19,65 @@ export function emptyChecklistStep(sortOrder: number): PmChecklistStep {
   };
 }
 
-export function emptyChecklistCategory(sortOrder: number): PmChecklistCategory {
-  return {
-    key: `category-${sortOrder}`,
-    name: "",
-    sortOrder,
-    steps: [emptyChecklistStep(0)],
-  };
+export function emptyChecklist(): PmChecklist {
+  return stepsToChecklist([emptyChecklistStep(0)]);
 }
 
-export function emptyChecklist(): PmChecklist {
-  return { categories: [emptyChecklistCategory(0)] };
+export function getFlatChecklistSteps(checklist: PmChecklist): PmChecklistStep[] {
+  return normalizeChecklist(checklist)
+    .categories.flatMap((category) => category.steps)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function stepsToChecklist(steps: PmChecklistStep[]): PmChecklist {
+  return {
+    categories: [
+      {
+        key: PM_DEFAULT_CATEGORY_KEY,
+        name: PM_DEFAULT_CATEGORY_NAME,
+        sortOrder: 0,
+        steps: steps.map((step, index) => ({
+          ...step,
+          key: step.key || `step-${index}`,
+          required: true,
+          sortOrder: index,
+        })),
+      },
+    ],
+  };
 }
 
 export function normalizeChecklist(checklist: PmChecklist): PmChecklist {
-  return {
-    categories: (checklist.categories || []).map((category, categoryIndex) => ({
-      key: category.key || `category-${categoryIndex}`,
-      name: category.name || "",
-      sortOrder: category.sortOrder ?? categoryIndex,
-      steps: (category.steps || []).map((step, stepIndex) => ({
-        key: step.key || `step-${stepIndex}`,
-        label: step.label || "",
-        required: step.required ?? true,
-        photoRequiredOnFail: step.photoRequiredOnFail ?? false,
-        sortOrder: step.sortOrder ?? stepIndex,
-      })),
-    })),
-  };
+  const flatSteps = (checklist.categories || []).flatMap((category, categoryIndex) =>
+    (category.steps || []).map((step, stepIndex) => ({
+      key: step.key || `step-${categoryIndex}-${stepIndex}`,
+      label: step.label || "",
+      required: true,
+      photoRequiredOnFail: step.photoRequiredOnFail ?? false,
+      sortOrder: step.sortOrder ?? stepIndex,
+    }))
+  );
+
+  return stepsToChecklist(flatSteps);
 }
 
 export function rekeyChecklist(checklist: PmChecklist): PmChecklist {
+  const steps = getFlatChecklistSteps(checklist).map((step, index) => ({
+    ...step,
+    key: step.key || newClientId(),
+    required: true,
+    sortOrder: index,
+  }));
+
+  return stepsToChecklist(steps);
+}
+
+/** @deprecated categories are internal only */
+export function emptyChecklistCategory() {
   return {
-    categories: checklist.categories.map((category, categoryIndex) => ({
-      ...category,
-      key: category.key || newClientId(),
-      sortOrder: categoryIndex,
-      steps: category.steps.map((step, stepIndex) => ({
-        ...step,
-        key: step.key || newClientId(),
-        sortOrder: stepIndex,
-      })),
-    })),
+    key: PM_DEFAULT_CATEGORY_KEY,
+    name: PM_DEFAULT_CATEGORY_NAME,
+    sortOrder: 0,
+    steps: [emptyChecklistStep(0)],
   };
 }

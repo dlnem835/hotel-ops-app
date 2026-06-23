@@ -17,6 +17,7 @@ export const STANDARD_HOTEL_AREAS: BuildingAreaInput[] = [
   { name: "Breakfast Area", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
   { name: "Market Area", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
   { name: "Kitchen Area", area_type: "Back Of House", floor_location: "Main Level", status: "Active" },
+  { name: "Employee Breakroom", area_type: "Back Of House", floor_location: "Main Level", status: "Active" },
   { name: "Fitness Center", area_type: "Public Area", floor_location: "Main Level", status: "Active" },
   { name: "Pool", area_type: "Exterior", floor_location: "Exterior", status: "Active" },
   { name: "Laundry", area_type: "Back Of House", floor_location: "First Floor", status: "Active" },

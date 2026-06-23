@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { X } from "lucide-react";
+import PmChecklistBuilder from "@/app/maintenance/components/PmChecklistBuilder";
+import PmWorkloadDatePicker from "@/app/maintenance/components/PmWorkloadDatePicker";
 import {
   emptyChecklist,
-  emptyChecklistCategory,
-  emptyChecklistStep,
+  getFlatChecklistSteps,
   normalizeChecklist,
   rekeyChecklist,
+  stepsToChecklist,
 } from "@/app/maintenance/lib/pm-checklist-draft";
 import {
   PM_CUSTOM_AREA_VALUE,
@@ -16,7 +18,8 @@ import {
 import {
   PM_FREQUENCIES,
   PM_FREQUENCY_LABELS,
-  PmChecklistCategory,
+  PmChecklistStep,
+  PmAssignmentSchedule,
   PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
 import { BuildingArea } from "../lib/buildings-types";
@@ -24,13 +27,13 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestHoverHandlers,
   secondaryHoverHandlers,
-  SETTINGS_BUTTON_BASE,
 } from "../lib/settings-ui-interactions";
 
 type PmTemplateModalProps = {
   open: boolean;
   editingId: number | null;
   areas: BuildingArea[];
+  schedules: PmAssignmentSchedule[];
   initial?: Partial<PmTemplateInput> & { id?: number };
   styles: Record<string, React.CSSProperties>;
   onClose: () => void;
@@ -67,6 +70,7 @@ export default function PmTemplateModal({
   open,
   editingId,
   areas,
+  schedules,
   initial,
   styles,
   onClose,
@@ -136,7 +140,17 @@ export default function PmTemplateModal({
     [areas]
   );
 
+  const draftPm = useMemo(
+    () => ({
+      name: form.name,
+      frequency: form.frequency,
+    }),
+    [form.name, form.frequency]
+  );
+
   if (!open) return null;
+
+  const checklistSteps = getFlatChecklistSteps(form.checklist);
 
   function updateForm(patch: Partial<PmTemplateInput>) {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -149,18 +163,8 @@ export default function PmTemplateModal({
     }));
   }
 
-  function updateChecklistCategory(
-    index: number,
-    patch: Partial<PmChecklistCategory>
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      checklist: {
-        categories: prev.checklist.categories.map((category, categoryIndex) =>
-          categoryIndex === index ? { ...category, ...patch } : category
-        ),
-      },
-    }));
+  function updateChecklistSteps(steps: PmChecklistStep[]) {
+    updateForm({ checklist: stepsToChecklist(steps) });
   }
 
   function handleAreaSelection(value: string) {
@@ -191,6 +195,12 @@ export default function PmTemplateModal({
 
     if (areaMode === "custom" && !customAreaLabel.trim()) {
       alert("Enter a custom area or utility PM label.");
+      return;
+    }
+
+    const filledSteps = checklistSteps.filter((step) => step.label.trim());
+    if (filledSteps.length === 0) {
+      alert("Add at least one checklist step.");
       return;
     }
 
@@ -368,13 +378,13 @@ export default function PmTemplateModal({
           <div style={twoCol}>
             <div>
               <span style={labelStyle}>Start date *</span>
-              <input
-                type="date"
+              <PmWorkloadDatePicker
                 value={form.assignment.start_date}
-                onChange={(e) =>
-                  updateAssignment({ start_date: e.target.value })
-                }
-                style={input}
+                onChange={(start_date) => updateAssignment({ start_date })}
+                schedules={schedules}
+                editingTemplateId={editingId}
+                draft={draftPm}
+                inputStyle={input}
               />
             </div>
 
@@ -437,277 +447,12 @@ export default function PmTemplateModal({
             Active
           </label>
 
-          <div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "10px",
-              }}
-            >
-              <span style={{ ...labelStyle, marginBottom: 0 }}>
-                Checklist sections
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  updateForm({
-                    checklist: {
-                      categories: [
-                        ...form.checklist.categories,
-                        emptyChecklistCategory(form.checklist.categories.length),
-                      ],
-                    },
-                  })
-                }
-                style={{
-                  ...SETTINGS_BUTTON_BASE,
-                  ...secondaryButton,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 10px",
-                  fontSize: "12px",
-                }}
-                {...secondaryHoverHandlers()}
-              >
-                <Plus size={14} />
-                Add section
-              </button>
-            </div>
-
-            {form.checklist.categories.map((category, categoryIndex) => (
-              <div
-                key={`${category.key}-${categoryIndex}`}
-                style={{
-                  border: `1px solid ${ONE_EYRIE.border}`,
-                  borderRadius: "10px",
-                  padding: "12px",
-                  marginBottom: "10px",
-                  background: ONE_EYRIE.surfacePanel,
-                }}
-              >
-                <div
-                  style={{ display: "flex", gap: "8px", marginBottom: "10px" }}
-                >
-                  <input
-                    value={category.name}
-                    onChange={(e) =>
-                      updateChecklistCategory(categoryIndex, {
-                        name: e.target.value,
-                      })
-                    }
-                    placeholder="Section name"
-                    style={{ ...input, flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateForm({
-                        checklist: {
-                          categories: form.checklist.categories.filter(
-                            (_, index) => index !== categoryIndex
-                          ),
-                        },
-                      })
-                    }
-                    style={{
-                      ...SETTINGS_BUTTON_BASE,
-                      border: "none",
-                      background: "transparent",
-                      color: ONE_EYRIE.textMuted,
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                {category.steps.map((step, stepIndex) => (
-                  <div
-                    key={`${step.key}-${stepIndex}`}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto auto auto",
-                      gap: "8px",
-                      alignItems: "center",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    <input
-                      value={step.label}
-                      onChange={(e) =>
-                        updateForm({
-                          checklist: {
-                            categories: form.checklist.categories.map(
-                              (entry, index) =>
-                                index === categoryIndex
-                                  ? {
-                                      ...entry,
-                                      steps: entry.steps.map(
-                                        (item, itemIndex) =>
-                                          itemIndex === stepIndex
-                                            ? {
-                                                ...item,
-                                                label: e.target.value,
-                                              }
-                                            : item
-                                      ),
-                                    }
-                                  : entry
-                            ),
-                          },
-                        })
-                      }
-                      placeholder="Checklist step"
-                      style={input}
-                    />
-                    <label
-                      style={{
-                        color: ONE_EYRIE.textSubtle,
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={step.required}
-                        onChange={(e) =>
-                          updateForm({
-                            checklist: {
-                              categories: form.checklist.categories.map(
-                                (entry, index) =>
-                                  index === categoryIndex
-                                    ? {
-                                        ...entry,
-                                        steps: entry.steps.map(
-                                          (item, itemIndex) =>
-                                            itemIndex === stepIndex
-                                              ? {
-                                                  ...item,
-                                                  required: e.target.checked,
-                                                }
-                                              : item
-                                        ),
-                                      }
-                                    : entry
-                              ),
-                            },
-                          })
-                        }
-                      />
-                      Required
-                    </label>
-                    <label
-                      style={{
-                        color: ONE_EYRIE.textSubtle,
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={step.photoRequiredOnFail}
-                        onChange={(e) =>
-                          updateForm({
-                            checklist: {
-                              categories: form.checklist.categories.map(
-                                (entry, index) =>
-                                  index === categoryIndex
-                                    ? {
-                                        ...entry,
-                                        steps: entry.steps.map(
-                                          (item, itemIndex) =>
-                                            itemIndex === stepIndex
-                                              ? {
-                                                  ...item,
-                                                  photoRequiredOnFail:
-                                                    e.target.checked,
-                                                }
-                                              : item
-                                        ),
-                                      }
-                                    : entry
-                              ),
-                            },
-                          })
-                        }
-                      />
-                      Photo on fail
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateForm({
-                          checklist: {
-                            categories: form.checklist.categories.map(
-                              (entry, index) =>
-                                index === categoryIndex
-                                  ? {
-                                      ...entry,
-                                      steps: entry.steps.filter(
-                                        (_, itemIndex) =>
-                                          itemIndex !== stepIndex
-                                      ),
-                                    }
-                                  : entry
-                            ),
-                          },
-                        })
-                      }
-                      style={{
-                        ...SETTINGS_BUTTON_BASE,
-                        border: "none",
-                        background: "transparent",
-                        color: ONE_EYRIE.textMuted,
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateForm({
-                      checklist: {
-                        categories: form.checklist.categories.map(
-                          (entry, index) =>
-                            index === categoryIndex
-                              ? {
-                                  ...entry,
-                                  steps: [
-                                    ...entry.steps,
-                                    emptyChecklistStep(entry.steps.length),
-                                  ],
-                                }
-                              : entry
-                        ),
-                      },
-                    })
-                  }
-                  style={{
-                    ...SETTINGS_BUTTON_BASE,
-                    color: ONE_EYRIE.gold,
-                    background: "transparent",
-                    border: "none",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    padding: 0,
-                  }}
-                >
-                  + Add step
-                </button>
-              </div>
-            ))}
-          </div>
+          <PmChecklistBuilder
+            steps={checklistSteps}
+            inputStyle={input}
+            secondaryButton={secondaryButton}
+            onChange={updateChecklistSteps}
+          />
         </div>
 
         <div style={modalFooter}>

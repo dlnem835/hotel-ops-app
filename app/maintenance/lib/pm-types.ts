@@ -15,6 +15,7 @@ export const PM_FREQUENCIES = [
   "weekly",
   "biweekly",
   "monthly",
+  "bimonthly",
   "quarterly",
   "triannually",
   "semiannually",
@@ -26,6 +27,7 @@ export const PM_FREQUENCY_LABELS: Record<PmFrequency, string> = {
   weekly: "Weekly",
   biweekly: "Bi-weekly",
   monthly: "Monthly",
+  bimonthly: "Every Other Month",
   quarterly: "Quarterly",
   triannually: "Triannually",
   semiannually: "Semi-annually",
@@ -37,10 +39,11 @@ export const PM_FREQUENCY_ORDER: Record<PmFrequency, number> = {
   weekly: 1,
   biweekly: 2,
   monthly: 3,
-  quarterly: 4,
-  triannually: 5,
-  semiannually: 6,
-  yearly: 7,
+  bimonthly: 4,
+  quarterly: 5,
+  triannually: 6,
+  semiannually: 7,
+  yearly: 8,
 };
 
 export const PM_APPLIES_TO = [
@@ -81,6 +84,11 @@ export type PmChecklistStep = {
   photoRequiredOnFail: boolean;
   sortOrder: number;
 };
+
+export type PmStepOutcome = "pass" | "fail" | "na";
+
+export const PM_DEFAULT_CATEGORY_KEY = "checklist";
+export const PM_DEFAULT_CATEGORY_NAME = "Checklist";
 
 export type PmChecklistCategory = {
   key: string;

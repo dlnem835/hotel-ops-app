@@ -11,6 +11,7 @@ type FailedItemDetailsProps = {
   photoUrl: string | null;
   readOnly?: boolean;
   uploading?: boolean;
+  photoEnabled?: boolean;
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
@@ -24,6 +25,7 @@ export default function FailedItemDetails({
   photoUrl,
   readOnly = false,
   uploading = false,
+  photoEnabled = true,
   onNotesChange,
   onPhotoSelect,
   onPhotoRemove,
@@ -73,7 +75,7 @@ export default function FailedItemDetails({
     color: ONE_EYRIE.text,
     border: `1px solid ${ONE_EYRIE.borderInput}`,
     borderRadius: "8px",
-    padding: "0 40px 0 12px",
+    padding: photoEnabled ? "0 40px 0 12px" : "0 12px",
     fontFamily: "inherit",
     fontSize: "13px",
     lineHeight: 1.3,
@@ -118,9 +120,9 @@ export default function FailedItemDetails({
                 }}
               />
             </a>
-          ) : (
+          ) : photoEnabled ? (
             <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px" }}>No photo attached.</div>
-          )}
+          ) : null}
         </div>
       ) : (
         <>
@@ -132,14 +134,14 @@ export default function FailedItemDetails({
               onChange={(event) => onNotesChange(event.target.value)}
               placeholder="Brief deficiency note…"
               className={
-                displayUrl
+                displayUrl && photoEnabled
                   ? "inspection-failed-details-note inspection-failed-details-note--has-photo"
                   : "inspection-failed-details-note"
               }
               style={noteFieldStyle}
             />
 
-            {displayUrl && (
+            {photoEnabled && displayUrl && (
               <div className="inspection-failed-details-thumb-wrap">
                 <a
                   href={displayUrl}
@@ -190,6 +192,7 @@ export default function FailedItemDetails({
               </div>
             )}
 
+            {photoEnabled && (
             <button
               type="button"
               className="inspection-failed-photo-icon-btn"
@@ -214,8 +217,11 @@ export default function FailedItemDetails({
             >
               {uploading ? <Loader2 size={16} className="inspection-failed-spin" /> : <Camera size={16} />}
             </button>
+            )}
           </div>
 
+          {photoEnabled && (
+            <>
           <input
             ref={cameraInputRef}
             type="file"
@@ -233,6 +239,8 @@ export default function FailedItemDetails({
             style={{ display: "none" }}
             aria-hidden
           />
+            </>
+          )}
         </>
       )}
     </div>

@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS pm_templates (
       'weekly',
       'biweekly',
       'monthly',
+      'bimonthly',
       'quarterly',
       'triannually',
       'semiannually',

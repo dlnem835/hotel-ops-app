@@ -29,11 +29,51 @@ type PmTemplatesSectionProps = {
   styles: Record<string, React.CSSProperties>;
 };
 
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function areaLabel(schedule: PmAssignmentSchedule): string {
   return formatPmAreaLabel({
     areaName: schedule.areaName,
     customAreaLabel: schedule.assetLabel,
   });
+}
+
+function formatScheduleDate(dateIso: string): string {
+  return new Date(`${dateIso}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function dueStatusStyles(dueStatus: PmAssignmentSchedule["dueStatus"]) {
+  switch (dueStatus) {
+    case "overdue":
+      return {
+        background: "rgba(139, 82, 82, 0.35)",
+        color: "#E57373",
+      };
+    case "due_soon":
+      return {
+        background: "rgba(200, 169, 106, 0.18)",
+        color: "#E0C47B",
+      };
+    case "inactive":
+      return {
+        background: "rgba(90, 90, 90, 0.25)",
+        color: "#9CA3AF",
+      };
+    default:
+      return {
+        background: "rgba(61, 107, 79, 0.18)",
+        color: "#B8D4C4",
+      };
+  }
 }
 
 export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) {
@@ -44,8 +84,6 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     searchInput,
     primaryButton,
     secondaryButton,
-    rowTitle,
-    rowText,
     statusPill,
     actionCell,
     iconButton,
@@ -147,6 +185,18 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   function openNew() {
     setEditingId(null);
     setEditInitial(undefined);
+    setModalOpen(true);
+  }
+
+  function openNewForArea(areaId: number) {
+    setEditingId(null);
+    setEditInitial({
+      assignment: {
+        area_id: areaId,
+        asset_label: null,
+        start_date: getLocalDateString(),
+      },
+    });
     setModalOpen(true);
   }
 
@@ -296,13 +346,17 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             marginBottom: "10px",
           }}
         >
-          Building areas and assets — guest rooms excluded
+          Building areas and assets — guest rooms excluded. Click an area to create a PM.
         </div>
         <PmGridLegend />
         {loading ? (
           <div style={emptyState}>Loading PM coverage…</div>
         ) : (
-          <PmAssignmentGrid areas={areas} summaries={gridSummaries} />
+          <PmAssignmentGrid
+            areas={areas}
+            summaries={gridSummaries}
+            onAreaClick={openNewForArea}
+          />
         )}
       </div>
 
@@ -375,11 +429,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                 </button>
 
                 {expanded && (
-                  <div style={{ borderTop: `1px solid ${ONE_EYRIE.border}` }}>
+                  <div style={{ padding: "10px 12px 14px" }}>
                     {items.length === 0 ? (
                       <div
                         style={{
-                          padding: "16px",
+                          padding: "8px 4px",
                           color: ONE_EYRIE.textMuted,
                           fontSize: "13px",
                         }}
@@ -387,70 +441,66 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                         No {PM_FREQUENCY_LABELS[frequency].toLowerCase()} PM templates yet.
                       </div>
                     ) : (
-                      items.map((schedule) => (
-                        <div
-                          key={schedule.assignmentId}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "1.4fr 1fr 0.9fr 1fr 0.8fr auto",
-                            gap: "12px",
-                            alignItems: "center",
-                            padding: "12px 16px",
-                            borderTop: `1px solid ${ONE_EYRIE.border}`,
-                          }}
-                        >
-                          <div>
-                            <div style={rowTitle}>{schedule.templateName}</div>
-                            <div style={rowText}>
-                              {PM_FREQUENCY_LABELS[schedule.frequency]}
-                            </div>
+                      <>
+                        <div className="one-eyrie-pm-schedule-list">
+                          <div className="one-eyrie-pm-schedule-header">
+                            <span>PM Name</span>
+                            <span>Area</span>
+                            <span>Start Date</span>
+                            <span>Next Due</span>
+                            <span>Status</span>
+                            <span />
                           </div>
-                          <div style={rowText}>{areaLabel(schedule)}</div>
-                          <div style={rowText}>
-                            {new Date(schedule.startDate).toLocaleDateString()}
-                          </div>
-                          <div style={rowText}>
-                            {schedule.nextDueDate
-                              ? formatNextDueLabel(
-                                  schedule.nextDueDate,
-                                  schedule.dueStatus
-                                )
-                              : "—"}
-                          </div>
-                          <div>
-                            <span
-                              style={{
-                                ...statusPill,
-                                background:
-                                  schedule.dueStatus === "overdue"
-                                    ? "rgba(139, 82, 82, 0.35)"
-                                    : schedule.dueStatus === "due_soon"
-                                      ? "rgba(200, 169, 106, 0.18)"
-                                      : "rgba(61, 107, 79, 0.18)",
-                                color:
-                                  schedule.dueStatus === "overdue"
-                                    ? "#E57373"
-                                    : schedule.dueStatus === "due_soon"
-                                      ? "#E0C47B"
-                                      : "#B8D4C4",
-                              }}
-                            >
-                              {formatDueStatusLabel(schedule.dueStatus)}
-                            </span>
-                          </div>
-                          <div style={actionCell}>
-                            <button
-                              type="button"
-                              style={iconButton}
-                              title="Edit"
-                              onClick={() => void openEdit(schedule.templateId)}
-                            >
-                              <Pencil size={16} />
-                            </button>
-                          </div>
+                          {items.map((schedule) => {
+                            const dueStyles = dueStatusStyles(schedule.dueStatus);
+
+                            return (
+                              <div
+                                key={schedule.assignmentId}
+                                className="one-eyrie-pm-schedule-row"
+                              >
+                                <div className="one-eyrie-pm-schedule-row__name">
+                                  {schedule.templateName}
+                                </div>
+                                <div className="one-eyrie-pm-schedule-row__area">
+                                  {areaLabel(schedule)}
+                                </div>
+                                <div className="one-eyrie-pm-schedule-row__meta">
+                                  {formatScheduleDate(schedule.startDate)}
+                                </div>
+                                <div className="one-eyrie-pm-schedule-row__meta">
+                                  {schedule.nextDueDate
+                                    ? formatNextDueLabel(
+                                        schedule.nextDueDate,
+                                        schedule.dueStatus
+                                      )
+                                    : "—"}
+                                </div>
+                                <div>
+                                  <span
+                                    style={{
+                                      ...statusPill,
+                                      ...dueStyles,
+                                    }}
+                                  >
+                                    {formatDueStatusLabel(schedule.dueStatus)}
+                                  </span>
+                                </div>
+                                <div style={actionCell}>
+                                  <button
+                                    type="button"
+                                    style={iconButton}
+                                    title="Edit PM template"
+                                    onClick={() => void openEdit(schedule.templateId)}
+                                  >
+                                    <Pencil size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))
+                      </>
                     )}
                   </div>
                 )}
@@ -464,6 +514,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         open={modalOpen}
         editingId={editingId}
         areas={areas}
+        schedules={schedules}
         initial={editInitial}
         styles={{
           modalOverlay,
