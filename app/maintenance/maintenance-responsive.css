@@ -1,0 +1,30 @@
+@media (max-width: 767px) {
+  .maintenance-mobile-page-content {
+    padding: 16px 14px 24px !important;
+  }
+
+  .maintenance-mobile-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .maintenance-pm-tile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .maintenance-pm-carousel {
+    flex-direction: column !important;
+  }
+
+  .maintenance-pm-carousel-arrow {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .maintenance-mobile-session-header {
+    padding: 18px 16px !important;
+  }
+
+  .maintenance-mobile-session-body {
+    padding: 12px 12px calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

@@ -32,6 +32,7 @@ import {
 type PmTemplateModalProps = {
   open: boolean;
   editingId: number | null;
+  isDuplicate?: boolean;
   areas: BuildingArea[];
   schedules: PmAssignmentSchedule[];
   initial?: Partial<PmTemplateInput> & { id?: number };
@@ -69,6 +70,7 @@ function emptyForm(): PmTemplateInput {
 export default function PmTemplateModal({
   open,
   editingId,
+  isDuplicate = false,
   areas,
   schedules,
   initial,
@@ -274,7 +276,11 @@ export default function PmTemplateModal({
       >
         <div style={modalHeader}>
           <h2 style={{ margin: 0 }}>
-            {editingId ? "Edit PM Template" : "New PM Template"}
+            {editingId
+              ? "Edit PM Template"
+              : isDuplicate
+                ? "Duplicate PM Template"
+                : "New PM Template"}
           </h2>
           <button type="button" style={closeButton} onClick={onClose}>
             <X size={22} />
@@ -472,7 +478,13 @@ export default function PmTemplateModal({
             disabled={saving}
             {...forestHoverHandlers()}
           >
-            {saving ? "Saving…" : editingId ? "Save Changes" : "Create Template"}
+            {saving
+              ? "Saving…"
+              : editingId
+                ? "Save Changes"
+                : isDuplicate
+                  ? "Create Duplicate"
+                  : "Create Template"}
           </button>
         </div>
       </div>

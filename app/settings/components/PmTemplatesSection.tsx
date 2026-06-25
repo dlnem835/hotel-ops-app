@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Pencil, Plus, Search } from "lucide-react";
 import {
   formatDueStatusLabel,
   formatNextDueLabel,
@@ -16,6 +16,10 @@ import {
 } from "@/app/maintenance/lib/pm-types";
 import { formatPmAreaLabel } from "@/app/maintenance/lib/pm-category";
 import { normalizeChecklist } from "@/app/maintenance/lib/pm-checklist-draft";
+import {
+  buildDuplicatePmTemplateInput,
+  toPmTemplateWithAssignment,
+} from "@/app/maintenance/lib/pm-template-duplicate";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestHoverHandlers,
@@ -107,6 +111,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     Set<PmFrequency>
   >(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editInitial, setEditInitial] = useState<
     (Partial<PmTemplateInput> & { id?: number }) | undefined
@@ -184,12 +189,14 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
   function openNew() {
     setEditingId(null);
+    setIsDuplicate(false);
     setEditInitial(undefined);
     setModalOpen(true);
   }
 
   function openNewForArea(areaId: number) {
     setEditingId(null);
+    setIsDuplicate(false);
     setEditInitial({
       assignment: {
         area_id: areaId,
@@ -209,6 +216,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       }
 
       setEditingId(templateId);
+      setIsDuplicate(false);
       setEditInitial({
         id: templateId,
         name: result.template.name,
@@ -229,6 +237,27 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       setModalOpen(true);
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : "Unable to load template");
+    }
+  }
+
+  async function openDuplicate(templateId: number) {
+    try {
+      const response = await fetch(`/api/pm-templates/${templateId}`);
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to load template");
+      }
+
+      setEditingId(null);
+      setIsDuplicate(true);
+      setEditInitial(
+        buildDuplicatePmTemplateInput(toPmTemplateWithAssignment(result))
+      );
+      setModalOpen(true);
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error ? error.message : "Unable to duplicate template"
+      );
     }
   }
 
@@ -490,6 +519,14 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                   <button
                                     type="button"
                                     style={iconButton}
+                                    title="Duplicate PM Template"
+                                    onClick={() => void openDuplicate(schedule.templateId)}
+                                  >
+                                    <Copy size={16} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    style={iconButton}
                                     title="Edit PM template"
                                     onClick={() => void openEdit(schedule.templateId)}
                                   >
@@ -513,6 +550,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       <PmTemplateModal
         open={modalOpen}
         editingId={editingId}
+        isDuplicate={isDuplicate}
         areas={areas}
         schedules={schedules}
         initial={editInitial}
@@ -532,11 +570,15 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         onClose={() => {
           setModalOpen(false);
           setEditingId(null);
+          setIsDuplicate(false);
           setEditInitial(undefined);
         }}
         onSaved={async () => {
           await fetchData();
-          setToast("PM template saved.");
+          setToast(
+            isDuplicate ? "PM template duplicated." : "PM template saved."
+          );
+          setIsDuplicate(false);
         }}
       />
     </div>

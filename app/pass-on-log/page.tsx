@@ -22,6 +22,9 @@ import {
   forestOutlineHoverHandlers,
   FOREST_OUTLINE_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
+import WorkOrderModal, {
+  WorkOrderModalInitialValues,
+} from "@/app/maintenance/components/WorkOrderModal";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,6 +45,10 @@ export default function PassOnLogPage() {
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
   const [expandedReplyEntry, setExpandedReplyEntry] = useState<number | null>(null);
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
+  const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
+  const [workOrderInitial, setWorkOrderInitial] = useState<
+    WorkOrderModalInitialValues | undefined
+  >(undefined);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const [dateFilter, setDateFilter] = useState("All");
@@ -765,6 +772,37 @@ onMouseLeave={(e) => {
   >
     + Reply
   </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setWorkOrderInitial({
+        subject: entry.subject,
+        description: entry.message,
+        priority: (entry.priority as "Normal" | "Important" | "Urgent") || "Normal",
+        source_module: "Pass-On Log",
+        source_record_id: String(entry.id),
+        source_note: entry.message,
+        created_by: currentUserName,
+      });
+      setWorkOrderModalOpen(true);
+    }}
+    style={{
+      ...replyPillButton,
+      marginTop: "8px",
+      alignSelf: "flex-start",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
+      e.currentTarget.style.boxShadow = "0 0 16px rgba(200,169,106,0.35)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = "transparent";
+      e.currentTarget.style.boxShadow = "none";
+    }}
+  >
+    Create Work Order
+  </button>
 </div>
 
 
@@ -813,10 +851,36 @@ onMouseLeave={(e) => {
   style={{
     display: "flex",
     justifyContent: "flex-end",
+    gap: "10px",
     marginTop: "10px",
     alignItems: "center",
+    flexWrap: "wrap",
   }}
 >
+  <button
+    type="button"
+    onClick={() => {
+      setWorkOrderInitial({
+        subject: entry.subject,
+        description: entry.message,
+        priority: (entry.priority as "Normal" | "Important" | "Urgent") || "Normal",
+        source_module: "Pass-On Log",
+        source_record_id: String(entry.id),
+        source_note: entry.message,
+        created_by: currentUserName,
+      });
+      setWorkOrderModalOpen(true);
+    }}
+    style={{
+      ...FOREST_OUTLINE_BUTTON,
+      borderRadius: "999px",
+      padding: "8px 14px",
+      fontSize: "12px",
+    }}
+    {...forestOutlineHoverHandlers()}
+  >
+    Create Work Order
+  </button>
   <button
     type="button"
     onClick={() => addInlineReply(entry.id)}
@@ -858,6 +922,14 @@ onMouseLeave={(e) => {
           </div>
         </div>
       </section>
+
+      <WorkOrderModal
+        open={workOrderModalOpen}
+        initialValues={workOrderInitial}
+        createdBy={currentUserName}
+        onClose={() => setWorkOrderModalOpen(false)}
+        onCreated={() => setWorkOrderModalOpen(false)}
+      />
     </main>
   );
 }

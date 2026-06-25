@@ -19,6 +19,10 @@ import {
   goldHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
+import WorkOrderModal, {
+  WorkOrderModalInitialValues,
+} from "@/app/maintenance/components/WorkOrderModal";
+import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,6 +57,7 @@ export default function InspectionSessionPage() {
   const [sessionNotes, setSessionNotes] = useState("");
   const [status, setStatus] = useState<string>("in_progress");
   const [roomName, setRoomName] = useState("");
+  const [areaId, setAreaId] = useState<number | null>(null);
   const [program, setProgram] = useState("");
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [inspectorName, setInspectorName] = useState<string | null>(null);
@@ -62,6 +67,10 @@ export default function InspectionSessionPage() {
   const [scorePercent, setScorePercent] = useState<number | null>(null);
   const [completedScore, setCompletedScore] = useState<string | null>(null);
   const [expandedCategoryKey, setExpandedCategoryKey] = useState<string | null>(null);
+  const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
+  const [workOrderInitial, setWorkOrderInitial] = useState<
+    WorkOrderModalInitialValues | undefined
+  >(undefined);
   const isMobileLayout = useIsMobileInspectionLayout();
 
   useEffect(() => {
@@ -94,6 +103,7 @@ export default function InspectionSessionPage() {
       setStatus(result.session.status);
       setSessionNotes(result.session.session_notes || "");
       setProgram(String(result.session.inspection_program || ""));
+      setAreaId(Number(result.session.area_id) || null);
       setCompletedAt(result.session.completed_at || null);
       setEarnedPoints(Number(result.session.earned_points) || 0);
       setPossiblePoints(Number(result.session.possible_points) || 0);
@@ -577,25 +587,51 @@ export default function InspectionSessionPage() {
                     </div>
 
                     {outcome === "fail" && (
-                      <FailedItemDetails
-                        notes={notes[key] || ""}
-                        photoUrl={photos[key] || null}
-                        readOnly={isCompleted}
-                        uploading={Boolean(uploadingKeys[key])}
-                        onNotesChange={(value) =>
-                          setNotes((prev) => ({ ...prev, [key]: value }))
-                        }
-                        onPhotoSelect={(file) =>
-                          void uploadItemPhoto(category.key, item.key, file)
-                        }
-                        onPhotoRemove={() =>
-                          setPhotos((prev) => {
-                            const next = { ...prev };
-                            delete next[key];
-                            return next;
-                          })
-                        }
-                      />
+                      <>
+                        <FailedItemDetails
+                          notes={notes[key] || ""}
+                          photoUrl={photos[key] || null}
+                          readOnly={isCompleted}
+                          uploading={Boolean(uploadingKeys[key])}
+                          onNotesChange={(value) =>
+                            setNotes((prev) => ({ ...prev, [key]: value }))
+                          }
+                          onPhotoSelect={(file) =>
+                            void uploadItemPhoto(category.key, item.key, file)
+                          }
+                          onPhotoRemove={() =>
+                            setPhotos((prev) => {
+                              const next = { ...prev };
+                              delete next[key];
+                              return next;
+                            })
+                          }
+                        />
+                        {!isCompleted && (
+                          <div style={{ marginTop: "10px" }}>
+                            <CreateWorkOrderButton
+                              compact
+                              onOpen={(initial) => {
+                                setWorkOrderInitial(initial);
+                                setWorkOrderModalOpen(true);
+                              }}
+                              initialValues={{
+                                subject: `Inspection fail: ${item.label}`,
+                                description: notes[key] || "",
+                                priority: "Important",
+                                area_id: areaId,
+                                area_label: roomName ? `Room ${roomName}` : null,
+                                source_module: "Inspections",
+                                source_record_id: String(sessionId),
+                                source_note: `${templateName} · ${category.name} · ${item.label}${
+                                  notes[key] ? ` — ${notes[key]}` : ""
+                                }`,
+                                created_by: inspectorName,
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );
@@ -715,6 +751,14 @@ export default function InspectionSessionPage() {
           </div>
         )}
       </section>
+
+      <WorkOrderModal
+        open={workOrderModalOpen}
+        initialValues={workOrderInitial}
+        createdBy={inspectorName}
+        onClose={() => setWorkOrderModalOpen(false)}
+        onCreated={() => setWorkOrderModalOpen(false)}
+      />
     </main>
   );
 }

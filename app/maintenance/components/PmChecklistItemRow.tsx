@@ -2,9 +2,21 @@
 
 import { Check, Minus, X } from "lucide-react";
 import FailedItemDetails from "@/app/inspections/components/FailedItemDetails";
+import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
+import { WorkOrderModalInitialValues } from "@/app/maintenance/components/WorkOrderModal";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PmChecklistStep, PmStepOutcome } from "../lib/pm-types";
+
+export type PmFailedItemWorkOrderContext = {
+  templateName: string;
+  occurrenceId: number;
+  areaId: number | null;
+  areaName: string | null;
+  assetLabel: string | null;
+  completedBy: string | null;
+  onCreateWorkOrder: (initial: WorkOrderModalInitialValues) => void;
+};
 
 type PmChecklistItemRowProps = {
   step: PmChecklistStep;
@@ -14,11 +26,19 @@ type PmChecklistItemRowProps = {
   photoUrl: string | null;
   readOnly?: boolean;
   uploading?: boolean;
+  workOrderContext?: PmFailedItemWorkOrderContext;
   onOutcomeChange: (outcome: PmStepOutcome) => void;
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
 };
+
+function locationLabel(context: PmFailedItemWorkOrderContext): string | null {
+  if (context.areaName && context.assetLabel) {
+    return `${context.areaName} · ${context.assetLabel}`;
+  }
+  return context.areaName || context.assetLabel || null;
+}
 
 export default function PmChecklistItemRow({
   step,
@@ -28,6 +48,7 @@ export default function PmChecklistItemRow({
   photoUrl,
   readOnly = false,
   uploading = false,
+  workOrderContext,
   onOutcomeChange,
   onNotesChange,
   onPhotoSelect,
@@ -121,16 +142,54 @@ export default function PmChecklistItemRow({
       </div>
 
       {outcome === "fail" && (
-        <FailedItemDetails
-          notes={notes}
-          photoUrl={photoUrl}
-          readOnly={readOnly}
-          uploading={uploading}
-          photoEnabled={step.photoRequiredOnFail}
-          onNotesChange={onNotesChange}
-          onPhotoSelect={onPhotoSelect}
-          onPhotoRemove={onPhotoRemove}
-        />
+        <>
+          <FailedItemDetails
+            notes={notes}
+            photoUrl={photoUrl}
+            readOnly={readOnly}
+            uploading={uploading}
+            photoEnabled
+            onNotesChange={onNotesChange}
+            onPhotoSelect={onPhotoSelect}
+            onPhotoRemove={onPhotoRemove}
+          />
+          {!readOnly && workOrderContext && (
+            <div style={{ marginTop: "10px" }}>
+              <CreateWorkOrderButton
+                compact
+                label="Create Work Order"
+                onOpen={() =>
+                  workOrderContext.onCreateWorkOrder({
+                    subject: `PM fail: ${step.label}`,
+                    description: notes || "",
+                    priority: "Important",
+                    area_id: workOrderContext.areaId,
+                    area_label: locationLabel(workOrderContext),
+                    source_module: "Maintenance",
+                    source_record_id: String(workOrderContext.occurrenceId),
+                    source_note: `${workOrderContext.templateName} · ${step.label}${
+                      notes ? ` — ${notes}` : ""
+                    }`,
+                    created_by: workOrderContext.completedBy,
+                  })
+                }
+                initialValues={{
+                  subject: `PM fail: ${step.label}`,
+                  description: notes || "",
+                  priority: "Important",
+                  area_id: workOrderContext.areaId,
+                  area_label: locationLabel(workOrderContext),
+                  source_module: "Maintenance",
+                  source_record_id: String(workOrderContext.occurrenceId),
+                  source_note: `${workOrderContext.templateName} · ${step.label}${
+                    notes ? ` — ${notes}` : ""
+                  }`,
+                  created_by: workOrderContext.completedBy,
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
