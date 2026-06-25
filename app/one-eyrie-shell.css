@@ -656,3 +656,101 @@
 .one-eyrie-pm-schedule-row:hover {
   background: #181715;
 }
+
+/* ── Rooms & Areas schedule list (settings) ── */
+
+.one-eyrie-settings-filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.one-eyrie-settings-filter-select {
+  width: 100%;
+  height: 44px;
+  background: #0f0e0c;
+  color: #ffffff;
+  border: 1px solid #3a352e;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.one-eyrie-settings-filter-select:hover {
+  border-color: rgba(200, 169, 106, 0.35);
+}
+
+.one-eyrie-settings-filter-select:focus {
+  border-color: rgba(200, 169, 106, 0.55);
+  box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.2);
+}
+
+.one-eyrie-area-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #2a2622;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0f0e0c;
+}
+
+.one-eyrie-area-schedule-header,
+.one-eyrie-area-schedule-row {
+  display: grid;
+  grid-template-columns: 36px 1.35fr 1fr 1fr 0.85fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.one-eyrie-area-schedule-header {
+  padding: 10px 14px;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #151412;
+  border-bottom: 1px solid #2f2b26;
+}
+
+.one-eyrie-area-schedule-row {
+  padding: 11px 14px;
+  border: none;
+  border-bottom: 1px solid #2f2b26;
+  border-radius: 0;
+  background: #121110;
+  transition: background-color 0.18s ease;
+}
+
+.one-eyrie-area-schedule-row:last-child {
+  border-bottom: none;
+}
+
+.one-eyrie-area-schedule-row[data-selected="true"] {
+  background: #181715;
+  box-shadow: inset 0 0 0 1px rgba(200, 169, 106, 0.22);
+}
+
+.one-eyrie-area-schedule-row:hover {
+  background: #181715;
+}
+
+.one-eyrie-area-schedule-row__name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.one-eyrie-area-schedule-row__meta {
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}

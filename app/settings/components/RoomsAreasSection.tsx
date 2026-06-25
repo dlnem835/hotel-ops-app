@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, Pencil, Plus, Search, Trash2, Wand2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, FileUp, Pencil, Plus, Search, Trash2, Wand2, X } from "lucide-react";
 import PropertyGrid, { StatusLegend } from "./PropertyGrid";
 import {
   AREA_STATUSES,
@@ -12,8 +12,13 @@ import {
   BuildingAreaInput,
   FLOOR_LOCATIONS,
 } from "../lib/buildings-types";
-import { FLAT_RED, FOREST, NEUTRAL_PILL } from "@/app/lib/oneEyrieColors";
+import { FLAT_RED, FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { formatSetupResult, formatStandardAreasResult, getMissingStandardAreas, GOLD, parseCsvRows } from "../lib/buildings-areas";
+import {
+  groupFilteredAreas,
+  isGroupFullySelected,
+  isGroupPartiallySelected,
+} from "../lib/rooms-areas-groups";
 import {
   applyGoldHover,
   forestHoverHandlers,
@@ -66,8 +71,142 @@ function createRoomRange(index = 0): RoomRangeRow {
   };
 }
 
-const TABLE_GRID =
-  "40px 1.4fr 1fr 1fr 0.7fr 0.7fr" as const;
+function AreaAccordion({
+  groupKey,
+  label,
+  areas,
+  expanded,
+  selectedIds,
+  onToggleExpanded,
+  onToggleGroupSelection,
+  onToggleSelect,
+  onEdit,
+  renderStatusPill,
+  actionCell,
+  iconButton,
+  buttonBase,
+}: {
+  groupKey: string;
+  label: string;
+  areas: BuildingArea[];
+  expanded: boolean;
+  selectedIds: Set<number>;
+  onToggleExpanded: (key: string) => void;
+  onToggleGroupSelection: (areas: BuildingArea[]) => void;
+  onToggleSelect: (id: number) => void;
+  onEdit: (area: BuildingArea) => void;
+  renderStatusPill: (status: BuildingArea["status"]) => React.ReactNode;
+  actionCell: React.CSSProperties;
+  iconButton: React.CSSProperties;
+  buttonBase: React.CSSProperties;
+}) {
+  const groupSelected = isGroupFullySelected(areas, selectedIds);
+  const groupPartial = isGroupPartiallySelected(areas, selectedIds);
+
+  return (
+    <div
+      style={{
+        border: `1px solid ${ONE_EYRIE.border}`,
+        borderRadius: "12px",
+        marginBottom: "10px",
+        overflow: "hidden",
+        background: ONE_EYRIE.surface,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onToggleExpanded(groupKey)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+          padding: "14px 16px",
+          background: "transparent",
+          border: "none",
+          color: ONE_EYRIE.text,
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span style={{ fontWeight: 800, fontSize: "14px" }}>{label}</span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+            color: ONE_EYRIE.textSubtle,
+            fontSize: "12px",
+            fontWeight: 700,
+          }}
+        >
+          {areas.length} location{areas.length === 1 ? "" : "s"}
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ padding: "10px 12px 14px" }}>
+          <div className="one-eyrie-area-schedule-list">
+            <div className="one-eyrie-area-schedule-header">
+              <span>
+                <input
+                  type="checkbox"
+                  checked={groupSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = groupPartial;
+                  }}
+                  onChange={() => onToggleGroupSelection(areas)}
+                  aria-label={`Select all in ${label}`}
+                />
+              </span>
+              <span>Name</span>
+              <span>Area Type</span>
+              <span>Floor / Location</span>
+              <span>Status</span>
+              <span />
+            </div>
+            {areas.map((area) => (
+              <div
+                key={area.id}
+                className="one-eyrie-area-schedule-row"
+                data-selected={selectedIds.has(area.id) ? "true" : "false"}
+              >
+                <span>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(area.id)}
+                    onChange={() => onToggleSelect(area.id)}
+                    aria-label={`Select ${area.name}`}
+                  />
+                </span>
+                <div className="one-eyrie-area-schedule-row__name">{area.name}</div>
+                <div className="one-eyrie-area-schedule-row__meta">{area.area_type}</div>
+                <div className="one-eyrie-area-schedule-row__meta">
+                  {area.floor_location}
+                </div>
+                <div>{renderStatusPill(area.status)}</div>
+                <div style={actionCell}>
+                  <button
+                    type="button"
+                    style={{ ...iconButton, ...buttonBase }}
+                    title="Edit location"
+                    onClick={() => onEdit(area)}
+                    onMouseEnter={(e) => applyGoldHover(e, "icon")}
+                    onMouseLeave={(e) => resetButtonHover(e, "icon")}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -163,7 +302,6 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
     secondaryButton,
     tableHeader,
     tableRow,
-    rowTitle,
     rowText,
     statusPill,
     actionCell,
@@ -188,6 +326,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
   const [filterAreaType, setFilterAreaType] = useState("All");
   const [filterFloor, setFilterFloor] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<{
     text: string;
@@ -296,6 +435,32 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
       return matchesSearch && matchesAreaType && matchesFloor && matchesStatus;
     });
   }, [areas, search, filterAreaType, filterFloor, filterStatus]);
+
+  const groupedAreas = useMemo(
+    () => groupFilteredAreas(filteredAreas),
+    [filteredAreas]
+  );
+
+  function toggleGroup(groupKey: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  }
+
+  function toggleGroupSelection(groupAreas: BuildingArea[]) {
+    const allSelected = isGroupFullySelected(groupAreas, selectedIds);
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      for (const area of groupAreas) {
+        if (allSelected) next.delete(area.id);
+        else next.add(area.id);
+      }
+      return next;
+    });
+  }
 
   const selectedCount = selectedIds.size;
 
@@ -793,18 +958,11 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "12px",
-          marginBottom: "14px",
-        }}
-      >
+      <div className="one-eyrie-settings-filter-row">
         <select
           value={filterAreaType}
           onChange={(e) => setFilterAreaType(e.target.value)}
-          style={input}
+          className="one-eyrie-settings-filter-select"
         >
           <option value="All">All Area Types</option>
           {AREA_TYPES.map((type) => (
@@ -817,7 +975,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
         <select
           value={filterFloor}
           onChange={(e) => setFilterFloor(e.target.value)}
-          style={input}
+          className="one-eyrie-settings-filter-select"
         >
           <option value="All">All Floors / Locations</option>
           {FLOOR_LOCATIONS.map((floor) => (
@@ -830,7 +988,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={input}
+          className="one-eyrie-settings-filter-select"
         >
           <option value="All">All Statuses</option>
           {AREA_STATUSES.map((status) => (
@@ -925,82 +1083,77 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
         </div>
       )}
 
-      <div style={{ ...tableHeader, gridTemplateColumns: TABLE_GRID }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={allVisibleSelected}
-            ref={(el) => {
-              if (el) el.indeterminate = someVisibleSelected;
-            }}
-            onChange={toggleSelectAllVisible}
-            disabled={filteredAreas.length === 0}
-            title="Select all visible rows"
-          />
+      <div style={{ marginTop: "8px" }}>
+        <div
+          style={{
+            color: ONE_EYRIE.text,
+            fontWeight: 800,
+            fontSize: "15px",
+            marginBottom: "4px",
+          }}
+        >
+          Rooms &amp; Areas List
         </div>
-        <div>Name</div>
-        <div>Area Type</div>
-        <div>Floor / Location</div>
-        <div>Status</div>
-        <div style={{ textAlign: "right" }}>Actions</div>
-      </div>
+        <div
+          style={{
+            color: ONE_EYRIE.textSubtle,
+            fontSize: "12px",
+            marginBottom: "12px",
+          }}
+        >
+          Grouped by floor for guest rooms and building areas for utilities
+        </div>
 
-      {loading ? (
-        <div style={emptyState}>Loading locations...</div>
-      ) : filteredAreas.length === 0 ? (
-        <div style={emptyState}>No locations found.</div>
-      ) : (
-        filteredAreas.map((area) => (
-          <div
-            key={area.id}
+        {filteredAreas.length > 0 && (
+          <label
             style={{
-              ...tableRow,
-              gridTemplateColumns: TABLE_GRID,
-              outline: selectedIds.has(area.id)
-                ? `1px solid ${GOLD}`
-                : "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              color: ONE_EYRIE.textMuted,
+              fontSize: "12px",
+              fontWeight: 600,
+              marginBottom: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(area.id)}
-                onChange={() => toggleSelect(area.id)}
-                aria-label={`Select ${area.name}`}
-              />
-            </div>
-            <div>
-              <div style={rowTitle}>{area.name}</div>
-              <div style={{ color: "#C9C9C9", fontSize: "12px", marginTop: "3px" }}>
-                {area.inspection_enabled ? "Inspections enabled" : "Inspections off"}
-              </div>
-            </div>
-            <div style={rowText}>{area.area_type}</div>
-            <div style={rowText}>{area.floor_location}</div>
-            <div>{renderStatusPill(area.status)}</div>
-            <div style={actionCell}>
-              <button
-                type="button"
-                style={{ ...iconButton, ...buttonBase }}
-                onClick={() => openEdit(area)}
-                onMouseEnter={(e) => applyGoldHover(e, "icon")}
-                onMouseLeave={(e) => resetButtonHover(e, "icon")}
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                type="button"
-                style={{ ...iconButton, ...buttonBase }}
-                onClick={() => deleteArea(area.id)}
-                onMouseEnter={(e) => applyGoldHover(e, "icon")}
-                onMouseLeave={(e) => resetButtonHover(e, "icon")}
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
-        ))
-      )}
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someVisibleSelected;
+              }}
+              onChange={toggleSelectAllVisible}
+              disabled={filteredAreas.length === 0}
+            />
+            Select all visible locations
+          </label>
+        )}
+
+        {loading ? (
+          <div style={emptyState}>Loading locations...</div>
+        ) : groupedAreas.length === 0 ? (
+          <div style={emptyState}>No locations found.</div>
+        ) : (
+          groupedAreas.map((group) => (
+            <AreaAccordion
+              key={group.key}
+              groupKey={group.key}
+              label={group.label}
+              areas={group.areas}
+              expanded={expandedGroups.has(group.key)}
+              selectedIds={selectedIds}
+              onToggleExpanded={toggleGroup}
+              onToggleGroupSelection={toggleGroupSelection}
+              onToggleSelect={toggleSelect}
+              onEdit={openEdit}
+              renderStatusPill={renderStatusPill}
+              actionCell={actionCell}
+              iconButton={iconButton}
+              buttonBase={buttonBase}
+            />
+          ))
+        )}
+      </div>
 
       {editModalOpen && (
         <div style={modalOverlay}>
