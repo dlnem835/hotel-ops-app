@@ -128,21 +128,12 @@ export function formatPmTileStatusLine(
   return `${label} · ${formatPmDueLabel(nextDueDate, urgency, now)}`;
 }
 
-export function formatLastCompletedLabel(
-  completedAt: string | null,
-  now = new Date()
-): string {
-  if (!completedAt) {
-    return "Never completed";
-  }
-
-  const completed = startOfDay(new Date(completedAt));
-  const today = startOfDay(now);
-  const days = daysBetween(completed, today);
-
-  if (days === 0) return "Last completed: today";
-  if (days === 1) return "Last completed: yesterday";
-  return `Last completed: ${days} days ago`;
+export function formatPmCompletionDate(completedAt: string): string {
+  return new Date(completedAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function isDateInCurrentMonth(iso: string, now = new Date()): boolean {

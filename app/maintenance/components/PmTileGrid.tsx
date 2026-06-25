@@ -1,6 +1,7 @@
 "use client";
 
 import { PmTile } from "../lib/maintenance-types";
+import { formatPmCompletionDate } from "../lib/pm-urgency";
 import { getPmTileStyle, PM_TILE_LEGEND } from "../lib/pm-tile-styles";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_CARD_TRANSITION } from "@/app/settings/lib/settings-ui-interactions";
@@ -11,6 +12,24 @@ type PmTileGridProps = {
   emptyMessage?: string;
   totalCount?: number;
 };
+
+function PmCompletionHistory({ tile }: { tile: PmTile }) {
+  if (!tile.lastCompletedAt) {
+    return <span>Never completed</span>;
+  }
+
+  return (
+    <span style={{ display: "block" }}>
+      <span style={{ display: "block" }}>Last completed:</span>
+      <span style={{ display: "block" }}>
+        {formatPmCompletionDate(tile.lastCompletedAt)}
+      </span>
+      {tile.lastCompletedBy && (
+        <span style={{ display: "block" }}>by {tile.lastCompletedBy}</span>
+      )}
+    </span>
+  );
+}
 
 function areaLabel(tile: PmTile): string {
   if (tile.areaName && tile.assetLabel) {
@@ -134,7 +153,7 @@ export default function PmTileGrid({
                     lineHeight: 1.35,
                   }}
                 >
-                  {tile.lastCompletedLabel}
+                  <PmCompletionHistory tile={tile} />
                 </div>
               </button>
             );

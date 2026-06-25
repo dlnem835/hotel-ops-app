@@ -62,7 +62,7 @@ export type PmTile = {
   occurrenceId: number | null;
   estimatedMinutes: number | null;
   lastCompletedAt: string | null;
-  lastCompletedLabel: string;
+  lastCompletedBy: string | null;
 };
 
 export type PmPriorityQueueItem = {
@@ -77,8 +77,17 @@ export type PmPriorityQueueItem = {
   occurrenceId: number | null;
 };
 
+export const PM_COMPLIANCE_PERIODS = ["mtd", "qtd", "ytd"] as const;
+
+export type PmCompliancePeriod = (typeof PM_COMPLIANCE_PERIODS)[number];
+
+export type PmPeriodPerformance = {
+  completionRate: number;
+  onTimeRate: number | null;
+};
+
 export type EngineeringPerformance = {
-  compliancePercent: number;
+  performanceByPeriod: Record<PmCompliancePeriod, PmPeriodPerformance>;
   completedMtd: number;
   pastDueCount: number;
   failedPmItems: number;

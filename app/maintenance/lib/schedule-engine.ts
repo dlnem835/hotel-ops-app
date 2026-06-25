@@ -58,6 +58,54 @@ export function advanceDueDate(dateIso: string, frequency: PmFrequency): string 
   return formatDate(date);
 }
 
+export function enumerateDueDatesInRange(
+  startDateIso: string,
+  frequency: PmFrequency,
+  endDateIso: string | null,
+  rangeStart: Date,
+  rangeEnd: Date
+): string[] {
+  const rangeStartDay = startOfDay(rangeStart);
+  const rangeEndDay = startOfDay(rangeEnd);
+  const assignmentEnd = endDateIso ? startOfDay(parseDate(endDateIso)) : null;
+
+  const results: string[] = [];
+  let due = startDateIso;
+
+  let guard = 0;
+  while (startOfDay(parseDate(due)) < rangeStartDay && guard < 10000) {
+    guard += 1;
+    if (assignmentEnd && startOfDay(parseDate(due)) > assignmentEnd) {
+      return results;
+    }
+    const next = advanceDueDate(due, frequency);
+    if (parseDate(next).getTime() <= parseDate(due).getTime()) {
+      break;
+    }
+    due = next;
+  }
+
+  guard = 0;
+  while (guard < 10000) {
+    guard += 1;
+    const dueDay = startOfDay(parseDate(due));
+    if (dueDay > rangeEndDay) break;
+    if (assignmentEnd && dueDay > assignmentEnd) break;
+
+    if (dueDay >= rangeStartDay && dueDay <= rangeEndDay) {
+      results.push(due);
+    }
+
+    const next = advanceDueDate(due, frequency);
+    if (parseDate(next).getTime() <= parseDate(due).getTime()) {
+      break;
+    }
+    due = next;
+  }
+
+  return results;
+}
+
 export function getActiveDueDate(
   startDateIso: string,
   frequency: PmFrequency,

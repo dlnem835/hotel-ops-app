@@ -10,9 +10,9 @@ import {
 } from "./maintenance-types";
 import { fetchPmDashboardData } from "./pm-db";
 import { PM_FREQUENCY_LABELS } from "./pm-types";
+import { calculatePmPerformanceByPeriod } from "./pm-compliance";
 import {
   classifyPmUrgency,
-  formatLastCompletedLabel,
   formatPmDueLabel,
   formatPmTileStatusLine,
   isDateInCurrentMonth,
@@ -30,7 +30,13 @@ type OccurrenceRow = {
   due_date: string;
   status: string;
   completed_at: string | null;
+  completed_by: string | null;
   responses: PmOccurrenceResponses;
+};
+
+type LastCompletion = {
+  completedAt: string;
+  completedBy: string | null;
 };
 
 function occurrenceKey(assignmentId: number, dueDate: string): string {
@@ -60,7 +66,7 @@ export async function buildMaintenanceDashboard(
         .not("completed_at", "is", null),
       supabase
         .from("pm_occurrences")
-        .select("id, assignment_id, due_date, status, completed_at, responses"),
+        .select("id, assignment_id, due_date, status, completed_at, completed_by, responses"),
     ]);
 
   if (workOrderResult.error) {
@@ -78,7 +84,7 @@ export async function buildMaintenanceDashboard(
   const occurrences = (occurrenceResult.data || []) as OccurrenceRow[];
   const completedByKey = new Map<string, OccurrenceRow>();
   const openByKey = new Map<string, OccurrenceRow>();
-  const lastCompletedByAssignment = new Map<number, string>();
+  const lastCompletedByAssignment = new Map<number, LastCompletion>();
   let failedPmItems = 0;
 
   for (const row of occurrences) {
@@ -89,8 +95,12 @@ export async function buildMaintenanceDashboard(
       completedByKey.set(key, row);
       if (row.completed_at) {
         const existing = lastCompletedByAssignment.get(assignmentId);
-        if (!existing || new Date(row.completed_at) > new Date(existing)) {
-          lastCompletedByAssignment.set(assignmentId, String(row.completed_at));
+        const completedAt = String(row.completed_at);
+        if (!existing || new Date(completedAt) > new Date(existing.completedAt)) {
+          lastCompletedByAssignment.set(assignmentId, {
+            completedAt,
+            completedBy: row.completed_by ? String(row.completed_by) : null,
+          });
         }
       }
     } else if (row.status === "open") {
@@ -112,8 +122,7 @@ export async function buildMaintenanceDashboard(
     const isCompleted = completedByKey.has(key);
     const openOccurrence = openByKey.get(key);
     const urgency = classifyPmUrgency(dueDate, isCompleted, now);
-    const lastCompletedAt =
-      lastCompletedByAssignment.get(schedule.assignmentId) || null;
+    const lastCompletion = lastCompletedByAssignment.get(schedule.assignmentId);
 
     return {
       key: `${schedule.assignmentId}-${dueDate}`,
@@ -130,8 +139,8 @@ export async function buildMaintenanceDashboard(
       dueStatusLine: formatPmTileStatusLine(urgency, dueDate, now),
       occurrenceId: openOccurrence?.id ?? completedByKey.get(key)?.id ?? null,
       estimatedMinutes: schedule.estimatedMinutes,
-      lastCompletedAt,
-      lastCompletedLabel: formatLastCompletedLabel(lastCompletedAt, now),
+      lastCompletedAt: lastCompletion?.completedAt ?? null,
+      lastCompletedBy: lastCompletion?.completedBy ?? null,
     };
   });
 
@@ -164,6 +173,23 @@ export async function buildMaintenanceDashboard(
   );
 
   const metrics = buildMetrics(pmTiles, workOrders, completedByKey, now);
+  const complianceSchedules = pmData.schedules
+    .filter(
+      (schedule) =>
+        schedule.templateStatus === "Active" && schedule.assignmentStatus === "Active"
+    )
+    .map((schedule) => ({
+      assignmentId: schedule.assignmentId,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      frequency: schedule.frequency,
+    }));
+
+  const performanceByPeriod = calculatePmPerformanceByPeriod(
+    complianceSchedules,
+    completedByKey,
+    now
+  );
   const workOrdersClosedMtd = (
     (closedWorkOrdersResult.data || []) as { completed_at: string }[]
   ).filter((row) => {
@@ -175,7 +201,7 @@ export async function buildMaintenanceDashboard(
   }).length;
 
   const engineeringPerformance: EngineeringPerformance = {
-    compliancePercent: metrics.compliancePercent,
+    performanceByPeriod,
     completedMtd: metrics.completedMtd,
     pastDueCount: metrics.pastDuePms,
     failedPmItems,
