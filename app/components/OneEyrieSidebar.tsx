@@ -4,7 +4,7 @@ import Link from "next/link";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/" },
-  { label: "Lost & Found", href: "/" },
+  { label: "Lost & Found", href: "/lost-and-found" },
   { label: "Pass-On Log", href: "/pass-on-log" },
   { label: "Inspections", href: "/inspections" },
   { label: "Maintenance", href: "/maintenance" },

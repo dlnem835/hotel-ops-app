@@ -72,6 +72,15 @@ export default function InspectionsPage() {
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const programParam = params.get("program")?.toUpperCase();
+    if (programParam === "RPM") {
+      setProgram("RPM");
+    }
+  }, []);
+
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);

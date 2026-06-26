@@ -1,0 +1,15 @@
+.dashboard-clickable-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200, 169, 106, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+@media (max-width: 767px) {
+  .dashboard-command-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-command-sidebar {
+    order: -1;
+  }
+}
