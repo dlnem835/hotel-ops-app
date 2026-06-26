@@ -14,6 +14,7 @@ type RoomHistoryDrawerProps = {
   open: boolean;
   room: RoomGridTile | null;
   history: RoomHistoryEntry[];
+  hasMore?: boolean;
   loading: boolean;
   onClose: () => void;
   onStartInspection: (areaId: number) => void;
@@ -23,6 +24,7 @@ export default function RoomHistoryDrawer({
   open,
   room,
   history,
+  hasMore = false,
   loading,
   onClose,
   onStartInspection,
@@ -110,7 +112,19 @@ export default function RoomHistoryDrawer({
             No completed inspections for this room yet.
           </div>
         ) : (
-          history.map((entry) => {
+          <>
+            {hasMore && (
+              <div
+                style={{
+                  color: ONE_EYRIE.textSubtle,
+                  fontSize: "11px",
+                  marginBottom: "12px",
+                }}
+              >
+                Showing latest 12 inspections
+              </div>
+            )}
+            {history.map((entry) => {
             const expanded = expandedId === entry.id;
             return (
               <div
@@ -265,7 +279,8 @@ export default function RoomHistoryDrawer({
                 </Link>
               </div>
             );
-          })
+          })}
+          </>
         )}
       </div>
     </div>

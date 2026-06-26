@@ -2,6 +2,7 @@
 
 import { DashboardMetrics } from "../lib/inspection-types";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import RpmComplianceCard from "./RpmComplianceCard";
 
 type InspectionMetricCardsProps = {
   metrics: DashboardMetrics;
@@ -62,6 +63,36 @@ export default function InspectionMetricCards({
   metrics,
   program,
 }: InspectionMetricCardsProps) {
+  if (program === "RPM") {
+    return (
+      <div
+        className="inspections-rpm-kpi-row"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr)",
+          gap: "12px",
+          marginBottom: "18px",
+        }}
+      >
+        <MetricCard
+          label="RPM Inspected"
+          value={`${metrics.rpmInspected} / ${metrics.rpmTotal}`}
+          accent={ONE_EYRIE.gold}
+        />
+        <MetricCard
+          label="Remaining"
+          value={String(metrics.remaining)}
+          sub="This period"
+        />
+        <MetricCard
+          label="Average Score"
+          value={metrics.averageScore === null ? "—" : `${metrics.averageScore}%`}
+        />
+        <RpmComplianceCard compliance={metrics.rpmCompliance} />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{

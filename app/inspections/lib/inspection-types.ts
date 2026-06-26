@@ -46,6 +46,15 @@ export type PeriodBounds = {
   end: string;
 };
 
+export type RpmCycleCompliance = {
+  compliancePercent: number;
+  completedCount: number;
+  requiredCount: number;
+  remainingCount: number;
+  cycleLabel: string;
+  cycleNumber: number;
+};
+
 export type DashboardMetrics = {
   inspected: number;
   total: number;
@@ -57,6 +66,7 @@ export type DashboardMetrics = {
   rpmInspected: number;
   vrTotal: number;
   rpmTotal: number;
+  rpmCompliance: RpmCycleCompliance;
 };
 
 export type RoomGridTile = {
@@ -73,6 +83,12 @@ export type RoomGridTile = {
   inspectorName: string | null;
   associateName: string | null;
   inspectionType: string | null;
+};
+
+export type InspectorRanking = {
+  inspectorId: string;
+  name: string;
+  inspectionCount: number;
 };
 
 export type HousekeeperRanking = {
@@ -156,6 +172,7 @@ export type DashboardPayload = {
   rooms: RoomGridTile[];
   priorityQueue: PriorityQueueItem[];
   housekeeperRankings: HousekeeperRanking[];
+  topInspectors: InspectorRanking[];
   thresholds: {
     lowScore: number;
     strongScore: number;

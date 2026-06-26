@@ -23,6 +23,7 @@ import StartInspectionPanel, {
   TemplateOption,
 } from "./components/StartInspectionPanel";
 import AssociateRankingsPanel from "./components/AssociateRankingsPanel";
+import TopInspectorsPanel from "./components/TopInspectorsPanel";
 import RoomHistoryDrawer from "./components/RoomHistoryDrawer";
 import "./inspections-responsive.css";
 import { templateMatchesDashboard } from "./lib/program-map";
@@ -68,6 +69,7 @@ export default function InspectionsPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyRoom, setHistoryRoom] = useState<RoomGridTile | null>(null);
   const [history, setHistory] = useState<RoomHistoryEntry[]>([]);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const loadDashboard = useCallback(async () => {
@@ -229,7 +231,13 @@ export default function InspectionsPage() {
     const response = await fetch(`/api/inspections/rooms/${room.areaId}/history`);
     const result = await response.json();
     setHistoryLoading(false);
-    setHistory(response.ok ? result.history || [] : []);
+    if (response.ok) {
+      setHistory(result.history || []);
+      setHistoryHasMore(Boolean(result.hasMore));
+    } else {
+      setHistory([]);
+      setHistoryHasMore(false);
+    }
   }
 
   useEffect(() => {
@@ -410,10 +418,25 @@ export default function InspectionsPage() {
                   rooms={dashboard.rooms}
                   onViewHistory={openRoomHistory}
                 />
-                <AssociateRankingsPanel
-                  rankings={dashboard.housekeeperRankings}
-                  program={program}
-                />
+                <div
+                  className="inspections-mobile-rankings-row"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: "12px",
+                    marginTop: "14px",
+                  }}
+                >
+                  <AssociateRankingsPanel
+                    rankings={dashboard.housekeeperRankings}
+                    program={program}
+                    periodLabel={PERIOD_LABELS[period]}
+                  />
+                  <TopInspectorsPanel
+                    inspectors={dashboard.topInspectors}
+                    periodLabel={PERIOD_LABELS[period]}
+                  />
+                </div>
               </div>
 
               <div
@@ -449,6 +472,7 @@ export default function InspectionsPage() {
           open={historyOpen}
           room={historyRoom}
           history={history}
+          hasMore={historyHasMore}
           loading={historyLoading}
           onClose={() => setHistoryOpen(false)}
           onStartInspection={(areaId) => {

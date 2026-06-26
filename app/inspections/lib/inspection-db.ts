@@ -5,6 +5,7 @@ import {
   DashboardPayload,
   GuestRoomRow,
   HousekeeperRanking,
+  InspectorRanking,
   InspectionItemResponse,
   InspectionSession,
   ItemResponseInput,
@@ -17,6 +18,12 @@ import {
 } from "./period-utils";
 import { buildPriorityQueue, SummaryRow } from "./priority-queue";
 import { programMatchesDashboard, resolveInspectionProgram } from "./program-map";
+import {
+  calculateRpmCycleCompliance,
+  formatRpmCycleLabel,
+  getRpmCycleBounds,
+  getRpmCycleEndIso,
+} from "./rpm-cycle";
 import { standardToPropertyContent } from "../standards/builders";
 import { PropertyInspectionTemplate, PropertyTemplateContent } from "../standards/types";
 import { getSupabaseAdmin } from "./property-template-db";
@@ -288,6 +295,43 @@ function buildHousekeeperRankings(
     .slice(0, 5);
 }
 
+function buildTopInspectors(
+  sessions: PeriodSessionRow[],
+  program: "VR" | "RPM",
+  periodStart: string,
+  periodEnd: string,
+  memberNames: Map<string, string>
+): InspectorRanking[] {
+  const byInspector = new Map<string, number>();
+
+  for (const session of sessions) {
+    if (!session.inspector_id || !session.completed_at) continue;
+    if (session.completed_at < periodStart || session.completed_at > periodEnd) {
+      continue;
+    }
+    if (!programMatchesDashboard(session.inspection_program as never, program)) {
+      continue;
+    }
+
+    const inspectorId = String(session.inspector_id);
+    byInspector.set(inspectorId, (byInspector.get(inspectorId) || 0) + 1);
+  }
+
+  return [...byInspector.entries()]
+    .map(([inspectorId, inspectionCount]) => ({
+      inspectorId,
+      name: memberNames.get(inspectorId) || "Unknown",
+      inspectionCount,
+    }))
+    .sort((a, b) => {
+      if (b.inspectionCount !== a.inspectionCount) {
+        return b.inspectionCount - a.inspectionCount;
+      }
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 5);
+}
+
 export async function buildDashboard(
   supabase: SupabaseClient,
   periodParam: string | null,
@@ -297,24 +341,52 @@ export async function buildDashboard(
   const program = parseDashboardProgram(programParam);
   const settings = await fetchInspectionSettings(supabase);
   const periodBounds = getPeriodBounds(period, new Date(), settings.week_starts_on);
+  const now = new Date();
+  const rpmCycleBounds = getRpmCycleBounds(now, settings.week_starts_on);
 
   const rooms = await fetchGuestRooms(supabase);
   const activeRooms = rooms.filter(
     (room) => room.inspection_enabled && room.status === "Active"
   );
+  const activeRoomIds = new Set(activeRooms.map((room) => room.id));
 
-  const { data: sessionRows, error: sessionError } = await supabase
-    .from("inspection_sessions")
-    .select(
-      "area_id, inspection_program, completed_at, score_percent, earned_points, possible_points, status, inspector_id, associate_id, template_snapshot"
-    )
-    .eq("status", "completed")
-    .gte("completed_at", periodBounds.start)
-    .lte("completed_at", periodBounds.end);
+  const [sessionResult, rpmCycleSessionResult] = await Promise.all([
+    supabase
+      .from("inspection_sessions")
+      .select(
+        "area_id, inspection_program, completed_at, score_percent, earned_points, possible_points, status, inspector_id, associate_id, template_snapshot"
+      )
+      .eq("status", "completed")
+      .gte("completed_at", periodBounds.start)
+      .lte("completed_at", periodBounds.end),
+    supabase
+      .from("inspection_sessions")
+      .select("area_id, inspection_program, completed_at")
+      .eq("status", "completed")
+      .gte("completed_at", rpmCycleBounds.start.toISOString())
+      .lte("completed_at", getRpmCycleEndIso(rpmCycleBounds)),
+  ]);
+
+  const { data: sessionRows, error: sessionError } = sessionResult;
 
   if (sessionError) {
     throw new Error(sessionError.message);
   }
+
+  if (rpmCycleSessionResult.error) {
+    throw new Error(rpmCycleSessionResult.error.message);
+  }
+
+  const rpmCycleComplianceResult = calculateRpmCycleCompliance(
+    activeRoomIds,
+    (rpmCycleSessionResult.data || []).map((row) => ({
+      area_id: Number(row.area_id),
+      inspection_program: String(row.inspection_program),
+      completed_at: String(row.completed_at),
+    })),
+    (inspectionProgram) =>
+      programMatchesDashboard(inspectionProgram as never, "RPM")
+  );
 
   const completedSessions: PeriodSessionRow[] = (sessionRows || []).map((row) => ({
     area_id: Number(row.area_id),
@@ -478,6 +550,11 @@ export async function buildDashboard(
       rpmInspected,
       vrTotal: activeRooms.length,
       rpmTotal: activeRooms.length,
+      rpmCompliance: {
+        ...rpmCycleComplianceResult,
+        cycleLabel: formatRpmCycleLabel(rpmCycleBounds),
+        cycleNumber: rpmCycleBounds.cycleNumber,
+      },
     },
     rooms: gridRooms.map(({ _programSummary: _, ...tile }) => tile),
     priorityQueue: buildPriorityQueue(priorityRows, program, 3),
@@ -489,6 +566,13 @@ export async function buildDashboard(
       activeRooms.length,
       memberNames
     ),
+    topInspectors: buildTopInspectors(
+      completedSessions,
+      program,
+      periodBounds.start,
+      periodBounds.end,
+      memberNames
+    ),
     thresholds: {
       lowScore: settings.low_score_threshold,
       strongScore: settings.strong_score_threshold,
@@ -496,10 +580,12 @@ export async function buildDashboard(
   };
 }
 
+export const ROOM_HISTORY_LIMIT = 12;
+
 export async function fetchRoomHistory(
   supabase: SupabaseClient,
   areaId: number
-): Promise<RoomHistoryEntry[]> {
+): Promise<{ history: RoomHistoryEntry[]; hasMore: boolean }> {
   const { data: sessions, error } = await supabase
     .from("inspection_sessions")
     .select(
@@ -508,15 +594,19 @@ export async function fetchRoomHistory(
     .eq("area_id", areaId)
     .eq("status", "completed")
     .order("completed_at", { ascending: false })
-    .limit(50);
+    .limit(ROOM_HISTORY_LIMIT + 1);
 
   if (error) {
     throw new Error(error.message);
   }
 
+  const sessionRows = sessions || [];
+  const hasMore = sessionRows.length > ROOM_HISTORY_LIMIT;
+  const limitedSessions = sessionRows.slice(0, ROOM_HISTORY_LIMIT);
+
   const inspectorIds = new Set<string>();
   const associateIds = new Set<string>();
-  for (const row of sessions || []) {
+  for (const row of limitedSessions) {
     if (row.inspector_id) inspectorIds.add(String(row.inspector_id));
     if (row.associate_id) associateIds.add(String(row.associate_id));
   }
@@ -538,7 +628,7 @@ export async function fetchRoomHistory(
     }
   }
 
-  const sessionIds = (sessions || []).map((row) => Number(row.id));
+  const sessionIds = limitedSessions.map((row) => Number(row.id));
   const failedBySession = new Map<
     number,
     Array<{
@@ -575,7 +665,7 @@ export async function fetchRoomHistory(
     }
   }
 
-  return (sessions || []).map((row) => {
+  const history = limitedSessions.map((row) => {
     const snapshot = row.template_snapshot as { name?: string };
     return {
       id: Number(row.id),
@@ -600,6 +690,8 @@ export async function fetchRoomHistory(
       failedItems: failedBySession.get(Number(row.id)) || [],
     };
   });
+
+  return { history, hasMore };
 }
 
 function buildTemplateSnapshot(template: PropertyInspectionTemplate) {
