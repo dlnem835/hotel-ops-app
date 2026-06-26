@@ -19,6 +19,20 @@ import {
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 
+function readInitialPmFiltersFromUrl(): PmTileFilterKey[] {
+  if (typeof window === "undefined") return DEFAULT_PM_TILE_FILTERS;
+  const filter = new URLSearchParams(window.location.search).get("filter");
+  if (
+    filter === "past_due" ||
+    filter === "due_today" ||
+    filter === "upcoming" ||
+    filter === "completed"
+  ) {
+    return [filter];
+  }
+  return DEFAULT_PM_TILE_FILTERS;
+}
+
 type PmTileGridSectionProps = {
   tiles: PmTile[];
   onOpenPm: (tile: PmTile) => void;
@@ -65,7 +79,7 @@ function CarouselArrow({
 
 export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSectionProps) {
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
-    () => new Set(DEFAULT_PM_TILE_FILTERS)
+    () => new Set(readInitialPmFiltersFromUrl())
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);

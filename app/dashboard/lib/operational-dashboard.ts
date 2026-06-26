@@ -1,13 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { buildDashboard as buildInspectionDashboard } from "@/app/inspections/lib/inspection-db";
+import { RoomGridTile } from "@/app/inspections/lib/inspection-types";
 import { buildMaintenanceDashboard } from "@/app/maintenance/lib/maintenance-dashboard";
+import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import {
   getLocalDateString,
   isStoredToday,
   shiftLocalDateString,
 } from "./date-utils";
 import {
-  AttentionItem,
   OperationalDashboardPayload,
   PassOnLogEntry,
 } from "./operational-types";
@@ -30,66 +31,22 @@ function normalizePassOnEntry(row: {
   };
 }
 
-function buildNeedsAttention(input: {
-  pastDuePms: number;
-  urgentWorkOrders: number;
-  readyToShip: number;
-  vrRemaining: number;
-  rpmRemaining: number;
-}): AttentionItem[] {
-  const items: AttentionItem[] = [];
-
-  if (input.pastDuePms > 0) {
-    items.push({
-      id: "overdue-pms",
-      label: `${input.pastDuePms} Overdue PM${input.pastDuePms === 1 ? "" : "s"}`,
-      count: input.pastDuePms,
-      href: "/maintenance",
-      severity: "critical",
-    });
+function formatPmDueTodayLabel(tile: PmTile): string {
+  if (tile.areaName) {
+    return `${tile.areaName} – ${tile.templateName}`;
   }
-
-  if (input.urgentWorkOrders > 0) {
-    items.push({
-      id: "urgent-work-orders",
-      label: `${input.urgentWorkOrders} Urgent Work Order${input.urgentWorkOrders === 1 ? "" : "s"}`,
-      count: input.urgentWorkOrders,
-      href: "/maintenance",
-      severity: "critical",
-    });
+  if (tile.assetLabel) {
+    return `${tile.assetLabel} – ${tile.templateName}`;
   }
+  return tile.templateName;
+}
 
-  if (input.readyToShip > 0) {
-    items.push({
-      id: "lost-ready-to-ship",
-      label: `${input.readyToShip} Lost Item${input.readyToShip === 1 ? "" : "s"} Ready to Ship`,
-      count: input.readyToShip,
-      href: "/lost-and-found",
-      severity: "warning",
-    });
-  }
-
-  if (input.vrRemaining > 0) {
-    items.push({
-      id: "vr-remaining",
-      label: `${input.vrRemaining} VR Inspection${input.vrRemaining === 1 ? "" : "s"} Remaining`,
-      count: input.vrRemaining,
-      href: "/inspections",
-      severity: "warning",
-    });
-  }
-
-  if (input.rpmRemaining > 0) {
-    items.push({
-      id: "rpm-remaining",
-      label: `${input.rpmRemaining} RPM Inspection${input.rpmRemaining === 1 ? "" : "s"} Remaining`,
-      count: input.rpmRemaining,
-      href: "/inspections?program=rpm",
-      severity: "warning",
-    });
-  }
-
-  return items;
+function countPastDueInspectionRooms(rooms: RoomGridTile[]): number {
+  return rooms.filter(
+    (room) =>
+      room.neverInspectedForProgram ||
+      (room.neverInspectedInPeriod && Boolean(room.operationalLastCompletedAt))
+  ).length;
 }
 
 export async function buildOperationalDashboard(
@@ -99,19 +56,26 @@ export async function buildOperationalDashboard(
   const yesterday = shiftLocalDateString(new Date(), -1);
   const tomorrow = shiftLocalDateString(new Date(), 1);
 
-  const [maintenance, inspectionVr, inspectionRpm, passOnResult, lostItemsResult] =
-    await Promise.all([
-      buildMaintenanceDashboard(supabase),
-      buildInspectionDashboard(supabase, "mtd", "vr"),
-      buildInspectionDashboard(supabase, "mtd", "rpm"),
-      supabase
-        .from("pass_on_log")
-        .select("id, subject, author, message, priority, entry_date")
-        .in("entry_date", [today, yesterday, tomorrow])
-        .order("entry_date", { ascending: false })
-        .order("created_at", { ascending: false }),
-      supabase.from("lost_items").select("id, status, created_at"),
-    ]);
+  const [
+    maintenance,
+    inspectionRpmToday,
+    inspectionVrMtd,
+    inspectionRpmMtd,
+    passOnResult,
+    lostItemsResult,
+  ] = await Promise.all([
+    buildMaintenanceDashboard(supabase),
+    buildInspectionDashboard(supabase, "today", "rpm"),
+    buildInspectionDashboard(supabase, "mtd", "vr"),
+    buildInspectionDashboard(supabase, "mtd", "rpm"),
+    supabase
+      .from("pass_on_log")
+      .select("id, subject, author, message, priority, entry_date")
+      .in("entry_date", [today, yesterday, tomorrow])
+      .order("entry_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase.from("lost_items").select("id, status, created_at"),
+  ]);
 
   if (passOnResult.error) {
     throw new Error(passOnResult.error.message);
@@ -134,21 +98,36 @@ export async function buildOperationalDashboard(
   ).length;
   const storedToday = lostItems.filter(
     (item) =>
-      item.status === "Stored" && isStoredToday(item.created_at ? String(item.created_at) : null, today)
+      item.status === "Stored" &&
+      isStoredToday(item.created_at ? String(item.created_at) : null, today)
   ).length;
 
-  const urgentWorkOrders = maintenance.workOrders.filter(
-    (order) => order.priority === "Urgent"
-  ).length;
+  const nextPmDueToday = maintenance.pmTiles.find(
+    (tile) => tile.urgency === "due_today"
+  );
+  const nextRpm = inspectionRpmToday.priorityQueue[0];
 
   return {
-    needsAttention: buildNeedsAttention({
-      pastDuePms: maintenance.metrics.pastDuePms,
-      urgentWorkOrders,
-      readyToShip,
-      vrRemaining: inspectionVr.metrics.remaining,
-      rpmRemaining: inspectionRpm.metrics.remaining,
-    }),
+    todaysWork: {
+      pms: {
+        label: nextPmDueToday ? formatPmDueTodayLabel(nextPmDueToday) : null,
+        href: "/maintenance?filter=due_today",
+      },
+      rpms: {
+        label: nextRpm ? `Room ${nextRpm.name}` : null,
+        href: "/inspections?period=today&program=rpm",
+      },
+    },
+    pastDue: {
+      pms: maintenance.metrics.pastDuePms,
+      vrInspections: countPastDueInspectionRooms(inspectionVrMtd.rooms),
+      rpmInspections: countPastDueInspectionRooms(inspectionRpmMtd.rooms),
+      hrefs: {
+        pms: "/maintenance?filter=past_due",
+        vrInspections: "/inspections?period=mtd&program=vr",
+        rpmInspections: "/inspections?period=mtd&program=rpm",
+      },
+    },
     passOnLog,
     workOrders: maintenance.workOrders.slice(0, 6).map((order) => ({
       id: order.id,

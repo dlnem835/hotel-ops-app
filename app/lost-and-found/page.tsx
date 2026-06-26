@@ -202,16 +202,18 @@ setTeamMembers(allTeamMembers || []);
               <p style={mutedText}>Items ready for shipping</p>
             </div>
             <div
-  style={{
-    ...iconBox,
-    background: "rgba(28, 52, 40, 0.35)",
-    color: FOREST.text,
-    fontSize: "24px",
-    boxShadow: "0 0 18px rgba(61, 107, 79, 0.2)",
-  }}
->
-  ≡ƒôª
-</div>
+              style={{
+                ...iconBox,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(28, 52, 40, 0.35)",
+                color: FOREST.text,
+                boxShadow: "0 0 18px rgba(61, 107, 79, 0.2)",
+              }}
+            >
+              <Package size={24} strokeWidth={2} />
+            </div>
           </div>
 
           <div style={cardStyle}>
@@ -221,16 +223,18 @@ setTeamMembers(allTeamMembers || []);
               <p style={mutedText}>Items older than 6 months</p>
             </div>
             <div
-  style={{
-    ...iconBox,
-    background: "rgba(139, 82, 82, 0.15)",
-    color: FLAT_RED.text,
-    fontSize: "22px",
-    boxShadow: "0 0 18px rgba(139, 82, 82, 0.18)",
-  }}
->
-  ≡ƒùæ∩╕Å
-</div>
+              style={{
+                ...iconBox,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(139, 82, 82, 0.15)",
+                color: FLAT_RED.text,
+                boxShadow: "0 0 18px rgba(139, 82, 82, 0.18)",
+              }}
+            >
+              <Trash2 size={22} strokeWidth={2} />
+            </div>
           </div>
         </div>
 

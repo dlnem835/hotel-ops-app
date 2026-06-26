@@ -9,6 +9,10 @@
     grid-template-columns: 1fr !important;
   }
 
+  .dashboard-todays-work-row {
+    grid-template-columns: 1fr !important;
+  }
+
   .dashboard-command-sidebar {
     order: -1;
   }

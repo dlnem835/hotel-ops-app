@@ -79,6 +79,17 @@ export default function InspectionsPage() {
     if (programParam === "RPM") {
       setProgram("RPM");
     }
+
+    const periodParam = params.get("period")?.toLowerCase();
+    if (
+      periodParam === "today" ||
+      periodParam === "wtd" ||
+      periodParam === "mtd" ||
+      periodParam === "qtd" ||
+      periodParam === "ytd"
+    ) {
+      setPeriod(periodParam);
+    }
   }, []);
 
   const loadDashboard = useCallback(async () => {

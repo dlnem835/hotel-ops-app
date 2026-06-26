@@ -1,13 +1,3 @@
-export type AttentionSeverity = "critical" | "warning";
-
-export type AttentionItem = {
-  id: string;
-  label: string;
-  count: number;
-  href: string;
-  severity: AttentionSeverity;
-};
-
 export type PassOnLogEntry = {
   id: number;
   subject: string;
@@ -26,8 +16,28 @@ export type DashboardWorkOrder = {
   areaLabel: string | null;
 };
 
+export type TodaysWorkCard = {
+  label: string | null;
+  href: string;
+};
+
+export type PastDueSummary = {
+  pms: number;
+  vrInspections: number;
+  rpmInspections: number;
+  hrefs: {
+    pms: string;
+    vrInspections: string;
+    rpmInspections: string;
+  };
+};
+
 export type OperationalDashboardPayload = {
-  needsAttention: AttentionItem[];
+  todaysWork: {
+    pms: TodaysWorkCard;
+    rpms: TodaysWorkCard;
+  };
+  pastDue: PastDueSummary;
   passOnLog: Record<PassOnLogDay, PassOnLogEntry[]>;
   workOrders: DashboardWorkOrder[];
   openWorkOrderCount: number;

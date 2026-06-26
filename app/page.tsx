@@ -7,7 +7,8 @@ import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
-import NeedsAttentionSection from "./dashboard/components/NeedsAttentionSection";
+import TodaysWorkSection from "./dashboard/components/TodaysWorkSection";
+import PastDueSummaryBar from "./dashboard/components/PastDueSummaryBar";
 import PassOnLogSection from "./dashboard/components/PassOnLogSection";
 import OpenWorkOrdersSection from "./dashboard/components/OpenWorkOrdersSection";
 import LostFoundSummaryCard from "./dashboard/components/LostFoundSummaryCard";
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<OperationalDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState("Unknown");
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,16 @@ export default function DashboardPage() {
         return;
       }
 
+      const { data: teamMember } = await supabase
+        .from("team_members")
+        .select("first_name, last_name, username")
+        .eq("auth_user_id", session.user.id)
+        .single();
+
+      if (teamMember) {
+        setCurrentUserName(teamMember.username || "unknown");
+      }
+
       await loadDashboard();
     }
 
@@ -61,7 +73,31 @@ export default function DashboardPage() {
       <section style={MAIN_CONTENT}>
         <OneEyriePageHeader
           title="Dashboard"
-          subtitle="What needs your attention right now"
+          subtitle="What must be completed today?"
+          actions={
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                {currentUserName}
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = "/login";
+                }}
+                className="one-eyrie-text-btn"
+                style={{ fontSize: "12px", padding: 0, marginTop: "2px" }}
+              >
+                Logout
+              </button>
+            </div>
+          }
         />
 
         {error && (
@@ -84,7 +120,12 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <NeedsAttentionSection items={dashboard.needsAttention} />
+            <TodaysWorkSection
+              pms={dashboard.todaysWork.pms}
+              rpms={dashboard.todaysWork.rpms}
+            />
+
+            <PastDueSummaryBar pastDue={dashboard.pastDue} />
 
             <div
               className="dashboard-command-grid"
