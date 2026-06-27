@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 import { DashboardWorkOrder } from "../lib/operational-types";
-import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { DashboardSectionTitle } from "./DashboardCard";
-
-function priorityDotColor(priority: string): string {
-  if (priority === "Urgent") return "#8B5252";
-  if (priority === "Important") return ONE_EYRIE.gold;
-  return FOREST.border;
-}
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
 
 type OpenWorkOrdersSectionProps = {
   workOrders: DashboardWorkOrder[];
@@ -27,6 +21,9 @@ export default function OpenWorkOrdersSection({
         border: `1px solid ${ONE_EYRIE.border}`,
         borderRadius: "14px",
         padding: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
       }}
     >
       <div
@@ -35,13 +32,16 @@ export default function OpenWorkOrdersSection({
           justifyContent: "space-between",
           alignItems: "flex-start",
           gap: "12px",
-          marginBottom: "12px",
         }}
       >
-        <DashboardSectionTitle
-          title="Open Work Orders"
-          subtitle="Live engineering checklist"
-        />
+        <div>
+          <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+            Work Order Checklist
+          </div>
+          <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
+            Guest-impacting · Urgent → Important → Normal · oldest first
+          </div>
+        </div>
         <Link
           href="/maintenance"
           style={{
@@ -57,48 +57,52 @@ export default function OpenWorkOrdersSection({
       </div>
 
       {workOrders.length === 0 ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "8px 2px" }}>
-          No open work orders.
+        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "12px 0" }}>
+          No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {workOrders.map((order) => (
-              <Link
-                key={order.id}
-                href="/maintenance"
-                className="dashboard-clickable-card"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "11px 12px",
-                  borderRadius: "10px",
-                  border: `1px solid ${ONE_EYRIE.borderDivider}`,
-                  background: ONE_EYRIE.surfacePanel,
-                  textDecoration: "none",
-                  color: ONE_EYRIE.text,
-                }}
-              >
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "999px",
-                    background: priorityDotColor(order.priority),
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: "13px" }}>{order.subject}</div>
-                  {order.areaLabel && (
-                    <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "2px" }}>
-                      {order.areaLabel}
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-        </div>
+        workOrders.map((order, index) => (
+          <Link
+            key={order.id}
+            href="/maintenance"
+            className="dashboard-clickable-card"
+            style={{
+              display: "block",
+              border: `1px solid ${ONE_EYRIE.border}`,
+              borderRadius: "10px",
+              padding: "12px",
+              background: ONE_EYRIE.surfacePanel,
+              textDecoration: "none",
+              color: ONE_EYRIE.text,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                alignItems: "center",
+                marginBottom: "6px",
+              }}
+            >
+              <span style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
+                {index + 1}. {order.subject}
+              </span>
+              <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                {order.priority}
+              </span>
+            </div>
+            <div
+              style={{
+                color: ONE_EYRIE.textMuted,
+                fontSize: "12px",
+                lineHeight: 1.45,
+              }}
+            >
+              {order.areaLabel || "No area specified"}
+            </div>
+          </Link>
+        ))
       )}
     </section>
   );

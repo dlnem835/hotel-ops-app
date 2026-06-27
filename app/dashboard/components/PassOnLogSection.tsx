@@ -20,14 +20,36 @@ const TABS: { key: PassOnLogDay; label: string }[] = [
   { key: "tomorrow", label: "Tomorrow" },
 ];
 
-function priorityStyle(priority: string) {
-  if (priority === "Urgent") {
-    return { color: FLAT_RED.text, border: FLAT_RED.border, background: FLAT_RED.bg };
-  }
-  if (priority === "Important") {
-    return { color: ONE_EYRIE.gold, border: ONE_EYRIE.gold, background: "#2A2418" };
-  }
-  return { color: FOREST.text, border: FOREST.border, background: FOREST.bg };
+const PASS_ON_PANEL = {
+  background: "#0B0B0B",
+  border: "1px solid #2A2A2A",
+} as const;
+
+function priorityPillStyle(priority: string) {
+  const color =
+    priority === "Urgent"
+      ? FLAT_RED.border
+      : priority === "Important"
+        ? ONE_EYRIE.gold
+        : FOREST.border;
+
+  const textColor =
+    priority === "Urgent"
+      ? FLAT_RED.text
+      : priority === "Important"
+        ? ONE_EYRIE.gold
+        : FOREST.text;
+
+  return {
+    display: "inline-block" as const,
+    color: textColor,
+    border: `1px solid ${color}`,
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontSize: "12px",
+    fontWeight: "bold" as const,
+    whiteSpace: "nowrap" as const,
+  };
 }
 
 export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
@@ -37,8 +59,7 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
   return (
     <section
       style={{
-        background: ONE_EYRIE.surface,
-        border: `1px solid ${ONE_EYRIE.border}`,
+        ...PASS_ON_PANEL,
         borderRadius: "14px",
         padding: "16px",
         minHeight: "320px",
@@ -58,7 +79,7 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
       >
         <DashboardSectionTitle
           title="Pass-On Log"
-          subtitle="Hotel communication center"
+          subtitle="Shift notes and hotel communication"
         />
         <Link
           href="/pass-on-log"
@@ -96,73 +117,70 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
         ))}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
         {entries.length === 0 ? (
-          <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "8px 2px" }}>
+          <div style={{ color: "#9CA3AF", fontSize: "13px", padding: "8px 2px" }}>
             No pass-on entries for {TABS.find((tab) => tab.key === activeTab)?.label.toLowerCase()}.
           </div>
         ) : (
-          entries.slice(0, 8).map((entry) => {
-            const pill = priorityStyle(entry.priority);
-            return (
-              <Link
-                key={entry.id}
-                href="/pass-on-log"
-                className="dashboard-clickable-card"
+          entries.slice(0, 8).map((entry) => (
+            <Link
+              key={entry.id}
+              href="/pass-on-log"
+              className="one-eyrie-list-row dashboard-clickable-card"
+              style={{
+                display: "block",
+                padding: "10px 12px",
+                textDecoration: "none",
+                color: ONE_EYRIE.text,
+              }}
+            >
+              <div
                 style={{
-                  display: "block",
-                  padding: "12px 14px",
-                  borderRadius: "10px",
-                  border: `1px solid ${ONE_EYRIE.borderDivider}`,
-                  background: ONE_EYRIE.surfacePanel,
-                  textDecoration: "none",
-                  color: ONE_EYRIE.text,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                  marginBottom: "6px",
                 }}
               >
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "10px",
-                    alignItems: "flex-start",
-                    marginBottom: "6px",
+                    fontSize: "16px",
+                    fontWeight: 700,
+                    color: "#FFFFFF",
+                    minWidth: 0,
                   }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: "14px" }}>{entry.subject}</div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      padding: "3px 8px",
-                      borderRadius: "999px",
-                      border: `1px solid ${pill.border}`,
-                      background: pill.background,
-                      color: pill.color,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {entry.priority}
-                  </span>
+                  {entry.subject}
                 </div>
-                <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginBottom: "6px" }}>
-                  {entry.author}
-                </div>
-                <div
-                  style={{
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "12px",
-                    lineHeight: 1.45,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {entry.message}
-                </div>
-              </Link>
-            );
-          })
+                <span style={priorityPillStyle(entry.priority)}>{entry.priority}</span>
+              </div>
+              <div
+                style={{
+                  marginTop: "3px",
+                  fontSize: "12px",
+                  color: "#B8C1D1",
+                  marginBottom: "6px",
+                }}
+              >
+                {entry.author}
+              </div>
+              <div
+                style={{
+                  color: "#9CA3AF",
+                  fontSize: "12px",
+                  lineHeight: 1.45,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {entry.message}
+              </div>
+            </Link>
+          ))
         )}
       </div>
     </section>

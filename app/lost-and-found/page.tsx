@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package } from "lucide-react";
+import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import {
   forestHoverHandlers,
-  forestOutlineHoverHandlers,
-  FOREST_OUTLINE_BUTTON,
   PRIMARY_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 
@@ -207,12 +205,9 @@ setTeamMembers(allTeamMembers || []);
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(28, 52, 40, 0.35)",
-                color: FOREST.text,
-                boxShadow: "0 0 18px rgba(61, 107, 79, 0.2)",
               }}
             >
-              <Package size={24} strokeWidth={2} />
+              <Package size={24} strokeWidth={2} color={FOREST.text} />
             </div>
           </div>
 
@@ -228,12 +223,9 @@ setTeamMembers(allTeamMembers || []);
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(139, 82, 82, 0.15)",
-                color: FLAT_RED.text,
-                boxShadow: "0 0 18px rgba(139, 82, 82, 0.18)",
               }}
             >
-              <Trash2 size={22} strokeWidth={2} />
+              <Trash2 size={22} strokeWidth={2} color={FLAT_RED.text} />
             </div>
           </div>
         </div>
@@ -275,8 +267,8 @@ setTeamMembers(allTeamMembers || []);
 
           <button
             type="submit"
-            style={FOREST_OUTLINE_BUTTON}
-            {...forestOutlineHoverHandlers()}
+            style={PRIMARY_BUTTON}
+            {...forestHoverHandlers()}
           >
             Add Item
           </button>
@@ -317,11 +309,11 @@ setTeamMembers(allTeamMembers || []);
       </div>
 
       <button type="button" onClick={() => setSortOrder("newest")} className="one-eyrie-menu-item" style={filterMenuButton}>
-        Newest First {sortOrder === "newest" ? "Γ£ô" : ""}
+        Newest First {sortOrder === "newest" ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
       </button>
 
       <button type="button" onClick={() => setSortOrder("oldest")} className="one-eyrie-menu-item" style={filterMenuButton}>
-        Oldest First {sortOrder === "oldest" ? "Γ£ô" : ""}
+        Oldest First {sortOrder === "oldest" ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
       </button>
 
       <div style={{ height: "1px", background: "#2A2A2A", margin: "14px 0" }} />
@@ -338,7 +330,7 @@ setTeamMembers(allTeamMembers || []);
           className="one-eyrie-menu-item"
           style={filterMenuButton}
         >
-          {status} {statusFilter === status ? "Γ£ô" : ""}
+          {status} {statusFilter === status ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
         </button>
       ))}
     </div>
@@ -441,7 +433,7 @@ setTeamMembers(allTeamMembers || []);
             <td style={{ ...tdStyle, color: "#E5E7EB", whiteSpace: "nowrap" }}>
               {item.created_at
                 ? new Date(item.created_at).toLocaleDateString()
-                : "ΓÇö"}
+                : "—"}
             </td>
 
             <td style={tdStyle}>
@@ -467,17 +459,17 @@ setTeamMembers(allTeamMembers || []);
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "6px",
-                    color: "#E5E7EB",
+                    color: ONE_EYRIE.text,
                     textDecoration: "none",
                     fontWeight: "bold",
                     fontSize: "12px",
                   }}
                 >
-                  <span style={{ color: FOREST.text }}>Γ£ô</span>
+                  <Check size={14} color={FOREST.border} strokeWidth={2.5} />
                   Label
                 </a>
               ) : (
-                <span style={{ color: "#6B7280" }}>ΓÇö</span>
+                <span style={{ color: "#6B7280" }}>—</span>
               )}
             </td>
 

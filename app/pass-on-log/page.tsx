@@ -19,8 +19,10 @@ import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import {
+  forestHoverHandlers,
   forestOutlineHoverHandlers,
   FOREST_OUTLINE_BUTTON,
+  PRIMARY_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
@@ -395,7 +397,7 @@ function dateHeader(dateString: string) {
                   type="button"
                   style={newPassOnButton}
                   onClick={() => setShowForm(true)}
-                  {...forestOutlineHoverHandlers()}
+                  {...forestHoverHandlers()}
                 >
                   <Plus size={18} /> New
                 </button>
@@ -976,12 +978,11 @@ const inputStyle: React.CSSProperties = {
 };
 
 const newPassOnButton: React.CSSProperties = {
-  ...FOREST_OUTLINE_BUTTON,
+  ...PRIMARY_BUTTON,
   borderRadius: "999px",
   padding: "12px 22px",
-  fontSize: "14px",
-  gap: "8px",
   minHeight: "44px",
+  height: "auto",
 };
 
 const goldButton: React.CSSProperties = {

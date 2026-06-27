@@ -26,14 +26,14 @@ function PastDueLink({
         alignItems: "baseline",
         gap: "6px",
         padding: "8px 12px",
-        borderRadius: "8px",
-        border: `1px solid ${ONE_EYRIE.borderDivider}`,
-        background: ONE_EYRIE.surfacePanel,
+        borderRadius: "12px",
         textDecoration: "none",
-        color: ONE_EYRIE.text,
+        background: FLAT_RED.bg,
+        border: `1px solid ${FLAT_RED.border}`,
+        color: FLAT_RED.text,
       }}
     >
-      <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
+      <span style={{ color: FLAT_RED.text, fontSize: "12px", fontWeight: 700, opacity: 0.9 }}>
         {label}:
       </span>
       <span
@@ -54,6 +54,7 @@ export default function PastDueSummaryBar({ pastDue }: PastDueSummaryBarProps) {
 
   return (
     <section
+      className="dashboard-row-card"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -61,8 +62,6 @@ export default function PastDueSummaryBar({ pastDue }: PastDueSummaryBarProps) {
         gap: "10px 14px",
         padding: "12px 14px",
         borderRadius: "12px",
-        border: `1px solid ${ONE_EYRIE.border}`,
-        background: ONE_EYRIE.surfaceInset,
       }}
     >
       <div
