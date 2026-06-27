@@ -7,6 +7,9 @@ export const ONE_EYRIE = {
   surfacePanel: "#1A1815",
   surfaceInset: "#151515",
   row: "#302D28",
+  /** Pass-on log list rows + mobile home module tiles (locked) */
+  listRow: "#45423E",
+  listRowActive: "#4E4A45",
   black: "#111111",
   border: "#3A352E",
   borderDivider: "#2A2A2A",
@@ -15,6 +18,13 @@ export const ONE_EYRIE = {
   textRow: "#E5E7EB",
   textMuted: "#C9C9C9",
   textSubtle: "#9CA3AF",
+} as const;
+
+/** Mobile home module tiles — same as ONE_EYRIE.listRow (locked) */
+export const MOBILE_HOME_TILE = {
+  bg: ONE_EYRIE.listRow,
+  bgActive: ONE_EYRIE.listRowActive,
+  border: ONE_EYRIE.border,
 } as const;
 
 /** Shared operational colors — forest green + flat muted red */

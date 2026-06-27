@@ -563,8 +563,8 @@ setTeamMembers(allTeamMembers || []);
 
 const cardStyle: React.CSSProperties = {
   flex: 1,
-  background: "linear-gradient(135deg, #211F1B, #211F1B)",
-  border: "1px solid #2A2A2A",
+  background: ONE_EYRIE.listRow,
+  border: `1px solid ${ONE_EYRIE.border}`,
   borderRadius: "16px",
   padding: "22px",
   display: "flex",

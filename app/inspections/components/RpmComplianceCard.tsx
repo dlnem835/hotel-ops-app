@@ -15,7 +15,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
   return (
     <div
       style={{
-        background: ONE_EYRIE.surface,
+        background: ONE_EYRIE.listRow,
         border: `1px solid ${ONE_EYRIE.border}`,
         borderRadius: "14px",
         padding: "16px 18px",
