@@ -231,3 +231,5 @@ export function memberDisplayName(
   );
 }
 
+export { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+

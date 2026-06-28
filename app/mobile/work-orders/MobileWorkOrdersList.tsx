@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   formatWorkOrderAge,
-  truncateWorkOrderText,
+  workOrderListDescription,
+  workOrderListSourceNote,
 } from "@/app/maintenance/lib/work-order-display";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
@@ -56,7 +57,8 @@ export default function MobileWorkOrdersList() {
   return (
     <div className="one-eyrie-mobile-work-orders-list">
       {workOrders.map((order, index) => {
-        const shortDescription = truncateWorkOrderText(order.description);
+        const description = workOrderListDescription(order);
+        const sourceNote = workOrderListSourceNote(order);
 
         return (
           <Link
@@ -77,14 +79,14 @@ export default function MobileWorkOrdersList() {
                 {order.areaLabel || "No area specified"}
                 {order.sourceModule ? ` · from ${order.sourceModule}` : ""}
               </div>
-              {shortDescription ? (
+              {description ? (
                 <div className="one-eyrie-mobile-work-order-card__description">
-                  {shortDescription}
+                  {description}
                 </div>
               ) : null}
-              {order.sourceNote ? (
+              {sourceNote ? (
                 <div className="one-eyrie-mobile-work-order-card__source-note">
-                  {order.sourceNote}
+                  {sourceNote}
                 </div>
               ) : null}
               <div className="one-eyrie-mobile-work-order-card__age">

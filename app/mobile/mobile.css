@@ -172,6 +172,39 @@
   background: var(--mobile-home-tile-bg-active);
 }
 
+.one-eyrie-mobile-row--unread {
+  border-color: #c8a96a;
+  box-shadow: inset 4px 0 0 #c8a96a;
+}
+
+.one-eyrie-mobile-row--read {
+  border-color: #3a352e;
+  opacity: 0.92;
+}
+
+.one-eyrie-mobile-row__title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.one-eyrie-mobile-pass-on-read-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: #c8a96a;
+  box-shadow: 0 0 8px rgba(200, 169, 106, 0.45);
+  flex-shrink: 0;
+}
+
+.one-eyrie-mobile-pass-on-read-dot--read {
+  background: #5a564f;
+  box-shadow: none;
+}
+
 .one-eyrie-mobile-row__top {
   display: flex;
   align-items: flex-start;
@@ -1011,7 +1044,7 @@
   border: 1px solid #3a352e;
   border-radius: 12px;
   padding: 14px 12px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .one-eyrie-mobile-inspection-item__prompt {
@@ -1063,9 +1096,9 @@
   margin-top: 10px;
 }
 
-.one-eyrie-mobile-inspection-item-nav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.one-eyrie-mobile-inspection-category-items {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   margin-bottom: 12px;
 }

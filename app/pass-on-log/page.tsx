@@ -27,6 +27,7 @@ import {
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
+import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,6 +60,7 @@ export default function PassOnLogPage() {
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
   const [editingMessage, setEditingMessage] = useState("");
   const [currentUserName, setCurrentUserName] = useState("Unknown");
+  const [currentAuthUserId, setCurrentAuthUserId] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([])
  async function updateEntry(id: number) {
   const text = editingMessage.trim();
@@ -147,6 +149,8 @@ async function markAsViewed(entryId: number) {
       window.location.href = "/login";
       return;
     }
+
+    setCurrentAuthUserId(session.user.id);
 
     const { data: teamMember } = await supabase
       .from("team_members")
@@ -614,11 +618,14 @@ function dateHeader(dateString: string) {
       const isOpen = expandedEntry === entry.id;
       const replyCount = entry.pass_on_log_replies?.length || 0;
       const viewCount = entry.pass_on_log_views?.length || 0;
+      const isRead = isPassOnReadByUser(entry, currentAuthUserId);
 
       return (
         <div
           key={entry.id}
-          className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}`}
+          className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}${
+            isRead ? " one-eyrie-list-row--read" : " one-eyrie-list-row--unread"
+          }`}
           style={{ marginBottom: "8px", padding: "10px 12px" }}
         >
           <div style={collapsedRow}>
@@ -634,6 +641,13 @@ function dateHeader(dateString: string) {
             >
               {isOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
             </button>
+
+            <span
+              className={`one-eyrie-pass-on-read-dot${
+                isRead ? " one-eyrie-pass-on-read-dot--read" : ""
+              }`}
+              aria-label={isRead ? "Read" : "Unread"}
+            />
 
             <div style={priorityPill(entry.priority)}>
               {entry.priority || "Normal"}

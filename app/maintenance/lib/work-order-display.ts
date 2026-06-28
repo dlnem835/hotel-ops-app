@@ -25,3 +25,36 @@ export function truncateWorkOrderText(
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1)}…`;
 }
+
+function normalizeWorkOrderText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function workOrderTextsMatch(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  if (!a?.trim() || !b?.trim()) return false;
+  return normalizeWorkOrderText(a) === normalizeWorkOrderText(b);
+}
+
+/** Mobile list cards — skip description when it repeats the subject. */
+export function workOrderListDescription(
+  order: Pick<WorkOrder, "subject" | "description">
+): string | null {
+  const description = truncateWorkOrderText(order.description);
+  if (!description) return null;
+  if (workOrderTextsMatch(description, order.subject)) return null;
+  return description;
+}
+
+/** Mobile list cards — skip source note when it repeats subject or description. */
+export function workOrderListSourceNote(
+  order: Pick<WorkOrder, "subject" | "description" | "sourceNote">
+): string | null {
+  if (!order.sourceNote?.trim()) return null;
+  const note = order.sourceNote.trim();
+  if (workOrderTextsMatch(note, order.subject)) return null;
+  if (workOrderTextsMatch(note, order.description)) return null;
+  return note;
+}

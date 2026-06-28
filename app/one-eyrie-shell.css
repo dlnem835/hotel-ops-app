@@ -89,6 +89,33 @@
     0 0 0 1px rgba(200, 169, 106, 0.38);
 }
 
+.one-eyrie-list-row--unread {
+  border-color: #c8a96a;
+  box-shadow: inset 4px 0 0 #c8a96a;
+}
+
+.one-eyrie-list-row--unread:hover {
+  border-color: #e0c47b;
+}
+
+.one-eyrie-list-row--read {
+  opacity: 0.94;
+}
+
+.one-eyrie-pass-on-read-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #c8a96a;
+  box-shadow: 0 0 8px rgba(200, 169, 106, 0.45);
+  flex-shrink: 0;
+}
+
+.one-eyrie-pass-on-read-dot--read {
+  background: #5a564f;
+  box-shadow: none;
+}
+
 .one-eyrie-table {
   width: 100%;
   border-collapse: separate;
