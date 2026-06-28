@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
@@ -13,6 +13,10 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { PmChecklist, PmStepOutcome, PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { PmOccurrenceResponses } from "../../lib/maintenance-types";
+import {
+  pmSessionBackLabel,
+  pmSessionReturnPath,
+} from "../../lib/pm-session-return";
 import {
   forestHoverHandlers,
   goldHoverHandlers,
@@ -32,7 +36,10 @@ type ResponseMap = Record<string, PmStepOutcome | undefined>;
 export default function PmSessionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const occurrenceId = Number(params.id);
+  const pmReturnPath = pmSessionReturnPath(searchParams);
+  const pmBackLabel = pmSessionBackLabel(searchParams);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,7 +93,7 @@ export default function PmSessionPage() {
 
       if (!response.ok) {
         alert(result.error || "Unable to load PM session");
-        router.push("/maintenance");
+        router.push(pmReturnPath);
         return;
       }
 
@@ -116,7 +123,7 @@ export default function PmSessionPage() {
     }
 
     void load();
-  }, [occurrenceId, router]);
+  }, [occurrenceId, router, pmReturnPath]);
 
   const allSteps = useMemo(() => {
     if (!checklist) return [];
@@ -257,7 +264,7 @@ export default function PmSessionPage() {
       return;
     }
 
-    router.push("/maintenance");
+    router.push(pmReturnPath);
   }
 
   const locationLabel =
@@ -279,7 +286,7 @@ export default function PmSessionPage() {
         >
           <button
             type="button"
-            onClick={() => router.push("/maintenance")}
+            onClick={() => router.push(pmReturnPath)}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -294,7 +301,7 @@ export default function PmSessionPage() {
             }}
           >
             <ArrowLeft size={16} />
-            Back to Maintenance
+            {pmBackLabel}
           </button>
           <h1 style={{ margin: 0, color: ONE_EYRIE.text, fontSize: "22px" }}>
             {templateName}

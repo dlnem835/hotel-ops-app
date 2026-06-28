@@ -594,3 +594,479 @@
   margin-top: 20px;
 }
 
+/* PMs */
+
+.one-eyrie-mobile-pms__subtitle {
+  margin-top: 8px;
+}
+
+.one-eyrie-mobile-pm-grid-section {
+  margin-top: 18px;
+}
+
+.one-eyrie-mobile-pm-grid-section__header {
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-pm-grid-section__title {
+  color: #c8a96a;
+  font-weight: 800;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.one-eyrie-mobile-pm-grid-section__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.one-eyrie-mobile-pm-filter {
+  border: 1px solid #3a352e;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.one-eyrie-mobile-pm-filter--active {
+  border-color: #e0c47b;
+  background: #c8a96a;
+  color: #211f1b;
+}
+
+.one-eyrie-mobile-pm-filter:active {
+  opacity: 0.9;
+}
+
+.one-eyrie-mobile-pm-search {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #4a4a4a;
+  background: #151515;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.one-eyrie-mobile-pm-grid-section__count {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.one-eyrie-mobile-pm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-pm-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.one-eyrie-mobile-pm-legend__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.one-eyrie-mobile-pm-grid-panel {
+  background: #151515;
+  border: 1px solid #3a352e;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.one-eyrie-mobile-pm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.one-eyrie-mobile-pm-tile {
+  text-align: left;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.one-eyrie-mobile-pm-tile:active:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.one-eyrie-mobile-pm-tile:disabled {
+  cursor: wait;
+}
+
+.one-eyrie-mobile-pm-tile__name {
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.one-eyrie-mobile-pm-tile__area,
+.one-eyrie-mobile-pm-tile__frequency {
+  font-size: 11px;
+  opacity: 0.92;
+  line-height: 1.35;
+}
+
+.one-eyrie-mobile-pm-tile__status {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.one-eyrie-mobile-pm-tile__history {
+  display: block;
+  margin-top: auto;
+  font-size: 10px;
+  opacity: 0.82;
+  line-height: 1.35;
+}
+
+.one-eyrie-mobile-pm-tile__history span {
+  display: block;
+}
+
+.one-eyrie-mobile-pm-tile__opening {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+@media (min-width: 420px) {
+  .one-eyrie-mobile-pm-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Room Inspections */
+
+.one-eyrie-mobile-inspections__subtitle {
+  margin-top: 8px;
+}
+
+.one-eyrie-mobile-inspections-section {
+  margin-top: 18px;
+}
+
+.one-eyrie-mobile-inspections-panel {
+  background: #211f1b;
+  border: 1px solid #3a352e;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.one-eyrie-mobile-inspections-panel__title {
+  color: #c8a96a;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.one-eyrie-mobile-inspections-panel__subtitle {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-inspections-queue,
+.one-eyrie-mobile-inspections-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.one-eyrie-mobile-inspections-queue__row,
+.one-eyrie-mobile-inspections-room-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #1a1815;
+  border: 1px solid #3a352e;
+}
+
+.one-eyrie-mobile-inspections-queue__main,
+.one-eyrie-mobile-inspections-room-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.one-eyrie-mobile-inspections-queue__title,
+.one-eyrie-mobile-inspections-room-row__title {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.one-eyrie-mobile-inspections-queue__meta,
+.one-eyrie-mobile-inspections-room-row__meta {
+  color: #c9c9c9;
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.one-eyrie-mobile-inspections-queue__inspect {
+  flex-shrink: 0;
+  border: 1px solid #3d6b4f;
+  border-radius: 8px;
+  background: rgba(28, 52, 40, 0.55);
+  color: #b8d4c4;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.one-eyrie-mobile-inspections-search {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #4a4a4a;
+  background: #151515;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.one-eyrie-mobile-inspection-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.one-eyrie-mobile-inspection-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+}
+
+.one-eyrie-mobile-inspection-modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: min(78vh, 560px);
+  overflow-y: auto;
+  background: #211f1b;
+  border: 1px solid #c8a96a;
+  border-radius: 18px;
+  padding: 18px 16px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.one-eyrie-mobile-inspection-modal__title {
+  color: #c8a96a;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.one-eyrie-mobile-inspection-modal__room {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 22px;
+  margin: 8px 0 14px;
+}
+
+.one-eyrie-mobile-inspection-modal__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.one-eyrie-mobile-inspection-modal__actions .one-eyrie-mobile-btn {
+  flex: 1;
+}
+
+.one-eyrie-mobile-inspection-session {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.one-eyrie-mobile-inspection-session__header {
+  margin: 10px 0 16px;
+}
+
+.one-eyrie-mobile-inspection-session__room {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.one-eyrie-mobile-inspection-session__meta {
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.one-eyrie-mobile-inspection-session__progress {
+  margin-top: 6px;
+  color: #c9c9c9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.one-eyrie-mobile-inspection-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.one-eyrie-mobile-inspection-category-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 88px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid #3a352e;
+  background: #45423e;
+  color: #ffffff;
+  text-decoration: none;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.one-eyrie-mobile-inspection-category-tile--complete {
+  border-color: #3d6b4f;
+  box-shadow: inset 0 0 0 1px rgba(61, 107, 79, 0.35);
+}
+
+.one-eyrie-mobile-inspection-category-tile__name {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.one-eyrie-mobile-inspection-category-tile__count {
+  font-size: 11px;
+  color: #c8a96a;
+  font-weight: 700;
+}
+
+.one-eyrie-mobile-inspection-session__notes {
+  margin-bottom: 14px;
+}
+
+.one-eyrie-mobile-inspection-session-footer {
+  margin-top: 8px;
+}
+
+.one-eyrie-mobile-inspection-session-footer__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.one-eyrie-mobile-inspection-complete-btn {
+  background: #1c3428;
+  border: 1px solid #3d6b4f;
+  color: #b8d4c4;
+}
+
+.one-eyrie-mobile-inspection-item {
+  background: #302d28;
+  border: 1px solid #3a352e;
+  border-radius: 12px;
+  padding: 14px 12px;
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-inspection-item__prompt {
+  background: #45423e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-inspection-item__label {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.one-eyrie-mobile-inspection-item__meta {
+  margin-top: 4px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.one-eyrie-mobile-inspection-outcomes {
+  display: flex;
+  gap: 8px;
+}
+
+.one-eyrie-mobile-inspection-outcome-btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.one-eyrie-mobile-inspection-item__readonly-outcome {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.one-eyrie-mobile-inspection-item__work-order {
+  margin-top: 10px;
+}
+
+.one-eyrie-mobile-inspection-item-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
