@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { redirectToLogin } from "@/app/lib/auth";
 import {
   addPassOnReply,
   formatDateTime,
@@ -46,7 +47,7 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
     if (!author) {
       author = await resolveCurrentUserName();
       if (!author) {
-        window.location.href = "/login";
+        redirectToLogin();
         return;
       }
       setCurrentUserName(author);
@@ -83,28 +84,24 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
         </p>
       ) : null}
 
-      <div className="one-eyrie-mobile-panel one-eyrie-mobile-pass-on-message">
+      <div className="one-eyrie-mobile-pass-on-message">
         <p>{entry.message}</p>
       </div>
 
-      <section className="one-eyrie-mobile-pass-on-replies">
-        <h2 className="one-eyrie-mobile-pass-on-replies__title">
-          Replies ({replies.length})
-        </h2>
-        {replies.length === 0 ? (
-          <div className="one-eyrie-mobile-status">No replies yet.</div>
-        ) : (
-          replies.map((reply) => (
-            <div key={reply.id} className="one-eyrie-mobile-panel one-eyrie-mobile-reply">
-              <div className="one-eyrie-mobile-reply__author">{reply.reply_author}</div>
-              <div className="one-eyrie-mobile-reply__body">{reply.reply_message}</div>
-              <div className="one-eyrie-mobile-pass-on-meta-line">
-                {formatDateTime(reply.created_at)}
-              </div>
+      {replies.length > 0 ? (
+        <section className="one-eyrie-mobile-pass-on-replies">
+          <h2 className="one-eyrie-mobile-pass-on-replies__title">
+            {replies.length === 1 ? "1 Reply" : `${replies.length} Replies`}
+          </h2>
+          {replies.map((reply) => (
+            <div key={reply.id} className="one-eyrie-mobile-reply">
+              <p className="one-eyrie-mobile-reply__text">
+                <strong>{reply.reply_author}:</strong> {reply.reply_message}
+              </p>
             </div>
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      ) : null}
 
       {error ? <div className="one-eyrie-mobile-error">{error}</div> : null}
 

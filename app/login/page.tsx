@@ -1,40 +1,76 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  confirmPersistedSession,
+  waitForInitialAuthSession,
+} from "@/app/lib/auth-session";
 import { consumeInactivityLogoutMessage } from "@/app/lib/inactivity-logout";
+import {
+  captureLoginReturnFromUrl,
+  consumeLoginRedirect,
+} from "@/app/lib/login-return";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/app/supabaseClient";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [logoutMessage, setLogoutMessage] = useState<string | null>(null);
+  const [authDebug, setAuthDebug] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
+    captureLoginReturnFromUrl();
     setLogoutMessage(consumeInactivityLogoutMessage());
+
+    let mounted = true;
+
+    void waitForInitialAuthSession().then((session) => {
+      if (!mounted || !session || submittingRef.current) return;
+      window.location.replace(consumeLoginRedirect());
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    submittingRef.current = true;
+    setAuthDebug("Signing in…");
 
     const authEmail = `${username.trim()}@oneeyrie.local`;
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: authEmail,
       password,
     });
 
     if (error) {
-      alert(error.message);
+      submittingRef.current = false;
+      setAuthDebug(`Login failed: ${error.message}`);
       return;
     }
 
-    window.location.href = "/pass-on-log";
+    if (!data.session) {
+      submittingRef.current = false;
+      setAuthDebug("Login failed: No session returned from Supabase.");
+      return;
+    }
+
+    const session = confirmPersistedSession(data.session);
+
+    if (!session) {
+      submittingRef.current = false;
+      setAuthDebug("Login failed: Session was not persisted.");
+      return;
+    }
+
+    const target = consumeLoginRedirect();
+    setAuthDebug(`Session created, redirecting… → ${target}`);
+    window.location.assign(target);
   }
 
   return (
@@ -50,7 +86,7 @@ export default function LoginPage() {
       }}
     >
       <form
-        onSubmit={handleLogin}
+        onSubmit={(event) => void handleLogin(event)}
         style={{
           width: "420px",
           background: "#211F1B",
@@ -78,6 +114,23 @@ export default function LoginPage() {
             {logoutMessage}
           </div>
         )}
+
+        {authDebug ? (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: "1px solid rgba(200,169,106,0.5)",
+              background: "rgba(0,0,0,0.25)",
+              color: ONE_EYRIE.text,
+              fontSize: "13px",
+              lineHeight: 1.45,
+            }}
+          >
+            {authDebug}
+          </div>
+        ) : null}
 
         <input
           value={username}

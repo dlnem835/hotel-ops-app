@@ -279,11 +279,26 @@
   margin-bottom: 8px;
 }
 
+.one-eyrie-mobile-pass-on-message {
+  margin-top: 10px;
+  background: #0d0d0d;
+  border-top: 1px solid #2a2a2a;
+  border-right: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
+  border-left: 3px solid #c8a96a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .one-eyrie-mobile-pass-on-message p {
   margin: 0;
-  line-height: 1.55;
+  line-height: 1.5;
   white-space: pre-wrap;
-  color: #e5e7eb;
+  color: #ffffff;
+  font-size: 14px;
 }
 
 .one-eyrie-mobile-pass-on-edited {
@@ -299,28 +314,39 @@
 }
 
 .one-eyrie-mobile-pass-on-replies {
-  margin-top: 20px;
+  margin-top: 8px;
 }
 
 .one-eyrie-mobile-pass-on-replies__title {
-  margin: 0 0 12px;
+  margin: 0 0 6px;
   font-size: 14px;
   font-weight: 800;
   color: #c8a96a;
 }
 
-.one-eyrie-mobile-reply__author {
-  font-size: 12px;
-  font-weight: 700;
-  color: #c8a96a;
+.one-eyrie-mobile-reply {
+  box-sizing: border-box;
+  background: #0d0d0d;
+  border: 1px solid #2a3345;
+  border-left: 3px solid #2a3345;
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-left: 16px;
+  margin-bottom: 5px;
+  color: #e5e7eb;
+  font-size: 13px;
 }
 
-.one-eyrie-mobile-reply__body {
-  margin-top: 6px;
-  font-size: 14px;
-  color: #e5e7eb;
-  line-height: 1.45;
+.one-eyrie-mobile-reply__text {
+  margin: 0;
+  line-height: 1.4;
   white-space: pre-wrap;
+}
+
+.one-eyrie-mobile-reply__text strong {
+  display: inline;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .one-eyrie-mobile-pass-on-reply-form,

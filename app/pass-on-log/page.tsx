@@ -374,6 +374,41 @@ function dateHeader(dateString: string) {
          .message-text-box:hover {
          border-color: C8A96A !important;
          box-shadow: 0 0 16px rgba(200,169,106,0.25);}
+
+          .pass-on-message-row {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+          }
+
+          .pass-on-message-text {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .pass-on-expanded-actions {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: stretch;
+            gap: 8px;
+            flex-shrink: 0;
+            width: 148px;
+          }
+
+          @media (max-width: 900px) {
+            .pass-on-message-row {
+              flex-direction: column;
+              align-items: stretch;
+            }
+
+            .pass-on-expanded-actions {
+              width: 100%;
+              flex-direction: row;
+              flex-wrap: wrap;
+              justify-content: flex-start;
+            }
+          }
         `}
       </style>
 
@@ -690,122 +725,121 @@ function dateHeader(dateString: string) {
 
           {isOpen && (
             <div style={expandedArea}>
-              <div style={messageRowBox}>
-  <div className="original-post-box"
-  style={messageTextBox}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.borderColor = "#C8A96A";
-    e.currentTarget.style.boxShadow =
-      "0 0 18px rgba(200,169,106,0.30)";
-  }}
- onMouseLeave={(e) => {
-  e.currentTarget.style.borderTopColor = "#2A3345";
-  e.currentTarget.style.borderRightColor = "#2A3345";
-  e.currentTarget.style.borderBottomColor = "#2A3345";
-  e.currentTarget.style.borderLeftColor = gold;
-  e.currentTarget.style.boxShadow = "none";
-}} 
->
-  {editingEntryId === entry.id ? (
-  <div style={{ width: "100%" }}>
-    <textarea
-  value={editingMessage}
-  onChange={(e) => setEditingMessage(e.target.value)}
-  style={{
-    width: "100%",
-    minHeight: "120px",
-    background: "#111111",
-    color: "#FFFFFF",
-    border: "1px solid #C8A96A",
-    borderRadius: "10px",
-    padding: "12px",
-    fontSize: "15px",
-    lineHeight: "1.5",
-    resize: "vertical",
-  }}
-/>
+              <div className="pass-on-message-row" style={messageRowBox}>
+                <div
+                  className="original-post-box pass-on-message-text"
+                  style={messageTextBox}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#C8A96A";
+                    e.currentTarget.style.boxShadow =
+                      "0 0 18px rgba(200,169,106,0.30)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderTopColor = "#2A3345";
+                    e.currentTarget.style.borderRightColor = "#2A3345";
+                    e.currentTarget.style.borderBottomColor = "#2A3345";
+                    e.currentTarget.style.borderLeftColor = gold;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {editingEntryId === entry.id ? (
+                    <div style={{ width: "100%" }}>
+                      <textarea
+                        value={editingMessage}
+                        onChange={(e) => setEditingMessage(e.target.value)}
+                        style={{
+                          width: "100%",
+                          minHeight: "120px",
+                          background: "#111111",
+                          color: "#FFFFFF",
+                          border: "1px solid #C8A96A",
+                          borderRadius: "10px",
+                          padding: "12px",
+                          fontSize: "15px",
+                          lineHeight: "1.5",
+                          resize: "vertical",
+                        }}
+                      />
 
-    <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-      <button
-        type="button"
-        style={replyPillButton}
-        onClick={() => updateEntry(entry.id)}
-      >
-        Save
-      </button>
+                      <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                        <button
+                          type="button"
+                          style={replyPillButton}
+                          onClick={() => updateEntry(entry.id)}
+                        >
+                          Save
+                        </button>
 
-      <button
-        type="button"
-        style={replyPillButton}
-        onClick={() => {
-          setEditingEntryId(null);
-          setEditingMessage("");
-        }}
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-) : (
-  entry.message
-)}
-</div>
+                        <button
+                          type="button"
+                          style={replyPillButton}
+                          onClick={() => {
+                            setEditingEntryId(null);
+                            setEditingMessage("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    entry.message
+                  )}
+                </div>
 
+                <div className="pass-on-expanded-actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedReplyEntry(
+                        expandedReplyEntry === entry.id ? null : entry.id
+                      )
+                    }
+                    style={replyPillButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 16px rgba(200,169,106,0.35)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    + Reply
+                  </button>
 
-
-  <button
-    type="button"
-    onClick={() =>
-      setExpandedReplyEntry(
-        expandedReplyEntry === entry.id ? null : entry.id
-      )
-    }
-    style={replyPillButton}
-    onMouseEnter={(e) => {
-  e.currentTarget.style.background = "rgba(200,169,106,0.12)";
-  e.currentTarget.style.boxShadow =
-    "0 0 16px rgba(200,169,106,0.35)";
-}}
-
-onMouseLeave={(e) => {
-  e.currentTarget.style.background = "transparent";
-  e.currentTarget.style.boxShadow = "none";
-}}
-  >
-    + Reply
-  </button>
-
-  <button
-    type="button"
-    onClick={() => {
-      setWorkOrderInitial({
-        subject: entry.subject,
-        description: entry.message,
-        priority: (entry.priority as "Normal" | "Important" | "Urgent") || "Normal",
-        source_module: "Pass-On Log",
-        source_record_id: String(entry.id),
-        source_note: entry.message,
-        created_by: currentUserName,
-      });
-      setWorkOrderModalOpen(true);
-    }}
-    style={{
-      ...replyPillButton,
-      marginTop: "8px",
-      alignSelf: "flex-start",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
-      e.currentTarget.style.boxShadow = "0 0 16px rgba(200,169,106,0.35)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = "transparent";
-      e.currentTarget.style.boxShadow = "none";
-    }}
-  >
-    Create Work Order
-  </button>
-</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkOrderInitial({
+                        subject: entry.subject,
+                        description: entry.message,
+                        priority:
+                          (entry.priority as "Normal" | "Important" | "Urgent") ||
+                          "Normal",
+                        source_module: "Pass-On Log",
+                        source_record_id: String(entry.id),
+                        source_note: entry.message,
+                        created_by: currentUserName,
+                      });
+                      setWorkOrderModalOpen(true);
+                    }}
+                    style={replyPillButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 16px rgba(200,169,106,0.35)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    Create Work Order
+                  </button>
+                </div>
+              </div>
 
 
 
@@ -1298,15 +1332,9 @@ const replySendButton: React.CSSProperties = {
 
 const messageRowBox: React.CSSProperties = {
   marginTop: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
 };
 
 const messageTextBox: React.CSSProperties = {
-  flex: 1,
-  width: "100%",
   background: "#0D0D0D",
   border: "1px solid #2A3345",
   borderLeft: `4px solid ${gold}`,

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import MobileAuthGuard from "./components/MobileAuthGuard";
 import "./mobile.css";
 
 export const metadata: Metadata = {
@@ -14,5 +15,9 @@ export const viewport: Viewport = {
 };
 
 export default function MobileLayout({ children }: { children: React.ReactNode }) {
-  return <div className="one-eyrie-mobile">{children}</div>;
+  return (
+    <div className="one-eyrie-mobile">
+      <MobileAuthGuard>{children}</MobileAuthGuard>
+    </div>
+  );
 }

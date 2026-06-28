@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { redirectToLogin } from "@/app/lib/auth";
 import {
   createPassOnEntry,
   getLocalDateString,
-  getPassOnSession,
   resolveCurrentUserName,
 } from "./lib/pass-on-shared";
 
@@ -20,11 +20,6 @@ export default function MobilePassOnLogNew() {
 
   useEffect(() => {
     void resolveCurrentUserName().then(setAuthor);
-    void getPassOnSession().then((session) => {
-      if (!session) {
-        window.location.href = "/login";
-      }
-    });
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -40,7 +35,7 @@ export default function MobilePassOnLogNew() {
     if (!currentAuthor) {
       currentAuthor = await resolveCurrentUserName();
       if (!currentAuthor) {
-        window.location.href = "/login";
+        redirectToLogin();
         return;
       }
     }

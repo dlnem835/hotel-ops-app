@@ -1,3 +1,4 @@
+import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 
 export type PassOnReply = {
@@ -149,7 +150,7 @@ export async function fetchTeamMembers(): Promise<TeamMember[]> {
 }
 
 export async function resolveCurrentUserName(): Promise<string | null> {
-  const session = await getPassOnSession();
+  const session = await getClientSession();
 
   if (!session) return null;
 
@@ -163,7 +164,7 @@ export async function resolveCurrentUserName(): Promise<string | null> {
 }
 
 export async function markPassOnAsViewed(entryId: number): Promise<void> {
-  const session = await getPassOnSession();
+  const session = await getClientSession();
 
   if (!session) return;
 
@@ -230,18 +231,3 @@ export function memberDisplayName(
   );
 }
 
-const SESSION_TIMEOUT_MS = 8000;
-
-export async function getPassOnSession() {
-  try {
-    const result = await Promise.race([
-      supabase.auth.getSession(),
-      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), SESSION_TIMEOUT_MS)),
-    ]);
-
-    if (!result || !("data" in result)) return null;
-    return result.data.session;
-  } catch {
-    return null;
-  }
-}

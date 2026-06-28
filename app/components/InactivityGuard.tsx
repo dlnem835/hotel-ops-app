@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import {
+  subscribeAuthSession,
+  waitForInitialAuthSession,
+} from "@/app/lib/auth-session";
+import { isMobilePath } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -22,6 +27,7 @@ const PUBLIC_PATHS = new Set(["/login"]);
 
 export default function InactivityGuard() {
   const pathname = usePathname();
+  const isMobileRoute = isMobilePath(pathname);
   const [active, setActive] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
 
@@ -89,13 +95,16 @@ export default function InactivityGuard() {
   }, [active, pathname, resetTimers]);
 
   useEffect(() => {
+    if (isMobileRoute) {
+      setActive(false);
+      clearTimers();
+      setWarningOpen(false);
+      return;
+    }
+
     let mounted = true;
 
-    async function syncSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+    void waitForInitialAuthSession().then((session) => {
       if (!mounted) return;
 
       const shouldTrack = Boolean(session) && !PUBLIC_PATHS.has(pathname);
@@ -105,13 +114,9 @@ export default function InactivityGuard() {
         clearTimers();
         setWarningOpen(false);
       }
-    }
+    });
 
-    void syncSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const unsubscribe = subscribeAuthSession((session) => {
       if (!mounted) return;
 
       const shouldTrack = Boolean(session) && !PUBLIC_PATHS.has(pathname);
@@ -125,10 +130,10 @@ export default function InactivityGuard() {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      unsubscribe();
       clearTimers();
     };
-  }, [pathname, clearTimers]);
+  }, [pathname, clearTimers, isMobileRoute]);
 
   useEffect(() => {
     if (!active || PUBLIC_PATHS.has(pathname)) {

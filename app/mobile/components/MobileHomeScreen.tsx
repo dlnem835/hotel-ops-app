@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { signOutAndRedirect } from "@/app/lib/auth";
 import {
   ClipboardCheck,
   ClipboardList,
@@ -50,7 +51,7 @@ const MODULES = [
 
 export default function MobileHomeScreen() {
   function handleLogout() {
-    window.location.href = "/login";
+    void signOutAndRedirect();
   }
 
   return (
