@@ -717,6 +717,127 @@
   box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.2);
 }
 
+.one-eyrie-hotel-property-panel {
+  width: 100%;
+  margin-bottom: 12px;
+  background: #211f1b;
+  border: 1px solid #c8a96a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.08);
+}
+
+.one-eyrie-hotel-property-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.one-eyrie-hotel-property-panel__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.one-eyrie-hotel-property-panel__title {
+  color: #c8a96a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.one-eyrie-hotel-property-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.one-eyrie-hotel-property-panel__fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr) minmax(110px, 1fr);
+  gap: 8px 10px;
+  align-items: end;
+}
+
+.one-eyrie-hotel-property-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.one-eyrie-hotel-property-panel__field span {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.one-eyrie-hotel-property-panel__status,
+.one-eyrie-hotel-property-panel__saved {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.one-eyrie-hotel-property-panel__saved {
+  color: #b8d4c4;
+}
+
+.one-eyrie-hotel-property-panel__error {
+  color: #c9a8a8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  max-width: 360px;
+}
+
+.one-eyrie-hotel-property-panel__save {
+  flex-shrink: 0;
+}
+
+.one-eyrie-hotel-property-panel--header {
+  width: min(100%, 340px);
+  margin-bottom: 0;
+}
+
+.one-eyrie-hotel-property-panel--header .one-eyrie-hotel-property-panel__fields {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.one-eyrie-hotel-property-panel--header .one-eyrie-hotel-property-panel__field--address {
+  grid-column: auto;
+}
+
+.one-eyrie-hotel-property-panel--header .one-eyrie-hotel-property-panel__header {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 900px) {
+  .one-eyrie-hotel-property-panel__fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .one-eyrie-hotel-property-panel__field--address {
+    grid-column: 1 / -1;
+  }
+
+  .one-eyrie-hotel-property-panel--header {
+    width: 100%;
+  }
+
+  .one-eyrie-hotel-property-panel--header .one-eyrie-hotel-property-panel__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
 .one-eyrie-area-schedule-list {
   display: flex;
   flex-direction: column;

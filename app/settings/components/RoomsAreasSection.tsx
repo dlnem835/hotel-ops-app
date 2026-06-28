@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FileUp, Pencil, Plus, Search, Trash2, Wand2, X } from "lucide-react";
 import PropertyGrid, { StatusLegend } from "./PropertyGrid";
+import HotelPropertyInfoPanel from "./HotelPropertyInfoPanel";
 import {
   AREA_STATUSES,
   AREA_TYPES,
@@ -883,6 +884,8 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           {toast.text}
         </div>
       )}
+
+      <HotelPropertyInfoPanel inputStyle={input} />
 
       <div style={statsRow}>
         <StatTile label="Total Locations" value={locationStats.total} />
