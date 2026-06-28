@@ -5,6 +5,7 @@ import {
   WorkOrderPriority,
 } from "./maintenance-types";
 import { WORK_ORDER_PRIORITY_ORDER } from "@/app/lib/workOrderPriority";
+import { isGuestImpactingWorkOrder } from "./work-order-display";
 
 export type WorkOrderRow = {
   id: number;
@@ -17,6 +18,7 @@ export type WorkOrderRow = {
   source_module: string | null;
   source_record_id: string | null;
   source_note: string | null;
+  comments: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -35,6 +37,7 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     sourceModule: row.source_module ? String(row.source_module) : null,
     sourceRecordId: row.source_record_id ? String(row.source_record_id) : null,
     sourceNote: row.source_note ? String(row.source_note) : null,
+    comments: row.comments ? String(row.comments) : null,
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -44,6 +47,10 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
 
 export function sortWorkOrdersByPriority(orders: WorkOrder[]): WorkOrder[] {
   return [...orders].sort((a, b) => {
+    const guestDiff =
+      Number(isGuestImpactingWorkOrder(b)) - Number(isGuestImpactingWorkOrder(a));
+    if (guestDiff !== 0) return guestDiff;
+
     const priorityDiff =
       WORK_ORDER_PRIORITY_ORDER[a.priority] - WORK_ORDER_PRIORITY_ORDER[b.priority];
     if (priorityDiff !== 0) return priorityDiff;
@@ -116,6 +123,7 @@ export async function updateWorkOrder(
   }
   if (patch.area_id !== undefined) payload.area_id = patch.area_id;
   if (patch.area_label !== undefined) payload.area_label = patch.area_label;
+  if (patch.comments !== undefined) payload.comments = patch.comments;
 
   const { data, error } = await supabase
     .from("work_orders")

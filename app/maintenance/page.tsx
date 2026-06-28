@@ -9,6 +9,7 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import {
   forestHoverHandlers,
+  goldHoverHandlers,
   PRIMARY_BUTTON,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
@@ -45,7 +46,10 @@ export default function MaintenancePage() {
   >(undefined);
   const [createdByName, setCreatedByName] = useState<string | null>(null);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const [workOrderComments, setWorkOrderComments] = useState("");
   const [completingWo, setCompletingWo] = useState(false);
+  const [savingComments, setSavingComments] = useState(false);
+  const [commentsSaveMessage, setCommentsSaveMessage] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -92,6 +96,11 @@ export default function MaintenancePage() {
     void init();
   }, [loadDashboard]);
 
+  useEffect(() => {
+    setWorkOrderComments(selectedWorkOrder?.comments || "");
+    setCommentsSaveMessage(null);
+  }, [selectedWorkOrder]);
+
   async function startPmForAssignment(assignmentId: number) {
     setStartingPm(true);
     const response = await fetch("/api/maintenance/pm-occurrences", {
@@ -121,6 +130,32 @@ export default function MaintenancePage() {
   function openWorkOrderModal(initial?: WorkOrderModalInitialValues) {
     setWorkOrderInitial(initial);
     setWorkOrderModalOpen(true);
+  }
+
+  async function saveWorkOrderComments() {
+    if (!selectedWorkOrder) return;
+    setSavingComments(true);
+    setCommentsSaveMessage(null);
+
+    const response = await fetch(`/api/work-orders/${selectedWorkOrder.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments: workOrderComments.trim() || null }),
+    });
+    setSavingComments(false);
+
+    if (!response.ok) {
+      const result = await response.json();
+      alert(result.error || "Unable to save comments");
+      return;
+    }
+
+    const result = await response.json();
+    setSelectedWorkOrder(result.workOrder);
+    setWorkOrderComments(result.workOrder.comments || "");
+    setCommentsSaveMessage("Comments saved.");
+    window.setTimeout(() => setCommentsSaveMessage(null), 2500);
+    await loadDashboard();
   }
 
   async function completeWorkOrder() {
@@ -269,58 +304,119 @@ export default function MaintenancePage() {
           >
             <div
               style={{
-                width: "640px",
+                width: "720px",
                 maxWidth: "100%",
                 background: ONE_EYRIE.row,
                 border: `1px solid ${ONE_EYRIE.border}`,
                 borderRadius: "14px",
-                padding: "22px",
+                padding: "26px",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 style={{ margin: "0 0 8px", color: ONE_EYRIE.text }}>
+              <h2 style={{ margin: "0 0 10px", color: ONE_EYRIE.text }}>
                 {selectedWorkOrder.subject}
               </h2>
-              <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", marginBottom: "14px" }}>
+              <div
+                style={{
+                  color: ONE_EYRIE.textMuted,
+                  fontSize: "13px",
+                  marginBottom: "18px",
+                }}
+              >
                 {selectedWorkOrder.areaLabel || "No area"}
                 {selectedWorkOrder.sourceModule
                   ? ` · from ${selectedWorkOrder.sourceModule}`
                   : ""}
               </div>
               {selectedWorkOrder.description && (
-                <p
+                <div
                   style={{
-                    color: ONE_EYRIE.textRow,
+                    background: "#0D0D0D",
+                    borderTop: "1px solid #2A2A2A",
+                    borderRight: "1px solid #2A2A2A",
+                    borderBottom: "1px solid #2A2A2A",
+                    borderLeft: `3px solid ${ONE_EYRIE.gold}`,
+                    borderRadius: "8px",
+                    padding: "12px 14px",
+                    marginBottom: "18px",
+                    color: "#FFFFFF",
                     fontSize: "14px",
                     lineHeight: 1.5,
-                    margin: "0 0 14px",
+                    whiteSpace: "pre-wrap",
                   }}
                 >
                   {selectedWorkOrder.description}
-                </p>
+                </div>
               )}
               {selectedWorkOrder.sourceNote && (
                 <p
                   style={{
                     color: ONE_EYRIE.textSubtle,
-                    fontSize: "13px",
-                    lineHeight: 1.5,
-                    margin: "0 0 14px",
+                    fontSize: "11px",
+                    lineHeight: 1.45,
+                    margin: "0 0 18px",
+                    opacity: 0.85,
                   }}
                 >
                   Source note: {selectedWorkOrder.sourceNote}
                 </p>
               )}
+              <label style={{ display: "block", marginBottom: "20px" }}>
+                <div
+                  style={{
+                    color: ONE_EYRIE.textSubtle,
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    marginBottom: "6px",
+                  }}
+                >
+                  Comments
+                </div>
+                <textarea
+                  value={workOrderComments}
+                  onChange={(e) => setWorkOrderComments(e.target.value)}
+                  rows={4}
+                  placeholder="Add notes about progress, parts needed, or completion details..."
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    background: ONE_EYRIE.black,
+                    color: ONE_EYRIE.text,
+                    border: `1px solid ${ONE_EYRIE.borderInput}`,
+                    borderRadius: "10px",
+                    padding: "12px",
+                    fontSize: "14px",
+                    lineHeight: 1.5,
+                    resize: "vertical",
+                  }}
+                />
+              </label>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
+                  alignItems: "center",
                   gap: "10px",
+                  flexWrap: "nowrap",
+                  marginTop: "4px",
                 }}
               >
+                {commentsSaveMessage ? (
+                  <span
+                    style={{
+                      marginRight: "auto",
+                      color: ONE_EYRIE.textMuted,
+                      fontSize: "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {commentsSaveMessage}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setSelectedWorkOrder(null)}
+                  disabled={completingWo || savingComments}
                   style={{
                     ...SETTINGS_BUTTON_BASE,
                     background: "transparent",
@@ -330,20 +426,42 @@ export default function MaintenancePage() {
                     height: "44px",
                     padding: "0 18px",
                     fontWeight: 800,
+                    opacity: completingWo || savingComments ? 0.6 : 1,
+                    cursor: completingWo || savingComments ? "not-allowed" : "pointer",
                   }}
                 >
                   Close
                 </button>
                 <button
                   type="button"
+                  onClick={() => void saveWorkOrderComments()}
+                  disabled={completingWo || savingComments}
+                  style={{
+                    ...SETTINGS_BUTTON_BASE,
+                    background: "transparent",
+                    border: `1px solid ${ONE_EYRIE.gold}`,
+                    color: ONE_EYRIE.gold,
+                    borderRadius: "12px",
+                    padding: "0 18px",
+                    height: "44px",
+                    fontWeight: 800,
+                    opacity: completingWo || savingComments ? 0.6 : 1,
+                    cursor: completingWo || savingComments ? "not-allowed" : "pointer",
+                  }}
+                  {...goldHoverHandlers("secondary", completingWo || savingComments)}
+                >
+                  {savingComments ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => void completeWorkOrder()}
-                  disabled={completingWo}
+                  disabled={completingWo || savingComments}
                   style={{
                     ...PRIMARY_BUTTON,
-                    opacity: completingWo ? 0.6 : 1,
-                    cursor: completingWo ? "not-allowed" : "pointer",
+                    opacity: completingWo || savingComments ? 0.6 : 1,
+                    cursor: completingWo || savingComments ? "not-allowed" : "pointer",
                   }}
-                  {...forestHoverHandlers(completingWo)}
+                  {...forestHoverHandlers(completingWo || savingComments)}
                 >
                   {completingWo ? "Saving..." : "Mark Completed"}
                 </button>

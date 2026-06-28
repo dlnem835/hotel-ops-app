@@ -19,6 +19,7 @@ export type WorkOrder = {
   sourceModule: string | null;
   sourceRecordId: string | null;
   sourceNote: string | null;
+  comments: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -35,6 +36,7 @@ export type WorkOrderInput = {
   source_module?: string | null;
   source_record_id?: string | null;
   source_note?: string | null;
+  comments?: string | null;
   created_by?: string | null;
 };
 
