@@ -21,6 +21,7 @@ import EngineeringPerformancePanel from "./components/EngineeringPerformancePane
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "./components/WorkOrderModal";
+import WorkOrderPhotoAttachment from "./components/WorkOrderPhotoAttachment";
 import {
   MaintenanceDashboardPayload,
   PmPriorityQueueItem,
@@ -360,6 +361,11 @@ export default function MaintenancePage() {
                 >
                   Source note: {selectedWorkOrder.sourceNote}
                 </p>
+              )}
+              {selectedWorkOrder.photoUrl && (
+                <div style={{ marginBottom: "18px" }}>
+                  <WorkOrderPhotoAttachment photoUrl={selectedWorkOrder.photoUrl} />
+                </div>
               )}
               <label style={{ display: "block", marginBottom: "20px" }}>
                 <div

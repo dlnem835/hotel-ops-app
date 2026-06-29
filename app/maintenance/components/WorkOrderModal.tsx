@@ -139,6 +139,7 @@ export default function WorkOrderModal({
       source_module: initialValues?.source_module ?? "Maintenance",
       source_record_id: initialValues?.source_record_id ?? null,
       source_note: initialValues?.source_note ?? null,
+      photo_url: initialValues?.photo_url ?? null,
       created_by: createdBy || initialValues?.created_by || null,
     };
 

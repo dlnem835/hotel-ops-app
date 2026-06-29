@@ -614,6 +614,7 @@ function dateHeader(dateString: string) {
       {dateHeader(dateKey)}
     </h3>
 
+    <div className="one-eyrie-pass-on-day-entries">
     {entriesForDate.map((entry: any) => {
       const isOpen = expandedEntry === entry.id;
       const replyCount = entry.pass_on_log_replies?.length || 0;
@@ -626,7 +627,7 @@ function dateHeader(dateString: string) {
           className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}${
             isRead ? " one-eyrie-list-row--read" : " one-eyrie-list-row--unread"
           }`}
-          style={{ marginBottom: "8px", padding: "10px 12px" }}
+          style={{ padding: "10px 12px" }}
         >
           <div style={collapsedRow}>
             <button
@@ -965,6 +966,7 @@ function dateHeader(dateString: string) {
         </div>
       );
     })}
+    </div>
   </div>
 ))
               )}

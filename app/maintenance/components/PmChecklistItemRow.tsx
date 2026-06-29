@@ -170,6 +170,7 @@ export default function PmChecklistItemRow({
                     source_note: `${workOrderContext.templateName} · ${step.label}${
                       notes ? ` — ${notes}` : ""
                     }`,
+                    photo_url: photoUrl || null,
                     created_by: workOrderContext.completedBy,
                   })
                 }
@@ -184,6 +185,7 @@ export default function PmChecklistItemRow({
                   source_note: `${workOrderContext.templateName} · ${step.label}${
                     notes ? ` — ${notes}` : ""
                   }`,
+                  photo_url: photoUrl || null,
                   created_by: workOrderContext.completedBy,
                 }}
               />

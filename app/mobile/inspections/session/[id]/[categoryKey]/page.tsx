@@ -126,6 +126,7 @@ export default function MobileInspectionCategoryPage() {
                     source_note: `${templateName} · ${categoryName} · ${item.label.en}${
                       notes[responseKey] ? ` — ${notes[responseKey]}` : ""
                     }`,
+                    photo_url: photos[responseKey] || null,
                     created_by: inspectorName,
                   }}
                 />

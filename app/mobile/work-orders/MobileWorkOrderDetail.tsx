@@ -10,6 +10,7 @@ import {
   fetchWorkOrderById,
   saveWorkOrderComments,
 } from "./lib/work-order-shared";
+import WorkOrderPhotoAttachment from "@/app/maintenance/components/WorkOrderPhotoAttachment";
 
 type MobileWorkOrderDetailProps = {
   workOrderId: number;
@@ -147,6 +148,13 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         <p className="one-eyrie-mobile-work-order-detail__source-note">
           Source note: {workOrder.sourceNote}
         </p>
+      ) : null}
+
+      {workOrder.photoUrl ? (
+        <WorkOrderPhotoAttachment
+          photoUrl={workOrder.photoUrl}
+          className="one-eyrie-mobile-work-order-detail__photo"
+        />
       ) : null}
 
       <label className="one-eyrie-mobile-field one-eyrie-mobile-work-order-detail__comments">

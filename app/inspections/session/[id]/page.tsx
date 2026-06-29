@@ -626,6 +626,7 @@ export default function InspectionSessionPage() {
                                 source_note: `${templateName} · ${category.name} · ${item.label}${
                                   notes[key] ? ` — ${notes[key]}` : ""
                                 }`,
+                                photo_url: photos[key] || null,
                                 created_by: inspectorName,
                               }}
                             />

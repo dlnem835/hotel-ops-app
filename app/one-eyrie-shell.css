@@ -102,6 +102,12 @@
   opacity: 0.94;
 }
 
+.one-eyrie-pass-on-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * 1.05);
+}
+
 .one-eyrie-pass-on-read-dot {
   width: 9px;
   height: 9px;

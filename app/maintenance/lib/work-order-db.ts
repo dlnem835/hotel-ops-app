@@ -19,6 +19,7 @@ export type WorkOrderRow = {
   source_record_id: string | null;
   source_note: string | null;
   comments: string | null;
+  photo_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -38,6 +39,7 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     sourceRecordId: row.source_record_id ? String(row.source_record_id) : null,
     sourceNote: row.source_note ? String(row.source_note) : null,
     comments: row.comments ? String(row.comments) : null,
+    photoUrl: row.photo_url ? String(row.photo_url) : null,
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -94,6 +96,7 @@ export async function createWorkOrder(
       source_module: input.source_module ?? null,
       source_record_id: input.source_record_id ?? null,
       source_note: input.source_note ?? null,
+      photo_url: input.photo_url ?? null,
       created_by: input.created_by ?? null,
     })
     .select("*")
@@ -124,6 +127,7 @@ export async function updateWorkOrder(
   if (patch.area_id !== undefined) payload.area_id = patch.area_id;
   if (patch.area_label !== undefined) payload.area_label = patch.area_label;
   if (patch.comments !== undefined) payload.comments = patch.comments;
+  if (patch.photo_url !== undefined) payload.photo_url = patch.photo_url;
 
   const { data, error } = await supabase
     .from("work_orders")

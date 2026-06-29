@@ -608,6 +608,10 @@
   opacity: 0.9;
 }
 
+.one-eyrie-mobile-work-order-detail__photo {
+  margin: 0 0 18px;
+}
+
 .one-eyrie-mobile-work-order-detail__comments {
   margin-top: 6px;
   margin-bottom: 4px;

@@ -20,6 +20,7 @@ export type WorkOrder = {
   sourceRecordId: string | null;
   sourceNote: string | null;
   comments: string | null;
+  photoUrl: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,7 @@ export type WorkOrderInput = {
   source_record_id?: string | null;
   source_note?: string | null;
   comments?: string | null;
+  photo_url?: string | null;
   created_by?: string | null;
 };
 
