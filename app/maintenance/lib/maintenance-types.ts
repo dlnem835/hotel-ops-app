@@ -1,3 +1,7 @@
+import {
+  WorkOrderCategory,
+} from "./work-order-categories";
+
 export type WorkOrderPriority = "Normal" | "Important" | "Urgent";
 
 export type WorkOrderStatus = "Open" | "In Progress" | "Completed" | "Cancelled";
@@ -21,6 +25,8 @@ export type WorkOrder = {
   sourceNote: string | null;
   comments: string | null;
   photoUrl: string | null;
+  category: WorkOrderCategory | null;
+  item: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +45,8 @@ export type WorkOrderInput = {
   source_note?: string | null;
   comments?: string | null;
   photo_url?: string | null;
+  category?: WorkOrderCategory | null;
+  item?: string | null;
   created_by?: string | null;
 };
 

@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { forestHoverHandlers, PRIMARY_BUTTON } from "@/app/settings/lib/settings-ui-interactions";
 import { BuildingArea } from "@/app/settings/lib/buildings-types";
 import { WorkOrderInput, WorkOrderPriority } from "../lib/maintenance-types";
+import { WORK_ORDER_CATEGORIES, WorkOrderCategory } from "../lib/work-order-categories";
 import {
-  getActiveGuestRooms,
-  getGroupedNonGuestAreas,
+  buildWorkOrderLocationOptions,
   inferInitialLocationSelection,
-  resolveWorkOrderLocation,
+  resolveWorkOrderLocationFromSelection,
 } from "../lib/work-order-location";
+import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
 import "./work-order-modal.css";
 
@@ -34,10 +35,12 @@ export default function WorkOrderModal({
 }: WorkOrderModalProps) {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<WorkOrderCategory | "">("");
+  const [item, setItem] = useState("");
   const [priority, setPriority] = useState<WorkOrderPriority>("Normal");
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-  const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
-  const [otherLocation, setOtherLocation] = useState("");
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const [selectedLocationLabel, setSelectedLocationLabel] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
   const [areas, setAreas] = useState<BuildingArea[]>([]);
   const [areasLoading, setAreasLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,14 +48,14 @@ export default function WorkOrderModal({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const guestRooms = useMemo(() => getActiveGuestRooms(areas), [areas]);
-  const groupedAreas = useMemo(() => getGroupedNonGuestAreas(areas), [areas]);
-  const nonGuestAreas = useMemo(
-    () => groupedAreas.flatMap((group) => group.areas),
-    [groupedAreas]
+  const activeAreas = useMemo(
+    () => areas.filter((area) => area.status === "Active"),
+    [areas]
   );
-
-  const showOtherLocation = !selectedRoomId && !selectedAreaId;
+  const locationOptions = useMemo(
+    () => buildWorkOrderLocationOptions(areas),
+    [areas]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -78,6 +81,8 @@ export default function WorkOrderModal({
     setDescription(
       initialValues?.description || initialValues?.source_note || ""
     );
+    setCategory(initialValues?.category || "");
+    setItem(initialValues?.item || "");
     setPriority(initialValues?.priority || "Normal");
     setPhotoUrl(initialValues?.photo_url ?? null);
     setUploadingPhoto(false);
@@ -88,9 +93,9 @@ export default function WorkOrderModal({
       initialValues?.area_id ?? null,
       initialValues?.area_label ?? null
     );
-    setSelectedRoomId(selection.selectedRoomId);
-    setSelectedAreaId(selection.selectedAreaId);
-    setOtherLocation(selection.otherLocation);
+    setSelectedLocationId(selection.selectedLocationId);
+    setSelectedLocationLabel(selection.selectedLocationLabel);
+    setCustomLocation(selection.customLocation);
   }, [open, initialValues, areas]);
 
   if (!open) return null;
@@ -124,26 +129,59 @@ export default function WorkOrderModal({
     }
   }
 
+  function handleLocationSelect(id: number, label: string) {
+    setSelectedLocationId(id);
+    setSelectedLocationLabel(label);
+    setCustomLocation("");
+  }
+
+  function handleLocationClear() {
+    setSelectedLocationId(null);
+    setSelectedLocationLabel("");
+  }
+
+  function handleCustomLocationChange(value: string) {
+    setCustomLocation(value);
+    if (value.trim()) {
+      setSelectedLocationId(null);
+      setSelectedLocationLabel("");
+    }
+  }
+
   async function handleSubmit() {
     if (!subject.trim()) {
-      setError("Subject is required.");
+      setError("Work order title is required.");
+      return;
+    }
+
+    const location = resolveWorkOrderLocationFromSelection({
+      selectedLocationId,
+      customLocation,
+      areas: activeAreas,
+    });
+    if (!location.area_id && !location.area_label) {
+      setError("Location or custom location is required.");
+      return;
+    }
+
+    if (!category) {
+      setError("Category is required.");
+      return;
+    }
+
+    if (!description.trim()) {
+      setError("Details are required.");
       return;
     }
 
     setSaving(true);
     setError(null);
 
-    const location = resolveWorkOrderLocation({
-      selectedRoomId,
-      selectedAreaId,
-      otherLocation,
-      rooms: guestRooms,
-      areas: nonGuestAreas,
-    });
-
     const payload: WorkOrderInput = {
       subject: subject.trim(),
-      description: description.trim() || null,
+      description: description.trim(),
+      category,
+      item: item.trim() || null,
       priority,
       area_id: location.area_id,
       area_label: location.area_label,
@@ -198,77 +236,69 @@ export default function WorkOrderModal({
         <div className="work-order-modal__content">
           {error ? <div className="work-order-modal__error">{error}</div> : null}
 
-          <div
-            className={`work-order-modal__form${
-              showOtherLocation ? " work-order-modal__form--with-other" : ""
-            }`}
-          >
+          <div className="work-order-modal__form">
             <label className="work-order-modal__field work-order-modal__field--full">
-              <span className="work-order-modal__label">Subject</span>
+              <span className="work-order-modal__label">Work Order Title</span>
               <input
                 className="work-order-modal__input"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="Brief issue summary"
+                placeholder="Example: Refrigerator not cooling"
+              />
+            </label>
+
+            <div className="work-order-modal__field work-order-modal__field--full">
+              <span className="work-order-modal__label">Location</span>
+              <WorkOrderLocationField
+                options={locationOptions}
+                loading={areasLoading}
+                selectedId={selectedLocationId}
+                selectedLabel={selectedLocationLabel}
+                onSelect={handleLocationSelect}
+                onClearSelection={handleLocationClear}
+                disabled={saving}
+              />
+            </div>
+
+            <label className="work-order-modal__field work-order-modal__field--full">
+              <span className="work-order-modal__label">Custom Location</span>
+              <input
+                className="work-order-modal__input"
+                value={customLocation}
+                onChange={(event) => handleCustomLocationChange(event.target.value)}
+                placeholder="If location is not listed"
               />
             </label>
 
             <label className="work-order-modal__field">
-              <span className="work-order-modal__label">Room</span>
+              <span className="work-order-modal__label">Category</span>
               <select
                 className="work-order-modal__select"
-                value={selectedRoomId ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value ? Number(event.target.value) : null;
-                  setSelectedRoomId(value);
-                  if (value) {
-                    setSelectedAreaId(null);
-                    setOtherLocation("");
-                  }
-                }}
-                disabled={areasLoading}
+                value={category}
+                onChange={(event) =>
+                  setCategory(event.target.value as WorkOrderCategory | "")
+                }
               >
-                <option value="">Select room…</option>
-                {guestRooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    Room {room.name}
+                <option value="">Select category…</option>
+                {WORK_ORDER_CATEGORIES.map((entry) => (
+                  <option key={entry} value={entry}>
+                    {entry}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="work-order-modal__field">
-              <span className="work-order-modal__label">Area</span>
-              <select
-                className="work-order-modal__select"
-                value={selectedAreaId ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value ? Number(event.target.value) : null;
-                  setSelectedAreaId(value);
-                  if (value) {
-                    setSelectedRoomId(null);
-                    setOtherLocation("");
-                  }
-                }}
-                disabled={areasLoading}
-              >
-                <option value="">Select area…</option>
-                {groupedAreas.map((group) => (
-                  <optgroup key={group.key} label={group.label}>
-                    {group.areas.map((area) => (
-                      <option key={area.id} value={area.id}>
-                        {area.name}
-                        {area.area_type !== "Public Area"
-                          ? ` · ${area.area_type}`
-                          : ""}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <span className="work-order-modal__label">Item</span>
+              <input
+                className="work-order-modal__input"
+                value={item}
+                onChange={(event) => setItem(event.target.value)}
+                placeholder="Example: Toilet, PTAC, TV, refrigerator"
+              />
             </label>
 
-            <label className="work-order-modal__field work-order-modal__field--priority">
+            <label className="work-order-modal__field">
               <span className="work-order-modal__label">Priority</span>
               <select
                 className="work-order-modal__select"
@@ -283,25 +313,13 @@ export default function WorkOrderModal({
               </select>
             </label>
 
-            {showOtherLocation ? (
-              <label className="work-order-modal__field work-order-modal__field--full">
-                <span className="work-order-modal__label">Other location</span>
-                <input
-                  className="work-order-modal__input"
-                  value={otherLocation}
-                  onChange={(event) => setOtherLocation(event.target.value)}
-                  placeholder="If room/area is not listed"
-                />
-              </label>
-            ) : null}
-
             <label className="work-order-modal__field work-order-modal__field--full">
               <span className="work-order-modal__label">Details</span>
               <textarea
                 className="work-order-modal__textarea"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                placeholder="What needs to be fixed?"
+                placeholder="Describe the issue"
                 rows={2}
               />
             </label>
@@ -334,6 +352,9 @@ export default function WorkOrderModal({
             onClick={() => void handleSubmit()}
             style={{
               ...PRIMARY_BUTTON,
+              height: "38px",
+              padding: "0 16px",
+              fontSize: "13px",
               opacity: submitDisabled ? 0.6 : 1,
               cursor: submitDisabled ? "not-allowed" : "pointer",
             }}

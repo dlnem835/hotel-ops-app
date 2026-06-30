@@ -4,6 +4,7 @@ import {
   WorkOrderInput,
   WorkOrderPriority,
 } from "./maintenance-types";
+import { WorkOrderCategory } from "./work-order-categories";
 import { WORK_ORDER_PRIORITY_ORDER } from "@/app/lib/workOrderPriority";
 import { isGuestImpactingWorkOrder } from "./work-order-display";
 
@@ -20,6 +21,8 @@ export type WorkOrderRow = {
   source_note: string | null;
   comments: string | null;
   photo_url: string | null;
+  category: string | null;
+  item: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -40,6 +43,8 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     sourceNote: row.source_note ? String(row.source_note) : null,
     comments: row.comments ? String(row.comments) : null,
     photoUrl: row.photo_url ? String(row.photo_url) : null,
+    category: row.category ? (row.category as WorkOrderCategory) : null,
+    item: row.item ? String(row.item) : null,
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -97,6 +102,8 @@ export async function createWorkOrder(
       source_record_id: input.source_record_id ?? null,
       source_note: input.source_note ?? null,
       photo_url: input.photo_url ?? null,
+      category: input.category ?? null,
+      item: input.item?.trim() || null,
       created_by: input.created_by ?? null,
     })
     .select("*")

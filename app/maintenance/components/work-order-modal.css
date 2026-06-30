@@ -166,10 +166,50 @@
   height: 44px;
 }
 
-@media (min-width: 640px) {
-  .work-order-modal__form--with-other .work-order-modal__field--priority {
-    grid-column: span 1;
-  }
+.work-order-location-field {
+  position: relative;
+}
+
+.work-order-location-field__input {
+  display: block;
+}
+
+.work-order-location-field__list {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 168px;
+  overflow-y: auto;
+  background: #111111;
+  border: 1px solid #3a352e;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.work-order-location-field__option {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #f5f1e8;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.work-order-location-field__option:hover,
+.work-order-location-field__option:focus-visible {
+  background: #3a352e;
+  outline: none;
 }
 
 @media (max-width: 560px) {
@@ -201,6 +241,22 @@
 
   .work-order-modal__field--priority {
     grid-column: auto;
+  }
+
+  .work-order-modal__input,
+  .work-order-modal__select {
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .work-order-location-field__option {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .work-order-modal__textarea {
+    font-size: 16px;
   }
 
   .work-order-modal__footer {

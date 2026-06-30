@@ -26,6 +26,73 @@ export function formatRoomLabel(area: BuildingArea): string {
   return `Room ${area.name}`;
 }
 
+export type WorkOrderLocationOption = {
+  id: number;
+  label: string;
+  searchText: string;
+};
+
+export function buildWorkOrderLocationOptions(
+  areas: BuildingArea[]
+): WorkOrderLocationOption[] {
+  const roomOptions = getActiveGuestRooms(areas).map((room) => ({
+    id: room.id,
+    label: formatRoomLabel(room),
+    searchText: `room ${room.name} ${room.name}`.toLowerCase(),
+  }));
+
+  const areaOptions = getActiveNonGuestAreas(areas).map((area) => ({
+    id: area.id,
+    label: area.name,
+    searchText: `${area.name} ${area.area_type} ${area.floor_location}`.toLowerCase(),
+  }));
+
+  return [...roomOptions, ...areaOptions].sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { numeric: true })
+  );
+}
+
+export function filterWorkOrderLocationOptions(
+  options: WorkOrderLocationOption[],
+  query: string,
+  limit = 20
+): WorkOrderLocationOption[] {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) {
+    return options.slice(0, limit);
+  }
+
+  return options
+    .filter(
+      (option) =>
+        option.searchText.includes(trimmed) ||
+        option.label.toLowerCase().includes(trimmed)
+    )
+    .slice(0, limit);
+}
+
+export function resolveWorkOrderLocationFromSelection(input: {
+  selectedLocationId: number | null;
+  customLocation: string;
+  areas: BuildingArea[];
+}): { area_id: number | null; area_label: string | null } {
+  if (input.selectedLocationId) {
+    const match = input.areas.find((area) => area.id === input.selectedLocationId);
+    if (match) {
+      const label =
+        match.area_type === "Guest Room" ? formatRoomLabel(match) : match.name;
+      return { area_id: match.id, area_label: label };
+    }
+  }
+
+  const custom = input.customLocation.trim();
+  if (custom) {
+    return { area_id: null, area_label: custom };
+  }
+
+  return { area_id: null, area_label: null };
+}
+
 export function resolveWorkOrderLocation(input: {
   selectedRoomId: number | null;
   selectedAreaId: number | null;
@@ -60,24 +127,19 @@ export function inferInitialLocationSelection(
   initialAreaId?: number | null,
   initialAreaLabel?: string | null
 ): {
-  selectedRoomId: number | null;
-  selectedAreaId: number | null;
-  otherLocation: string;
+  selectedLocationId: number | null;
+  selectedLocationLabel: string;
+  customLocation: string;
 } {
   if (initialAreaId) {
     const match = areas.find((area) => area.id === initialAreaId);
-    if (match?.area_type === "Guest Room") {
-      return {
-        selectedRoomId: match.id,
-        selectedAreaId: null,
-        otherLocation: "",
-      };
-    }
     if (match) {
+      const label =
+        match.area_type === "Guest Room" ? formatRoomLabel(match) : match.name;
       return {
-        selectedRoomId: null,
-        selectedAreaId: match.id,
-        otherLocation: "",
+        selectedLocationId: match.id,
+        selectedLocationLabel: label,
+        customLocation: "",
       };
     }
   }
@@ -91,7 +153,11 @@ export function inferInitialLocationSelection(
           area.area_type === "Guest Room" && area.name === roomMatch[1]
       );
       if (room) {
-        return { selectedRoomId: room.id, selectedAreaId: null, otherLocation: "" };
+        return {
+          selectedLocationId: room.id,
+          selectedLocationLabel: formatRoomLabel(room),
+          customLocation: "",
+        };
       }
     }
 
@@ -101,11 +167,23 @@ export function inferInitialLocationSelection(
         area.name.toLowerCase() === label.toLowerCase()
     );
     if (areaMatch) {
-      return { selectedRoomId: null, selectedAreaId: areaMatch.id, otherLocation: "" };
+      return {
+        selectedLocationId: areaMatch.id,
+        selectedLocationLabel: areaMatch.name,
+        customLocation: "",
+      };
     }
 
-    return { selectedRoomId: null, selectedAreaId: null, otherLocation: label };
+    return {
+      selectedLocationId: null,
+      selectedLocationLabel: "",
+      customLocation: label,
+    };
   }
 
-  return { selectedRoomId: null, selectedAreaId: null, otherLocation: "" };
+  return {
+    selectedLocationId: null,
+    selectedLocationLabel: "",
+    customLocation: "",
+  };
 }
