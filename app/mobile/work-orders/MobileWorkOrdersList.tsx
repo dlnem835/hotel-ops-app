@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   formatWorkOrderAge,
@@ -11,13 +12,21 @@ import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
 import { fetchOpenWorkOrders } from "./lib/work-order-shared";
 
-export default function MobileWorkOrdersList() {
+type MobileWorkOrdersListProps = {
+  refreshKey?: number;
+};
+
+export default function MobileWorkOrdersList({
+  refreshKey = 0,
+}: MobileWorkOrdersListProps) {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setError(null);
 
     void fetchOpenWorkOrders()
       .then((orders) => {
@@ -36,7 +45,7 @@ export default function MobileWorkOrdersList() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <div className="one-eyrie-mobile-status">Loading work orders…</div>;
@@ -94,7 +103,11 @@ export default function MobileWorkOrdersList() {
                 {order.createdBy ? ` · ${order.createdBy}` : ""}
               </div>
             </div>
-            <span className="one-eyrie-mobile-work-order-card__open">Open</span>
+            <ChevronRight
+              size={18}
+              className="one-eyrie-mobile-work-order-card__chevron"
+              aria-hidden
+            />
           </Link>
         );
       })}

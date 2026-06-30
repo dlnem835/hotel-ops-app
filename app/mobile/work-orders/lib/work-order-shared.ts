@@ -1,4 +1,25 @@
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
+import { getClientSession } from "@/app/lib/auth";
+import { supabase } from "@/app/supabaseClient";
+
+export async function resolveWorkOrderCreatedBy(): Promise<string | null> {
+  const session = await getClientSession();
+  if (!session) return null;
+
+  const { data: teamMember } = await supabase
+    .from("team_members")
+    .select("first_name, last_name, username")
+    .eq("auth_user_id", session.user.id)
+    .maybeSingle();
+
+  if (!teamMember) return null;
+
+  return (
+    [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
+    teamMember.username ||
+    null
+  );
+}
 
 export async function fetchOpenWorkOrders(): Promise<WorkOrder[]> {
   const response = await fetch("/api/work-orders?open=1");

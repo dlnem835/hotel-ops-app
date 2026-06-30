@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  forestHoverHandlers,
-  PRIMARY_BUTTON,
-  SETTINGS_BUTTON_BASE,
-} from "@/app/settings/lib/settings-ui-interactions";
+import { forestHoverHandlers, PRIMARY_BUTTON } from "@/app/settings/lib/settings-ui-interactions";
 import { BuildingArea } from "@/app/settings/lib/buildings-types";
 import { WorkOrderInput, WorkOrderPriority } from "../lib/maintenance-types";
 import {
@@ -15,6 +10,8 @@ import {
   inferInitialLocationSelection,
   resolveWorkOrderLocation,
 } from "../lib/work-order-location";
+import WorkOrderPhotoField from "./WorkOrderPhotoField";
+import "./work-order-modal.css";
 
 export type WorkOrderModalInitialValues = Partial<WorkOrderInput> & {
   subject?: string;
@@ -26,24 +23,6 @@ type WorkOrderModalProps = {
   createdBy?: string | null;
   onClose: () => void;
   onCreated?: () => void;
-};
-
-const fieldLabel: React.CSSProperties = {
-  color: ONE_EYRIE.textSubtle,
-  fontSize: "12px",
-  fontWeight: 700,
-  marginBottom: "6px",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  background: ONE_EYRIE.black,
-  color: ONE_EYRIE.text,
-  border: `1px solid ${ONE_EYRIE.borderInput}`,
-  borderRadius: "10px",
-  padding: "10px 12px",
-  fontSize: "14px",
-  outline: "none",
 };
 
 export default function WorkOrderModal({
@@ -63,6 +42,8 @@ export default function WorkOrderModal({
   const [areasLoading, setAreasLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const guestRooms = useMemo(() => getActiveGuestRooms(areas), [areas]);
   const groupedAreas = useMemo(() => getGroupedNonGuestAreas(areas), [areas]);
@@ -71,8 +52,7 @@ export default function WorkOrderModal({
     [groupedAreas]
   );
 
-  const showOtherLocation =
-    !selectedRoomId && !selectedAreaId;
+  const showOtherLocation = !selectedRoomId && !selectedAreaId;
 
   useEffect(() => {
     if (!open) return;
@@ -99,6 +79,8 @@ export default function WorkOrderModal({
       initialValues?.description || initialValues?.source_note || ""
     );
     setPriority(initialValues?.priority || "Normal");
+    setPhotoUrl(initialValues?.photo_url ?? null);
+    setUploadingPhoto(false);
     setError(null);
 
     const selection = inferInitialLocationSelection(
@@ -112,6 +94,35 @@ export default function WorkOrderModal({
   }, [open, initialValues, areas]);
 
   if (!open) return null;
+
+  async function handlePhotoSelect(file: File) {
+    setUploadingPhoto(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/work-orders/photo", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to upload photo");
+      }
+
+      setPhotoUrl(result.photoUrl as string);
+    } catch (uploadError) {
+      setPhotoUrl(null);
+      setError(
+        uploadError instanceof Error ? uploadError.message : "Unable to upload photo"
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!subject.trim()) {
@@ -139,7 +150,7 @@ export default function WorkOrderModal({
       source_module: initialValues?.source_module ?? "Maintenance",
       source_record_id: initialValues?.source_record_id ?? null,
       source_note: initialValues?.source_note ?? null,
-      photo_url: initialValues?.photo_url ?? null,
+      photo_url: photoUrl,
       created_by: createdBy || initialValues?.created_by || null,
     };
 
@@ -161,199 +172,176 @@ export default function WorkOrderModal({
     onClose();
   }
 
+  const submitDisabled = saving || uploadingPhoto;
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.75)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 999,
-        padding: "16px",
-      }}
-      onClick={onClose}
-    >
+    <div className="work-order-modal-overlay" onClick={onClose}>
       <div
-        style={{
-          width: "640px",
-          maxWidth: "100%",
-          background: ONE_EYRIE.row,
-          border: `1px solid ${ONE_EYRIE.border}`,
-          borderRadius: "14px",
-          padding: "22px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-        }}
-        onClick={(e) => e.stopPropagation()}
+        className="work-order-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="work-order-modal-title"
+        onClick={(event) => event.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 6px", color: ONE_EYRIE.text, fontSize: "20px" }}>
-          New Work Order
-        </h2>
-        <p style={{ margin: "0 0 18px", color: ONE_EYRIE.textMuted, fontSize: "13px" }}>
-          Guest-impacting maintenance issue
-          {initialValues?.source_module
-            ? ` · from ${initialValues.source_module}`
-            : ""}
-        </p>
+        <header className="work-order-modal__header">
+          <h2 id="work-order-modal-title" className="work-order-modal__title">
+            New Work Order
+          </h2>
+          <p className="work-order-modal__subtitle">
+            Guest-impacting maintenance issue
+            {initialValues?.source_module
+              ? ` · from ${initialValues.source_module}`
+              : ""}
+          </p>
+        </header>
 
-        {error && (
+        <div className="work-order-modal__content">
+          {error ? <div className="work-order-modal__error">{error}</div> : null}
+
           <div
-            style={{
-              marginBottom: "14px",
-              padding: "10px 12px",
-              borderRadius: "8px",
-              border: "1px solid #8B5252",
-              color: "#C9A8A8",
-              fontSize: "13px",
-            }}
+            className={`work-order-modal__form${
+              showOtherLocation ? " work-order-modal__form--with-other" : ""
+            }`}
           >
-            {error}
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <label>
-            <div style={fieldLabel}>Subject</div>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              style={inputStyle}
-              placeholder="Brief issue summary"
-            />
-          </label>
-
-          <label>
-            <div style={fieldLabel}>Room</div>
-            <select
-              value={selectedRoomId ?? ""}
-              onChange={(e) => {
-                const value = e.target.value ? Number(e.target.value) : null;
-                setSelectedRoomId(value);
-                if (value) {
-                  setSelectedAreaId(null);
-                  setOtherLocation("");
-                }
-              }}
-              disabled={areasLoading}
-              style={{ ...inputStyle, height: "42px" }}
-            >
-              <option value="">Select room (optional)...</option>
-              {guestRooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  Room {room.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <div style={fieldLabel}>Area</div>
-            <select
-              value={selectedAreaId ?? ""}
-              onChange={(e) => {
-                const value = e.target.value ? Number(e.target.value) : null;
-                setSelectedAreaId(value);
-                if (value) {
-                  setSelectedRoomId(null);
-                  setOtherLocation("");
-                }
-              }}
-              disabled={areasLoading}
-              style={{ ...inputStyle, height: "42px" }}
-            >
-              <option value="">Select area (optional)...</option>
-              {groupedAreas.map((group) => (
-                <optgroup key={group.key} label={group.label}>
-                  {group.areas.map((area) => (
-                    <option key={area.id} value={area.id}>
-                      {area.name}
-                      {area.area_type !== "Public Area"
-                        ? ` · ${area.area_type}`
-                        : ""}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-
-          {showOtherLocation && (
-            <label>
-              <div style={fieldLabel}>Other location (optional)</div>
+            <label className="work-order-modal__field work-order-modal__field--full">
+              <span className="work-order-modal__label">Subject</span>
               <input
-                value={otherLocation}
-                onChange={(e) => setOtherLocation(e.target.value)}
-                style={inputStyle}
-                placeholder="Use only if room/area is not listed"
+                className="work-order-modal__input"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                placeholder="Brief issue summary"
               />
             </label>
-          )}
 
-          <label>
-            <div style={fieldLabel}>Priority</div>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as WorkOrderPriority)}
-              style={{ ...inputStyle, height: "42px" }}
-            >
-              <option value="Normal">Normal</option>
-              <option value="Important">Important</option>
-              <option value="Urgent">Urgent</option>
-            </select>
-          </label>
+            <label className="work-order-modal__field">
+              <span className="work-order-modal__label">Room</span>
+              <select
+                className="work-order-modal__select"
+                value={selectedRoomId ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value ? Number(event.target.value) : null;
+                  setSelectedRoomId(value);
+                  if (value) {
+                    setSelectedAreaId(null);
+                    setOtherLocation("");
+                  }
+                }}
+                disabled={areasLoading}
+              >
+                <option value="">Select room…</option>
+                {guestRooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    Room {room.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label>
-            <div style={fieldLabel}>Details</div>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              style={{ ...inputStyle, resize: "vertical" }}
-              placeholder="What needs to be fixed?"
-            />
-          </label>
+            <label className="work-order-modal__field">
+              <span className="work-order-modal__label">Area</span>
+              <select
+                className="work-order-modal__select"
+                value={selectedAreaId ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value ? Number(event.target.value) : null;
+                  setSelectedAreaId(value);
+                  if (value) {
+                    setSelectedRoomId(null);
+                    setOtherLocation("");
+                  }
+                }}
+                disabled={areasLoading}
+              >
+                <option value="">Select area…</option>
+                {groupedAreas.map((group) => (
+                  <optgroup key={group.key} label={group.label}>
+                    {group.areas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name}
+                        {area.area_type !== "Public Area"
+                          ? ` · ${area.area_type}`
+                          : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+
+            <label className="work-order-modal__field work-order-modal__field--priority">
+              <span className="work-order-modal__label">Priority</span>
+              <select
+                className="work-order-modal__select"
+                value={priority}
+                onChange={(event) =>
+                  setPriority(event.target.value as WorkOrderPriority)
+                }
+              >
+                <option value="Normal">Normal</option>
+                <option value="Important">Important</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+            </label>
+
+            {showOtherLocation ? (
+              <label className="work-order-modal__field work-order-modal__field--full">
+                <span className="work-order-modal__label">Other location</span>
+                <input
+                  className="work-order-modal__input"
+                  value={otherLocation}
+                  onChange={(event) => setOtherLocation(event.target.value)}
+                  placeholder="If room/area is not listed"
+                />
+              </label>
+            ) : null}
+
+            <label className="work-order-modal__field work-order-modal__field--full">
+              <span className="work-order-modal__label">Details</span>
+              <textarea
+                className="work-order-modal__textarea"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="What needs to be fixed?"
+                rows={2}
+              />
+            </label>
+
+            <div className="work-order-modal__photo work-order-modal__photo-field">
+              <WorkOrderPhotoField
+                compact
+                photoUrl={photoUrl}
+                uploading={uploadingPhoto}
+                disabled={saving}
+                onPhotoSelect={(file) => void handlePhotoSelect(file)}
+                onPhotoRemove={() => setPhotoUrl(null)}
+              />
+            </div>
+          </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "10px",
-            marginTop: "20px",
-          }}
-        >
+        <footer className="work-order-modal__footer">
           <button
             type="button"
+            className="work-order-modal__btn work-order-modal__btn--cancel"
             onClick={onClose}
-            style={{
-              ...SETTINGS_BUTTON_BASE,
-              background: "transparent",
-              color: ONE_EYRIE.textMuted,
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "12px",
-              height: "44px",
-              padding: "0 18px",
-              fontWeight: 800,
-            }}
           >
             Cancel
           </button>
           <button
             type="button"
+            className="work-order-modal__btn work-order-modal__btn--submit"
+            disabled={submitDisabled}
             onClick={() => void handleSubmit()}
-            disabled={saving}
             style={{
               ...PRIMARY_BUTTON,
-              opacity: saving ? 0.6 : 1,
-              cursor: saving ? "not-allowed" : "pointer",
+              opacity: submitDisabled ? 0.6 : 1,
+              cursor: submitDisabled ? "not-allowed" : "pointer",
             }}
-            {...forestHoverHandlers(saving)}
+            {...forestHoverHandlers(submitDisabled)}
           >
-            {saving ? "Creating..." : "Create Work Order"}
+            {saving ? "Creating…" : "Create Work Order"}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   );
