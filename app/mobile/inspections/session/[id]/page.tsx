@@ -34,6 +34,8 @@ export default function MobileInspectionSessionHubPage() {
     notes,
     photos,
     categoryProgress,
+    listHref,
+    listLabel,
   } = useMobileInspectionSession();
 
   if (loading) {
@@ -65,8 +67,8 @@ export default function MobileInspectionSessionHubPage() {
           isMobileLayout
           expandedCategoryKey={null}
           onToggleCategory={() => undefined}
-          onBack={() => router.push("/mobile/inspections")}
-          backLabel="Back to inspections"
+          onBack={() => router.push(listHref)}
+          backLabel={`Back to ${listLabel.toLowerCase()}`}
         />
       </div>
     );
@@ -74,8 +76,8 @@ export default function MobileInspectionSessionHubPage() {
 
   return (
     <div className="one-eyrie-mobile__inner one-eyrie-mobile-inspection-session">
-      <Link href="/mobile/inspections" className="one-eyrie-mobile-back">
-        ← Inspections
+      <Link href={listHref} className="one-eyrie-mobile-back">
+        ← {listLabel}
       </Link>
 
       <header className="one-eyrie-mobile-inspection-session__header">

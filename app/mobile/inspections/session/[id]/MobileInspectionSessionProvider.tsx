@@ -12,6 +12,10 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/app/supabaseClient";
 import { ItemResponseInput } from "@/app/inspections/lib/inspection-types";
 import {
+  mobileInspectionListHref,
+  mobileInspectionListLabel,
+} from "@/app/mobile/inspections/lib/inspection-shared";
+import {
   calculateInspectionScore,
   formatInspectionScoreDisplay,
 } from "@/app/inspections/lib/scoring";
@@ -59,6 +63,8 @@ type MobileInspectionSessionContextValue = {
   removeItemPhoto: (categoryKey: string, itemKey: string) => void;
   saveProgress: () => Promise<boolean>;
   completeInspection: () => Promise<boolean>;
+  listHref: string;
+  listLabel: string;
 };
 
 const MobileInspectionSessionContext =
@@ -107,7 +113,9 @@ export function MobileInspectionSessionProvider({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        window.location.href = "/login?next=/mobile/inspections";
+        const returnPath =
+          typeof window !== "undefined" ? window.location.pathname : "/mobile/inspections";
+        window.location.href = `/login?next=${encodeURIComponent(returnPath)}`;
         return;
       }
 
@@ -117,7 +125,8 @@ export function MobileInspectionSessionProvider({
 
       if (!response.ok) {
         alert(result.error || "Unable to load inspection");
-        router.push("/mobile/inspections");
+        const programHint = String(result.session?.inspection_program || "");
+        router.push(mobileInspectionListHref(programHint));
         return;
       }
 
@@ -232,6 +241,9 @@ export function MobileInspectionSessionProvider({
 
   const scoreDisplay = liveScore ? formatInspectionScoreDisplay(liveScore) : null;
   const isCompleted = status === "completed";
+
+  const listHref = useMemo(() => mobileInspectionListHref(program), [program]);
+  const listLabel = useMemo(() => mobileInspectionListLabel(program), [program]);
   const totalItems = content?.categories.reduce((sum, cat) => sum + cat.items.length, 0) ?? 0;
   const answeredItems = responseInputs.length;
 
@@ -418,6 +430,8 @@ export function MobileInspectionSessionProvider({
     removeItemPhoto,
     saveProgress,
     completeInspection,
+    listHref,
+    listLabel,
   };
 
   return (

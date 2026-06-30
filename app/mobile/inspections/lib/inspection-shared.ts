@@ -11,7 +11,7 @@ import {
   RoomGridTile,
 } from "@/app/inspections/lib/inspection-types";
 import { templateMatchesDashboard } from "@/app/inspections/lib/program-map";
-import { daysSince } from "@/app/inspections/lib/period-utils";
+import { daysSince, parseDashboardProgram } from "@/app/inspections/lib/period-utils";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 
@@ -172,6 +172,14 @@ export async function startInspectionSession(params: {
 
 export function inspectionSessionUrl(sessionId: number): string {
   return `/mobile/inspections/session/${sessionId}`;
+}
+
+export function mobileInspectionListHref(program: string): string {
+  return parseDashboardProgram(program) === "RPM" ? "/mobile/rpms" : "/mobile/inspections";
+}
+
+export function mobileInspectionListLabel(program: string): string {
+  return parseDashboardProgram(program) === "RPM" ? "RPMs" : "Inspections";
 }
 
 export function filterRoomsBySearch<T extends { name: string }>(
