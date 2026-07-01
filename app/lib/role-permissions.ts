@@ -10,6 +10,9 @@ export const JOB_TITLE_OPTIONS = [
   "Maintenance Technician",
   "Inspector",
   "Sales Manager",
+  "F&B Supervisor",
+  "Breakfast Attendant",
+  "Bartender",
 ] as const;
 
 export type JobTitleOption = (typeof JOB_TITLE_OPTIONS)[number];
