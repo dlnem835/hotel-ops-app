@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check, X } from "lucide-react";
+import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
+import LostFoundAddItemModal, {
+  combineLostFoundLocation,
+  type LostFoundAddItemFormData,
+} from "@/app/lost-and-found/components/LostFoundAddItemModal";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -31,9 +36,10 @@ export default function LostAndFoundPage() {
   const [searchterm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
-  const [foundby, setFoundBy] = useState("");
   const [currentUserName, setCurrentUserName] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const readyToShipCount = lostItems.filter(
     (item) => item.status === "Ready to be shipped"
@@ -110,31 +116,45 @@ setTeamMembers(allTeamMembers || []);
   checkAuth();
 }, []);
 
-  async function addItem(e: any) {
-    e.preventDefault();
+  useEffect(() => {
+    if (!successToast) return;
+    const timer = window.setTimeout(() => setSuccessToast(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [successToast]);
 
-    const form = e.currentTarget as HTMLFormElement;
-    const formData = new FormData(form);
-
+  async function submitNewItem(data: LostFoundAddItemFormData, keepOpen: boolean) {
     const {
-  data: { session },
-} = await supabase.auth.getSession();
-    await supabase.from("lost_items").insert([
-      {
-      
-        item_name: formData.get("item_name"),
-        room_number: formData.get("room_number"),
-        guest_last_name: formData.get("guest_last_name"),
-        found_by: foundby,
-        status: formData.get("status"),
-        created_by: session?.user?.id || null,
-      },
-    ]);
+      data: { session },
+    } = await supabase.auth.getSession();
 
+    const insertPayload: Record<string, string | null> = {
+      item_name: data.item_name,
+      room_number: combineLostFoundLocation(data.room_number, data.other_location),
+      guest_last_name: data.guest_last_name,
+      found_by: data.found_by,
+      status: data.status,
+      created_by: session?.user?.id || null,
+    };
 
-    form.reset();
-    setFoundBy ("");
-    fetchItems();
+    if (data.comments) {
+      insertPayload.comments = data.comments;
+    }
+
+    const { error } = await supabase.from("lost_items").insert([insertPayload]);
+
+    if (error) {
+      alert("Unable to add item.");
+      return false;
+    }
+
+    await fetchItems();
+
+    if (!keepOpen) {
+      setShowAddModal(false);
+    }
+
+    setSuccessToast("Item added successfully.");
+    return true;
   }
 
   async function deleteItem(id: string) {
@@ -182,6 +202,19 @@ setTeamMembers(allTeamMembers || []);
         <OneEyriePageHeader
           title="Lost & Found"
           subtitle="Track, manage, and return guest items"
+          actions={
+            <OneEyrieDesktopHeaderActions>
+              <button
+                type="button"
+                style={PRIMARY_BUTTON}
+                onClick={() => setShowAddModal(true)}
+                {...forestHoverHandlers()}
+              >
+                <Plus size={18} />
+                Add Item
+              </button>
+            </OneEyrieDesktopHeaderActions>
+          }
         />
 
         {/* STATS */}
@@ -222,44 +255,6 @@ setTeamMembers(allTeamMembers || []);
             </div>
           </div>
         </div>
-
-        {/* ADD ITEM */}
-        <form onSubmit={addItem} className="one-eyrie-form-grid--lnf-add" style={{ marginBottom: "18px" }}>
-          <input name="item_name" placeholder="Item name" required className="one-eyrie-field" style={inputStyle} />
-          <input name="room_number" placeholder="Room #" required className="one-eyrie-field" style={inputStyle} />
-          <input
-            name="guest_last_name"
-            placeholder="Guest Last Name"
-            required
-            className="one-eyrie-field"
-            style={inputStyle}
-          />
-         <input
-  name="found_by"
-  type="text"
-  placeholder="Found By"
-  value={foundby}
-  onChange={(e) => setFoundBy(e.target.value)}
-  className="one-eyrie-field"
-  style={inputStyle}
-/> 
-
-          <select name="status" defaultValue="Stored" className="one-eyrie-field" style={inputStyle}>
-            <option>Stored</option>
-            <option>Ready to be shipped</option>
-            <option>Label sent</option>
-            <option>Shipped</option>
-            <option>Closed</option>
-          </select>
-
-          <button
-            type="submit"
-            style={PRIMARY_BUTTON}
-            {...forestHoverHandlers()}
-          >
-            Add Item
-          </button>
-        </form>
 
         {/* SEARCH/FILTER */}
         <div className="one-eyrie-toolbar-row" style={{ marginBottom: "18px" }}>
@@ -538,6 +533,36 @@ setTeamMembers(allTeamMembers || []);
     </div>
   </div>
 )}
+        <LostFoundAddItemModal
+          open={showAddModal}
+          defaultFoundBy={currentUserName}
+          onClose={() => setShowAddModal(false)}
+          onSubmit={submitNewItem}
+        />
+
+        {successToast ? (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              position: "fixed",
+              bottom: "28px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 1000,
+              padding: "12px 18px",
+              borderRadius: "10px",
+              border: `1px solid ${gold}`,
+              background: "#1a1815",
+              color: gold,
+              fontSize: "13px",
+              fontWeight: 700,
+              boxShadow: "0 10px 28px rgba(0, 0, 0, 0.45)",
+            }}
+          >
+            {successToast}
+          </div>
+        ) : null}
       </section>
     </main>
   );
