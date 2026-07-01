@@ -17,6 +17,48 @@ export const JOB_TITLE_OPTIONS = [
 
 export type JobTitleOption = (typeof JOB_TITLE_OPTIONS)[number];
 
+/** Default access summary shown in Settings → Roles & Permissions. */
+export function getJobTitleDefaultAccessLabel(jobTitle: JobTitleOption): string {
+  switch (jobTitle) {
+    case "General Manager":
+    case "Assistant General Manager":
+      return "All tabs including Settings";
+    case "Front Desk Supervisor":
+    case "Sales Manager":
+    case "F&B Supervisor":
+      return "All operational tabs";
+    case "Front Desk Agent":
+      return "Pass-On Log + Lost & Found";
+    case "Executive Housekeeper":
+    case "Housekeeping Supervisor":
+    case "Housekeeper":
+    case "Inspector":
+      return "Inspections + Pass-On Log";
+    case "Chief Engineer":
+    case "Maintenance Technician":
+      return "Maintenance + Pass-On Log";
+    case "Breakfast Attendant":
+    case "Bartender":
+      return "Pass-On Log";
+    default:
+      return "Set per user in Team Members";
+  }
+}
+
+export function buildSettingsRoleCatalog(): Array<{
+  id: number;
+  name: JobTitleOption;
+  access: string;
+  status: "Active";
+}> {
+  return JOB_TITLE_OPTIONS.map((name, index) => ({
+    id: index + 1,
+    name,
+    access: getJobTitleDefaultAccessLabel(name),
+    status: "Active",
+  }));
+}
+
 export const MODULE_PERMISSION_KEYS = [
   "dashboard",
   "lost_found",

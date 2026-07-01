@@ -48,8 +48,10 @@ import PmTemplatesSection from "./components/PmTemplatesSection";
 import RoomsAreasSection from "./components/RoomsAreasSection";
 import {
   buildUserAccessProfile,
+  buildSettingsRoleCatalog,
   draftFlagsToPermissions,
   getAdministratorPermissions,
+  getJobTitleDefaultAccessLabel,
   JOB_TITLE_OPTIONS,
   MODULE_PERMISSION_KEYS,
   MODULE_PERMISSION_LABELS,
@@ -126,38 +128,7 @@ useEffect(() => {
 }, []);
 
 
-  const [roles, setRoles] = useState<AnyRecord[]>([
-    {
-      id: 1,
-      name: "Admin / GM",
-      access: "All tabs including Settings",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Manager",
-      access: "All operational tabs",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Front Desk",
-      access: "Pass-On Log + Lost & Found",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Inspector",
-      access: "Inspections + Pass-On Log",
-      status: "Active",
-    },
-    {
-      id: 5,
-      name: "RPM / Maintenance",
-      access: "Maintenance + Pass-On Log",
-      status: "Active",
-    },
-  ]);
+  const [roles, setRoles] = useState<AnyRecord[]>(() => buildSettingsRoleCatalog());
 
     const settingsCards = [
     {
@@ -302,8 +273,8 @@ useEffect(() => {
 
     if (type === "roles") {
       return {
-        name: "",
-        access: "View Only",
+        name: JOB_TITLE_OPTIONS[0],
+        access: getJobTitleDefaultAccessLabel(JOB_TITLE_OPTIONS[0]),
         status: "Active",
       };
     }
@@ -698,12 +669,25 @@ async function saveItem() {
     if (modalType === "roles") {
       return (
         <>
-          <input
-            value={draft.name || ""}
-            onChange={(e) => updateDraft("name", e.target.value)}
-            placeholder="Role Name"
+          <select
+            value={draft.name || JOB_TITLE_OPTIONS[0]}
+            onChange={(e) => {
+              const name = e.target.value as (typeof JOB_TITLE_OPTIONS)[number];
+              setDraft((prev) => ({
+                ...prev,
+                name,
+                access: getJobTitleDefaultAccessLabel(name),
+              }));
+            }}
             style={input}
-          />
+            aria-label="Position"
+          >
+            {JOB_TITLE_OPTIONS.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </select>
 
           <select
             value={draft.access || "View Only"}
