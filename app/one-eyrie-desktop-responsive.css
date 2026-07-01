@@ -64,6 +64,18 @@
     justify-content: flex-end;
     gap: 12px;
   }
+
+  /* List / row navigation chevrons (>) — gold icon only, tiles unchanged */
+  .one-eyrie-app-shell .lucide-chevron-right {
+    color: var(--oe-gold, #c8a96a);
+    opacity: 1;
+  }
+
+  .one-eyrie-app-shell button:disabled .lucide-chevron-right,
+  .one-eyrie-app-shell [aria-disabled="true"] .lucide-chevron-right {
+    color: var(--oe-text-subtle, #9ca3af);
+    opacity: 0.35;
+  }
 }
 
 /* ── Truncation helpers ── */
