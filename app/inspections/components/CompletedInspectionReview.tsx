@@ -9,6 +9,7 @@ import { AMBER, FLAT_RED, FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneE
 import { formatInspectionScoreDisplay } from "../lib/scoring";
 import { PropertyTemplateContent } from "../standards/types";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 
 type Outcome = "pass" | "fail" | "na";
 
@@ -160,6 +161,7 @@ export default function CompletedInspectionReview({
               justifyContent: "space-between",
               gap: "12px",
               marginBottom: "18px",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -182,27 +184,29 @@ export default function CompletedInspectionReview({
               {backLabel}
             </button>
 
-            <button
-              type="button"
-              onClick={() => window.print()}
-              style={{
-                ...SETTINGS_BUTTON_BASE,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "transparent",
-                border: `1px solid ${ONE_EYRIE.gold}`,
-                color: ONE_EYRIE.gold,
-                borderRadius: "10px",
-                padding: "8px 14px",
-                fontSize: "13px",
-                fontWeight: 800,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <Printer size={16} />
-              Print
-            </button>
+            <OneEyrieDesktopHeaderActions>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                style={{
+                  ...SETTINGS_BUTTON_BASE,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "transparent",
+                  border: `1px solid ${ONE_EYRIE.gold}`,
+                  color: ONE_EYRIE.gold,
+                  borderRadius: "10px",
+                  padding: "8px 14px",
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <Printer size={16} />
+                Print
+              </button>
+            </OneEyrieDesktopHeaderActions>
           </div>
 
           <div

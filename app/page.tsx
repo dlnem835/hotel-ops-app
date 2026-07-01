@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
@@ -23,7 +24,6 @@ export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<OperationalDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserName, setCurrentUserName] = useState("Unknown");
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -50,16 +50,6 @@ export default function DashboardPage() {
         return;
       }
 
-      const { data: teamMember } = await supabase
-        .from("team_members")
-        .select("first_name, last_name, username")
-        .eq("auth_user_id", session.user.id)
-        .single();
-
-      if (teamMember) {
-        setCurrentUserName(teamMember.username || "unknown");
-      }
-
       await loadDashboard();
     }
 
@@ -74,30 +64,7 @@ export default function DashboardPage() {
         <OneEyriePageHeader
           title="Dashboard"
           subtitle="What must be completed today?"
-          actions={
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  color: "#FFFFFF",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                {currentUserName}
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  window.location.href = "/login";
-                }}
-                className="one-eyrie-text-btn"
-                style={{ fontSize: "12px", padding: 0, marginTop: "2px" }}
-              >
-                Logout
-              </button>
-            </div>
-          }
+          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {error && (

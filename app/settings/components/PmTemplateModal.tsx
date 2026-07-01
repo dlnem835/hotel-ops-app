@@ -273,6 +273,7 @@ export default function PmTemplateModal({
           maxHeight: "92vh",
           overflowY: "auto",
         }}
+        className="one-eyrie-modal"
       >
         <div style={modalHeader}>
           <h2 style={{ margin: 0 }}>

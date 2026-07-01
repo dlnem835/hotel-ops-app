@@ -1160,7 +1160,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
       {editModalOpen && (
         <div style={modalOverlay}>
-          <div style={{ ...modalBox, maxWidth: "720px" }}>
+          <div style={{ ...modalBox, maxWidth: "720px" }} className="one-eyrie-modal">
             <div style={modalHeader}>
               <h2 style={{ margin: 0 }}>
                 {editingId ? "Edit" : "New"} Location
@@ -1268,7 +1268,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
       {wizardOpen && (
         <div style={modalOverlay}>
-          <div style={{ ...modalBox, width: "860px", maxHeight: "90vh", overflowY: "auto" }}>
+          <div style={{ ...modalBox, width: "860px", maxHeight: "90vh", overflowY: "auto" }} className="one-eyrie-modal">
             <div style={modalHeader}>
               <h2 style={{ margin: 0 }}>Bulk Manage</h2>
               <button

@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
+import OneEyrieDesktopUserMenu from "@/app/components/OneEyrieDesktopUserMenu";
 import PmChecklistItemRow from "../../components/PmChecklistItemRow";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
@@ -285,25 +286,29 @@ export default function PmSessionPage() {
             borderBottom: `1px solid ${ONE_EYRIE.border}`,
           }}
         >
-          <button
-            type="button"
-            onClick={() => router.push(pmReturnPath)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "transparent",
-              border: "none",
-              color: ONE_EYRIE.gold,
-              cursor: "pointer",
-              fontWeight: 700,
-              marginBottom: "10px",
-              padding: 0,
-            }}
-          >
-            <ArrowLeft size={16} />
-            {pmBackLabel}
-          </button>
+          <div className="one-eyrie-session-header-top">
+            <button
+              type="button"
+              className="one-eyrie-session-header-back"
+              onClick={() => router.push(pmReturnPath)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "transparent",
+                border: "none",
+                color: ONE_EYRIE.gold,
+                cursor: "pointer",
+                fontWeight: 700,
+                marginBottom: "10px",
+                padding: 0,
+              }}
+            >
+              <ArrowLeft size={16} />
+              {pmBackLabel}
+            </button>
+            <OneEyrieDesktopUserMenu />
+          </div>
           <h1 style={{ margin: 0, color: ONE_EYRIE.text, fontSize: "22px" }}>
             {templateName}
           </h1>
@@ -371,14 +376,14 @@ export default function PmSessionPage() {
                     value={sessionNotes}
                     onChange={(e) => setSessionNotes(e.target.value)}
                     rows={3}
+                    className="one-eyrie-inspection-session-field"
                     style={{
                       width: "100%",
-                      background: ONE_EYRIE.black,
-                      color: ONE_EYRIE.text,
-                      border: `1px solid ${ONE_EYRIE.borderInput}`,
                       borderRadius: "10px",
                       padding: "12px",
                       resize: "vertical",
+                      outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
                 </label>

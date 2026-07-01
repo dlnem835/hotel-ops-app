@@ -54,6 +54,64 @@
   flex-shrink: 0;
 }
 
+/* ── Desktop username / logout (hidden on mobile) ── */
+
+.one-eyrie-desktop-user-menu {
+  display: none;
+}
+
+.one-eyrie-desktop-header-actions__module {
+  display: contents;
+}
+
+@media (min-width: 769px) {
+  .one-eyrie-desktop-user-menu {
+    display: block;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .one-eyrie-desktop-user-menu__name {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .one-eyrie-desktop-user-menu__logout {
+    font-size: 12px;
+    padding: 0;
+    margin-top: 2px;
+  }
+
+  .one-eyrie-desktop-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px 16px;
+  }
+
+  .one-eyrie-desktop-header-actions__module {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .one-eyrie-session-header-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 16px;
+    margin-bottom: 12px;
+  }
+
+  .one-eyrie-session-header-top .one-eyrie-session-header-back {
+    margin-bottom: 0 !important;
+  }
+}
+
 /* ── Truncation helpers ── */
 
 .one-eyrie-truncate,
@@ -260,6 +318,12 @@
 }
 
 /* ── Pass-On entry rows ── */
+
+@media (min-width: 769px) {
+  .one-eyrie-pass-on-page-header-wrap .one-eyrie-page-header {
+    align-items: flex-start;
+  }
+}
 
 .one-eyrie-pass-on-toolbar {
   display: flex;

@@ -165,6 +165,7 @@ export default function LoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username"
+          className="one-eyrie-login-field"
           style={inputStyle}
         />
 
@@ -173,6 +174,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
+          className="one-eyrie-login-field"
           style={inputStyle}
         />
 
@@ -201,8 +203,7 @@ const inputStyle: React.CSSProperties = {
   marginBottom: "14px",
   padding: "14px",
   borderRadius: "12px",
-  border: "1px solid rgba(200,169,106,0.35)",
-  background: "#302D28",
-  color: "#fff",
   fontSize: "15px",
+  boxSizing: "border-box",
+  outline: "none",
 };

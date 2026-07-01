@@ -92,65 +92,152 @@
   color: #111111;
 }
 
-/* ── Shared form fields (Pass-On, Lost & Found, etc.) ── */
+/* ── Shared form fields — desktop unified look (Pass-On / Lost & Found style) ── */
 
-.one-eyrie-field {
-  background: #302d28;
-  color: #ffffff;
-  border: 1px solid #4a4a4a;
-  border-radius: 10px;
-  outline: none;
-  box-sizing: border-box;
-  transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
+@media (min-width: 769px) {
+  .one-eyrie-field,
+  .work-order-modal__input,
+  .work-order-modal__select,
+  .work-order-modal__textarea,
+  .start-inspection-form__select,
+  .one-eyrie-settings-filter-select,
+  .one-eyrie-date-input,
+  .one-eyrie-date-picker__input,
+  .one-eyrie-login-field,
+  .one-eyrie-label-field,
+  .one-eyrie-inspection-session-field,
+  .one-eyrie-maintenance-field,
+  .one-eyrie-failed-item-field,
+  .one-eyrie-room-grid-search,
+  .one-eyrie-pm-grid-search,
+  .one-eyrie-pass-on-search,
+  .one-eyrie-settings-search,
+  .pass-on-date-wrap,
+  .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"]),
+  .one-eyrie-modal select,
+  .one-eyrie-modal textarea,
+  .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
+  .one-eyrie-settings-page select,
+  .one-eyrie-settings-page textarea {
+    background: #524e48;
+    color: #ffffff;
+    border: 1px solid rgba(200, 169, 106, 0.42);
+    border-radius: 10px;
+    outline: none;
+    box-sizing: border-box;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.28);
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      background-color 0.18s ease;
+  }
 
-.one-eyrie-field:hover {
-  border-color: rgba(200, 169, 106, 0.4);
-}
+  .one-eyrie-field::placeholder,
+  .work-order-modal__input::placeholder,
+  .work-order-modal__textarea::placeholder,
+  .one-eyrie-login-field::placeholder,
+  .one-eyrie-label-field::placeholder,
+  .one-eyrie-pass-on-search::placeholder,
+  .one-eyrie-room-grid-search::placeholder,
+  .one-eyrie-pm-grid-search::placeholder,
+  .one-eyrie-settings-search::placeholder,
+  .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"])::placeholder,
+  .one-eyrie-modal textarea::placeholder,
+  .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"])::placeholder,
+  .one-eyrie-settings-page textarea::placeholder {
+    color: #b8b4ae;
+  }
 
-.one-eyrie-field:focus,
-.one-eyrie-field:focus-visible {
-  border-color: rgba(200, 169, 106, 0.65);
-  box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.28),
-    0 0 12px rgba(200, 169, 106, 0.12);
-  outline: none;
-}
+  .one-eyrie-field:hover,
+  .work-order-modal__input:hover,
+  .work-order-modal__select:hover,
+  .work-order-modal__textarea:hover,
+  .start-inspection-form__select:hover,
+  .one-eyrie-settings-filter-select:hover,
+  .one-eyrie-date-input:hover,
+  .one-eyrie-date-picker__input:hover,
+  .one-eyrie-login-field:hover,
+  .one-eyrie-label-field:hover,
+  .one-eyrie-inspection-session-field:hover,
+  .one-eyrie-maintenance-field:hover,
+  .one-eyrie-failed-item-field:hover,
+  .one-eyrie-room-grid-search:hover,
+  .one-eyrie-pm-grid-search:hover,
+  .one-eyrie-pass-on-search:hover,
+  .one-eyrie-settings-search:hover,
+  .pass-on-date-wrap:hover,
+  .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"]):hover,
+  .one-eyrie-modal select:hover,
+  .one-eyrie-modal textarea:hover,
+  .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):hover,
+  .one-eyrie-settings-page select:hover,
+  .one-eyrie-settings-page textarea:hover {
+    background: #5a564f;
+    border-color: rgba(200, 169, 106, 0.58);
+  }
 
-.one-eyrie-field--compact {
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: 12px;
-}
+  .one-eyrie-field:focus,
+  .one-eyrie-field:focus-visible,
+  .work-order-modal__input:focus,
+  .work-order-modal__input:focus-visible,
+  .work-order-modal__select:focus,
+  .work-order-modal__select:focus-visible,
+  .work-order-modal__textarea:focus,
+  .work-order-modal__textarea:focus-visible,
+  .start-inspection-form__select:focus,
+  .start-inspection-form__select:focus-visible,
+  .one-eyrie-settings-filter-select:focus,
+  .one-eyrie-settings-filter-select:focus-visible,
+  .one-eyrie-date-input:focus,
+  .one-eyrie-date-input:focus-visible,
+  .one-eyrie-date-picker__input:focus,
+  .one-eyrie-date-picker__input:focus-visible,
+  .one-eyrie-login-field:focus,
+  .one-eyrie-login-field:focus-visible,
+  .one-eyrie-label-field:focus,
+  .one-eyrie-label-field:focus-visible,
+  .one-eyrie-inspection-session-field:focus,
+  .one-eyrie-inspection-session-field:focus-visible,
+  .one-eyrie-maintenance-field:focus,
+  .one-eyrie-maintenance-field:focus-visible,
+  .one-eyrie-failed-item-field:focus,
+  .one-eyrie-failed-item-field:focus-visible,
+  .one-eyrie-room-grid-search:focus,
+  .one-eyrie-room-grid-search:focus-visible,
+  .one-eyrie-pm-grid-search:focus,
+  .one-eyrie-pm-grid-search:focus-visible,
+  .one-eyrie-pass-on-search:focus,
+  .one-eyrie-pass-on-search:focus-visible,
+  .one-eyrie-settings-search:focus,
+  .one-eyrie-settings-search:focus-visible,
+  .pass-on-date-wrap:focus-within,
+  .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"]):focus,
+  .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"]):focus-visible,
+  .one-eyrie-modal select:focus,
+  .one-eyrie-modal select:focus-visible,
+  .one-eyrie-modal textarea:focus,
+  .one-eyrie-modal textarea:focus-visible,
+  .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):focus,
+  .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):focus-visible,
+  .one-eyrie-settings-page select:focus,
+  .one-eyrie-settings-page select:focus-visible,
+  .one-eyrie-settings-page textarea:focus,
+  .one-eyrie-settings-page textarea:focus-visible {
+    background: #5a564f;
+    border-color: rgba(200, 169, 106, 0.78);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 0 0 1px rgba(200, 169, 106, 0.35),
+      0 0 14px rgba(200, 169, 106, 0.18);
+  }
 
-/* Lost & Found — extra lift on dark table rows / black page bg */
-.one-eyrie-field--lnf {
-  background: #524e48;
-  border: 1px solid rgba(200, 169, 106, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.28);
-}
-
-.one-eyrie-field--lnf::placeholder {
-  color: #b8b4ae;
-}
-
-.one-eyrie-field--lnf:hover {
-  background: #5a564f;
-  border-color: rgba(200, 169, 106, 0.58);
-}
-
-.one-eyrie-field--lnf:focus,
-.one-eyrie-field--lnf:focus-visible {
-  background: #5a564f;
-  border-color: rgba(200, 169, 106, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 0 0 1px rgba(200, 169, 106, 0.35),
-    0 0 14px rgba(200, 169, 106, 0.18);
+  .one-eyrie-field--compact {
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
 }
 
 /* ── Shared list / table row interactions ── */

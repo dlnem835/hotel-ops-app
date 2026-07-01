@@ -52,7 +52,7 @@ export default function SendLabelRequestForm({
         type="email"
         placeholder="Guest email"
         required
-        className="one-eyrie-field one-eyrie-field--lnf one-eyrie-field--compact"
+        className="one-eyrie-field one-eyrie-field--compact"
       />
 
       <button

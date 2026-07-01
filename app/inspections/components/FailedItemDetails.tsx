@@ -71,15 +71,13 @@ export default function FailedItemDetails({
     width: "100%",
     minWidth: 0,
     height: "44px",
-    background: ONE_EYRIE.black,
-    color: ONE_EYRIE.text,
-    border: `1px solid ${ONE_EYRIE.borderInput}`,
     borderRadius: "8px",
     padding: photoEnabled ? "0 40px 0 12px" : "0 12px",
     fontFamily: "inherit",
     fontSize: "13px",
     lineHeight: 1.3,
     boxSizing: "border-box",
+    outline: "none",
   };
 
   return (
@@ -135,8 +133,8 @@ export default function FailedItemDetails({
               placeholder="Brief deficiency note…"
               className={
                 displayUrl && photoEnabled
-                  ? "inspection-failed-details-note inspection-failed-details-note--has-photo"
-                  : "inspection-failed-details-note"
+                  ? "inspection-failed-details-note inspection-failed-details-note--has-photo one-eyrie-failed-item-field"
+                  : "inspection-failed-details-note one-eyrie-failed-item-field"
               }
               style={noteFieldStyle}
             />

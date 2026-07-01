@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
   ONE_EYRIE_MODAL_BOX,
@@ -431,6 +432,7 @@ async function saveItem() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Search ${sectionTitle?.title.toLowerCase()}...`}
+              className="one-eyrie-settings-search"
               style={searchInput}
             />
           </div>
@@ -736,10 +738,11 @@ async function saveItem() {
     <div style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Settings" />
 
-      <main style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
+      <main style={MAIN_CONTENT} className={`${MAIN_CONTENT_CLASS} one-eyrie-settings-page`}>
         <OneEyriePageHeader
           title="Settings"
           subtitle="Configure One Eyrie platform settings"
+          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {activeSection === "home" ? (
@@ -875,7 +878,7 @@ async function saveItem() {
 
         {modalType && (
           <div style={modalOverlay}>
-            <div style={modalBox}>
+            <div style={modalBox} className="one-eyrie-modal">
               <div style={modalHeader}>
                 <h2 style={{ margin: 0 }}>
                   {editingId ? "Edit" : "New"}{" "}
@@ -1098,14 +1101,11 @@ const searchWrap: React.CSSProperties = {
 const searchInput: React.CSSProperties = {
   width: "100%",
   height: "46px",
-  background: black,
-  color: "#FFFFFF",
-  border: "1px solid #3A352E",
-  borderRadius: "12px",
   padding: "0 14px 0 46px",
   outline: "none",
   fontSize: "15px",
   fontWeight: 600,
+  boxSizing: "border-box",
 };
 
 const primaryButton: React.CSSProperties = {
@@ -1195,14 +1195,11 @@ const twoCol: React.CSSProperties = {
 const input: React.CSSProperties = {
   width: "100%",
   height: "46px",
-  background: black,
-  color: "#FFFFFF",
-  border: "1px solid #4A4A4A",
-  borderRadius: "10px",
   padding: "0 12px",
   fontSize: "14px",
   fontWeight: 600,
   outline: "none",
+  boxSizing: "border-box",
 };
 
 const secondaryButton: React.CSSProperties = {

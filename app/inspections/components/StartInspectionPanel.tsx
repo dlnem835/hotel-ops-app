@@ -39,14 +39,12 @@ export type StartInspectionFormProps = {
 const selectStyle: React.CSSProperties = {
   width: "100%",
   height: "42px",
-  background: ONE_EYRIE.black,
-  color: ONE_EYRIE.text,
-  border: `1px solid ${ONE_EYRIE.borderInput}`,
   borderRadius: "10px",
   padding: "0 12px",
   fontSize: "14px",
   fontWeight: 600,
   outline: "none",
+  boxSizing: "border-box",
 };
 
 export function StartInspectionForm({

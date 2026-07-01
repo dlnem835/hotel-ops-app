@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
@@ -326,6 +327,7 @@ export default function InspectionsPage() {
           title="Inspections"
           subtitle="Coverage snapshot and priority-driven inspection workflow"
           titleClassName="inspections-mobile-page-title"
+          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         <div

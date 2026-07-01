@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
@@ -190,35 +191,27 @@ export default function MaintenancePage() {
         className={`maintenance-mobile-page-content ${MAIN_CONTENT_CLASS}`}
         style={MAIN_CONTENT}
       >
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: "8px",
-          }}
-        >
-          <OneEyriePageHeader
-            title="Maintenance"
-            subtitle="Work orders and preventive maintenance at a glance"
-          />
-          <button
-            type="button"
-            onClick={() => openWorkOrderModal()}
-            disabled={startingPm}
-            style={{
-              ...PRIMARY_BUTTON,
-              marginTop: "4px",
-              opacity: startingPm ? 0.6 : 1,
-              cursor: startingPm ? "wait" : "pointer",
-            }}
-            {...forestHoverHandlers(startingPm)}
-          >
-            + New Work Order
-          </button>
-        </div>
+        <OneEyriePageHeader
+          title="Maintenance"
+          subtitle="Work orders and preventive maintenance at a glance"
+          actions={
+            <OneEyrieDesktopHeaderActions>
+              <button
+                type="button"
+                onClick={() => openWorkOrderModal()}
+                disabled={startingPm}
+                style={{
+                  ...PRIMARY_BUTTON,
+                  opacity: startingPm ? 0.6 : 1,
+                  cursor: startingPm ? "wait" : "pointer",
+                }}
+                {...forestHoverHandlers(startingPm)}
+              >
+                + New Work Order
+              </button>
+            </OneEyrieDesktopHeaderActions>
+          }
+        />
 
         {error && (
           <div
@@ -380,17 +373,16 @@ export default function MaintenancePage() {
                   onChange={(e) => setWorkOrderComments(e.target.value)}
                   rows={4}
                   placeholder="Add notes about progress, parts needed, or completion details..."
+                  className="one-eyrie-maintenance-field"
                   style={{
                     width: "100%",
                     boxSizing: "border-box",
-                    background: ONE_EYRIE.black,
-                    color: ONE_EYRIE.text,
-                    border: `1px solid ${ONE_EYRIE.borderInput}`,
                     borderRadius: "10px",
                     padding: "12px",
                     fontSize: "14px",
                     lineHeight: 1.5,
                     resize: "vertical",
+                    outline: "none",
                   }}
                 />
               </label>

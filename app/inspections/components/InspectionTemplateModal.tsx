@@ -294,7 +294,7 @@ export default function InspectionTemplateModal({
             display: "flex",
             flexDirection: "column",
           }}
-          className="inspection-template-modal"
+          className="inspection-template-modal one-eyrie-modal"
         >
           <div style={{ ...modalHeader, marginBottom: "12px" }}>
             <div>

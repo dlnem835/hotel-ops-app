@@ -24,6 +24,7 @@ import {
 } from "@/app/lib/one-eyrie-modal-styles";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   forestHoverHandlers,
@@ -386,24 +387,6 @@ function dateHeader(dateString: string) {
             box-shadow: 0 0 0 3px rgba(200,169,106,0.08);
           }
 
-          .pass-on-field {
-            transition:
-              border-color 0.18s ease,
-              box-shadow 0.18s ease;
-          }
-
-          .pass-on-field:hover {
-            border-color: rgba(200, 169, 106, 0.4) !important;
-          }
-
-          .pass-on-field:focus,
-          .pass-on-field:focus-visible {
-            border-color: rgba(200, 169, 106, 0.65) !important;
-            box-shadow:
-              0 0 0 1px rgba(200, 169, 106, 0.28),
-              0 0 12px rgba(200, 169, 106, 0.12);
-            outline: none;
-          }
           .reply-preview-box:hover {
           border: 2px solid C8A96A !important;
           box-shadow: 0 0 20px rgba(200,169,106,0.35);
@@ -457,19 +440,13 @@ function dateHeader(dateString: string) {
       <OneEyrieSidebar active="Pass-On Log" />
 
       <section style={{ ...MAIN_CONTENT, maxWidth: "100%" }} className={MAIN_CONTENT_CLASS}>
-        <div style={{ maxWidth: "1120px", margin: "0 auto" }}>
+        <div className="one-eyrie-pass-on-page-header-wrap">
           <OneEyriePageHeader
             title="Pass-On Log"
             subtitle="Shift notes and hotel communication"
             align="center"
             actions={
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
+              <OneEyrieDesktopHeaderActions>
                 <button
                   type="button"
                   style={PRIMARY_BUTTON}
@@ -478,33 +455,12 @@ function dateHeader(dateString: string) {
                 >
                   <Plus size={18} /> New
                 </button>
-
-                <div style={{ textAlign: "right" }}>
-                  <div
-                    style={{
-                      color: "#FFFFFF",
-                      fontWeight: 700,
-                      fontSize: "14px",
-                    }}
-                  >
-                    {currentUserName}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      window.location.href = "/login";
-                    }}
-                    className="one-eyrie-text-btn"
-                    style={{ fontSize: "12px", padding: 0, marginTop: "2px" }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
+              </OneEyrieDesktopHeaderActions>
             }
           />
+        </div>
 
+        <div className="one-eyrie-pass-on-page-body" style={{ maxWidth: "1120px", margin: "0 auto" }}>
           <div style={panelStyle}>
   <div className="one-eyrie-pass-on-toolbar" style={searchHeaderRow}>
     <div className="one-eyrie-pass-on-search-wrap" style={searchWrap}>
@@ -517,6 +473,7 @@ function dateHeader(dateString: string) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search pass-on entries..."
+        className="one-eyrie-pass-on-search"
         style={searchInput}
       />
     </div>
@@ -591,14 +548,14 @@ function dateHeader(dateString: string) {
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       placeholder="Subject"
-                      className="pass-on-field"
+                      className="one-eyrie-field"
                       style={inputStyle}
                     />
 
                     <select
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
-                      className="pass-on-field"
+                      className="one-eyrie-field"
                       style={inputStyle}
                     >
                       <option>Normal</option>
@@ -606,7 +563,7 @@ function dateHeader(dateString: string) {
                       <option>Urgent</option>
                     </select>
 
-<div style={dateInputWrap} className="pass-on-field pass-on-date-wrap">
+<div style={dateInputWrap} className="pass-on-date-wrap">
   <button
     type="button"
     style={calendarButton}
@@ -632,7 +589,7 @@ function dateHeader(dateString: string) {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Write pass-on note..."
-                      className="pass-on-field one-eyrie-form-grid--pass-on__message"
+                      className="one-eyrie-field one-eyrie-form-grid--pass-on__message"
                       style={{
                         ...inputStyle,
                         gridColumn: "1 / -1",
@@ -807,7 +764,7 @@ function dateHeader(dateString: string) {
                       <textarea
                         value={editingMessage}
                         onChange={(e) => setEditingMessage(e.target.value)}
-                        className="pass-on-field"
+                        className="one-eyrie-field"
                         style={textareaStyle}
                       />
 
@@ -930,7 +887,7 @@ function dateHeader(dateString: string) {
     }))
   }
   placeholder="Write a reply..."
-  className="pass-on-field"
+  className="one-eyrie-field"
   style={replyTextarea}
 />
 
@@ -1037,15 +994,11 @@ const searchWrap: React.CSSProperties = {
 const searchInput: React.CSSProperties = {
   width: "100%",
   height: "56px",
-  background: "#111111",
-  color: "#FFFFFF",
-  border: `1px solid ${gold}`,
   borderRadius: "14px",
   padding: "0 20px 0 56px",
   outline: "none",
   fontSize: "18px",
   boxSizing: "border-box",
-  boxShadow: "0 0 8px rgba(200,169,106,0.25)"
 };
 
 const formStyle: React.CSSProperties = {
@@ -1053,13 +1006,11 @@ const formStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  background: ONE_EYRIE.row,
-  color: ONE_EYRIE.text,
-  border: `1px solid ${ONE_EYRIE.borderInput}`,
   borderRadius: "10px",
   padding: "12px 14px",
   outline: "none",
   boxSizing: "border-box",
+  width: "100%",
 };
 
 const textareaStyle: React.CSSProperties = {
@@ -1279,8 +1230,6 @@ const dateInputWrap: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "8px",
-  background: ONE_EYRIE.row,
-  border: `1px solid ${ONE_EYRIE.borderInput}`,
   borderRadius: "10px",
   padding: "0 12px",
 };

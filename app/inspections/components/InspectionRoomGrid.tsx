@@ -129,16 +129,15 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search room..."
+            className="one-eyrie-room-grid-search"
             style={{
               width: "100%",
               height: "36px",
-              background: ONE_EYRIE.black,
-              color: ONE_EYRIE.text,
-              border: `1px solid ${ONE_EYRIE.border}`,
               borderRadius: "10px",
               padding: "0 12px 0 32px",
               outline: "none",
               fontSize: "13px",
+              boxSizing: "border-box",
             }}
           />
         </div>

@@ -204,17 +204,16 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search PMs..."
+            className="one-eyrie-pm-grid-search"
             style={{
               width: "100%",
               height: "36px",
               paddingLeft: "32px",
               paddingRight: "10px",
-              background: ONE_EYRIE.black,
-              color: ONE_EYRIE.text,
-              border: `1px solid ${ONE_EYRIE.borderInput}`,
               borderRadius: "8px",
               fontSize: "13px",
               outline: "none",
+              boxSizing: "border-box",
             }}
           />
         </div>

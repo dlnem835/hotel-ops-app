@@ -7,6 +7,7 @@ import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
+import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -74,11 +75,6 @@ export default function LostAndFoundPage() {
       .order("created_at", { ascending: false });
 
     setLostItems(data || []);
-  }
-
-  async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
   }
 
   useEffect(() => {
@@ -187,14 +183,7 @@ setTeamMembers(allTeamMembers || []);
         <OneEyriePageHeader
           title="Lost & Found"
           subtitle="Track, manage, and return guest items"
-          actions={
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 600 }}>{currentUserName}</div>
-              <button type="button" onClick={logout} className="one-eyrie-text-btn" style={{ padding: 0, marginTop: "4px" }}>
-                Logout
-              </button>
-            </div>
-          }
+          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {/* STATS */}
@@ -238,13 +227,13 @@ setTeamMembers(allTeamMembers || []);
 
         {/* ADD ITEM */}
         <form onSubmit={addItem} className="one-eyrie-form-grid--lnf-add" style={{ marginBottom: "18px" }}>
-          <input name="item_name" placeholder="Item name" required className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle} />
-          <input name="room_number" placeholder="Room #" required className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle} />
+          <input name="item_name" placeholder="Item name" required className="one-eyrie-field" style={inputStyle} />
+          <input name="room_number" placeholder="Room #" required className="one-eyrie-field" style={inputStyle} />
           <input
             name="guest_last_name"
             placeholder="Guest Last Name"
             required
-            className="one-eyrie-field one-eyrie-field--lnf"
+            className="one-eyrie-field"
             style={inputStyle}
           />
          <input
@@ -253,11 +242,11 @@ setTeamMembers(allTeamMembers || []);
   placeholder="Found By"
   value={foundby}
   onChange={(e) => setFoundBy(e.target.value)}
-  className="one-eyrie-field one-eyrie-field--lnf"
+  className="one-eyrie-field"
   style={inputStyle}
 /> 
 
-          <select name="status" defaultValue="Stored" className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle}>
+          <select name="status" defaultValue="Stored" className="one-eyrie-field" style={inputStyle}>
             <option>Stored</option>
             <option>Ready to be shipped</option>
             <option>Label sent</option>
@@ -281,7 +270,7 @@ setTeamMembers(allTeamMembers || []);
     placeholder="Search guest, room, item, or status..."
     value={searchterm}
     onChange={(e) => setSearchTerm(e.target.value)}
-    className="one-eyrie-toolbar-row__grow one-eyrie-field one-eyrie-field--lnf"
+    className="one-eyrie-toolbar-row__grow one-eyrie-field"
     style={inputStyle}
   />
 
@@ -441,7 +430,7 @@ setTeamMembers(allTeamMembers || []);
                 value={item.comments || ""}
                 placeholder="Add comment..."
                 onChange={(e) => updateComments(item.id, e.target.value)}
-                className="one-eyrie-field one-eyrie-field--lnf one-eyrie-field--compact"
+                className="one-eyrie-field one-eyrie-field--compact"
                 style={{
                   ...inputStyle,
                   padding: "8px 10px",
