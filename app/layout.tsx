@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ONE_EYRIE_BRAND } from "./lib/one-eyrie-brand";
 import InactivityGuard from "./components/InactivityGuard";
+import OneEyrieThemeBootstrap from "./components/OneEyrieThemeBootstrap";
 import RoleAccessProvider from "./components/RoleAccessProvider";
 import RoleRouteGuard from "./components/RoleRouteGuard";
+import ThemeProvider from "./components/ThemeProvider";
 import "./globals.css";
 import "./one-eyrie-shell.css";
+import "./one-eyrie-themes.css";
 import "./components/one-eyrie-modal.css";
 import "./one-eyrie-desktop-responsive.css";
 
@@ -39,6 +42,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F7F5F1" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -48,12 +58,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <RoleAccessProvider>
-          {children}
-          <RoleRouteGuard />
-        </RoleAccessProvider>
+        <OneEyrieThemeBootstrap />
+        <ThemeProvider>
+          <RoleAccessProvider>
+            {children}
+            <RoleRouteGuard />
+          </RoleAccessProvider>
+        </ThemeProvider>
         <InactivityGuard />
       </body>
     </html>

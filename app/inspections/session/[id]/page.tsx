@@ -5,7 +5,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, Check, Minus, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
-import OneEyrieDesktopUserMenu from "@/app/components/OneEyrieDesktopUserMenu";
 import CompletedInspectionReview from "../../components/CompletedInspectionReview";
 import FailedItemDetails from "../../components/FailedItemDetails";
 import InspectionCategorySection from "../../components/InspectionCategorySection";
@@ -422,28 +421,24 @@ export default function InspectionSessionPage() {
             background: ONE_EYRIE.surface,
           }}
         >
-          <div className="one-eyrie-session-header-top">
-            <button
-              type="button"
-              className="one-eyrie-session-header-back"
-              onClick={() => router.push("/inspections")}
-              style={{
-                ...SETTINGS_BUTTON_BASE,
-                background: "transparent",
-                border: "none",
-                color: ONE_EYRIE.gold,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                marginBottom: "12px",
-                fontWeight: 700,
-              }}
-            >
-              <ArrowLeft size={16} />
-              Back to dashboard
-            </button>
-            <OneEyrieDesktopUserMenu />
-          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/inspections")}
+            style={{
+              ...SETTINGS_BUTTON_BASE,
+              background: "transparent",
+              border: "none",
+              color: ONE_EYRIE.gold,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              marginBottom: "12px",
+              fontWeight: 700,
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to dashboard
+          </button>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
             <div style={{ flex: 1 }}>

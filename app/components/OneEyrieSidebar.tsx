@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
+import OneEyrieUserProfileMenu from "@/app/components/OneEyrieUserProfileMenu";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import type { OneEyrieNavLabel } from "@/app/lib/role-permissions";
 
@@ -19,7 +20,7 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
         <OneEyrieWordmark className="one-eyrie-wordmark--sidebar" />
       </div>
 
-      <nav aria-label="Main navigation">
+      <nav className="one-eyrie-sidebar__nav" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = item.label === active;
           return (
@@ -37,6 +38,10 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
           );
         })}
       </nav>
+
+      <div className="one-eyrie-sidebar__profile">
+        <OneEyrieUserProfileMenu variant="sidebar" />
+      </div>
     </aside>
   );
 }

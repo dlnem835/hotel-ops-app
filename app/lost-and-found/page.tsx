@@ -7,7 +7,6 @@ import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
-import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -183,7 +182,6 @@ setTeamMembers(allTeamMembers || []);
         <OneEyriePageHeader
           title="Lost & Found"
           subtitle="Track, manage, and return guest items"
-          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {/* STATS */}

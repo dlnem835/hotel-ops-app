@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
-import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
@@ -64,7 +63,6 @@ export default function DashboardPage() {
         <OneEyriePageHeader
           title="Dashboard"
           subtitle="What must be completed today?"
-          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {error && (

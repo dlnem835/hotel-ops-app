@@ -5,7 +5,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
-import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
   ONE_EYRIE_MODAL_BOX,
@@ -742,7 +741,6 @@ async function saveItem() {
         <OneEyriePageHeader
           title="Settings"
           subtitle="Configure One Eyrie platform settings"
-          actions={<OneEyrieDesktopHeaderActions />}
         />
 
         {activeSection === "home" ? (
