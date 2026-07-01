@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Suspense } from "react";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 export function LabelUploadPageContent() {
   const searchParams = useSearchParams();
@@ -47,8 +49,7 @@ export function LabelUploadPageContent() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background:
-          "radial-gradient(circle at top, #1a1a1d 0%, #0b0b0d 45%, #050505 100%)",
+        background: ONE_EYRIE.black,
         fontFamily: "Arial, sans-serif",
         padding: "24px",
       }}
@@ -57,42 +58,46 @@ export function LabelUploadPageContent() {
         style={{
           width: "100%",
           maxWidth: "460px",
-          background: "#121214",
-          border: "1px solid #2A2A2A",
+          background: ONE_EYRIE.surface,
+          border: `1px solid ${ONE_EYRIE.gold}`,
           borderRadius: "18px",
           boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
           textAlign: "center",
-          color: "#F5F1E8",
+          color: ONE_EYRIE.text,
           overflow: "hidden",
         }}
       >
         <div
           style={{
-            background: "#080808",
-            padding: "26px 22px",
-            borderBottom: "3px solid #C8A96A",
+            background: ONE_EYRIE.surfacePanel,
+            padding: "28px 22px 24px",
+            borderBottom: `3px solid ${ONE_EYRIE.gold}`,
           }}
         >
-          <div
+          <Image
+            src="/one-eyrie-logo-stacked.png"
+            alt="One Eyrie"
+            width={168}
+            height={120}
+            priority
             style={{
-              color: "#ffffff",
-              fontSize: "32px",
-              fontWeight: 800,
-              letterSpacing: "3px",
+              display: "block",
+              margin: "0 auto",
+              height: "auto",
+              width: "168px",
+            }}
+          />
+          <p
+            style={{
+              margin: "14px 0 0",
+              color: ONE_EYRIE.textSubtle,
+              fontSize: "12px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
             }}
           >
-            ONE
-          </div>
-          <div
-            style={{
-              color: "#C8A96A",
-              fontSize: "13px",
-              letterSpacing: "7px",
-              marginTop: "4px",
-            }}
-          >
-            — EYRIE —
-          </div>
+            Lost &amp; Found Shipping
+          </p>
         </div>
 
         <div style={{ padding: "32px 28px" }}>
@@ -100,7 +105,8 @@ export function LabelUploadPageContent() {
             style={{
               margin: "0 0 12px",
               fontSize: "24px",
-              color: "#ffffff",
+              color: ONE_EYRIE.text,
+              fontWeight: 800,
             }}
           >
             Upload Shipping Label
@@ -109,26 +115,26 @@ export function LabelUploadPageContent() {
           <p
             style={{
               margin: "0 0 22px",
-              color: "#D8D8D8",
+              color: ONE_EYRIE.textMuted,
               lineHeight: 1.6,
               fontSize: "15px",
             }}
           >
-            Please upload your prepaid UPS or FedEx shipping label so the hotel
-            team can prepare your item for shipment.
+            Please upload your prepaid UPS, FedEx, or USPS shipping label so the
+            hotel team can prepare your item for shipment.
           </p>
 
           <label
             style={{
               display: "block",
               padding: "15px 20px",
-              background: "#C8A96A",
-              color: "#111111",
+              background: ONE_EYRIE.gold,
+              color: ONE_EYRIE.black,
               borderRadius: "12px",
               cursor: "pointer",
               marginBottom: "16px",
               fontWeight: 800,
-              boxShadow: "0 10px 24px rgba(200,169,106,0.22)",
+              boxShadow: `0 10px 24px ${ONE_EYRIE.goldGlow}`,
             }}
           >
             Upload Shipping Label
@@ -144,7 +150,7 @@ export function LabelUploadPageContent() {
             style={{
               minHeight: "24px",
               marginBottom: "18px",
-              color: file ? "#C8A96A" : "#8F8F8F",
+              color: file ? ONE_EYRIE.gold : ONE_EYRIE.textSubtle,
               fontSize: "14px",
               wordBreak: "break-word",
             }}
@@ -157,11 +163,11 @@ export function LabelUploadPageContent() {
             style={{
               width: "100%",
               padding: "15px 20px",
-              background: "#ffffff",
-              color: "#111111",
+              background: ONE_EYRIE.row,
+              color: ONE_EYRIE.text,
               borderRadius: "12px",
               cursor: "pointer",
-              border: "none",
+              border: `1px solid ${ONE_EYRIE.border}`,
               fontWeight: 800,
               fontSize: "15px",
             }}
@@ -189,7 +195,7 @@ export function LabelUploadPageContent() {
             style={{
               marginTop: "22px",
               marginBottom: 0,
-              color: "#8F8F8F",
+              color: ONE_EYRIE.textSubtle,
               fontSize: "12px",
               lineHeight: 1.5,
             }}
