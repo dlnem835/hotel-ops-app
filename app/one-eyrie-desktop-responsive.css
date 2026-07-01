@@ -131,61 +131,77 @@
   box-sizing: border-box;
 }
 
+.one-eyrie-toolbar-row > details {
+  flex-shrink: 0;
+}
+
 /* ── Responsive form grids ── */
 
 .one-eyrie-form-grid--lnf-add {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(72px, 0.55fr) minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 0.75fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
 .one-eyrie-form-grid--lnf-add input,
-.one-eyrie-form-grid--lnf-add select,
-.one-eyrie-form-grid--lnf-add button {
-  min-width: 0;
+.one-eyrie-form-grid--lnf-add select {
+  flex: 1 1 150px;
+  min-width: 130px;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+.one-eyrie-form-grid--lnf-add button[type="submit"] {
+  flex: 0 0 auto;
+  min-width: 110px;
+  white-space: nowrap;
 }
 
 .one-eyrie-form-grid--pass-on {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(110px, 130px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  align-items: center;
 }
 
-.one-eyrie-form-grid--pass-on > * {
+.one-eyrie-form-grid--pass-on > input,
+.one-eyrie-form-grid--pass-on > select {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+.one-eyrie-form-grid--pass-on__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.one-eyrie-form-grid--pass-on .pass-on-date-wrap {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.one-eyrie-form-grid--pass-on .pass-on-date-wrap input[type="date"] {
+  min-width: 0;
+}
+
+.one-eyrie-form-grid--pass-on__submit {
+  flex: 0 0 auto;
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 .one-eyrie-form-grid--pass-on__message {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 1280px) {
-  .one-eyrie-form-grid--lnf-add {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .one-eyrie-form-grid--lnf-add button[type="submit"] {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-
-  .one-eyrie-form-grid--pass-on {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .one-eyrie-form-grid--pass-on button[type="submit"] {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-}
-
-@media (max-width: 900px) {
-  .one-eyrie-form-grid--lnf-add,
+@media (max-width: 520px) {
   .one-eyrie-form-grid--pass-on {
     grid-template-columns: 1fr;
   }
@@ -303,6 +319,11 @@
   min-width: 0;
 }
 
+.one-eyrie-pass-on-toolbar > button,
+.one-eyrie-pass-on-toolbar > select {
+  flex-shrink: 0;
+}
+
 .one-eyrie-pass-on-entry-row {
   display: flex;
   flex-wrap: wrap;
@@ -358,14 +379,16 @@
   }
 }
 
-/* ── Responsive tables (fit container, ellipsis) ── */
+/* ── Responsive tables (horizontal scroll when needed) ── */
 
 .one-eyrie-table-panel {
   border: 1px solid #2a2a2a;
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: #111111;
   max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .one-eyrie-table--fit {
@@ -394,45 +417,124 @@
   text-align: center;
 }
 
-.one-eyrie-table--fit select,
+.one-eyrie-table--fit select:not(.one-eyrie-lnf-status-select),
 .one-eyrie-table--fit input {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
 }
 
-/* Lost & Found column widths — important cols get more space */
-.one-eyrie-lnf-table .col-delete { width: 40px; }
-.one-eyrie-lnf-table .col-guest { width: 11%; }
-.one-eyrie-lnf-table .col-location { width: 7%; }
-.one-eyrie-lnf-table .col-item { width: 16%; }
-.one-eyrie-lnf-table .col-status { width: 13%; }
-.one-eyrie-lnf-table .col-send-label { width: 15%; }
-.one-eyrie-lnf-table .col-date { width: 9%; }
-.one-eyrie-lnf-table .col-comments { width: 12%; }
-.one-eyrie-lnf-table .col-label { width: 7%; }
-.one-eyrie-lnf-table .col-view { width: 44px; }
-
-@media (max-width: 1320px) {
-  .one-eyrie-lnf-table .col-label {
-    display: none;
-  }
+/* Lost & Found — comfortable desktop columns; scroll table when narrow */
+.one-eyrie-lnf-table.one-eyrie-table--fit {
+  table-layout: auto;
+  min-width: 1170px;
 }
 
-@media (max-width: 1200px) {
-  .one-eyrie-lnf-table .col-comments {
-    display: none;
-  }
-
-  .one-eyrie-lnf-table .col-send-label {
-    width: 18%;
-  }
+.one-eyrie-lnf-table th,
+.one-eyrie-lnf-table td {
+  overflow: visible;
+  white-space: normal;
+  vertical-align: middle;
 }
 
-@media (max-width: 1080px) {
-  .one-eyrie-lnf-table .col-date {
-    display: none;
-  }
+.one-eyrie-lnf-table .one-eyrie-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.one-eyrie-lnf-table .col-delete { width: 40px; min-width: 40px; }
+.one-eyrie-lnf-table .col-guest { min-width: 96px; }
+.one-eyrie-lnf-table .col-location { min-width: 72px; }
+.one-eyrie-lnf-table .col-item { min-width: 120px; }
+.one-eyrie-lnf-table .col-status { min-width: 200px; }
+
+.one-eyrie-lnf-status-header,
+.one-eyrie-lnf-status-cell {
+  text-align: center;
+}
+
+.one-eyrie-lnf-status-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  max-width: 100%;
+  border-radius: 999px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.one-eyrie-lnf-status-select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C8A96A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    center center / 14px 14px no-repeat;
+}
+
+.one-eyrie-lnf-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: block;
+  margin: 0;
+  min-width: 192px;
+  max-width: 100%;
+  width: auto;
+  box-sizing: border-box;
+  padding: 8px 36px 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+  transition: box-shadow 0.18s ease;
+}
+
+.one-eyrie-lnf-status-select:hover {
+  box-shadow: inset 0 0 0 1px rgba(200, 169, 106, 0.35);
+}
+
+.one-eyrie-lnf-status-select:focus,
+.one-eyrie-lnf-status-select:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgba(200, 169, 106, 0.55),
+    0 0 0 2px rgba(200, 169, 106, 0.22);
+}
+
+.one-eyrie-lnf-status-select-wrap:hover {
+  box-shadow: 0 0 12px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-lnf-status-select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+.one-eyrie-lnf-table .col-send-label { min-width: 168px; }
+.one-eyrie-lnf-table .col-date { min-width: 88px; white-space: nowrap; }
+.one-eyrie-lnf-table .col-comments { min-width: 200px; }
+.one-eyrie-lnf-table .col-label { min-width: 68px; }
+.one-eyrie-lnf-table .col-view { width: 44px; min-width: 44px; }
+
+.one-eyrie-lnf-table .col-comments input {
+  min-width: 180px;
+  width: 100%;
 }
 
 /* ── Send label inline form ── */
@@ -441,19 +543,44 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  width: 100%;
   max-width: 100%;
 }
 
 .one-eyrie-send-label-form input {
-  flex: 1 1 72px;
-  min-width: 0 !important;
+  flex: 1 1 120px;
+  min-width: 108px !important;
   width: auto !important;
   max-width: 100%;
 }
 
-.one-eyrie-send-label-form button {
+.one-eyrie-send-label-form__btn {
+  flex: 0 0 auto;
   flex-shrink: 0;
+  min-width: 52px;
+  padding: 6px 8px;
+  background: #c8a96a;
+  color: #111111;
+  border: 1px solid rgba(200, 169, 106, 0.55);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.one-eyrie-send-label-form__btn:hover {
+  background: #e0c47b;
+  border-color: #e0c47b;
+  box-shadow: 0 0 12px rgba(200, 169, 106, 0.28);
+  transform: translateY(-1px);
 }
 
 /* ── Section toolbars with search ── */

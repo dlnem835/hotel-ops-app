@@ -566,27 +566,33 @@ function dateHeader(dateString: string) {
                       <option>Urgent</option>
                     </select>
 
-<div style={dateInputWrap} className="pass-on-date-wrap">
-  <button
-    type="button"
-    style={calendarButton}
-    onClick={() => dateInputRef.current?.showPicker?.()}
-  >
-    <Calendar size={17} />
-  </button>
+                    <div className="one-eyrie-form-grid--pass-on__actions">
+                      <div style={dateInputWrap} className="pass-on-date-wrap">
+                        <button
+                          type="button"
+                          style={calendarButton}
+                          onClick={() => dateInputRef.current?.showPicker?.()}
+                        >
+                          <Calendar size={17} />
+                        </button>
 
-  <input
-    ref={dateInputRef}
-    type="date"
-    value={entryDate}
-    onChange={(e) => setEntryDate(e.target.value)}
-    style={dateInput}
-  />
-</div>
+                        <input
+                          ref={dateInputRef}
+                          type="date"
+                          value={entryDate}
+                          onChange={(e) => setEntryDate(e.target.value)}
+                          style={dateInput}
+                        />
+                      </div>
 
-                    <button type="submit" className="gold-button" style={goldButton}>
-                      Add Entry
-                    </button>
+                      <button
+                        type="submit"
+                        className="gold-button one-eyrie-form-grid--pass-on__submit"
+                        style={goldButton}
+                      >
+                        Add Entry
+                      </button>
+                    </div>
 
                     <textarea
                       value={message}
@@ -1263,6 +1269,7 @@ const calendarButton: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   padding: 0,
+  flexShrink: 0,
 };
 
 const replyComposerHeader: React.CSSProperties = {

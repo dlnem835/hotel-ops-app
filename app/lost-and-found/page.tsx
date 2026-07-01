@@ -350,7 +350,7 @@ setTeamMembers(allTeamMembers || []);
           <th className="col-guest" style={thStyle}>Guest</th>
           <th className="col-location" style={thStyle}>Location</th>
           <th className="col-item" style={thStyle}>Item</th>
-          <th className="col-status" style={thStyle}>Status</th>
+          <th className="col-status one-eyrie-lnf-status-header" style={thStyle}>Status</th>
           <th className="col-send-label one-eyrie-table__cell--wrap" style={thStyle}>Send Label</th>
           <th className="col-date" style={thStyle}>Date</th>
           <th className="col-comments one-eyrie-table__cell--wrap" style={thStyle}>Comments</th>
@@ -390,26 +390,24 @@ setTeamMembers(allTeamMembers || []);
               {item.item_name}
             </td>
 
-            <td className="col-status one-eyrie-table__cell--wrap" style={tdStyle}>
-              <select
-                value={item.status}
-                onChange={(e) => updateStatus(item.id, e.target.value)}
-                style={{
-                  ...statusStyle(item.status),
-                  borderRadius: "999px",
-                  padding: "6px 10px",
-                  fontWeight: "bold",
-                  fontSize: "12px",
-                  width: "100%",
-                  maxWidth: "140px",
-                }}
+            <td className="col-status one-eyrie-table__cell--wrap one-eyrie-lnf-status-cell" style={tdStyle}>
+              <div
+                className="one-eyrie-lnf-status-select-wrap"
+                style={statusStyle(item.status)}
               >
-                <option>Stored</option>
-                <option>Ready to be shipped</option>
-                <option>Label sent</option>
-                <option>Shipped</option>
-                <option>Closed</option>
-              </select>
+                <select
+                  value={item.status}
+                  onChange={(e) => updateStatus(item.id, e.target.value)}
+                  className="one-eyrie-lnf-status-select"
+                  aria-label={`Status for ${item.item_name}`}
+                >
+                  <option>Stored</option>
+                  <option>Ready to be shipped</option>
+                  <option>Label sent</option>
+                  <option>Shipped</option>
+                  <option>Closed</option>
+                </select>
+              </div>
             </td>
 
             <td className="col-send-label one-eyrie-table__cell--wrap" style={tdStyle}>
