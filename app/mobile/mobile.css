@@ -124,6 +124,8 @@
   margin: 0;
   font-size: 22px;
   font-weight: 800;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* Pass-On Log */
@@ -276,6 +278,9 @@
   margin: 0;
   flex: 1;
   min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .one-eyrie-mobile-row__meta {
@@ -355,6 +360,8 @@
   color: #ffffff;
   font-size: 14px;
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .one-eyrie-mobile-pass-on-message p {
@@ -363,6 +370,8 @@
   white-space: pre-wrap;
   color: #ffffff;
   font-size: 14px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .one-eyrie-mobile-pass-on-edited {
@@ -405,6 +414,8 @@
   margin: 0;
   line-height: 1.4;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .one-eyrie-mobile-reply__text strong {

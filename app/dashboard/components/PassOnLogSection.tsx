@@ -145,6 +145,7 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
                 }}
               >
                 <div
+                  className="one-eyrie-pass-on-entry-subject-text"
                   style={{
                     fontSize: "16px",
                     fontWeight: 700,

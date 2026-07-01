@@ -324,6 +324,31 @@
   flex-shrink: 0;
 }
 
+/* Pass-On Log — wrap long subjects and message bodies */
+.one-eyrie-pass-on-entry-subject-text {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.one-eyrie-pass-on-entry-expanded {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pass-on-message-text,
+.original-post-box.pass-on-message-text,
+.reply-preview-box {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 @media (max-width: 1280px) {
   .pass-on-expanded-actions {
     width: auto !important;

@@ -409,6 +409,9 @@ function dateHeader(dateString: string) {
           .pass-on-message-text {
             flex: 1;
             min-width: 0;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
           }
 
           .pass-on-expanded-actions {
@@ -626,7 +629,7 @@ function dateHeader(dateString: string) {
           className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}${
             isRead ? " one-eyrie-list-row--read" : " one-eyrie-list-row--unread"
           }`}
-          style={{ padding: "10px 12px" }}
+          style={{ padding: "10px 12px", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}
         >
           <div className="one-eyrie-pass-on-entry-row" style={collapsedRow}>
             <button
@@ -664,7 +667,7 @@ function dateHeader(dateString: string) {
               style={{ flex: 1, cursor: "pointer" }}
               className="one-eyrie-pass-on-entry-subject"
             >
-              <div className="one-eyrie-truncate-block" style={rowSubject} title={entry.subject}>
+              <div className="one-eyrie-pass-on-entry-subject-text" style={rowSubject}>
                 {entry.subject}
               </div>
               <div style={rowMeta}>
@@ -741,7 +744,7 @@ function dateHeader(dateString: string) {
           </div>
 
           {isOpen && (
-            <div style={expandedArea}>
+            <div className="one-eyrie-pass-on-entry-expanded" style={expandedArea}>
               <div className="pass-on-message-row" style={messageRowBox}>
                 <div
                   className="original-post-box pass-on-message-text"
@@ -1096,6 +1099,10 @@ const iconButton: React.CSSProperties = {
 const expandedArea: React.CSSProperties = {
   marginTop: "10px",
   paddingLeft: "30px",
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 const originalPostBox: React.CSSProperties = {
@@ -1121,6 +1128,11 @@ const replyPreviewBox: React.CSSProperties = {
   color: "#E5E7EB",
   fontSize: "13px",
   marginLeft: "18px",
+  wordBreak: "break-word",
+  overflowWrap: "anywhere",
+  whiteSpace: "pre-wrap",
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const expandedActions: React.CSSProperties = {
@@ -1303,6 +1315,11 @@ const messageTextBox: React.CSSProperties = {
   color: ONE_EYRIE.text,
   lineHeight: 1.5,
   transition: "all 0.18s ease",
+  wordBreak: "break-word",
+  overflowWrap: "anywhere",
+  whiteSpace: "pre-wrap",
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const replyPillButton: React.CSSProperties = {
