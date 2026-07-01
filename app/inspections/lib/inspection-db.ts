@@ -12,11 +12,13 @@ import {
   RoomHistoryEntry,
 } from "./inspection-types";
 import {
+  getMtdMonthBounds,
   getPeriodBounds,
   parseDashboardProgram,
+  parseMtdMonthYear,
   parsePeriod,
 } from "./period-utils";
-import { buildPriorityQueue, SummaryRow } from "./priority-queue";
+import { buildMtdPriorityQueue, buildPriorityQueue, SummaryRow } from "./priority-queue";
 import { programMatchesDashboard, resolveInspectionProgram } from "./program-map";
 import {
   calculateRpmCycleCompliance,
@@ -335,13 +337,20 @@ function buildTopInspectors(
 export async function buildDashboard(
   supabase: SupabaseClient,
   periodParam: string | null,
-  programParam: string | null
+  programParam: string | null,
+  monthParam: string | null = null,
+  yearParam: string | null = null
 ): Promise<DashboardPayload> {
   const period = parsePeriod(periodParam);
   const program = parseDashboardProgram(programParam);
   const settings = await fetchInspectionSettings(supabase);
-  const periodBounds = getPeriodBounds(period, new Date(), settings.week_starts_on);
   const now = new Date();
+  const mtdMonthYear = parseMtdMonthYear(monthParam, yearParam, now);
+  const periodBounds =
+    period === "mtd"
+      ? getMtdMonthBounds(mtdMonthYear.year, mtdMonthYear.month, now)
+      : getPeriodBounds(period, now, settings.week_starts_on);
+  const mtdReferenceDate = new Date(periodBounds.end);
   const rpmCycleBounds = getRpmCycleBounds(now, settings.week_starts_on);
 
   const rooms = await fetchGuestRooms(supabase);
@@ -557,7 +566,16 @@ export async function buildDashboard(
       },
     },
     rooms: gridRooms.map(({ _programSummary: _, ...tile }) => tile),
-    priorityQueue: buildPriorityQueue(priorityRows, program, 10),
+    priorityQueue:
+      period === "mtd"
+        ? buildMtdPriorityQueue(
+            priorityRows,
+            new Set(activeProgramMap.keys()),
+            program,
+            10,
+            mtdReferenceDate
+          )
+        : buildPriorityQueue(priorityRows, program, 10),
     housekeeperRankings: buildHousekeeperRankings(
       completedSessions,
       program,

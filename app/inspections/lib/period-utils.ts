@@ -22,6 +22,79 @@ function getQuarterStart(date: Date): Date {
   return new Date(date.getFullYear(), quarterMonth, 1);
 }
 
+export function getMtdMonthBounds(
+  year: number,
+  month: number,
+  now = new Date()
+): PeriodBounds {
+  const start = new Date(year, month, 1);
+  const isCurrentMonth =
+    year === now.getFullYear() && month === now.getMonth();
+  const end = isCurrentMonth
+    ? now
+    : new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+}
+
+export function parseMtdMonthYear(
+  monthParam: string | null,
+  yearParam: string | null,
+  now = new Date()
+): { year: number; month: number } {
+  const parsedYear = yearParam ? Number.parseInt(yearParam, 10) : now.getFullYear();
+  const parsedMonth = monthParam
+    ? Number.parseInt(monthParam, 10) - 1
+    : now.getMonth();
+
+  if (
+    Number.isFinite(parsedYear) &&
+    Number.isFinite(parsedMonth) &&
+    parsedMonth >= 0 &&
+    parsedMonth <= 11 &&
+    parsedYear >= 2000 &&
+    parsedYear <= 2100
+  ) {
+    const selected = new Date(parsedYear, parsedMonth, 1);
+    const current = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (selected <= current) {
+      return { year: parsedYear, month: parsedMonth };
+    }
+  }
+
+  return { year: now.getFullYear(), month: now.getMonth() };
+}
+
+export function formatMonthYearLabel(year: number, month: number): string {
+  return new Date(year, month, 1).toLocaleString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function shiftCalendarMonth(
+  year: number,
+  month: number,
+  delta: number
+): { year: number; month: number } {
+  const shifted = new Date(year, month + delta, 1);
+  return { year: shifted.getFullYear(), month: shifted.getMonth() };
+}
+
+export function isAtOrAfterCurrentMonth(
+  year: number,
+  month: number,
+  now = new Date()
+): boolean {
+  return (
+    year > now.getFullYear() ||
+    (year === now.getFullYear() && month >= now.getMonth())
+  );
+}
+
 export function getPeriodBounds(
   period: InspectionPeriod,
   now = new Date(),

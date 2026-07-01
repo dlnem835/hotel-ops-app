@@ -26,8 +26,11 @@ import {
 import AssociateRankingsPanel from "./components/AssociateRankingsPanel";
 import TopInspectorsPanel from "./components/TopInspectorsPanel";
 import RoomHistoryDrawer from "./components/RoomHistoryDrawer";
+import InspectionMtdMonthSelector from "./components/InspectionMtdMonthSelector";
+import { formatMonthYearLabel } from "./lib/period-utils";
 import "./inspections-responsive.css";
 import "./components/start-inspection-modal.css";
+import "./components/inspections-mtd-month-selector.css";
 import { templateMatchesDashboard } from "./lib/program-map";
 import { resolveDefaultTemplateForDashboard } from "./lib/default-template";
 import {
@@ -50,7 +53,10 @@ const PERIOD_LABELS: Record<InspectionPeriod, string> = {
 
 export default function InspectionsPage() {
   const router = useRouter();
+  const initialNow = useMemo(() => new Date(), []);
   const [period, setPeriod] = useState<InspectionPeriod>("mtd");
+  const [mtdYear, setMtdYear] = useState(initialNow.getFullYear());
+  const [mtdMonth, setMtdMonth] = useState(initialNow.getMonth());
   const [program, setProgram] = useState<"VR" | "RPM">("VR");
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,9 +103,15 @@ export default function InspectionsPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const response = await fetch(
-      `/api/inspections/dashboard?period=${period}&program=${program.toLowerCase()}`
-    );
+    const params = new URLSearchParams({
+      period,
+      program: program.toLowerCase(),
+    });
+    if (period === "mtd") {
+      params.set("month", String(mtdMonth + 1));
+      params.set("year", String(mtdYear));
+    }
+    const response = await fetch(`/api/inspections/dashboard?${params}`);
     const result = await response.json();
     setLoading(false);
 
@@ -109,7 +121,7 @@ export default function InspectionsPage() {
     }
 
     setDashboard(result);
-  }, [period, program]);
+  }, [period, program, mtdMonth, mtdYear]);
 
   useEffect(() => {
     async function init() {
@@ -311,6 +323,11 @@ export default function InspectionsPage() {
     router.push(`/inspections/session/${result.session.id}`);
   }
 
+  const periodContextLabel =
+    period === "mtd"
+      ? `MTD · ${formatMonthYearLabel(mtdYear, mtdMonth)}`
+      : PERIOD_LABELS[period];
+
   return (
     <main style={APP_SHELL}>
       <OneEyrieSidebar active="Inspections" />
@@ -421,6 +438,16 @@ export default function InspectionsPage() {
               }}
             >
               <div>
+                {period === "mtd" ? (
+                  <InspectionMtdMonthSelector
+                    year={mtdYear}
+                    month={mtdMonth}
+                    onChange={(year, month) => {
+                      setMtdYear(year);
+                      setMtdMonth(month);
+                    }}
+                  />
+                ) : null}
                 <div
                   style={{
                     color: ONE_EYRIE.gold,
@@ -429,7 +456,7 @@ export default function InspectionsPage() {
                     marginBottom: "10px",
                   }}
                 >
-                  Guest Room Grid · {PERIOD_LABELS[period]} · {program === "VR" ? "VR / SO" : "RPM"}
+                  Guest Room Grid · {periodContextLabel} · {program === "VR" ? "VR / SO" : "RPM"}
                 </div>
                 <InspectionRoomGrid
                   rooms={dashboard.rooms}
@@ -447,11 +474,11 @@ export default function InspectionsPage() {
                   <AssociateRankingsPanel
                     rankings={dashboard.housekeeperRankings}
                     program={program}
-                    periodLabel={PERIOD_LABELS[period]}
+                    periodLabel={periodContextLabel}
                   />
                   <TopInspectorsPanel
                     inspectors={dashboard.topInspectors}
-                    periodLabel={PERIOD_LABELS[period]}
+                    periodLabel={periodContextLabel}
                   />
                 </div>
               </div>

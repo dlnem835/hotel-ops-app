@@ -1,0 +1,45 @@
+.inspections-mtd-month-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.inspections-mtd-month-selector__label {
+  min-width: 132px;
+  text-align: center;
+  color: #c8a96a;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.inspections-mtd-month-selector__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #3a352e;
+  background: #1a1816;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.inspections-mtd-month-selector__arrow:hover:not(:disabled) {
+  border-color: #d4bc82;
+  color: #c8a96a;
+}
+
+.inspections-mtd-month-selector__arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .inspections-mtd-month-selector {
+    display: none;
+  }
+}

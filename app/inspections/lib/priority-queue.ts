@@ -10,6 +10,17 @@ export type SummaryRow = {
   never_inspected: boolean;
 };
 
+export function buildMtdPriorityQueue(
+  rows: SummaryRow[],
+  inspectedAreaIds: Set<number>,
+  program: "VR" | "RPM",
+  limit = 3,
+  now = new Date()
+): PriorityQueueItem[] {
+  const notInspectedInPeriod = rows.filter((row) => !inspectedAreaIds.has(row.area_id));
+  return buildPriorityQueue(notInspectedInPeriod, program, limit, now);
+}
+
 export function buildPriorityQueue(
   rows: SummaryRow[],
   program: "VR" | "RPM",
