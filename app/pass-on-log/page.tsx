@@ -442,7 +442,10 @@ function dateHeader(dateString: string) {
 
       <OneEyrieSidebar active="Pass-On Log" />
 
-      <section style={{ ...MAIN_CONTENT, maxWidth: "100%" }} className={MAIN_CONTENT_CLASS}>
+      <section
+        style={{ ...MAIN_CONTENT, maxWidth: "100%" }}
+        className={`${MAIN_CONTENT_CLASS} one-eyrie-pass-on-log-page`}
+      >
         <div className="one-eyrie-pass-on-page-header-wrap">
           <OneEyriePageHeader
             title="Pass-On Log"

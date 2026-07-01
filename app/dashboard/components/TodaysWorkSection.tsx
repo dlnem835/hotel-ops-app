@@ -64,7 +64,7 @@ function WorkCard({
 
 export default function TodaysWorkSection({ pms, rpms }: TodaysWorkSectionProps) {
   return (
-    <section>
+    <section className="dashboard-todays-work-section">
       <div style={{ marginBottom: "12px" }}>
         <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "16px" }}>
           Today&apos;s Work
@@ -78,7 +78,7 @@ export default function TodaysWorkSection({ pms, rpms }: TodaysWorkSectionProps)
         className="dashboard-todays-work-row"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gridTemplateColumns: "repeat(2, minmax(280px, 1fr))",
           gap: "12px",
         }}
       >

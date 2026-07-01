@@ -18,6 +18,7 @@ export default function OpenWorkOrdersSection({
 }: OpenWorkOrdersSectionProps) {
   return (
     <section
+      className="dashboard-open-work-orders-section"
       style={{
         background: ONE_EYRIE.surface,
         border: `1px solid ${ONE_EYRIE.border}`,

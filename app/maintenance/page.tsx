@@ -244,7 +244,7 @@ export default function MaintenancePage() {
               className="maintenance-mobile-dashboard-grid one-eyrie-split-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 1fr)",
+                gridTemplateColumns: "minmax(360px, 1.7fr) minmax(300px, 1fr)",
                 gap: "16px",
                 alignItems: "start",
               }}

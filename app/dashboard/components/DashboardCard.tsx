@@ -8,11 +8,13 @@ type DashboardCardProps = {
   href?: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  className?: string;
 };
 
-export function DashboardCard({ href, children, style }: DashboardCardProps) {
+export function DashboardCard({ href, children, style, className }: DashboardCardProps) {
   const shell = (
     <div
+      className={className}
       style={{
         background: ONE_EYRIE.surface,
         border: `1px solid ${ONE_EYRIE.border}`,

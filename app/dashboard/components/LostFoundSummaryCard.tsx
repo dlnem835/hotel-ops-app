@@ -72,7 +72,7 @@ export default function LostFoundSummaryCard({
   storedToday,
 }: LostFoundSummaryCardProps) {
   return (
-    <DashboardCard>
+    <DashboardCard className="dashboard-lost-found-card">
       <DashboardSectionTitle title="Lost & Found" subtitle="Quick summary" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <SummaryLink

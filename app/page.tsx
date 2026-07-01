@@ -84,7 +84,10 @@ export default function DashboardPage() {
             Loading operational dashboard...
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div
+            className="one-eyrie-dashboard-page"
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
             <TodaysWorkSection
               pms={dashboard.todaysWork.pms}
               rpms={dashboard.todaysWork.rpms}
@@ -96,12 +99,14 @@ export default function DashboardPage() {
               className="dashboard-command-grid one-eyrie-split-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(0, 1.55fr) minmax(280px, 1fr)",
+                gridTemplateColumns: "minmax(360px, 1.55fr) minmax(300px, 1fr)",
                 gap: "16px",
                 alignItems: "start",
               }}
             >
-              <PassOnLogSection passOnLog={dashboard.passOnLog} />
+              <div className="dashboard-pass-on-panel">
+                <PassOnLogSection passOnLog={dashboard.passOnLog} />
+              </div>
 
               <div
                 className="dashboard-command-sidebar"

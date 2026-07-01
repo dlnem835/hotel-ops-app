@@ -178,7 +178,7 @@ setTeamMembers(allTeamMembers || []);
     <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Lost & Found" />
 
-      <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
+      <section style={MAIN_CONTENT} className={`${MAIN_CONTENT_CLASS} one-eyrie-lost-found-page`}>
         <OneEyriePageHeader
           title="Lost & Found"
           subtitle="Track, manage, and return guest items"
