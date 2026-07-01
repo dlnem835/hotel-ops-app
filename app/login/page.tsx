@@ -18,6 +18,7 @@ import {
   getDefaultMobileHome,
   isMobileAppPath,
 } from "@/app/lib/role-permissions";
+import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
@@ -123,8 +124,8 @@ export default function LoginPage() {
           padding: "32px",
         }}
       >
-        <h1 style={{ marginTop: 0 }}>One Eyrie</h1>
-        <p style={{ color: "#C8A96A" }}>Staff Login</p>
+        <OneEyrieWordmark className="one-eyrie-wordmark--login" />
+        <p style={{ color: "#C8A96A", marginTop: 0 }}>Staff Login</p>
 
         {logoutMessage && (
           <div

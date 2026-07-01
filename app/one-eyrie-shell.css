@@ -7,7 +7,22 @@
 }
 
 .one-eyrie-logo-block {
-  margin-bottom: 42px;
+  margin-bottom: 32px;
+}
+
+.one-eyrie-wordmark {
+  color: #c8a96a;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.one-eyrie-wordmark--login {
+  margin-bottom: 16px;
+  letter-spacing: 0.28em;
 }
 
 .one-eyrie-logo-title {

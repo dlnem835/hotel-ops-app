@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:003": "node scripts/migrate-003.cjs"
+    "migrate:003": "node scripts/migrate-003.cjs",
+    "icons:generate": "node scripts/generate-one-eyrie-icons.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
@@ -25,7 +26,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "pg": "^8.22.0",
+    "sharp": "^0.35.2",
     "tailwindcss": "^4",
+    "to-ico": "^1.1.5",
     "typescript": "^5"
   }
 }

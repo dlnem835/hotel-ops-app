@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import type { OneEyrieNavLabel } from "@/app/lib/role-permissions";
 
@@ -15,8 +16,7 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
   return (
     <aside className="one-eyrie-sidebar">
       <div className="one-eyrie-logo-block">
-        <div className="one-eyrie-logo-title">ONE</div>
-        <div className="one-eyrie-logo-subtitle">— EYRIE —</div>
+        <OneEyrieWordmark />
       </div>
 
       <nav aria-label="Main navigation">

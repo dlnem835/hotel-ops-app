@@ -75,8 +75,6 @@ export default function MobileHomeScreen() {
   return (
     <div className="one-eyrie-mobile__inner">
       <header>
-        <div className="one-eyrie-mobile-brand__title">ONE</div>
-        <div className="one-eyrie-mobile-brand__subtitle">— EYRIE —</div>
         <h1 className="one-eyrie-mobile-heading">Field Operations</h1>
         <p className="one-eyrie-mobile-subheading">Choose a module to get started.</p>
       </header>
