@@ -7,11 +7,14 @@ export default function MobileRpmsPage() {
       <Link href="/mobile" className="one-eyrie-mobile-back">
         ← Home
       </Link>
-      <h1 className="one-eyrie-mobile-page-title">RPMs</h1>
+      <h1 className="one-eyrie-mobile-page-title">Rooms Preventative Maintenance</h1>
       <p className="one-eyrie-mobile-subheading one-eyrie-mobile-inspections__subtitle">
-        RPM guest room inspections
+        Guest room preventative maintenance inspections
       </p>
-      <MobileInspectionSection program="RPM" programLabel="RPM" />
+      <MobileInspectionSection
+        program="RPM"
+        programLabel="Rooms Preventative Maintenance"
+      />
     </div>
   );
 }

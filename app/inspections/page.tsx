@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
@@ -17,7 +17,8 @@ import { INSPECTION_PERIODS } from "./lib/inspection-types";
 import InspectionMetricCards from "./components/InspectionMetricCards";
 import InspectionRoomGrid from "./components/InspectionRoomGrid";
 import PriorityQueuePanel from "./components/PriorityQueuePanel";
-import StartInspectionPanel, {
+import StartInspectionModal from "./components/StartInspectionModal";
+import {
   AssociateOption,
   RoomOption,
   TemplateOption,
@@ -26,6 +27,7 @@ import AssociateRankingsPanel from "./components/AssociateRankingsPanel";
 import TopInspectorsPanel from "./components/TopInspectorsPanel";
 import RoomHistoryDrawer from "./components/RoomHistoryDrawer";
 import "./inspections-responsive.css";
+import "./components/start-inspection-modal.css";
 import { templateMatchesDashboard } from "./lib/program-map";
 import { resolveDefaultTemplateForDashboard } from "./lib/default-template";
 import {
@@ -63,8 +65,8 @@ export default function InspectionsPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedAssociateId, setSelectedAssociateId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
-  const [startPanelHighlighted, setStartPanelHighlighted] = useState(false);
-  const highlightTimeoutRef = useRef<number | null>(null);
+  const [startModalOpen, setStartModalOpen] = useState(false);
+  const [preloadedFromQueue, setPreloadedFromQueue] = useState(false);
 
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyRoom, setHistoryRoom] = useState<RoomGridTile | null>(null);
@@ -210,39 +212,32 @@ export default function InspectionsPage() {
     });
   }, [program, matchingTemplates, defaultTemplateId]);
 
-  function handlePriorityInspect(areaId: number) {
-    setSelectedRoomId(areaId);
+  function openStartModal(areaId?: number, fromQueue = false) {
+    if (areaId !== undefined) {
+      setSelectedRoomId(areaId);
+    } else {
+      setSelectedRoomId(null);
+      setSelectedAssociateId(null);
+    }
 
     const templateId = resolveDefaultTemplateForDashboard(templates, program);
     if (templateId) {
       setSelectedTemplateId(templateId);
     }
 
-    setStartPanelHighlighted(true);
-
-    if (highlightTimeoutRef.current !== null) {
-      window.clearTimeout(highlightTimeoutRef.current);
-    }
-
-    highlightTimeoutRef.current = window.setTimeout(() => {
-      setStartPanelHighlighted(false);
-      highlightTimeoutRef.current = null;
-    }, 3000);
-
-    window.requestAnimationFrame(() => {
-      document
-        .getElementById("start-inspection-panel")
-        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
+    setPreloadedFromQueue(fromQueue && areaId !== undefined);
+    setStartModalOpen(true);
   }
 
-  useEffect(() => {
-    return () => {
-      if (highlightTimeoutRef.current !== null) {
-        window.clearTimeout(highlightTimeoutRef.current);
-      }
-    };
-  }, []);
+  function handlePriorityInspect(areaId: number) {
+    openStartModal(areaId, true);
+  }
+
+  function closeStartModal() {
+    if (starting) return;
+    setStartModalOpen(false);
+    setPreloadedFromQueue(false);
+  }
 
   async function openRoomHistory(room: RoomGridTile) {
     setHistoryRoom(room);
@@ -311,6 +306,8 @@ export default function InspectionsPage() {
       return;
     }
 
+    setStartModalOpen(false);
+    setPreloadedFromQueue(false);
     router.push(`/inspections/session/${result.session.id}`);
   }
 
@@ -463,21 +460,13 @@ export default function InspectionsPage() {
                 className="inspections-mobile-dashboard-sidebar"
                 style={{ display: "flex", flexDirection: "column", gap: "12px" }}
               >
-                <StartInspectionPanel
-                  program={program}
-                  rooms={rooms}
-                  templates={templates}
-                  associates={associates}
-                  selectedRoomId={selectedRoomId}
-                  selectedTemplateId={effectiveTemplateId}
-                  selectedAssociateId={selectedAssociateId}
-                  highlighted={startPanelHighlighted}
-                  onRoomChange={setSelectedRoomId}
-                  onTemplateChange={setSelectedTemplateId}
-                  onAssociateChange={setSelectedAssociateId}
-                  onStart={() => void startInspection()}
-                  starting={starting}
-                />
+                <button
+                  type="button"
+                  className="inspections-start-btn inspections-desktop-start-btn"
+                  onClick={() => openStartModal()}
+                >
+                  Start Inspection
+                </button>
                 <PriorityQueuePanel
                   items={dashboard.priorityQueue}
                   program={program}
@@ -497,8 +486,31 @@ export default function InspectionsPage() {
           onClose={() => setHistoryOpen(false)}
           onStartInspection={(areaId) => {
             setHistoryOpen(false);
-            handlePriorityInspect(areaId);
+            openStartModal(areaId, true);
           }}
+        />
+
+        <StartInspectionModal
+          open={startModalOpen}
+          program={program}
+          rooms={rooms}
+          templates={templates}
+          associates={associates}
+          selectedRoomId={selectedRoomId}
+          selectedTemplateId={effectiveTemplateId}
+          selectedAssociateId={selectedAssociateId}
+          preloadedFromQueue={preloadedFromQueue}
+          onRoomChange={(id) => {
+            setSelectedRoomId(id);
+            if (id !== null) {
+              setPreloadedFromQueue(false);
+            }
+          }}
+          onTemplateChange={setSelectedTemplateId}
+          onAssociateChange={setSelectedAssociateId}
+          starting={starting}
+          onClose={closeStartModal}
+          onStart={() => void startInspection()}
         />
       </section>
     </main>

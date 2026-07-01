@@ -616,14 +616,14 @@ export default function InspectionSessionPage() {
                                 setWorkOrderModalOpen(true);
                               }}
                               initialValues={{
-                                subject: `Inspection fail: ${item.label}`,
-                                description: notes[key] || "",
+                                subject: "",
+                                description: "",
                                 priority: "Important",
                                 area_id: areaId,
                                 area_label: roomName ? `Room ${roomName}` : null,
                                 source_module: "Inspections",
                                 source_record_id: String(sessionId),
-                                source_note: `${templateName} · ${category.name} · ${item.label}${
+                                source_note: `${templateName} · ${category.name.en} · ${item.label.en}${
                                   notes[key] ? ` — ${notes[key]}` : ""
                                 }`,
                                 photo_url: photos[key] || null,

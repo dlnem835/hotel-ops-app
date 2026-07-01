@@ -20,16 +20,17 @@ export default async function MobilePassOnLogPage() {
       <Link href="/mobile" className="one-eyrie-mobile-back">
         ← Home
       </Link>
-      <h1 className="one-eyrie-mobile-page-title">Pass-On Log</h1>
-      <p className="one-eyrie-mobile-subheading" style={{ marginTop: 8 }}>
+      <div className="one-eyrie-mobile-pass-on__header">
+        <h1 className="one-eyrie-mobile-page-title">Pass-On Log</h1>
+        <MobilePassOnLogListActions />
+      </div>
+      <p className="one-eyrie-mobile-subheading one-eyrie-mobile-pass-on__subtitle">
         Today and recent shift notes
       </p>
 
       {error ? <div className="one-eyrie-mobile-error">{error}</div> : null}
 
       {!error ? <MobilePassOnLogList entries={entries} /> : null}
-
-      <MobilePassOnLogListActions />
     </div>
   );
 }

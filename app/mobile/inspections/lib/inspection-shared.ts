@@ -179,7 +179,9 @@ export function mobileInspectionListHref(program: string): string {
 }
 
 export function mobileInspectionListLabel(program: string): string {
-  return parseDashboardProgram(program) === "RPM" ? "RPMs" : "Inspections";
+  return parseDashboardProgram(program) === "RPM"
+    ? "Rooms Preventative Maintenance"
+    : "Inspections";
 }
 
 export function filterRoomsBySearch<T extends { name: string }>(

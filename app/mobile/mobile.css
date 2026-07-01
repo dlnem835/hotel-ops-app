@@ -132,7 +132,68 @@
 /* Pass-On Log */
 
 .one-eyrie-mobile-pass-on {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 24px;
+}
+
+.one-eyrie-mobile-pass-on__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.one-eyrie-mobile-pass-on__header .one-eyrie-mobile-page-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.one-eyrie-mobile-pass-on__subtitle {
+  margin-top: 0;
+}
+
+.one-eyrie-mobile-work-orders__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.one-eyrie-mobile-work-orders__header .one-eyrie-mobile-page-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.one-eyrie-mobile-work-orders__subtitle {
+  margin-top: 0;
+}
+
+.one-eyrie-mobile-work-orders__create-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid #3d6b4f;
+  background: #1c3428;
+  color: #b8d4c4;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.one-eyrie-mobile-pass-on__create-btn {
+  gap: 4px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .one-eyrie-mobile-pass-on-groups {
@@ -268,33 +329,6 @@
   border: 1px solid #8b5252;
   color: #c9a8a8;
   font-size: 14px;
-}
-
-.one-eyrie-mobile-pass-on-new {
-  position: fixed;
-  left: 18px;
-  right: 18px;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  max-width: 444px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 52px;
-  border-radius: 14px;
-  border: 1px solid #c8a96a;
-  background: #c8a96a;
-  color: #211f1b;
-  font-size: 16px;
-  font-weight: 800;
-  text-decoration: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.one-eyrie-mobile-pass-on-new:active {
-  background: #e0c47b;
-  border-color: #e0c47b;
 }
 
 .one-eyrie-mobile-panel {
@@ -475,48 +509,10 @@
   pointer-events: none;
 }
 
-/* Work Orders */
-
-.one-eyrie-mobile-work-orders__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.one-eyrie-mobile-work-orders__header .one-eyrie-mobile-page-title {
-  flex: 1;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.one-eyrie-mobile-work-orders__create-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 9px;
-  border: 1px solid #3d6b4f;
-  background: #1c3428;
-  color: #b8d4c4;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.one-eyrie-mobile-work-orders__subtitle {
-  margin-top: 0;
-  margin-bottom: 14px;
-}
+/* Work Orders list */
 
 .one-eyrie-mobile-work-orders-list {
-  margin-top: 0;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;

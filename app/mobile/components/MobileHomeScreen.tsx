@@ -27,7 +27,7 @@ const MODULES = [
     lightTile: true,
   },
   {
-    title: "PMs",
+    title: "Preventative Maintenance",
     href: "/mobile/pms",
     icon: Wrench,
     color: "#B8D4C4",
@@ -41,7 +41,7 @@ const MODULES = [
     lightTile: true,
   },
   {
-    title: "RPMs",
+    title: "Rooms Preventative Maintenance",
     href: "/mobile/rpms",
     icon: ClipboardList,
     color: "#D4C4A8",

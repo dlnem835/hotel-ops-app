@@ -434,7 +434,7 @@ function dateHeader(dateString: string) {
               >
                 <button
                   type="button"
-                  style={newPassOnButton}
+                  style={PRIMARY_BUTTON}
                   onClick={() => setShowForm(true)}
                   {...forestHoverHandlers()}
                 >
@@ -1025,14 +1025,6 @@ const inputStyle: React.CSSProperties = {
   borderRadius: "10px",
   padding: "12px 14px",
   outline: "none",
-};
-
-const newPassOnButton: React.CSSProperties = {
-  ...PRIMARY_BUTTON,
-  borderRadius: "999px",
-  padding: "12px 22px",
-  minHeight: "44px",
-  height: "auto",
 };
 
 const goldButton: React.CSSProperties = {

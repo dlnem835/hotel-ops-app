@@ -34,7 +34,6 @@ export default function MobileWorkOrdersSection() {
           + New Work Order
         </button>
       </div>
-
       <p className="one-eyrie-mobile-subheading one-eyrie-mobile-work-orders__subtitle">
         Guest-impacting · Urgent → Important → Normal · oldest first
       </p>

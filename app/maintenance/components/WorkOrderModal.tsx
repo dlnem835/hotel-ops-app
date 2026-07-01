@@ -77,9 +77,11 @@ export default function WorkOrderModal({
   useEffect(() => {
     if (!open) return;
 
-    setSubject(initialValues?.subject || "");
+    setSubject(initialValues?.subject ?? "");
     setDescription(
-      initialValues?.description || initialValues?.source_note || ""
+      initialValues?.description !== undefined && initialValues?.description !== null
+        ? initialValues.description
+        : initialValues?.source_note || ""
     );
     setCategory(initialValues?.category || "");
     setItem(initialValues?.item || "");

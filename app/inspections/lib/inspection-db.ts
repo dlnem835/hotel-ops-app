@@ -557,7 +557,7 @@ export async function buildDashboard(
       },
     },
     rooms: gridRooms.map(({ _programSummary: _, ...tile }) => tile),
-    priorityQueue: buildPriorityQueue(priorityRows, program, 3),
+    priorityQueue: buildPriorityQueue(priorityRows, program, 10),
     housekeeperRankings: buildHousekeeperRankings(
       completedSessions,
       program,

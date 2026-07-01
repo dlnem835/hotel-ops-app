@@ -116,8 +116,8 @@ export default function MobileInspectionCategoryPage() {
                     setWorkOrderModalOpen(true);
                   }}
                   initialValues={{
-                    subject: `Inspection fail: ${item.label.en}`,
-                    description: notes[responseKey] || "",
+                    subject: "",
+                    description: "",
                     priority: "Important",
                     area_id: areaId,
                     area_label: roomName ? `Room ${roomName}` : null,

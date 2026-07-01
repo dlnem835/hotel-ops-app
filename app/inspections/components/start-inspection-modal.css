@@ -1,0 +1,154 @@
+.start-inspection-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.start-inspection-modal {
+  width: min(100%, 420px);
+  background: #302d28;
+  border: 1px solid #3a352e;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.start-inspection-modal__header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #3a352e;
+}
+
+.start-inspection-modal__title {
+  margin: 0;
+  color: #f5f1e8;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.start-inspection-modal__content {
+  padding: 14px 16px;
+}
+
+.start-inspection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.start-inspection-form__hint {
+  color: #b8d4c4;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(28, 52, 40, 0.65);
+  border: 1px solid #3d6b4f;
+  line-height: 1.4;
+}
+
+.start-inspection-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.start-inspection-form__label {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.start-inspection-form__select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.start-inspection-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid #3a352e;
+  background: #302d28;
+}
+
+.start-inspection-modal__btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.start-inspection-modal__btn--cancel {
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid #3a352e;
+}
+
+.start-inspection-modal__btn--submit {
+  border-radius: 12px;
+}
+
+.inspections-start-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid #3d6b4f;
+  background: #1c3428;
+  color: #b8d4c4;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.inspections-start-btn:hover:not(:disabled) {
+  background: #244232;
+}
+
+.inspections-priority-queue-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inspections-priority-queue-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inspections-priority-queue-item {
+  border: 1px solid #3a352e;
+  border-radius: 10px;
+  padding: 12px;
+  background: #262320;
+}
+
+.inspections-priority-queue-item__meta {
+  margin-top: 6px;
+}
+
+@media (min-width: 768px) {
+  .inspections-priority-queue-item {
+    padding: 10px 12px;
+  }
+
+  .inspections-priority-queue-item__meta {
+    margin-top: 4px;
+  }
+
+  .inspections-priority-queue-panel__list {
+    gap: 6px;
+  }
+}

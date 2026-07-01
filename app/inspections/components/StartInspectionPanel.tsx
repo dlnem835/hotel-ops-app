@@ -3,10 +3,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { templateMatchesDashboard } from "../lib/program-map";
-import {
-  forestHoverHandlers,
-  SETTINGS_BUTTON_BASE,
-} from "@/app/settings/lib/settings-ui-interactions";
 
 export type TemplateOption = {
   id: number;
@@ -26,7 +22,7 @@ export type AssociateOption = {
   name: string;
 };
 
-type StartInspectionPanelProps = {
+export type StartInspectionFormProps = {
   program: "VR" | "RPM";
   rooms: RoomOption[];
   templates: TemplateOption[];
@@ -34,12 +30,10 @@ type StartInspectionPanelProps = {
   selectedRoomId: number | null;
   selectedTemplateId: number | null;
   selectedAssociateId: string | null;
-  highlighted?: boolean;
+  preloadedFromQueue?: boolean;
   onRoomChange: (id: number | null) => void;
   onTemplateChange: (id: number | null) => void;
   onAssociateChange: (id: string | null) => void;
-  onStart: () => void;
-  starting?: boolean;
 };
 
 const selectStyle: React.CSSProperties = {
@@ -55,7 +49,7 @@ const selectStyle: React.CSSProperties = {
   outline: "none",
 };
 
-export default function StartInspectionPanel({
+export function StartInspectionForm({
   program,
   rooms,
   templates,
@@ -63,13 +57,11 @@ export default function StartInspectionPanel({
   selectedRoomId,
   selectedTemplateId,
   selectedAssociateId,
-  highlighted = false,
+  preloadedFromQueue = false,
   onRoomChange,
   onTemplateChange,
   onAssociateChange,
-  onStart,
-  starting,
-}: StartInspectionPanelProps) {
+}: StartInspectionFormProps) {
   const roomSelectRef = useRef<HTMLSelectElement>(null);
 
   const filteredTemplates = templates.filter((template) =>
@@ -90,15 +82,105 @@ export default function StartInspectionPanel({
     return [selectedRoom, ...activeRooms];
   }, [rooms, selectedRoomId]);
 
-  const startDisabled = !selectedRoomId || !selectedTemplateId || starting;
-
   useEffect(() => {
-    if (!highlighted) {
+    if (!preloadedFromQueue || !selectedRoomId) {
       return;
     }
 
     roomSelectRef.current?.focus({ preventScroll: true });
-  }, [highlighted, selectedRoomId]);
+  }, [preloadedFromQueue, selectedRoomId]);
+
+  return (
+    <div className="start-inspection-form">
+      {preloadedFromQueue && selectedRoomId ? (
+        <div className="start-inspection-form__hint">
+          Room preloaded from Priority Queue — choose associate, then Start Inspection.
+        </div>
+      ) : null}
+
+      <label className="start-inspection-form__field">
+        <span className="start-inspection-form__label">Room</span>
+        <select
+          ref={roomSelectRef}
+          value={selectedRoomId ?? ""}
+          onChange={(event) =>
+            onRoomChange(event.target.value ? Number(event.target.value) : null)
+          }
+          className="start-inspection-form__select"
+          style={selectStyle}
+        >
+          <option value="">Select room...</option>
+          {roomOptions.map((room) => (
+            <option key={room.id} value={room.id}>
+              Room {room.name}
+              {room.status !== "Active" ? ` (${room.status})` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="start-inspection-form__field">
+        <span className="start-inspection-form__label">Inspection Type</span>
+        <select
+          value={selectedTemplateId ?? ""}
+          onChange={(event) =>
+            onTemplateChange(event.target.value ? Number(event.target.value) : null)
+          }
+          className="start-inspection-form__select"
+          style={selectStyle}
+        >
+          <option value="">Select template...</option>
+          {filteredTemplates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="start-inspection-form__field">
+        <span className="start-inspection-form__label">Associate</span>
+        <select
+          value={selectedAssociateId ?? ""}
+          onChange={(event) =>
+            onAssociateChange(event.target.value ? event.target.value : null)
+          }
+          className="start-inspection-form__select"
+          style={selectStyle}
+        >
+          <option value="">Optional...</option>
+          {associates.map((associate) => (
+            <option key={associate.id} value={associate.id}>
+              {associate.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
+/** @deprecated Desktop uses StartInspectionModal; kept for type exports and legacy layout. */
+export default function StartInspectionPanel({
+  program,
+  rooms,
+  templates,
+  associates,
+  selectedRoomId,
+  selectedTemplateId,
+  selectedAssociateId,
+  highlighted = false,
+  onRoomChange,
+  onTemplateChange,
+  onAssociateChange,
+  onStart,
+  starting,
+}: StartInspectionFormProps & {
+  highlighted?: boolean;
+  onStart: () => void;
+  starting?: boolean;
+}) {
+  const startDisabled = !selectedRoomId || !selectedTemplateId || starting;
 
   return (
     <div
@@ -134,93 +216,25 @@ export default function StartInspectionPanel({
           Start Inspection
         </div>
 
-        {highlighted && selectedRoomId && (
-          <div
-            style={{
-              color: FOREST.text,
-              fontSize: "12px",
-              fontWeight: 700,
-              padding: "8px 10px",
-              borderRadius: "8px",
-              background: FOREST.bgSoft,
-              border: `1px solid ${FOREST.border}`,
-            }}
-          >
-            Room preloaded from Priority Queue — choose associate, then Start Inspection.
-          </div>
-        )}
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-            Room
-          </span>
-          <select
-            ref={roomSelectRef}
-            value={selectedRoomId ?? ""}
-            onChange={(e) =>
-              onRoomChange(e.target.value ? Number(e.target.value) : null)
-            }
-            style={{
-              ...selectStyle,
-              borderColor: highlighted ? FOREST.border : ONE_EYRIE.borderInput,
-            }}
-          >
-            <option value="">Select room...</option>
-            {roomOptions.map((room) => (
-              <option key={room.id} value={room.id}>
-                Room {room.name}
-                {room.status !== "Active" ? ` (${room.status})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-            Inspection Type
-          </span>
-          <select
-            value={selectedTemplateId ?? ""}
-            onChange={(e) =>
-              onTemplateChange(e.target.value ? Number(e.target.value) : null)
-            }
-            style={selectStyle}
-          >
-            <option value="">Select template...</option>
-            {filteredTemplates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-            Associate
-          </span>
-          <select
-            value={selectedAssociateId ?? ""}
-            onChange={(e) =>
-              onAssociateChange(e.target.value ? e.target.value : null)
-            }
-            style={selectStyle}
-          >
-            <option value="">Optional...</option>
-            {associates.map((associate) => (
-              <option key={associate.id} value={associate.id}>
-                {associate.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StartInspectionForm
+          program={program}
+          rooms={rooms}
+          templates={templates}
+          associates={associates}
+          selectedRoomId={selectedRoomId}
+          selectedTemplateId={selectedTemplateId}
+          selectedAssociateId={selectedAssociateId}
+          preloadedFromQueue={highlighted}
+          onRoomChange={onRoomChange}
+          onTemplateChange={onTemplateChange}
+          onAssociateChange={onAssociateChange}
+        />
 
         <button
           type="button"
           onClick={onStart}
           disabled={startDisabled}
           style={{
-            ...SETTINGS_BUTTON_BASE,
             background: FOREST.bg,
             border: `1px solid ${FOREST.border}`,
             color: FOREST.text,
@@ -231,7 +245,6 @@ export default function StartInspectionPanel({
             opacity: startDisabled ? 0.55 : 1,
             cursor: startDisabled ? "not-allowed" : "pointer",
           }}
-          {...forestHoverHandlers(startDisabled)}
         >
           {starting ? "Starting..." : "Start Inspection"}
         </button>

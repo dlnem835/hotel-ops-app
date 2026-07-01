@@ -25,14 +25,12 @@ export default function PriorityQueuePanel({
 }: PriorityQueuePanelProps) {
   return (
     <div
+      className="inspections-priority-queue-panel"
       style={{
         background: ONE_EYRIE.surface,
         border: `1px solid ${ONE_EYRIE.border}`,
         borderRadius: "14px",
         padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
       }}
     >
       <div>
@@ -49,50 +47,47 @@ export default function PriorityQueuePanel({
           No priority rooms right now. All guest rooms are current.
         </div>
       ) : (
-        items.map((item, index) => (
-          <div
-            key={item.areaId}
-            style={{
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "10px",
-              padding: "12px",
-              background: ONE_EYRIE.surfacePanel,
-            }}
-          >
+        <div className="inspections-priority-queue-panel__list">
+          {items.map((item, index) => (
             <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "10px",
-                alignItems: "flex-start",
-              }}
+              key={item.areaId}
+              className="inspections-priority-queue-item"
             >
-              <div>
-                <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
-                  {index + 1}. Room {item.name}
-                </div>
-                <div
-                  style={{
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "12px",
-                    marginTop: "6px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {statusLine(item)}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onInspectRoom(item.areaId)}
-                style={FOREST_OUTLINE_BUTTON}
-                {...forestOutlineHoverHandlers()}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                }}
               >
-                Inspect
-              </button>
+                <div>
+                  <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
+                    {index + 1}. Room {item.name}
+                  </div>
+                  <div
+                    className="inspections-priority-queue-item__meta"
+                    style={{
+                      color: ONE_EYRIE.textMuted,
+                      fontSize: "12px",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {statusLine(item)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onInspectRoom(item.areaId)}
+                  style={FOREST_OUTLINE_BUTTON}
+                  {...forestOutlineHoverHandlers()}
+                >
+                  Inspect
+                </button>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );
