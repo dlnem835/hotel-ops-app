@@ -1,23 +1,17 @@
 "use client";
 
 import Link from "next/link";
-
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/" },
-  { label: "Lost & Found", href: "/lost-and-found" },
-  { label: "Pass-On Log", href: "/pass-on-log" },
-  { label: "Inspections", href: "/inspections" },
-  { label: "Maintenance", href: "/maintenance" },
-  { label: "Settings", href: "/settings" },
-] as const;
-
-export type OneEyrieNavLabel = (typeof NAV_ITEMS)[number]["label"];
+import { useRoleAccess } from "@/app/components/RoleAccessProvider";
+import type { OneEyrieNavLabel } from "@/app/lib/role-permissions";
 
 type OneEyrieSidebarProps = {
   active: OneEyrieNavLabel;
 };
 
 export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
+  const { desktopNavItems, loading, permissions } = useRoleAccess();
+  const navItems = !loading && permissions ? desktopNavItems : [];
+
   return (
     <aside className="one-eyrie-sidebar">
       <div className="one-eyrie-logo-block">
@@ -26,7 +20,7 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
       </div>
 
       <nav aria-label="Main navigation">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = item.label === active;
           return (
             <Link
@@ -46,3 +40,5 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
     </aside>
   );
 }
+
+export type { OneEyrieNavLabel };

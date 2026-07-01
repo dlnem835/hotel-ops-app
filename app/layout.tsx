@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import InactivityGuard from "./components/InactivityGuard";
+import RoleAccessProvider from "./components/RoleAccessProvider";
+import RoleRouteGuard from "./components/RoleRouteGuard";
 import "./globals.css";
 import "./one-eyrie-shell.css";
 
@@ -30,7 +32,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <RoleAccessProvider>
+          {children}
+          <RoleRouteGuard />
+        </RoleAccessProvider>
         <InactivityGuard />
       </body>
     </html>

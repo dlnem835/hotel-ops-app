@@ -1,5 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import {
+  getAdministratorPermissions,
+  normalizeModulePermissions,
+} from "@/app/lib/role-permissions";
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+function resolveStoredPermissions(
+  isAdministrator: boolean,
+  modulePermissions: unknown
+) {
+  if (isAdministrator) {
+    return getAdministratorPermissions();
+  }
+  return normalizeModulePermissions(
+    modulePermissions as Record<string, boolean> | null | undefined
+  );
+}
 
 export async function PATCH(request: Request) {
   try {
@@ -12,7 +35,10 @@ export async function PATCH(request: Request) {
       email,
       phone,
       department,
+      job_title,
       role,
+      is_administrator,
+      module_permissions,
       status,
       can_login,
       username,
@@ -23,10 +49,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "User id is required" }, { status: 400 });
     }
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const jobTitle = String(job_title || role || "").trim();
+    const isAdministrator = Boolean(is_administrator);
+    const permissions = resolveStoredPermissions(
+      isAdministrator,
+      module_permissions
     );
+
+    const supabaseAdmin = getSupabaseAdmin();
 
     const { data: existing, error: fetchError } = await supabaseAdmin
       .from("team_members")
@@ -56,7 +86,8 @@ export async function PATCH(request: Request) {
             user_metadata: {
               first_name,
               last_name,
-              role,
+              job_title: jobTitle,
+              is_administrator: isAdministrator,
               username,
             },
           });
@@ -69,12 +100,13 @@ export async function PATCH(request: Request) {
       } else if (authUserId) {
         const authUpdates: {
           password?: string;
-          user_metadata: Record<string, string>;
+          user_metadata: Record<string, string | boolean>;
         } = {
           user_metadata: {
             first_name,
             last_name,
-            role,
+            job_title: jobTitle,
+            is_administrator: isAdministrator,
             username,
           },
         };
@@ -105,8 +137,11 @@ export async function PATCH(request: Request) {
         last_name,
         email,
         phone,
-        department,
-        role,
+        ...(department !== undefined ? { department: department ?? null } : {}),
+        job_title: jobTitle || null,
+        role: jobTitle || null,
+        is_administrator: isAdministrator,
+        module_permissions: permissions,
         status,
         can_login,
         username: can_login && username ? username : existing.username,
@@ -122,10 +157,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ user: data });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

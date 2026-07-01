@@ -1,5 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import {
+  getAdministratorPermissions,
+  normalizeModulePermissions,
+} from "@/app/lib/role-permissions";
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+function resolveStoredPermissions(
+  isAdministrator: boolean,
+  modulePermissions: unknown
+) {
+  if (isAdministrator) {
+    return getAdministratorPermissions();
+  }
+  return normalizeModulePermissions(
+    modulePermissions as Record<string, boolean> | null | undefined
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -11,20 +34,24 @@ export async function POST(request: Request) {
       email,
       phone,
       department,
+      job_title,
       role,
+      is_administrator,
+      module_permissions,
       status,
       can_login,
       username,
       tempPassword,
     } = body;
 
-    console.log("URL EXISTS:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log("SERVICE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const jobTitle = String(job_title || role || "").trim();
+    const isAdministrator = Boolean(is_administrator);
+    const permissions = resolveStoredPermissions(
+      isAdministrator,
+      module_permissions
     );
+
+    const supabaseAdmin = getSupabaseAdmin();
 
     let authUserId = null;
     let authEmail = null;
@@ -40,17 +67,14 @@ console.log("SERVICE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
           user_metadata: {
             first_name,
             last_name,
-            role,
+            job_title: jobTitle,
+            is_administrator: isAdministrator,
             username,
           },
         });
 
       if (authError) {
-        console.log("AUTH ERROR:", authError);
-        return NextResponse.json(
-          { error: authError.message },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: authError.message }, { status: 500 });
       }
 
       authUserId = authData.user.id;
@@ -64,8 +88,11 @@ console.log("SERVICE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
           last_name,
           email,
           phone,
-          department,
-          role,
+          department: department ?? null,
+          job_title: jobTitle || null,
+          role: jobTitle || null,
+          is_administrator: isAdministrator,
+          module_permissions: permissions,
           status,
           can_login,
           username: username || null,
@@ -77,17 +104,12 @@ console.log("SERVICE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ user: data });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

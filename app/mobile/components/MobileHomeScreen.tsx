@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { signOutAndRedirect } from "@/app/lib/auth";
+import { useRoleAccess } from "@/app/components/RoleAccessProvider";
+import type { MobileModuleKey } from "@/app/lib/role-permissions";
 import {
   ClipboardCheck,
   ClipboardList,
@@ -11,8 +13,16 @@ import {
   Wrench,
 } from "lucide-react";
 
-const MODULES = [
+const MODULES: Array<{
+  key: MobileModuleKey;
+  title: string;
+  href: string;
+  icon: typeof MessageSquare;
+  color: string;
+  lightTile: boolean;
+}> = [
   {
+    key: "pass_on",
     title: "Pass-On Log",
     href: "/mobile/pass-on-log",
     icon: MessageSquare,
@@ -20,6 +30,7 @@ const MODULES = [
     lightTile: true,
   },
   {
+    key: "work_orders",
     title: "Work Orders",
     href: "/mobile/work-orders",
     icon: HardHat,
@@ -27,6 +38,7 @@ const MODULES = [
     lightTile: true,
   },
   {
+    key: "pms",
     title: "Preventative Maintenance",
     href: "/mobile/pms",
     icon: Wrench,
@@ -34,6 +46,7 @@ const MODULES = [
     lightTile: true,
   },
   {
+    key: "inspections",
     title: "Room Inspections",
     href: "/mobile/inspections",
     icon: ClipboardCheck,
@@ -41,15 +54,20 @@ const MODULES = [
     lightTile: true,
   },
   {
+    key: "rpms",
     title: "Rooms Preventative Maintenance",
     href: "/mobile/rpms",
     icon: ClipboardList,
     color: "#D4C4A8",
     lightTile: true,
   },
-] as const;
+];
 
 export default function MobileHomeScreen() {
+  const { mobileModules, loading } = useRoleAccess();
+
+  const visibleModules = MODULES.filter((module) => mobileModules.includes(module.key));
+
   function handleLogout() {
     void signOutAndRedirect();
   }
@@ -64,21 +82,27 @@ export default function MobileHomeScreen() {
       </header>
 
       <nav className="one-eyrie-mobile-menu" aria-label="Field operations modules">
-        {MODULES.map((module) => {
-          const Icon = module.icon;
-          return (
-            <Link
-              key={module.href}
-              href={module.href}
-              className={`one-eyrie-mobile-menu__btn${module.lightTile ? " one-eyrie-mobile-menu__btn--row" : ""}`}
-            >
-              <span className="one-eyrie-mobile-menu__icon" style={{ color: module.color }}>
-                <Icon size={24} strokeWidth={2} />
-              </span>
-              {module.title}
-            </Link>
-          );
-        })}
+        {loading ? (
+          <div className="one-eyrie-mobile-status">Loading modules…</div>
+        ) : visibleModules.length === 0 ? (
+          <div className="one-eyrie-mobile-status">No mobile modules available.</div>
+        ) : (
+          visibleModules.map((module) => {
+            const Icon = module.icon;
+            return (
+              <Link
+                key={module.href}
+                href={module.href}
+                className={`one-eyrie-mobile-menu__btn${module.lightTile ? " one-eyrie-mobile-menu__btn--row" : ""}`}
+              >
+                <span className="one-eyrie-mobile-menu__icon" style={{ color: module.color }}>
+                  <Icon size={24} strokeWidth={2} />
+                </span>
+                {module.title}
+              </Link>
+            );
+          })
+        )}
 
         <button
           type="button"

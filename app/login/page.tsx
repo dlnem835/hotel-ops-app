@@ -8,10 +8,37 @@ import {
 import { consumeInactivityLogoutMessage } from "@/app/lib/inactivity-logout";
 import {
   captureLoginReturnFromUrl,
-  consumeLoginRedirect,
+  consumeExplicitLoginRedirect,
+  DESKTOP_LOGIN_DEFAULT,
 } from "@/app/lib/login-return";
+import { fetchTeamMemberAccess } from "@/app/lib/current-user-role";
+import {
+  canAccessPath,
+  getDefaultDesktopHome,
+  getDefaultMobileHome,
+  isMobileAppPath,
+} from "@/app/lib/role-permissions";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
+
+async function resolvePostLoginTarget(): Promise<string> {
+  const explicitMobileTarget = consumeExplicitLoginRedirect();
+  const access = await fetchTeamMemberAccess();
+
+  if (!access) {
+    return explicitMobileTarget ?? DESKTOP_LOGIN_DEFAULT;
+  }
+
+  const { permissions } = access;
+
+  if (explicitMobileTarget && canAccessPath(permissions, explicitMobileTarget)) {
+    return explicitMobileTarget;
+  }
+
+  return explicitMobileTarget && isMobileAppPath(explicitMobileTarget)
+    ? getDefaultMobileHome(permissions)
+    : getDefaultDesktopHome(permissions);
+}
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -26,9 +53,10 @@ export default function LoginPage() {
 
     let mounted = true;
 
-    void waitForInitialAuthSession().then((session) => {
+    void waitForInitialAuthSession().then(async (session) => {
       if (!mounted || !session || submittingRef.current) return;
-      window.location.replace(consumeLoginRedirect());
+      const target = await resolvePostLoginTarget();
+      window.location.replace(target);
     });
 
     return () => {
@@ -68,7 +96,7 @@ export default function LoginPage() {
       return;
     }
 
-    const target = consumeLoginRedirect();
+    const target = await resolvePostLoginTarget();
     setAuthDebug(`Session created, redirecting… → ${target}`);
     window.location.assign(target);
   }

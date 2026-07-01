@@ -37,6 +37,15 @@ import {
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
 import RoomsAreasSection from "./components/RoomsAreasSection";
+import {
+  buildUserAccessProfile,
+  draftFlagsToPermissions,
+  getAdministratorPermissions,
+  JOB_TITLE_OPTIONS,
+  MODULE_PERMISSION_KEYS,
+  MODULE_PERMISSION_LABELS,
+  permissionsToDraftFlags,
+} from "@/app/lib/role-permissions";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -112,37 +121,31 @@ useEffect(() => {
     {
       id: 1,
       name: "Admin / GM",
-      access: "Full Access",
+      access: "All tabs including Settings",
       status: "Active",
     },
     {
       id: 2,
       name: "Manager",
-      access: "Operations + Reports",
+      access: "All operational tabs",
       status: "Active",
     },
     {
       id: 3,
-      name: "Front Desk Agent",
-      access: "Lost & Found + Pass-On Log",
+      name: "Front Desk",
+      access: "Pass-On Log + Lost & Found",
       status: "Active",
     },
     {
       id: 4,
-      name: "Housekeeper",
-      access: "Inspections Only",
+      name: "Inspector",
+      access: "Inspections + Pass-On Log",
       status: "Active",
     },
     {
       id: 5,
-      name: "Inspector",
-      access: "Inspections Only",
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "RPM/Maintenance",
-      access: "Maintenance Only",
+      name: "RPM / Maintenance",
+      access: "Maintenance + Pass-On Log",
       status: "Active",
     },
   ]);
@@ -151,7 +154,7 @@ useEffect(() => {
     {
       id: "team" as SectionId,
       title: "Team Members",
-      subtitle: "Add, edit, and manage users, departments, and access.",
+      subtitle: "Add, edit, and manage users with flexible module permissions.",
       icon: <Users size={26} />,
     },
     {
@@ -177,7 +180,7 @@ useEffect(() => {
     {
       id: "roles" as SectionId,
       title: "Roles & Permissions",
-      subtitle: "Manage simple role access for each department.",
+      subtitle: "Simple role access by job title.",
       icon: <ShieldCheck size={26} />,
     },
   ];
@@ -204,18 +207,26 @@ useEffect(() => {
   }
 
   function teamMemberToDraft(item: AnyRecord): Record<string, string> {
+    const access = buildUserAccessProfile({
+      jobTitle: item.job_title,
+      legacyRole: item.role,
+      isAdministrator: item.is_administrator,
+      modulePermissions: item.module_permissions,
+    });
+
     return {
       firstName: item.first_name || item.firstName || "",
       lastName: item.last_name || item.lastName || "",
       email: item.email || "",
       phone: item.phone || "",
-      department: item.department || "Front Desk",
-      role: item.role || "Front Desk Agent",
+      jobTitle: access.jobTitle || "Front Desk Agent",
+      isAdministrator: access.isAdministrator ? "true" : "false",
       status: item.status || "Active",
       can_login:
         item.can_login === true || item.can_login === "true" ? "true" : "false",
       username: item.username || "",
       tempPassword: "",
+      ...permissionsToDraftFlags(access.permissions),
     };
   }
 
@@ -238,6 +249,23 @@ useEffect(() => {
     }));
   }
 
+  function setAdministrator(checked: boolean) {
+    setDraft((prev) => {
+      const next: Record<string, string> = {
+        ...prev,
+        isAdministrator: checked ? "true" : "false",
+      };
+
+      if (checked) {
+        for (const key of MODULE_PERMISSION_KEYS) {
+          next[`perm_${key}`] = "true";
+        }
+      }
+
+      return next;
+    });
+  }
+
   function getEmptyDraft(type: ModalType): Record<string, string> {
     if (type === "team") {
       
@@ -246,13 +274,20 @@ useEffect(() => {
         lastName: "",
         email: "",
         phone: "",
-        department: "Front Desk",
-        role: "Front Desk Agent",
+        jobTitle: "Front Desk Agent",
+        isAdministrator: "false",
         status: "Active",
-
         can_login: "false",
         username: "",
         tempPassword: "",
+        ...permissionsToDraftFlags({
+          dashboard: false,
+          lost_found: false,
+          pass_on: true,
+          inspections: false,
+          maintenance: false,
+          settings: false,
+        }),
       };
     }
 
@@ -279,13 +314,19 @@ async function saveItem() {
   if (!modalType) return;
 
   if (modalType === "team") {
+    const isAdministrator = draft.isAdministrator === "true";
+    const module_permissions = isAdministrator
+      ? getAdministratorPermissions()
+      : draftFlagsToPermissions(draft);
+
     const payload = {
       first_name: draft.firstName || "",
       last_name: draft.lastName || "",
       email: draft.email || "",
       phone: draft.phone || "",
-      department: draft.department || "Front Desk",
-      role: draft.role || "Front Desk Agent",
+      job_title: draft.jobTitle || "Front Desk Agent",
+      is_administrator: isAdministrator,
+      module_permissions,
       status: draft.status || "Active",
       can_login: draft.can_login === "true",
       username: draft.username || "",
@@ -398,8 +439,8 @@ async function saveItem() {
 
         <div style={tableHeader}>
           <div>Name</div>
-          <div>Type / Role</div>
-          <div>Department / Location</div>
+          <div>Job Title</div>
+          <div>Username</div>
           <div>Status</div>
           <div style={{ textAlign: "right" }}>Actions</div>
         </div>
@@ -414,12 +455,19 @@ async function saveItem() {
             </div>
 
             <div style={rowText}>
-              {activeSection === "team" && item.role}
+              {activeSection === "team" && (
+                <>
+                  <div>{item.job_title || item.role || "—"}</div>
+                  {item.is_administrator ? (
+                    <div style={{ ...rowSub, color: gold }}>Administrator</div>
+                  ) : null}
+                </>
+              )}
               {activeSection === "roles" && item.access}
             </div>
 
             <div style={rowText}>
-              {activeSection === "team" && item.department}
+              {activeSection === "team" && (item.username || "—")}
               {activeSection === "roles" && "System"}
             </div>
 
@@ -495,33 +543,88 @@ async function saveItem() {
             style={input}
           />
 
-          <div style={twoCol}>
-            <select
-              value={draft.department || "Front Desk"}
-              onChange={(e) => updateDraft("department", e.target.value)}
-              style={input}
-            >
-              <option>Management</option>
-              <option>Front Desk</option>
-              <option>Housekeeping</option>
-              <option>Maintenance</option>
-              <option>Sales</option>
-              <option>Food & Beverage</option>
-            </select>
+          <select
+            value={draft.jobTitle || "Front Desk Agent"}
+            onChange={(e) => updateDraft("jobTitle", e.target.value)}
+            style={input}
+            aria-label="Job Title"
+          >
+            {JOB_TITLE_OPTIONS.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </select>
 
-            <select
-              value={draft.role || "Front Desk Agent"}
-              onChange={(e) => updateDraft("role", e.target.value)}
-              style={input}
+          <div
+            style={{
+              marginTop: "8px",
+              padding: "14px",
+              borderRadius: "12px",
+              border: "1px solid #3A352E",
+              background: "#1A1816",
+            }}
+          >
+            <div
+              style={{
+                color: gold,
+                fontWeight: 800,
+                fontSize: "13px",
+                marginBottom: "10px",
+              }}
             >
-              <option>Admin / GM</option>
-              <option>Manager</option>
-              <option>Front Desk Agent</option>
-              <option>Housekeeper</option>
-              <option>Inspector</option>
-              <option>RPM/Maintenance</option>
-              <option>Read Only</option>
-            </select>
+              Permissions
+            </div>
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                color: "#FFFFFF",
+                fontWeight: 700,
+                marginBottom: "12px",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={draft.isAdministrator === "true"}
+                onChange={(e) => setAdministrator(e.target.checked)}
+              />
+              Administrator (all modules including Settings)
+            </label>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: "8px 14px",
+              }}
+            >
+              {MODULE_PERMISSION_KEYS.map((key) => (
+                <label
+                  key={key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: draft.isAdministrator === "true" ? "#9CA3AF" : "#FFFFFF",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={draft[`perm_${key}`] === "true"}
+                    disabled={draft.isAdministrator === "true"}
+                    onChange={(e) =>
+                      updateDraft(`perm_${key}`, e.target.checked ? "true" : "false")
+                    }
+                  />
+                  {MODULE_PERMISSION_LABELS[key]}
+                </label>
+              ))}
+            </div>
           </div>
 
           <select

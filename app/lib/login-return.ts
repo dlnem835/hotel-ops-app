@@ -39,6 +39,14 @@ export function peekLoginRedirect(): string {
   return DESKTOP_LOGIN_DEFAULT;
 }
 
+export function consumeExplicitLoginRedirect(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const next = sanitizeLoginNext(sessionStorage.getItem(LOGIN_NEXT_KEY));
+  sessionStorage.removeItem(LOGIN_NEXT_KEY);
+  return next;
+}
+
 export function consumeLoginRedirect(): string {
   if (typeof window === "undefined") return DESKTOP_LOGIN_DEFAULT;
 
