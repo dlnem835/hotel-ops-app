@@ -2,6 +2,7 @@ import { HotelProperty } from "@/app/settings/lib/hotel-property-types";
 
 const UPS_LABEL_URL = "https://www.ups.com/ship/guided/origin";
 const FEDEX_LABEL_URL = "https://www.fedex.com/en-us/shipping.html";
+const USPS_LABEL_URL = "https://cnsb.usps.com/";
 
 function escapeHtml(value: string): string {
   return value
@@ -88,7 +89,7 @@ export function buildShippingLabelEmailHtml({
       <div style="background:#0F0F11;border:1px solid #2E2E2E;border-radius:14px;padding:18px;margin:0 0 24px;">
         <p style="margin:0 0 12px;color:#ffffff;font-weight:700;">Instructions</p>
         <ol style="margin:0;padding-left:20px;color:#D8D8D8;line-height:1.7;">
-          <li>Click UPS or FedEx below.</li>
+          <li>Click UPS, FedEx, or USPS below.</li>
           <li>Use the hotel address above as the Ship From / Return Address.</li>
           <li>Create and pay for the shipping label.</li>
           <li>Upload the PDF label using the upload link below.</li>
@@ -97,13 +98,18 @@ export function buildShippingLabelEmailHtml({
 
       <div style="background:#1A1A1D;border:1px solid #2E2E2E;border-radius:14px;padding:18px;margin:0 0 24px;">
         <a href="${UPS_LABEL_URL}"
-          style="display:block;text-align:center;padding:14px 18px;background:#C8A96A;color:#111111;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px;">
+          style="display:block;text-align:center;padding:14px 18px;background:#644117;color:#FFB500;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px;">
           Create UPS Label
         </a>
 
         <a href="${FEDEX_LABEL_URL}"
-          style="display:block;text-align:center;padding:13px 18px;background:#242428;color:#ffffff;border:1px solid #3A3A3A;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:10px;">
+          style="display:block;text-align:center;padding:14px 18px;background:#4D148C;color:#ffffff;border-radius:10px;border-bottom:3px solid #FF6600;text-decoration:none;font-weight:800;margin-bottom:10px;">
           Create FedEx Label
+        </a>
+
+        <a href="${USPS_LABEL_URL}"
+          style="display:block;text-align:center;padding:14px 18px;background:#004B87;color:#ffffff;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px;">
+          Create USPS Label
         </a>
 
         <a href="${safeUploadLink}"
