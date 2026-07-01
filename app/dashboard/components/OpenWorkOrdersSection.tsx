@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { DashboardWorkOrder } from "../lib/operational-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import "@/app/components/dashboard-list-card.css";
 
 type OpenWorkOrdersSectionProps = {
   workOrders: DashboardWorkOrder[];
@@ -54,48 +56,36 @@ export default function OpenWorkOrdersSection({
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        workOrders.map((order, index) => (
-          <Link
-            key={order.id}
-            href="/maintenance"
-            className="dashboard-clickable-card"
-            style={{
-              display: "block",
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "10px",
-              padding: "12px",
-              background: ONE_EYRIE.surfacePanel,
-              textDecoration: "none",
-              color: ONE_EYRIE.text,
-            }}
-          >
-            <div
+        <div className="dashboard-list-panel__rows">
+          {workOrders.map((order) => (
+            <Link
+              key={order.id}
+              href="/maintenance"
+              className="dashboard-list-card dashboard-clickable-card"
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "8px",
-                alignItems: "center",
-                marginBottom: "6px",
+                textDecoration: "none",
+                color: "inherit",
               }}
             >
-              <span style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
-                {index + 1}. {order.subject}
-              </span>
-              <span style={getWorkOrderPriorityPillStyle(order.priority)}>
-                {order.priority}
-              </span>
-            </div>
-            <div
-              style={{
-                color: ONE_EYRIE.textMuted,
-                fontSize: "12px",
-                lineHeight: 1.45,
-              }}
-            >
-              {order.areaLabel || "No area specified"}
-            </div>
-          </Link>
-        ))
+              <div className="dashboard-list-card__body">
+                <div className="dashboard-list-card__title-row">
+                  <span className="dashboard-list-card__title">{order.subject}</span>
+                  <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                    {order.priority}
+                  </span>
+                </div>
+                <div className="dashboard-list-card__location">
+                  {order.areaLabel || "No area specified"}
+                </div>
+              </div>
+              <ChevronRight
+                size={18}
+                aria-hidden
+                className="dashboard-list-card__chevron"
+              />
+            </Link>
+          ))}
+        </div>
       )}
     </section>
   );
