@@ -38,23 +38,13 @@ export function workOrderTextsMatch(
   return normalizeWorkOrderText(a) === normalizeWorkOrderText(b);
 }
 
-/** Mobile list cards — skip description when it repeats the subject. */
+/** List cards — user-entered details only; skip repeats of subject or source note. */
 export function workOrderListDescription(
-  order: Pick<WorkOrder, "subject" | "description">
+  order: Pick<WorkOrder, "subject" | "description" | "sourceNote">
 ): string | null {
   const description = truncateWorkOrderText(order.description);
   if (!description) return null;
   if (workOrderTextsMatch(description, order.subject)) return null;
+  if (workOrderTextsMatch(description, order.sourceNote)) return null;
   return description;
-}
-
-/** Mobile list cards — skip source note when it repeats subject or description. */
-export function workOrderListSourceNote(
-  order: Pick<WorkOrder, "subject" | "description" | "sourceNote">
-): string | null {
-  if (!order.sourceNote?.trim()) return null;
-  const note = order.sourceNote.trim();
-  if (workOrderTextsMatch(note, order.subject)) return null;
-  if (workOrderTextsMatch(note, order.description)) return null;
-  return note;
 }

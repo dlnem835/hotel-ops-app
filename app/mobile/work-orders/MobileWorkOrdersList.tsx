@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import {
   formatWorkOrderAge,
   workOrderListDescription,
-  workOrderListSourceNote,
 } from "@/app/maintenance/lib/work-order-display";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
@@ -65,9 +64,8 @@ export default function MobileWorkOrdersList({
 
   return (
     <div className="one-eyrie-mobile-work-orders-list">
-      {workOrders.map((order, index) => {
+      {workOrders.map((order) => {
         const description = workOrderListDescription(order);
-        const sourceNote = workOrderListSourceNote(order);
 
         return (
           <Link
@@ -78,7 +76,7 @@ export default function MobileWorkOrdersList({
             <div className="one-eyrie-mobile-work-order-card__main">
               <div className="one-eyrie-mobile-work-order-card__top">
                 <p className="one-eyrie-mobile-work-order-card__title">
-                  {index + 1}. {order.subject}
+                  {order.subject}
                 </p>
                 <span style={getWorkOrderPriorityPillStyle(order.priority)}>
                   {order.priority}
@@ -86,16 +84,11 @@ export default function MobileWorkOrdersList({
               </div>
               <div className="one-eyrie-mobile-work-order-card__location">
                 {order.areaLabel || "No area specified"}
-                {order.sourceModule ? ` · from ${order.sourceModule}` : ""}
+                {order.sourceModule ? ` · From ${order.sourceModule}` : ""}
               </div>
               {description ? (
                 <div className="one-eyrie-mobile-work-order-card__description">
                   {description}
-                </div>
-              ) : null}
-              {sourceNote ? (
-                <div className="one-eyrie-mobile-work-order-card__source-note">
-                  {sourceNote}
                 </div>
               ) : null}
               <div className="one-eyrie-mobile-work-order-card__age">

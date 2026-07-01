@@ -1,27 +1,19 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { WorkOrder } from "../lib/maintenance-types";
+import {
+  formatWorkOrderAge,
+  workOrderListDescription,
+} from "../lib/work-order-display";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
-import {
-  forestOutlineHoverHandlers,
-  FOREST_OUTLINE_BUTTON,
-} from "@/app/settings/lib/settings-ui-interactions";
 
 type WorkOrdersPanelProps = {
   workOrders: WorkOrder[];
   onOpenWorkOrder?: (workOrder: WorkOrder) => void;
   compact?: boolean;
 };
-
-function formatAge(createdAt: string): string {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-  if (days === 0) return "Opened today";
-  if (days === 1) return "Opened yesterday";
-  return `Open ${days} days`;
-}
 
 export default function WorkOrdersPanel({
   workOrders,
@@ -54,25 +46,39 @@ export default function WorkOrdersPanel({
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        workOrders.map((order, index) => (
-          <div
-            key={order.id}
-            style={{
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "10px",
-              padding: "12px",
-              background: ONE_EYRIE.surfacePanel,
-            }}
-          >
+        workOrders.map((order) => {
+          const description = workOrderListDescription(order);
+          const clickable = Boolean(onOpenWorkOrder);
+
+          return (
             <div
+              key={order.id}
+              role={clickable ? "button" : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => onOpenWorkOrder?.(order) : undefined}
+              onKeyDown={
+                clickable
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onOpenWorkOrder?.(order);
+                      }
+                    }
+                  : undefined
+              }
               style={{
                 display: "flex",
+                alignItems: "center",
                 justifyContent: "space-between",
                 gap: "10px",
-                alignItems: "flex-start",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                borderRadius: "10px",
+                padding: "12px",
+                background: ONE_EYRIE.surfacePanel,
+                cursor: clickable ? "pointer" : "default",
               }}
             >
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     display: "flex",
@@ -83,7 +89,7 @@ export default function WorkOrdersPanel({
                   }}
                 >
                   <span style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
-                    {index + 1}. {order.subject}
+                    {order.subject}
                   </span>
                   <span style={getWorkOrderPriorityPillStyle(order.priority)}>
                     {order.priority}
@@ -97,20 +103,20 @@ export default function WorkOrdersPanel({
                   }}
                 >
                   {order.areaLabel || "No area specified"}
-                  {order.sourceModule ? ` · from ${order.sourceModule}` : ""}
+                  {order.sourceModule ? ` · From ${order.sourceModule}` : ""}
                 </div>
-                {order.sourceNote && (
+                {description ? (
                   <div
                     style={{
-                      color: ONE_EYRIE.textSubtle,
+                      color: ONE_EYRIE.textMuted,
                       fontSize: "12px",
                       marginTop: "6px",
                       lineHeight: 1.45,
                     }}
                   >
-                    {order.sourceNote}
+                    {description}
                   </div>
-                )}
+                ) : null}
                 <div
                   style={{
                     color: ONE_EYRIE.textSubtle,
@@ -118,23 +124,20 @@ export default function WorkOrdersPanel({
                     marginTop: "6px",
                   }}
                 >
-                  {formatAge(order.createdAt)}
+                  {formatWorkOrderAge(order.createdAt)}
                   {order.createdBy ? ` · ${order.createdBy}` : ""}
                 </div>
               </div>
-              {onOpenWorkOrder && (
-                <button
-                  type="button"
-                  onClick={() => onOpenWorkOrder(order)}
-                  style={FOREST_OUTLINE_BUTTON}
-                  {...forestOutlineHoverHandlers()}
-                >
-                  Open
-                </button>
-              )}
+              {clickable ? (
+                <ChevronRight
+                  size={18}
+                  aria-hidden
+                  style={{ flexShrink: 0, color: ONE_EYRIE.textSubtle, opacity: 0.75 }}
+                />
+              ) : null}
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );

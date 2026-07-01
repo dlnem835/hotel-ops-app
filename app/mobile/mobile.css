@@ -559,20 +559,14 @@
 }
 
 .one-eyrie-mobile-work-order-card__location,
-.one-eyrie-mobile-work-order-card__description,
-.one-eyrie-mobile-work-order-card__source-note {
+.one-eyrie-mobile-work-order-card__description {
   font-size: 12px;
   line-height: 1.45;
   color: #9ca3af;
 }
 
-.one-eyrie-mobile-work-order-card__description,
-.one-eyrie-mobile-work-order-card__source-note {
+.one-eyrie-mobile-work-order-card__description {
   margin-top: 6px;
-}
-
-.one-eyrie-mobile-work-order-card__source-note {
-  color: #b8b0a3;
 }
 
 .one-eyrie-mobile-work-order-card__age {
