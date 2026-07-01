@@ -14,11 +14,7 @@ export async function resolveWorkOrderCreatedBy(): Promise<string | null> {
 
   if (!teamMember) return null;
 
-  return (
-    [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
-    teamMember.username ||
-    null
-  );
+  return teamMember?.username || null;
 }
 
 export async function fetchOpenWorkOrders(): Promise<WorkOrder[]> {

@@ -7,10 +7,12 @@ import { priorityClassName } from "./lib/pass-on-priority";
 import {
   dateHeader,
   fetchPassOnEntries,
+  fetchTeamMembers,
   filterRecentPassOnEntries,
   groupEntriesByDate,
   isPassOnReadByUser,
   PassOnEntry,
+  resolvePassOnAuthorDisplay,
 } from "./lib/pass-on-shared";
 
 type MobilePassOnLogListProps = {
@@ -20,7 +22,14 @@ type MobilePassOnLogListProps = {
 export default function MobilePassOnLogList({ entries: initialEntries }: MobilePassOnLogListProps) {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [entries, setEntries] = useState(initialEntries);
+  const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
   const groupedEntries = groupEntriesByDate(entries);
+
+  useEffect(() => {
+    void fetchTeamMembers()
+      .then(setTeamMembers)
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     void getClientSession().then((session) => {
@@ -74,7 +83,7 @@ export default function MobilePassOnLogList({ entries: initialEntries }: MobileP
                     </span>
                   </div>
                   <div className="one-eyrie-mobile-row__meta">
-                    <span>{entry.author || "Unknown"}</span>
+                    <span>{resolvePassOnAuthorDisplay(teamMembers, entry.author)}</span>
                     <span>
                       {new Date(entry.created_at).toLocaleString([], {
                         month: "numeric",

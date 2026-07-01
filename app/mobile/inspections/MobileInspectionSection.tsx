@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatInspectionAgeLabel } from "@/app/inspections/lib/inspection-age";
 import { PriorityQueueItem } from "@/app/inspections/lib/inspection-types";
@@ -165,7 +166,12 @@ export default function MobileInspectionSection({
               if (!room) return null;
 
               return (
-                <div key={item.areaId} className="one-eyrie-mobile-inspections-queue__row">
+                <button
+                  key={item.areaId}
+                  type="button"
+                  className="one-eyrie-mobile-inspections-queue__row"
+                  onClick={() => openInspectModal(room)}
+                >
                   <div className="one-eyrie-mobile-inspections-queue__main">
                     <div className="one-eyrie-mobile-inspections-queue__title">
                       {index + 1}. Room {item.name}
@@ -174,14 +180,12 @@ export default function MobileInspectionSection({
                       {statusLine(item)}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="one-eyrie-mobile-inspections-queue__inspect"
-                    onClick={() => openInspectModal(room)}
-                  >
-                    Inspect
-                  </button>
-                </div>
+                  <ChevronRight
+                    size={18}
+                    aria-hidden
+                    className="one-eyrie-mobile-inspections-queue__chevron"
+                  />
+                </button>
               );
             })}
           </div>

@@ -8,6 +8,7 @@ import {
 } from "../lib/work-order-display";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import "@/app/components/dashboard-list-card.css";
 
 type WorkOrdersPanelProps = {
   workOrders: WorkOrder[];
@@ -46,98 +47,56 @@ export default function WorkOrdersPanel({
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        workOrders.map((order) => {
-          const description = workOrderListDescription(order);
-          const clickable = Boolean(onOpenWorkOrder);
+        <div className="dashboard-list-panel__rows">
+          {workOrders.map((order) => {
+            const description = workOrderListDescription(order);
+            const clickable = Boolean(onOpenWorkOrder);
 
-          return (
-            <div
-              key={order.id}
-              role={clickable ? "button" : undefined}
-              tabIndex={clickable ? 0 : undefined}
-              onClick={clickable ? () => onOpenWorkOrder?.(order) : undefined}
-              onKeyDown={
-                clickable
-                  ? (event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onOpenWorkOrder?.(order);
+            return (
+              <div
+                key={order.id}
+                role={clickable ? "button" : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                className="dashboard-list-card"
+                onClick={clickable ? () => onOpenWorkOrder?.(order) : undefined}
+                onKeyDown={
+                  clickable
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onOpenWorkOrder?.(order);
+                        }
                       }
-                    }
-                  : undefined
-              }
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "10px",
-                border: `1px solid ${ONE_EYRIE.border}`,
-                borderRadius: "10px",
-                padding: "12px",
-                background: ONE_EYRIE.surfacePanel,
-                cursor: clickable ? "pointer" : "default",
-              }}
-            >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                    alignItems: "center",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <span style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
-                    {order.subject}
-                  </span>
-                  <span style={getWorkOrderPriorityPillStyle(order.priority)}>
-                    {order.priority}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "12px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {order.areaLabel || "No area specified"}
-                  {order.sourceModule ? ` · From ${order.sourceModule}` : ""}
-                </div>
-                {description ? (
-                  <div
-                    style={{
-                      color: ONE_EYRIE.textMuted,
-                      fontSize: "12px",
-                      marginTop: "6px",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {description}
+                    : undefined
+                }
+                style={{ cursor: clickable ? "pointer" : "default" }}
+              >
+                <div className="dashboard-list-card__body">
+                  <div className="dashboard-list-card__title-row">
+                    <span className="dashboard-list-card__title">{order.subject}</span>
+                    <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                      {order.priority}
+                    </span>
                   </div>
-                ) : null}
-                <div
-                  style={{
-                    color: ONE_EYRIE.textSubtle,
-                    fontSize: "11px",
-                    marginTop: "6px",
-                  }}
-                >
-                  {formatWorkOrderAge(order.createdAt)}
-                  {order.createdBy ? ` · ${order.createdBy}` : ""}
+                  <div className="dashboard-list-card__location">
+                    {order.areaLabel || "No area specified"}
+                    {order.sourceModule ? ` · From ${order.sourceModule}` : ""}
+                  </div>
+                  {description ? (
+                    <div className="dashboard-list-card__description">{description}</div>
+                  ) : null}
+                  <div className="dashboard-list-card__meta">
+                    {formatWorkOrderAge(order.createdAt)}
+                    {order.createdByLabel || order.createdBy ? ` · ${order.createdByLabel || order.createdBy}` : ""}
+                  </div>
                 </div>
+                {clickable ? (
+                  <ChevronRight size={18} aria-hidden className="dashboard-list-card__chevron" />
+                ) : null}
               </div>
-              {clickable ? (
-                <ChevronRight
-                  size={18}
-                  aria-hidden
-                  style={{ flexShrink: 0, color: ONE_EYRIE.textSubtle, opacity: 0.75 }}
-                />
-              ) : null}
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
     </div>
   );

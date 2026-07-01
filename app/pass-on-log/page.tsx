@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST } from "@/app/lib/oneEyrieColors";
 import {
@@ -13,8 +13,15 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
-  SlidersHorizontal
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
+import {
+  ONE_EYRIE_MODAL_CLOSE_BUTTON,
+  ONE_EYRIE_MODAL_BOX,
+  ONE_EYRIE_MODAL_HEADER,
+  ONE_EYRIE_MODAL_OVERLAY,
+} from "@/app/lib/one-eyrie-modal-styles";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
@@ -28,6 +35,7 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,6 +70,17 @@ export default function PassOnLogPage() {
   const [currentUserName, setCurrentUserName] = useState("Unknown");
   const [currentAuthUserId, setCurrentAuthUserId] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+
+  const memberResolver = useMemo(
+    () => buildMemberDisplayNameResolver(teamMembers),
+    [teamMembers]
+  );
+
+  function displayAuthor(stored: string | null | undefined) {
+    if (!stored) return "Unknown";
+    return memberResolver.resolveStoredValue(stored) || stored;
+  }
+
  async function updateEntry(id: number) {
   const text = editingMessage.trim();
 
@@ -542,8 +561,9 @@ function dateHeader(dateString: string) {
                       type="button"
                       onClick={() => setShowForm(false)}
                       style={closeButton}
+                      aria-label="Close"
                     >
-                      ×
+                      <X size={22} />
                     </button>
                   </div>
 
@@ -666,7 +686,7 @@ function dateHeader(dateString: string) {
             >
               <div style={rowSubject}>{entry.subject}</div>
               <div style={rowMeta}>
-  {entry.author || "Unknown"} · {formatDateTime(entry.created_at)}
+  {displayAuthor(entry.author)} · {formatDateTime(entry.created_at)}
 </div>
 
 {entry.edited_at && (
@@ -876,7 +896,7 @@ function dateHeader(dateString: string) {
   }}
 >
 
-                      <strong>{reply.reply_author}:</strong>{" "}
+                      <strong>{displayAuthor(reply.reply_author)}:</strong>{" "}
                       {reply.reply_message}
                     </div>
                   ))}
@@ -954,7 +974,7 @@ function dateHeader(dateString: string) {
     String(person.auth_user_id).trim() === String(view.auth_user_id).trim()
 );
 
-        return member?.username || "Unknown";
+        return memberResolver.displayForAuthUserId(view.auth_user_id) || "Unknown";
       })
       .join(", ")}
   </div>
@@ -1238,39 +1258,10 @@ function priorityPill(priority: string): React.CSSProperties {
   };
 }
 
-const modalOverlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.75)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 999,
-};
-
-const modalBox: React.CSSProperties = {
-  width: "760px",
-  maxWidth: "90%",
-  background: "#302D28",
-  border: "1px solid #C8A96A",
-  borderRadius: "16px",
-  padding: "24px",
-};
-
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "20px",
-};
-
-const closeButton: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  color: "#FFFFFF",
-  fontSize: "28px",
-  cursor: "pointer",
-};
+const modalOverlay = ONE_EYRIE_MODAL_OVERLAY;
+const modalBox = ONE_EYRIE_MODAL_BOX;
+const modalHeader = ONE_EYRIE_MODAL_HEADER;
+const closeButton = ONE_EYRIE_MODAL_CLOSE_BUTTON;
 
 const dateInputWrap: React.CSSProperties = {
   display: "flex",

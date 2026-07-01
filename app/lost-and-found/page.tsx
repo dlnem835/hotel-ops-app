@@ -4,10 +4,16 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check } from "lucide-react";
+import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import {
+  ONE_EYRIE_MODAL_CLOSE_BUTTON,
+  ONE_EYRIE_MODAL_BOX,
+  ONE_EYRIE_MODAL_HEADER,
+  ONE_EYRIE_MODAL_OVERLAY,
+} from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
   PRIMARY_BUTTON,
@@ -491,27 +497,24 @@ setTeamMembers(allTeamMembers || []);
 </div>
 {selectedItem && (
   <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(0,0,0,0.65)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 9999,
-    }}
+    style={ONE_EYRIE_MODAL_OVERLAY}
+    onClick={() => setSelectedItem(null)}
   >
     <div
-      style={{
-        background: "#111111",
-        border: "1px solid #2A2A2A",
-        borderRadius: "16px",
-        padding: "24px",
-        width: "420px",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-      }}
+      style={{ ...ONE_EYRIE_MODAL_BOX, width: "480px" }}
+      onClick={(event) => event.stopPropagation()}
     >
-      <h2 style={{ marginTop: 0, color: gold }}>Item Details</h2>
+      <div style={ONE_EYRIE_MODAL_HEADER}>
+        <h2 style={{ margin: 0, color: gold }}>Item Details</h2>
+        <button
+          type="button"
+          onClick={() => setSelectedItem(null)}
+          style={ONE_EYRIE_MODAL_CLOSE_BUTTON}
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+      </div>
 
       <p><strong>Guest:</strong> {selectedItem.guest_last_name}</p>
       <p><strong>Location:</strong> {selectedItem.room_number}</p>

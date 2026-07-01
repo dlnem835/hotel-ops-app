@@ -16,7 +16,7 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
   return (
     <aside className="one-eyrie-sidebar">
       <div className="one-eyrie-logo-block">
-        <OneEyrieWordmark />
+        <OneEyrieWordmark className="one-eyrie-wordmark--sidebar" />
       </div>
 
       <nav aria-label="Main navigation">

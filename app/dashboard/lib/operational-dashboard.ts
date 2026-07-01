@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { buildDashboard as buildInspectionDashboard } from "@/app/inspections/lib/inspection-db";
+import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { RoomGridTile } from "@/app/inspections/lib/inspection-types";
 import { buildMaintenanceDashboard } from "@/app/maintenance/lib/maintenance-dashboard";
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
@@ -13,18 +14,21 @@ import {
   PassOnLogEntry,
 } from "./operational-types";
 
-function normalizePassOnEntry(row: {
-  id: number;
-  subject: string;
-  author: string;
-  message: string;
-  priority: string;
-  entry_date: string;
-}): PassOnLogEntry {
+function normalizePassOnEntry(
+  row: {
+    id: number;
+    subject: string;
+    author: string;
+    message: string;
+    priority: string;
+    entry_date: string;
+  },
+  resolveAuthor: (author: string) => string
+): PassOnLogEntry {
   return {
     id: Number(row.id),
     subject: String(row.subject || "Pass-on"),
-    author: String(row.author || "Unknown"),
+    author: resolveAuthor(String(row.author || "Unknown")),
     message: String(row.message || ""),
     priority: String(row.priority || "Normal"),
     entryDate: String(row.entry_date),
@@ -85,7 +89,13 @@ export async function buildOperationalDashboard(
     throw new Error(lostItemsResult.error.message);
   }
 
-  const passOnEntries = (passOnResult.data || []).map(normalizePassOnEntry);
+  const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+  const resolveAuthor = (author: string) =>
+    memberResolver.resolveStoredValue(author) || author || "Unknown";
+
+  const passOnEntries = (passOnResult.data || []).map((row) =>
+    normalizePassOnEntry(row, resolveAuthor)
+  );
   const passOnLog = {
     today: passOnEntries.filter((entry) => entry.entryDate === today),
     yesterday: passOnEntries.filter((entry) => entry.entryDate === yesterday),

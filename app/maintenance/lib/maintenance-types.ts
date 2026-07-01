@@ -28,6 +28,8 @@ export type WorkOrder = {
   category: WorkOrderCategory | null;
   item: string | null;
   createdBy: string | null;
+  /** UI-only label resolved from team member first name */
+  createdByLabel?: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -75,6 +77,8 @@ export type PmTile = {
   estimatedMinutes: number | null;
   lastCompletedAt: string | null;
   lastCompletedBy: string | null;
+  /** UI-only label resolved from team member first name */
+  lastCompletedByLabel?: string | null;
 };
 
 export type PmPriorityQueueItem = {

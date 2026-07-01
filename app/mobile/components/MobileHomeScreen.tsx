@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { signOutAndRedirect } from "@/app/lib/auth";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import type { MobileModuleKey } from "@/app/lib/role-permissions";
@@ -75,6 +76,7 @@ export default function MobileHomeScreen() {
   return (
     <div className="one-eyrie-mobile__inner">
       <header>
+        <OneEyrieWordmark className="one-eyrie-wordmark--mobile" />
         <h1 className="one-eyrie-mobile-heading">Field Operations</h1>
         <p className="one-eyrie-mobile-subheading">Choose a module to get started.</p>
       </header>

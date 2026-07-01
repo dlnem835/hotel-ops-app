@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { redirectToLogin } from "@/app/lib/auth";
 import {
   addPassOnReply,
+  fetchTeamMembers,
   formatDateTime,
   markPassOnAsViewed,
   PassOnEntry,
   resolveCurrentUserName,
+  resolvePassOnAuthorDisplay,
 } from "./lib/pass-on-shared";
 import { priorityClassName } from "./lib/pass-on-priority";
 
@@ -21,9 +23,11 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
 
   useEffect(() => {
     void resolveCurrentUserName().then(setCurrentUserName);
+    void fetchTeamMembers().then(setTeamMembers).catch(() => undefined);
     void markPassOnAsViewed(entry.id);
   }, [entry.id]);
 
@@ -74,7 +78,7 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
         <span className={priorityClassName(entry.priority || "Normal")}>
           {entry.priority || "Normal"}
         </span>
-        <span>{entry.author || "Unknown"}</span>
+        <span>{resolvePassOnAuthorDisplay(teamMembers, entry.author)}</span>
         <span>{formatDateTime(entry.created_at)}</span>
       </div>
 
@@ -96,7 +100,8 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
           {replies.map((reply) => (
             <div key={reply.id} className="one-eyrie-mobile-reply">
               <p className="one-eyrie-mobile-reply__text">
-                <strong>{reply.reply_author}:</strong> {reply.reply_message}
+                <strong>{resolvePassOnAuthorDisplay(teamMembers, reply.reply_author)}:</strong>{" "}
+                {reply.reply_message}
               </p>
             </div>
           ))}

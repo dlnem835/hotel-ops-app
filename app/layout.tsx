@@ -6,6 +6,7 @@ import RoleAccessProvider from "./components/RoleAccessProvider";
 import RoleRouteGuard from "./components/RoleRouteGuard";
 import "./globals.css";
 import "./one-eyrie-shell.css";
+import "./components/one-eyrie-modal.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

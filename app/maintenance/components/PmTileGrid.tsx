@@ -25,7 +25,9 @@ function PmCompletionHistory({ tile }: { tile: PmTile }) {
         {formatPmCompletionDate(tile.lastCompletedAt)}
       </span>
       {tile.lastCompletedBy && (
-        <span style={{ display: "block" }}>by {tile.lastCompletedBy}</span>
+        <span style={{ display: "block" }}>
+          by {tile.lastCompletedByLabel || tile.lastCompletedBy}
+        </span>
       )}
     </span>
   );

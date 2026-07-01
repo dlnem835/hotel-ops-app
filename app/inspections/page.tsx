@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { mapMembersToAssociateOptions } from "@/app/lib/member-display-name";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
@@ -167,22 +168,7 @@ export default function InspectionsPage() {
         );
       }
 
-      setAssociates(
-        (membersRes.data || []).map(
-          (member: {
-            id: number;
-            first_name?: string;
-            last_name?: string;
-            username?: string;
-          }) => ({
-            id: String(member.id),
-            name:
-              member.username ||
-              `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-              "Unknown",
-          })
-        )
-      );
+      setAssociates(mapMembersToAssociateOptions(membersRes.data || []));
     }
 
     void init();

@@ -11,6 +11,7 @@ import InspectionCategorySection from "../../components/InspectionCategorySectio
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { useIsMobileInspectionLayout } from "../../lib/use-inspection-breakpoint";
 import "../../inspections-responsive.css";
+import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { calculateInspectionScore, formatInspectionScoreDisplay } from "../../lib/scoring";
 import { ItemResponseInput } from "../../lib/inspection-types";
 import { PropertyTemplateContent } from "../../standards/types";
@@ -128,21 +129,16 @@ export default function InspectionSessionPage() {
           .select("id, first_name, last_name, username")
           .in("id", memberIds);
 
-        const nameById = new Map<string, string>();
-        for (const member of members || []) {
-          nameById.set(
-            String(member.id),
-            member.username ||
-              `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-              "Unknown"
+        const nameById = buildMemberDisplayNameResolver(members || []);
+        if (result.session.inspector_id) {
+          setInspectorName(
+            nameById.displayForMemberId(result.session.inspector_id) || null
           );
         }
-
-        if (result.session.inspector_id) {
-          setInspectorName(nameById.get(String(result.session.inspector_id)) || null);
-        }
         if (result.session.associate_id) {
-          setAssociateName(nameById.get(String(result.session.associate_id)) || null);
+          setAssociateName(
+            nameById.displayForMemberId(result.session.associate_id) || null
+          );
         }
       }
 

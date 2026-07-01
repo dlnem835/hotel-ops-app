@@ -1,12 +1,10 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { PmPriorityQueueItem } from "../lib/maintenance-types";
 import { formatPmTileStatusLine } from "../lib/pm-urgency";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  forestOutlineHoverHandlers,
-  FOREST_OUTLINE_BUTTON,
-} from "@/app/settings/lib/settings-ui-interactions";
+import "@/app/components/dashboard-list-card.css";
 
 type Next3PmsPanelProps = {
   items: PmPriorityQueueItem[];
@@ -47,62 +45,34 @@ export default function Next3PmsPanel({ items, onStartPm }: Next3PmsPanelProps) 
           No urgent PMs right now. Preventive maintenance is current.
         </div>
       ) : (
-        items.map((item, index) => (
-          <div
-            key={`${item.assignmentId}-${item.nextDueDate}`}
-            style={{
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "10px",
-              padding: "12px",
-              background: ONE_EYRIE.surfacePanel,
-            }}
-          >
+        <div className="dashboard-list-panel__rows">
+          {items.map((item, index) => (
             <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "10px",
-                alignItems: "flex-start",
+              key={`${item.assignmentId}-${item.nextDueDate}`}
+              role="button"
+              tabIndex={0}
+              className="dashboard-list-card"
+              onClick={() => onStartPm(item)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onStartPm(item);
+                }
               }}
             >
-              <div>
-                <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
+              <div className="dashboard-list-card__body">
+                <div className="dashboard-list-card__title">
                   {index + 1}. {item.templateName}
                 </div>
-                <div
-                  style={{
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "12px",
-                    marginTop: "6px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {areaLabel(item)}
-                </div>
-                <div
-                  style={{
-                    color: ONE_EYRIE.textSubtle,
-                    fontSize: "12px",
-                    marginTop: "4px",
-                  }}
-                >
-                  {formatPmTileStatusLine(
-                    item.urgency,
-                    item.nextDueDate
-                  )}
+                <div className="dashboard-list-card__location">{areaLabel(item)}</div>
+                <div className="dashboard-list-card__meta">
+                  {formatPmTileStatusLine(item.urgency, item.nextDueDate)}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onStartPm(item)}
-                style={FOREST_OUTLINE_BUTTON}
-                {...forestOutlineHoverHandlers()}
-              >
-                Start PM
-              </button>
+              <ChevronRight size={18} aria-hidden className="dashboard-list-card__chevron" />
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );

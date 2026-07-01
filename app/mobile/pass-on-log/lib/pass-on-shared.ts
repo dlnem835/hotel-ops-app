@@ -1,4 +1,5 @@
 import { getClientSession } from "@/app/lib/auth";
+import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { supabase } from "@/app/supabaseClient";
 
 export type PassOnReply = {
@@ -224,11 +225,15 @@ export function memberDisplayName(
 ): string {
   const member = members.find((row) => row.auth_user_id === authUserId);
   if (!member) return "Team member";
-  return (
-    member.username ||
-    `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-    "Team member"
-  );
+  return buildMemberDisplayNameResolver(members).displayForAuthUserId(authUserId) || "Team member";
+}
+
+export function resolvePassOnAuthorDisplay(
+  members: TeamMember[],
+  storedAuthor: string | null | undefined
+): string {
+  if (!storedAuthor) return "Unknown";
+  return buildMemberDisplayNameResolver(members).resolveStoredValue(storedAuthor) || storedAuthor;
 }
 
 export { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";

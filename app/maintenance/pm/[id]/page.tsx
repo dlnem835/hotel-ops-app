@@ -18,6 +18,10 @@ import {
   pmSessionReturnPath,
 } from "../../lib/pm-session-return";
 import {
+  resolveMemberDisplayLabel,
+  useMemberDisplayNameResolver,
+} from "@/app/lib/use-member-display-name";
+import {
   forestHoverHandlers,
   goldHoverHandlers,
   PRIMARY_BUTTON,
@@ -62,6 +66,7 @@ export default function PmSessionPage() {
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
   >(undefined);
+  const memberResolver = useMemberDisplayNameResolver();
 
   useEffect(() => {
     async function load() {
@@ -80,11 +85,7 @@ export default function PmSessionPage() {
         .maybeSingle();
 
       if (teamMember) {
-        setCompletedBy(
-          [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
-            teamMember.username ||
-            null
-        );
+        setCompletedBy(teamMember.username || null);
       }
 
       const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
@@ -452,7 +453,9 @@ export default function PmSessionPage() {
                   }}
                 >
                   This PM was completed
-                  {completedBy ? ` by ${completedBy}` : ""}.
+                  {completedBy
+                    ? ` by ${resolveMemberDisplayLabel(memberResolver, completedBy)}`
+                    : ""}
                 </div>
               )}
             </>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { TodaysWorkCard } from "../lib/operational-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { SETTINGS_CARD_TRANSITION } from "@/app/settings/lib/settings-ui-interactions";
 
 type TodaysWorkSectionProps = {
   pms: TodaysWorkCard;
@@ -26,20 +25,16 @@ function WorkCard({
   return (
     <Link
       href={href}
-      className="dashboard-clickable-card"
+      className="one-eyrie-list-row dashboard-clickable-card"
       style={{
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         textDecoration: "none",
         color: "inherit",
-        background: ONE_EYRIE.surface,
-        border: `1px solid ${ONE_EYRIE.border}`,
-        borderRadius: "14px",
         padding: "20px 22px",
         minWidth: 0,
         minHeight: "108px",
-        transition: SETTINGS_CARD_TRANSITION,
       }}
     >
       <div

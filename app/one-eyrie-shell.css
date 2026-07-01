@@ -3,21 +3,44 @@
   flex-shrink: 0;
   border-right: 1px solid #2a2a2a;
   background: #211f1b;
-  padding: 28px 18px;
+  padding: 24px 18px 28px;
 }
 
 .one-eyrie-logo-block {
-  margin-bottom: 32px;
+  margin-bottom: 14px;
 }
 
 .one-eyrie-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: #c8a96a;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.32em;
-  line-height: 1.2;
+  letter-spacing: 0.28em;
+  line-height: 1.25;
   text-align: center;
   text-transform: uppercase;
+}
+
+.one-eyrie-wordmark__line {
+  display: block;
+}
+
+.one-eyrie-wordmark__line--second {
+  margin-top: 2px;
+}
+
+.one-eyrie-wordmark--sidebar {
+  align-items: flex-start;
+  font-size: 18px;
+  letter-spacing: 0.28em;
+  padding-left: 16px;
+  text-align: left;
+}
+
+.one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--second {
+  margin-left: 0.4em;
 }
 
 .one-eyrie-wordmark--login {

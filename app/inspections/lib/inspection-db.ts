@@ -19,6 +19,9 @@ import {
   parsePeriod,
 } from "./period-utils";
 import { buildMtdPriorityQueue, buildPriorityQueue, SummaryRow } from "./priority-queue";
+import {
+  fetchMemberDisplayNameResolver,
+} from "@/app/lib/member-display-name";
 import { programMatchesDashboard, resolveInspectionProgram } from "./program-map";
 import {
   calculateRpmCycleCompliance,
@@ -224,16 +227,10 @@ async function loadMemberNames(
   const members = new Map<string, string>();
   if (memberIds.length === 0) return members;
 
-  const { data: teamRows } = await supabase
-    .from("team_members")
-    .select("id, first_name, last_name, username")
-    .in("id", memberIds);
+  const resolver = await fetchMemberDisplayNameResolver(supabase);
 
-  for (const member of teamRows || []) {
-    const name =
-      member.username ||
-      `${member.first_name || ""} ${member.last_name || ""}`.trim();
-    members.set(String(member.id), name || "Unknown");
+  for (const id of memberIds) {
+    members.set(id, resolver.displayForMemberId(id) || "Unknown");
   }
 
   return members;
@@ -630,21 +627,7 @@ export async function fetchRoomHistory(
   }
 
   const memberIds = [...inspectorIds, ...associateIds];
-  const members = new Map<string, string>();
-
-  if (memberIds.length > 0) {
-    const { data: teamRows } = await supabase
-      .from("team_members")
-      .select("id, first_name, last_name, username")
-      .in("id", memberIds);
-
-    for (const member of teamRows || []) {
-      const name =
-        member.username ||
-        `${member.first_name || ""} ${member.last_name || ""}`.trim();
-      members.set(String(member.id), name || "Unknown");
-    }
-  }
+  const members = await loadMemberNames(supabase, memberIds);
 
   const sessionIds = limitedSessions.map((row) => Number(row.id));
   const failedBySession = new Map<

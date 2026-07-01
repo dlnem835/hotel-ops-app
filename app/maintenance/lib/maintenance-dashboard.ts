@@ -18,11 +18,11 @@ import {
   isDateInCurrentMonth,
   PM_URGENCY_ORDER,
 } from "./pm-urgency";
-import {
-  sortWorkOrdersByPriority,
+import { sortWorkOrdersByPriority,
   normalizeWorkOrder,
   WorkOrderRow,
 } from "./work-order-db";
+import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 
 type OccurrenceRow = {
   id: number;
@@ -172,6 +172,22 @@ export async function buildMaintenanceDashboard(
     ((workOrderResult.data || []) as WorkOrderRow[]).map(normalizeWorkOrder)
   );
 
+  const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+
+  const workOrdersWithLabels = workOrders.map((order) => ({
+    ...order,
+    createdByLabel: order.createdBy
+      ? memberResolver.resolveStoredValue(order.createdBy)
+      : null,
+  }));
+
+  const pmTilesWithLabels = pmTiles.map((tile) => ({
+    ...tile,
+    lastCompletedByLabel: tile.lastCompletedBy
+      ? memberResolver.resolveStoredValue(tile.lastCompletedBy)
+      : null,
+  }));
+
   const metrics = buildMetrics(pmTiles, workOrders, completedByKey, now);
   const complianceSchedules = pmData.schedules
     .filter(
@@ -211,8 +227,8 @@ export async function buildMaintenanceDashboard(
   return {
     metrics,
     engineeringPerformance,
-    workOrders,
-    pmTiles,
+    workOrders: workOrdersWithLabels,
+    pmTiles: pmTilesWithLabels,
     pmPriorityQueue,
   };
 }

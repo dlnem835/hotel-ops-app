@@ -10,6 +10,10 @@ import { isMobilePath } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
+  ONE_EYRIE_MODAL_BOX,
+  ONE_EYRIE_MODAL_OVERLAY,
+} from "@/app/lib/one-eyrie-modal-styles";
+import {
   forestHoverHandlers,
   PRIMARY_BUTTON,
   secondaryHoverHandlers,
@@ -164,24 +168,15 @@ export default function InactivityGuard() {
       aria-modal="true"
       aria-labelledby="inactivity-warning-title"
       style={{
-        position: "fixed",
-        inset: 0,
+        ...ONE_EYRIE_MODAL_OVERLAY,
         zIndex: 10000,
-        background: "rgba(0, 0, 0, 0.72)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         padding: "20px",
       }}
     >
       <div
         style={{
+          ...ONE_EYRIE_MODAL_BOX,
           width: "min(420px, 100%)",
-          background: ONE_EYRIE.surface,
-          border: `1px solid ${ONE_EYRIE.gold}`,
-          borderRadius: "14px",
-          padding: "24px",
-          boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
         }}
       >
         <h2

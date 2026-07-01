@@ -93,7 +93,7 @@ export default function MobileWorkOrdersList({
               ) : null}
               <div className="one-eyrie-mobile-work-order-card__age">
                 {formatWorkOrderAge(order.createdAt)}
-                {order.createdBy ? ` · ${order.createdBy}` : ""}
+                {order.createdByLabel || order.createdBy ? ` · ${order.createdByLabel || order.createdBy}` : ""}
               </div>
             </div>
             <ChevronRight

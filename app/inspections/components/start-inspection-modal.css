@@ -121,34 +121,3 @@
   flex-direction: column;
   gap: 12px;
 }
-
-.inspections-priority-queue-panel__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.inspections-priority-queue-item {
-  border: 1px solid #3a352e;
-  border-radius: 10px;
-  padding: 12px;
-  background: #262320;
-}
-
-.inspections-priority-queue-item__meta {
-  margin-top: 6px;
-}
-
-@media (min-width: 768px) {
-  .inspections-priority-queue-item {
-    padding: 10px 12px;
-  }
-
-  .inspections-priority-queue-item__meta {
-    margin-top: 4px;
-  }
-
-  .inspections-priority-queue-panel__list {
-    gap: 6px;
-  }
-}

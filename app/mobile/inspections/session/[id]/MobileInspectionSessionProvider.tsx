@@ -11,6 +11,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/app/supabaseClient";
 import { ItemResponseInput } from "@/app/inspections/lib/inspection-types";
+import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import {
   mobileInspectionListHref,
   mobileInspectionListLabel,
@@ -160,21 +161,17 @@ export function MobileInspectionSessionProvider({
           .select("id, first_name, last_name, username")
           .in("id", memberIds);
 
-        const nameById = new Map<string, string>();
-        for (const member of members || []) {
-          nameById.set(
-            String(member.id),
-            member.username ||
-              `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-              "Unknown"
-          );
-        }
+        const nameResolver = buildMemberDisplayNameResolver(members || []);
 
         if (result.session.inspector_id) {
-          setInspectorName(nameById.get(String(result.session.inspector_id)) || null);
+          setInspectorName(
+            nameResolver.displayForMemberId(result.session.inspector_id) || null
+          );
         }
         if (result.session.associate_id) {
-          setAssociateName(nameById.get(String(result.session.associate_id)) || null);
+          setAssociateName(
+            nameResolver.displayForMemberId(result.session.associate_id) || null
+          );
         }
       }
 

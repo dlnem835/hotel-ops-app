@@ -16,6 +16,18 @@
   margin: 0 auto;
 }
 
+.one-eyrie-wordmark--mobile {
+  align-items: flex-start;
+  font-size: 15px;
+  letter-spacing: 0.21em;
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+.one-eyrie-wordmark--mobile .one-eyrie-wordmark__line--second {
+  margin-left: 0.4em;
+}
+
 .one-eyrie-mobile-heading {
   margin: 0 0 6px;
   font-size: 24px;
@@ -500,7 +512,7 @@
   margin-top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .one-eyrie-mobile-work-order-card {
@@ -510,15 +522,19 @@
   gap: 10px;
   padding: 14px 16px;
   border-radius: 12px;
-  border: 1px solid #3a352e;
+  border: 1px solid #484238;
   background: var(--mobile-home-tile-bg);
   color: #ffffff;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .one-eyrie-mobile-work-order-card:active {
   background: var(--mobile-home-tile-bg-active);
+  border-color: rgba(200, 169, 106, 0.28);
 }
 
 .one-eyrie-mobile-work-order-card__main {
@@ -732,75 +748,115 @@
 }
 
 .one-eyrie-mobile-pm-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.one-eyrie-mobile-pm-tile {
-  text-align: left;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  min-height: 132px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 16px;
+}
+
+.one-eyrie-mobile-pm-queue-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #484238;
+  border-left-width: 3px;
+  background: var(--mobile-home-tile-bg);
+  color: #ffffff;
+  text-align: left;
+  font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.one-eyrie-mobile-pm-tile:active:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+.one-eyrie-mobile-pm-queue-row:active:not(:disabled) {
+  background: var(--mobile-home-tile-bg-active);
+  border-color: rgba(200, 169, 106, 0.28);
 }
 
-.one-eyrie-mobile-pm-tile:disabled {
+.one-eyrie-mobile-pm-queue-row:disabled {
   cursor: wait;
 }
 
-.one-eyrie-mobile-pm-tile__name {
+.one-eyrie-mobile-pm-queue-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.one-eyrie-mobile-pm-queue-row__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.one-eyrie-mobile-pm-queue-row__name {
   font-weight: 800;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.35;
+  flex: 1;
+  min-width: 0;
 }
 
-.one-eyrie-mobile-pm-tile__area,
-.one-eyrie-mobile-pm-tile__frequency {
-  font-size: 11px;
-  opacity: 0.92;
-  line-height: 1.35;
-}
-
-.one-eyrie-mobile-pm-tile__status {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.one-eyrie-mobile-pm-tile__history {
-  display: block;
-  margin-top: auto;
-  font-size: 10px;
-  opacity: 0.82;
-  line-height: 1.35;
-}
-
-.one-eyrie-mobile-pm-tile__history span {
-  display: block;
-}
-
-.one-eyrie-mobile-pm-tile__opening {
+.one-eyrie-mobile-pm-queue-row__urgency {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
   font-size: 10px;
   font-weight: 700;
-  opacity: 0.95;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
 }
 
-@media (min-width: 420px) {
-  .one-eyrie-mobile-pm-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.one-eyrie-mobile-pm-queue-row__area,
+.one-eyrie-mobile-pm-queue-row__frequency {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.45;
+}
+
+.one-eyrie-mobile-pm-queue-row__status {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.one-eyrie-mobile-pm-queue-row__frequency {
+  margin-top: 4px;
+}
+
+.one-eyrie-mobile-pm-queue-row__history {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #8f8a82;
+  line-height: 1.45;
+}
+
+.one-eyrie-mobile-pm-queue-row__history span {
+  display: block;
+}
+
+.one-eyrie-mobile-pm-queue-row__opening {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c8a96a;
+}
+
+.one-eyrie-mobile-pm-queue-row__chevron {
+  flex-shrink: 0;
+  color: #8f8a82;
+  opacity: 0.75;
 }
 
 /* Room Inspections */
@@ -838,19 +894,35 @@
 .one-eyrie-mobile-inspections-room-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
 .one-eyrie-mobile-inspections-queue__row,
 .one-eyrie-mobile-inspections-room-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #1a1815;
-  border: 1px solid #3a352e;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--mobile-home-tile-bg);
+  border: 1px solid #484238;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.one-eyrie-mobile-inspections-queue__row:active,
+.one-eyrie-mobile-inspections-room-row:active {
+  background: var(--mobile-home-tile-bg-active);
+  border-color: rgba(200, 169, 106, 0.28);
 }
 
 .one-eyrie-mobile-inspections-queue__main,
@@ -863,7 +935,8 @@
 .one-eyrie-mobile-inspections-room-row__title {
   color: #ffffff;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .one-eyrie-mobile-inspections-queue__meta,
@@ -874,17 +947,10 @@
   line-height: 1.45;
 }
 
-.one-eyrie-mobile-inspections-queue__inspect {
+.one-eyrie-mobile-inspections-queue__chevron {
   flex-shrink: 0;
-  border: 1px solid #3d6b4f;
-  border-radius: 8px;
-  background: rgba(28, 52, 40, 0.55);
-  color: #b8d4c4;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  color: #8f8a82;
+  opacity: 0.75;
 }
 
 .one-eyrie-mobile-inspections-search {

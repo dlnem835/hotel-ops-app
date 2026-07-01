@@ -6,11 +6,12 @@ import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import {
-  APP_SHELL,
-  MAIN_CONTENT,
-  SECTION_SUBTITLE,
-  SECTION_TITLE,
-} from "@/app/lib/oneEyrieLayout";
+  ONE_EYRIE_MODAL_CLOSE_BUTTON,
+  ONE_EYRIE_MODAL_BOX,
+  ONE_EYRIE_MODAL_FOOTER,
+  ONE_EYRIE_MODAL_HEADER,
+  ONE_EYRIE_MODAL_OVERLAY,
+} from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
   PRIMARY_BUTTON,
@@ -19,6 +20,12 @@ import {
   SETTINGS_BUTTON_BASE,
   settingsCardHoverHandlers,
 } from "@/app/lib/oneEyrieButtons";
+import {
+  APP_SHELL,
+  MAIN_CONTENT,
+  SECTION_SUBTITLE,
+  SECTION_TITLE,
+} from "@/app/lib/oneEyrieLayout";
 import {
   ArrowLeft,
   Building2,
@@ -1162,38 +1169,11 @@ const emptyState: React.CSSProperties = {
   textAlign: "center",
 };
 
-const modalOverlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.72)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 999,
-};
-
-const modalBox: React.CSSProperties = {
-  width: "720px",
-  background: row,
-  border: `1px solid ${gold}`,
-  borderRadius: "16px",
-  boxShadow: "0 0 26px rgba(200,169,106,0.25)",
-  padding: "24px",
-};
-
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginBottom: "22px",
-};
-
-const closeButton: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  color: "#FFFFFF",
-  cursor: "pointer",
-};
+const modalOverlay = ONE_EYRIE_MODAL_OVERLAY;
+const modalBox = ONE_EYRIE_MODAL_BOX;
+const modalHeader = ONE_EYRIE_MODAL_HEADER;
+const closeButton = ONE_EYRIE_MODAL_CLOSE_BUTTON;
+const modalFooter = ONE_EYRIE_MODAL_FOOTER;
 
 const formStack: React.CSSProperties = {
   display: "flex",
@@ -1218,13 +1198,6 @@ const input: React.CSSProperties = {
   fontSize: "14px",
   fontWeight: 600,
   outline: "none",
-};
-
-const modalFooter: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "10px",
-  marginTop: "24px",
 };
 
 const secondaryButton: React.CSSProperties = {

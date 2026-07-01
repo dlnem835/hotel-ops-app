@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import { formatPmCompletionDate } from "@/app/maintenance/lib/pm-urgency";
@@ -22,10 +23,12 @@ function PmCompletionHistory({ tile }: { tile: PmTile }) {
   }
 
   return (
-    <span className="one-eyrie-mobile-pm-tile__history">
+    <span className="one-eyrie-mobile-pm-queue-row__history">
       <span>Last completed:</span>
       <span>{formatPmCompletionDate(tile.lastCompletedAt)}</span>
-      {tile.lastCompletedBy ? <span>by {tile.lastCompletedBy}</span> : null}
+      {tile.lastCompletedBy ? (
+        <span>by {tile.lastCompletedByLabel || tile.lastCompletedBy}</span>
+      ) : null}
     </span>
   );
 }
@@ -175,24 +178,50 @@ export default function MobilePmGridSection() {
                 <button
                   key={tile.key}
                   type="button"
-                  className="one-eyrie-mobile-pm-tile"
+                  className="one-eyrie-mobile-pm-queue-row"
                   disabled={Boolean(startingKey)}
                   style={{
-                    background: style.background,
-                    borderColor: style.border,
-                    color: style.color,
+                    borderLeftColor: style.border,
                     opacity: startingKey && !isStarting ? 0.55 : 1,
                   }}
                   onClick={() => void handleOpenPm(tile)}
                 >
-                  <div className="one-eyrie-mobile-pm-tile__name">{tile.templateName}</div>
-                  <div className="one-eyrie-mobile-pm-tile__area">{pmAreaLabel(tile)}</div>
-                  <div className="one-eyrie-mobile-pm-tile__status">{tile.dueStatusLine}</div>
-                  <div className="one-eyrie-mobile-pm-tile__frequency">{tile.frequencyLabel}</div>
-                  <PmCompletionHistory tile={tile} />
-                  {isStarting ? (
-                    <div className="one-eyrie-mobile-pm-tile__opening">Opening…</div>
-                  ) : null}
+                  <div className="one-eyrie-mobile-pm-queue-row__main">
+                    <div className="one-eyrie-mobile-pm-queue-row__top">
+                      <div className="one-eyrie-mobile-pm-queue-row__name">
+                        {tile.templateName}
+                      </div>
+                      <span
+                        className="one-eyrie-mobile-pm-queue-row__urgency"
+                        style={{
+                          background: style.background,
+                          borderColor: style.border,
+                          color: style.color,
+                        }}
+                      >
+                        {tile.dueLabel}
+                      </span>
+                    </div>
+                    <div className="one-eyrie-mobile-pm-queue-row__area">{pmAreaLabel(tile)}</div>
+                    <div
+                      className="one-eyrie-mobile-pm-queue-row__status"
+                      style={{ color: style.color }}
+                    >
+                      {tile.dueStatusLine}
+                    </div>
+                    <div className="one-eyrie-mobile-pm-queue-row__frequency">
+                      {tile.frequencyLabel}
+                    </div>
+                    <PmCompletionHistory tile={tile} />
+                    {isStarting ? (
+                      <div className="one-eyrie-mobile-pm-queue-row__opening">Opening…</div>
+                    ) : null}
+                  </div>
+                  <ChevronRight
+                    size={18}
+                    aria-hidden
+                    className="one-eyrie-mobile-pm-queue-row__chevron"
+                  />
                 </button>
               );
             })}

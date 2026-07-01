@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import {
+  ONE_EYRIE_MODAL_CLOSE_BUTTON,
+  ONE_EYRIE_MODAL_BOX,
+  ONE_EYRIE_MODAL_HEADER,
+  ONE_EYRIE_MODAL_OVERLAY,
+} from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
   goldHoverHandlers,
@@ -84,11 +91,7 @@ export default function MaintenancePage() {
         .maybeSingle();
 
       if (teamMember) {
-        const name =
-          [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
-          teamMember.username ||
-          null;
-        setCreatedByName(name);
+        setCreatedByName(teamMember.username || null);
       }
 
       await loadDashboard();
@@ -291,32 +294,26 @@ export default function MaintenancePage() {
 
         {selectedWorkOrder && (
           <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.75)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 999,
-              padding: "16px",
-            }}
+            style={ONE_EYRIE_MODAL_OVERLAY}
             onClick={() => setSelectedWorkOrder(null)}
           >
             <div
-              style={{
-                width: "720px",
-                maxWidth: "100%",
-                background: ONE_EYRIE.row,
-                border: `1px solid ${ONE_EYRIE.border}`,
-                borderRadius: "14px",
-                padding: "26px",
-              }}
+              style={{ ...ONE_EYRIE_MODAL_BOX, width: "720px", maxWidth: "100%" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 style={{ margin: "0 0 10px", color: ONE_EYRIE.text }}>
-                {selectedWorkOrder.subject}
-              </h2>
+              <div style={ONE_EYRIE_MODAL_HEADER}>
+                <h2 style={{ margin: 0, color: ONE_EYRIE.text }}>
+                  {selectedWorkOrder.subject}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSelectedWorkOrder(null)}
+                  style={ONE_EYRIE_MODAL_CLOSE_BUTTON}
+                  aria-label="Close"
+                >
+                  <X size={22} />
+                </button>
+              </div>
               <div
                 style={{
                   color: ONE_EYRIE.textMuted,

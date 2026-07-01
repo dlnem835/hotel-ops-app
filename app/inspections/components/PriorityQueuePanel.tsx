@@ -1,12 +1,10 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { PriorityQueueItem } from "../lib/inspection-types";
 import { formatInspectionAgeLabel } from "../lib/inspection-age";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  forestOutlineHoverHandlers,
-  FOREST_OUTLINE_BUTTON,
-} from "@/app/settings/lib/settings-ui-interactions";
+import "@/app/components/dashboard-list-card.css";
 
 type PriorityQueuePanelProps = {
   items: PriorityQueueItem[];
@@ -47,44 +45,28 @@ export default function PriorityQueuePanel({
           No priority rooms right now. All guest rooms are current.
         </div>
       ) : (
-        <div className="inspections-priority-queue-panel__list">
+        <div className="dashboard-list-panel__rows">
           {items.map((item, index) => (
             <div
               key={item.areaId}
-              className="inspections-priority-queue-item"
+              role="button"
+              tabIndex={0}
+              className="dashboard-list-card"
+              onClick={() => onInspectRoom(item.areaId)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onInspectRoom(item.areaId);
+                }
+              }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "10px",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div>
-                  <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "14px" }}>
-                    {index + 1}. Room {item.name}
-                  </div>
-                  <div
-                    className="inspections-priority-queue-item__meta"
-                    style={{
-                      color: ONE_EYRIE.textMuted,
-                      fontSize: "12px",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {statusLine(item)}
-                  </div>
+              <div className="dashboard-list-card__body">
+                <div className="dashboard-list-card__title">
+                  {index + 1}. Room {item.name}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onInspectRoom(item.areaId)}
-                  style={FOREST_OUTLINE_BUTTON}
-                  {...forestOutlineHoverHandlers()}
-                >
-                  Inspect
-                </button>
+                <div className="dashboard-list-card__meta">{statusLine(item)}</div>
               </div>
+              <ChevronRight size={18} aria-hidden className="dashboard-list-card__chevron" />
             </div>
           ))}
         </div>

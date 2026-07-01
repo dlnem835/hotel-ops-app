@@ -1,0 +1,103 @@
+/**
+ * One Eyrie desktop modal shell — matches Settings “New Team Member”.
+ * Import globally; add .one-eyrie-modal + .one-eyrie-modal-overlay on dialog roots.
+ * Desktop-only shell overrides for shared modals also used on mobile routes.
+ */
+
+.one-eyrie-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.one-eyrie-modal {
+  background: #302d28;
+  border: 1px solid #c8a96a;
+  border-radius: 16px;
+  box-shadow: 0 0 26px rgba(200, 169, 106, 0.25);
+  color: #ffffff;
+}
+
+.one-eyrie-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.one-eyrie-modal__header-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.one-eyrie-modal__title {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.one-eyrie-modal__close {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.one-eyrie-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+@media (min-width: 769px) {
+  .work-order-modal-overlay.one-eyrie-modal-overlay {
+    background: rgba(0, 0, 0, 0.72);
+  }
+
+  .work-order-modal.one-eyrie-modal {
+    border: 1px solid #c8a96a;
+    border-radius: 16px;
+    box-shadow: 0 0 26px rgba(200, 169, 106, 0.25);
+  }
+
+  .work-order-modal.one-eyrie-modal .work-order-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .start-inspection-modal-overlay.one-eyrie-modal-overlay {
+    background: rgba(0, 0, 0, 0.72);
+  }
+
+  .start-inspection-modal.one-eyrie-modal {
+    border: 1px solid #c8a96a;
+    border-radius: 16px;
+    box-shadow: 0 0 26px rgba(200, 169, 106, 0.25);
+  }
+
+  .start-inspection-modal.one-eyrie-modal .start-inspection-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .one-eyrie-modal__close--desktop-only {
+    display: none;
+  }
+}

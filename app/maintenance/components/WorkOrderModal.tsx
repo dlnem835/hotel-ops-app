@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { forestHoverHandlers, PRIMARY_BUTTON } from "@/app/settings/lib/settings-ui-interactions";
 import { BuildingArea } from "@/app/settings/lib/buildings-types";
 import { WorkOrderInput, WorkOrderPriority } from "../lib/maintenance-types";
@@ -215,24 +216,34 @@ export default function WorkOrderModal({
   const submitDisabled = saving || uploadingPhoto;
 
   return (
-    <div className="work-order-modal-overlay" onClick={onClose}>
+    <div className="work-order-modal-overlay one-eyrie-modal-overlay" onClick={onClose}>
       <div
-        className="work-order-modal"
+        className="work-order-modal one-eyrie-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="work-order-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="work-order-modal__header">
-          <h2 id="work-order-modal-title" className="work-order-modal__title">
-            New Work Order
-          </h2>
-          <p className="work-order-modal__subtitle">
-            Guest-impacting maintenance issue
-            {initialValues?.source_module
-              ? ` · from ${initialValues.source_module}`
-              : ""}
-          </p>
+        <header className="work-order-modal__header one-eyrie-modal__header">
+          <div className="one-eyrie-modal__header-main">
+            <h2 id="work-order-modal-title" className="work-order-modal__title one-eyrie-modal__title">
+              New Work Order
+            </h2>
+            <p className="work-order-modal__subtitle">
+              Guest-impacting maintenance issue
+              {initialValues?.source_module
+                ? ` · from ${initialValues.source_module}`
+                : ""}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="one-eyrie-modal__close one-eyrie-modal__close--desktop-only"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={22} />
+          </button>
         </header>
 
         <div className="work-order-modal__content">

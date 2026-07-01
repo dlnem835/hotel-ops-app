@@ -12,6 +12,7 @@ import {
 } from "@/app/inspections/lib/inspection-types";
 import { templateMatchesDashboard } from "@/app/inspections/lib/program-map";
 import { daysSince, parseDashboardProgram } from "@/app/inspections/lib/period-utils";
+import { mapMembersToAssociateOptions } from "@/app/lib/member-display-name";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 
@@ -74,20 +75,7 @@ export async function fetchInspectionBootstrap(): Promise<InspectionBootstrap> {
       status: String(area.status),
     }));
 
-  const associates = (membersRes.data || []).map(
-    (member: {
-      id: number;
-      first_name?: string;
-      last_name?: string;
-      username?: string;
-    }) => ({
-      id: String(member.id),
-      name:
-        member.username ||
-        `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-        "Unknown",
-    })
-  );
+  const associates = mapMembersToAssociateOptions(membersRes.data || []);
 
   return {
     templates,

@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { forestHoverHandlers } from "@/app/settings/lib/settings-ui-interactions";
 import { FOREST } from "@/app/lib/oneEyrieColors";
 import { StartInspectionForm, StartInspectionFormProps } from "./StartInspectionPanel";
@@ -25,18 +26,30 @@ export default function StartInspectionModal({
     !formProps.selectedRoomId || !formProps.selectedTemplateId || starting;
 
   return (
-    <div className="start-inspection-modal-overlay" onClick={onClose}>
+    <div className="start-inspection-modal-overlay one-eyrie-modal-overlay" onClick={onClose}>
       <div
-        className="start-inspection-modal"
+        className="start-inspection-modal one-eyrie-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="start-inspection-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="start-inspection-modal__header">
-          <h2 id="start-inspection-modal-title" className="start-inspection-modal__title">
+        <header className="start-inspection-modal__header one-eyrie-modal__header">
+          <h2
+            id="start-inspection-modal-title"
+            className="start-inspection-modal__title one-eyrie-modal__title"
+          >
             Start Inspection
           </h2>
+          <button
+            type="button"
+            className="one-eyrie-modal__close"
+            onClick={onClose}
+            disabled={starting}
+            aria-label="Close"
+          >
+            <X size={22} />
+          </button>
         </header>
 
         <div className="start-inspection-modal__content">
