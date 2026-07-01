@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   DashboardPayload,
   InspectionPeriod,
@@ -315,11 +315,11 @@ export default function InspectionsPage() {
       : PERIOD_LABELS[period];
 
   return (
-    <main style={APP_SHELL}>
+    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Inspections" />
 
       <section
-        className="inspections-mobile-page-content"
+        className={`inspections-mobile-page-content ${MAIN_CONTENT_CLASS}`}
         style={MAIN_CONTENT}
       >
         <OneEyriePageHeader
@@ -415,10 +415,10 @@ export default function InspectionsPage() {
             <InspectionMetricCards metrics={dashboard.metrics} program={program} />
 
             <div
-              className="inspections-mobile-dashboard-grid"
+              className="inspections-mobile-dashboard-grid one-eyrie-split-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(0, 1.7fr) minmax(320px, 1fr)",
+                gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 1fr)",
                 gap: "16px",
                 alignItems: "start",
               }}

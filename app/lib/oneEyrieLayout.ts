@@ -5,6 +5,9 @@ import { ONE_EYRIE } from "./oneEyrieColors";
 export const ONE_EYRIE_FONT =
   "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
 
+export const APP_SHELL_CLASS = "one-eyrie-app-shell";
+export const MAIN_CONTENT_CLASS = "one-eyrie-main-content";
+
 export const APP_SHELL: React.CSSProperties = {
   minHeight: "100vh",
   display: "flex",
@@ -15,8 +18,10 @@ export const APP_SHELL: React.CSSProperties = {
 
 export const MAIN_CONTENT: React.CSSProperties = {
   flex: 1,
+  minWidth: 0,
   padding: "34px 40px",
   overflowX: "hidden",
+  overflowY: "auto",
 };
 
 export const PAGE_HEADER_ROW: React.CSSProperties = {
@@ -24,6 +29,7 @@ export const PAGE_HEADER_ROW: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "flex-start",
   marginBottom: "24px",
+  gap: "12px 16px",
 };
 
 export const PAGE_TITLE: React.CSSProperties = {

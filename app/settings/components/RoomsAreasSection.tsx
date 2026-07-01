@@ -887,7 +887,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
       <HotelPropertyInfoPanel inputStyle={input} />
 
-      <div style={statsRow}>
+      <div className="one-eyrie-settings-stats-row one-eyrie-settings-stats-row--4" style={statsRow}>
         <StatTile label="Total Locations" value={locationStats.total} />
         <StatTile label="Guest Rooms" value={locationStats.guestRooms} />
         <StatTile label="Public Areas" value={locationStats.publicAreas} />

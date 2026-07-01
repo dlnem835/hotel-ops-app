@@ -26,15 +26,8 @@ export default function OpenWorkOrdersSection({
         gap: "12px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "12px",
-        }}
-      >
-        <div>
+      <div className="one-eyrie-section-header-row">
+        <div className="one-eyrie-section-header-row__main">
           <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
             Work Order Checklist
           </div>

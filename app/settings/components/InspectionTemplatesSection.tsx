@@ -433,7 +433,10 @@ export default function InspectionTemplatesSection({
         Property Templates
       </div>
 
-      <div style={{ ...tableHeader, gridTemplateColumns: tableGrid }}>
+      <div
+        className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates"
+        style={{ ...tableHeader, gridTemplateColumns: undefined }}
+      >
         <div>Template</div>
         <div>Type</div>
         <div>Items</div>
@@ -458,7 +461,8 @@ export default function InspectionTemplatesSection({
           return (
             <div
               key={template.id}
-              style={{ ...tableRow, gridTemplateColumns: tableGrid }}
+              className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates"
+              style={{ ...tableRow, gridTemplateColumns: undefined }}
             >
               <div>
                 <div style={rowTitle}>{template.name}</div>

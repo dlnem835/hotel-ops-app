@@ -7,6 +7,7 @@ import RoleRouteGuard from "./components/RoleRouteGuard";
 import "./globals.css";
 import "./one-eyrie-shell.css";
 import "./components/one-eyrie-modal.css";
+import "./one-eyrie-desktop-responsive.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

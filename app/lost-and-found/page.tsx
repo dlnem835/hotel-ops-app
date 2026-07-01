@@ -7,7 +7,7 @@ import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Send, Eye, Edit2, SlidersHorizontal, Package, Check, X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
   ONE_EYRIE_MODAL_BOX,
@@ -180,10 +180,10 @@ setTeamMembers(allTeamMembers || []);
   }
 
   return (
-    <main style={APP_SHELL}>
+    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Lost & Found" />
 
-      <section style={MAIN_CONTENT}>
+      <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
         <OneEyriePageHeader
           title="Lost & Found"
           subtitle="Track, manage, and return guest items"
@@ -198,7 +198,7 @@ setTeamMembers(allTeamMembers || []);
         />
 
         {/* STATS */}
-        <div style={{ display: "flex", gap: "18px", marginBottom: "22px" }}>
+        <div className="one-eyrie-kpi-row" style={{ marginBottom: "22px" }}>
           <div style={cardStyle}>
             <div>
               <p style={cardTitle}>Ready to Ship</p>
@@ -237,21 +237,14 @@ setTeamMembers(allTeamMembers || []);
         </div>
 
         {/* ADD ITEM */}
-        <form
-          onSubmit={addItem}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 0.65fr 1fr .85fr 0.7fr auto",
-            gap: "10px",
-            marginBottom: "18px",
-          }}
-        >
-          <input name="item_name" placeholder="Item name" required style={inputStyle} />
-          <input name="room_number" placeholder="Room #" required style={inputStyle} />
+        <form onSubmit={addItem} className="one-eyrie-form-grid--lnf-add" style={{ marginBottom: "18px" }}>
+          <input name="item_name" placeholder="Item name" required className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle} />
+          <input name="room_number" placeholder="Room #" required className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle} />
           <input
             name="guest_last_name"
             placeholder="Guest Last Name"
             required
+            className="one-eyrie-field one-eyrie-field--lnf"
             style={inputStyle}
           />
          <input
@@ -260,10 +253,11 @@ setTeamMembers(allTeamMembers || []);
   placeholder="Found By"
   value={foundby}
   onChange={(e) => setFoundBy(e.target.value)}
+  className="one-eyrie-field one-eyrie-field--lnf"
   style={inputStyle}
 /> 
 
-          <select name="status" defaultValue="Stored" style={inputStyle}>
+          <select name="status" defaultValue="Stored" className="one-eyrie-field one-eyrie-field--lnf" style={inputStyle}>
             <option>Stored</option>
             <option>Ready to be shipped</option>
             <option>Label sent</option>
@@ -281,13 +275,14 @@ setTeamMembers(allTeamMembers || []);
         </form>
 
         {/* SEARCH/FILTER */}
-<div style={{ display: "flex", gap: "12px", marginBottom: "18px", alignItems: "center" }}>
+        <div className="one-eyrie-toolbar-row" style={{ marginBottom: "18px" }}>
   <input
     type="text"
     placeholder="Search guest, room, item, or status..."
     value={searchterm}
     onChange={(e) => setSearchTerm(e.target.value)}
-    style={{ ...inputStyle, flex: 1 }}
+    className="one-eyrie-toolbar-row__grow one-eyrie-field one-eyrie-field--lnf"
+    style={inputStyle}
   />
 
   <details style={{ position: "relative" }}>
@@ -346,20 +341,13 @@ setTeamMembers(allTeamMembers || []);
   
 
         {/* TABLE */}
-<div
-  style={{
-    border: "1px solid #2A2A2A",
-    borderRadius: "14px",
-    overflow: "hidden",
-    background: "#111111",
-  }}
->
+        <div className="one-eyrie-table-panel">
   {!lostItems.length ? (
     <p style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
   ) : !filteredItems.length ? (
     <p style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
   ) : (
-    <table className="one-eyrie-table" style={{ fontSize: "13px", tableLayout: "auto" }}>
+    <table className="one-eyrie-table one-eyrie-table--fit one-eyrie-lnf-table" style={{ fontSize: "13px" }}>
       <thead>
         <tr
           style={{
@@ -371,16 +359,16 @@ setTeamMembers(allTeamMembers || []);
             letterSpacing: "0.6px",
           }}
         >
-          <th style={thStyle}></th>
-          <th style={thStyle}>Guest</th>
-          <th style={thStyle}>Location</th>
-          <th style={thStyle}>Item</th>
-          <th style={thStyle}>Status</th>
-          <th style={thStyle}>Send Label</th>
-          <th style={thStyle}>Date</th>
-          <th style={thStyle}>Comments</th>
-          <th style={thStyle}>Label</th>
-          <th style={{ ...thStyle, textAlign: "center" }}>View Details</th>
+          <th className="col-delete" style={thStyle}></th>
+          <th className="col-guest" style={thStyle}>Guest</th>
+          <th className="col-location" style={thStyle}>Location</th>
+          <th className="col-item" style={thStyle}>Item</th>
+          <th className="col-status" style={thStyle}>Status</th>
+          <th className="col-send-label one-eyrie-table__cell--wrap" style={thStyle}>Send Label</th>
+          <th className="col-date" style={thStyle}>Date</th>
+          <th className="col-comments one-eyrie-table__cell--wrap" style={thStyle}>Comments</th>
+          <th className="col-label" style={thStyle}>Label</th>
+          <th className="col-view one-eyrie-table__cell--actions" style={{ ...thStyle, textAlign: "center" }}>View</th>
         </tr>
       </thead>
 
@@ -394,7 +382,7 @@ setTeamMembers(allTeamMembers || []);
                 : "one-eyrie-table-row"
             }
           >
-            <td style={tdStyle}>
+            <td className="col-delete one-eyrie-table__cell--actions" style={tdStyle}>
   <button
     type="button"
     onClick={() => deleteItem(item.id)}
@@ -405,11 +393,17 @@ setTeamMembers(allTeamMembers || []);
   </button>
 </td>
 
-            <td style={tdStyle}>{item.guest_last_name}</td>
-            <td style={tdStyle}>{item.room_number}</td>
-            <td style={tdStyle}>{item.item_name}</td>
+            <td className="col-guest one-eyrie-truncate" style={tdStyle} title={item.guest_last_name}>
+              {item.guest_last_name}
+            </td>
+            <td className="col-location one-eyrie-truncate" style={tdStyle} title={item.room_number}>
+              {item.room_number}
+            </td>
+            <td className="col-item one-eyrie-truncate" style={tdStyle} title={item.item_name}>
+              {item.item_name}
+            </td>
 
-            <td style={tdStyle}>
+            <td className="col-status one-eyrie-table__cell--wrap" style={tdStyle}>
               <select
                 value={item.status}
                 onChange={(e) => updateStatus(item.id, e.target.value)}
@@ -419,7 +413,8 @@ setTeamMembers(allTeamMembers || []);
                   padding: "6px 10px",
                   fontWeight: "bold",
                   fontSize: "12px",
-                  width: "150px",
+                  width: "100%",
+                  maxWidth: "140px",
                 }}
               >
                 <option>Stored</option>
@@ -430,37 +425,36 @@ setTeamMembers(allTeamMembers || []);
               </select>
             </td>
 
-            <td style={tdStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
-                <SendLabelRequestForm itemId={item.id} />
-              </div>
+            <td className="col-send-label one-eyrie-table__cell--wrap" style={tdStyle}>
+              <SendLabelRequestForm itemId={item.id} />
             </td>
 
-            <td style={{ ...tdStyle, color: "#E5E7EB", whiteSpace: "nowrap" }}>
+            <td className="col-date" style={{ ...tdStyle, color: "#E5E7EB" }} title={item.created_at ? new Date(item.created_at).toLocaleDateString() : undefined}>
               {item.created_at
                 ? new Date(item.created_at).toLocaleDateString()
                 : "—"}
             </td>
 
-            <td style={tdStyle}>
+            <td className="col-comments one-eyrie-table__cell--wrap" style={tdStyle}>
               <input
                 type="text"
                 value={item.comments || ""}
                 placeholder="Add comment..."
                 onChange={(e) => updateComments(item.id, e.target.value)}
+                className="one-eyrie-field one-eyrie-field--lnf one-eyrie-field--compact"
                 style={{
                   ...inputStyle,
-                  width: "180px",
                   padding: "8px 10px",
                 }}
               />
             </td>
 
-            <td style={tdStyle}>
+            <td className="col-label one-eyrie-truncate" style={tdStyle}>
               {item.label_url ? (
                 <a
                   href={item.label_url}
                   target="_blank"
+                  title="View label"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -479,7 +473,7 @@ setTeamMembers(allTeamMembers || []);
               )}
             </td>
 
-            <td style={{ ...tdStyle, textAlign: "center" }}>
+            <td className="col-view one-eyrie-table__cell--actions" style={{ ...tdStyle, textAlign: "center" }}>
   <button
     type="button"
     onClick={() => setSelectedItem(item)}
@@ -600,12 +594,11 @@ const iconBox: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  background: "#0B0B0B",
-  color: "#FFFFFF",
-  border: "1px solid #2A2A2A",
-  borderRadius: "10px",
   padding: "11px 12px",
   outline: "none",
+  width: "100%",
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const thStyle: React.CSSProperties = {

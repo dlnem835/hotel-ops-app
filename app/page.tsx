@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
 import TodaysWorkSection from "./dashboard/components/TodaysWorkSection";
 import PastDueSummaryBar from "./dashboard/components/PastDueSummaryBar";
@@ -67,10 +67,10 @@ export default function DashboardPage() {
   }, [loadDashboard]);
 
   return (
-    <main style={APP_SHELL}>
+    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Dashboard" />
 
-      <section style={MAIN_CONTENT}>
+      <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
         <OneEyriePageHeader
           title="Dashboard"
           subtitle="What must be completed today?"
@@ -128,10 +128,10 @@ export default function DashboardPage() {
             <PastDueSummaryBar pastDue={dashboard.pastDue} />
 
             <div
-              className="dashboard-command-grid"
+              className="dashboard-command-grid one-eyrie-split-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(0, 1.55fr) minmax(300px, 1fr)",
+                gridTemplateColumns: "minmax(0, 1.55fr) minmax(280px, 1fr)",
                 gap: "16px",
                 alignItems: "start",
               }}

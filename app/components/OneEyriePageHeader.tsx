@@ -21,14 +21,19 @@ export default function OneEyriePageHeader({
   titleClassName,
 }: OneEyriePageHeaderProps) {
   return (
-    <div style={{ ...PAGE_HEADER_ROW, alignItems: align }}>
-      <div>
+    <div
+      className="one-eyrie-page-header"
+      style={{ ...PAGE_HEADER_ROW, alignItems: align }}
+    >
+      <div className="one-eyrie-page-header__title-block">
         <h1 className={titleClassName} style={PAGE_TITLE}>
           {title}
         </h1>
         {subtitle ? <p style={PAGE_SUBTITLE}>{subtitle}</p> : null}
       </div>
-      {actions ? <div>{actions}</div> : null}
+      {actions ? (
+        <div className="one-eyrie-page-header__actions">{actions}</div>
+      ) : null}
     </div>
   );
 }

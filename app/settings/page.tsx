@@ -22,7 +22,9 @@ import {
 } from "@/app/lib/oneEyrieButtons";
 import {
   APP_SHELL,
+  APP_SHELL_CLASS,
   MAIN_CONTENT,
+  MAIN_CONTENT_CLASS,
   SECTION_SUBTITLE,
   SECTION_TITLE,
 } from "@/app/lib/oneEyrieLayout";
@@ -418,8 +420,8 @@ async function saveItem() {
 
     return (
       <div style={sectionPanel}>
-        <div style={sectionToolbar}>
-          <div style={searchWrap}>
+        <div className="one-eyrie-settings-toolbar" style={sectionToolbar}>
+          <div className="one-eyrie-section-toolbar__search" style={searchWrap}>
             <Search
               size={18}
               color="#E5E7EB"
@@ -444,7 +446,10 @@ async function saveItem() {
           </button>
         </div>
 
-        <div style={tableHeader}>
+        <div
+          className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team"
+          style={tableHeader}
+        >
           <div>Name</div>
           <div>Job Title</div>
           <div>Username</div>
@@ -453,7 +458,11 @@ async function saveItem() {
         </div>
 
         {currentRows.map((item) => (
-          <div key={item.id} style={tableRow}>
+          <div
+            key={item.id}
+            className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team"
+            style={tableRow}
+          >
             <div>
               <div style={rowTitle}>{getName(item)}</div>
               {activeSection === "team" && (
@@ -724,10 +733,10 @@ async function saveItem() {
   }
 
     return (
-    <div style={APP_SHELL}>
+    <div style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Settings" />
 
-      <main style={MAIN_CONTENT}>
+      <main style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
         <OneEyriePageHeader
           title="Settings"
           subtitle="Configure One Eyrie platform settings"
@@ -1104,8 +1113,6 @@ const primaryButton: React.CSSProperties = {
 };
 
 const tableHeader: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1.4fr 1fr 1fr 0.7fr 0.7fr",
   color: gold,
   fontWeight: 800,
   fontSize: "13px",
@@ -1114,8 +1121,6 @@ const tableHeader: React.CSSProperties = {
 };
 
 const tableRow: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1.4fr 1fr 1fr 0.7fr 0.7fr",
   alignItems: "center",
   padding: "16px 14px",
   borderBottom: "1px solid #2A2A2A",

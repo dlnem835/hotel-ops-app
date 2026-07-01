@@ -92,6 +92,67 @@
   color: #111111;
 }
 
+/* ── Shared form fields (Pass-On, Lost & Found, etc.) ── */
+
+.one-eyrie-field {
+  background: #302d28;
+  color: #ffffff;
+  border: 1px solid #4a4a4a;
+  border-radius: 10px;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.one-eyrie-field:hover {
+  border-color: rgba(200, 169, 106, 0.4);
+}
+
+.one-eyrie-field:focus,
+.one-eyrie-field:focus-visible {
+  border-color: rgba(200, 169, 106, 0.65);
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.28),
+    0 0 12px rgba(200, 169, 106, 0.12);
+  outline: none;
+}
+
+.one-eyrie-field--compact {
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+/* Lost & Found — extra lift on dark table rows / black page bg */
+.one-eyrie-field--lnf {
+  background: #524e48;
+  border: 1px solid rgba(200, 169, 106, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+.one-eyrie-field--lnf::placeholder {
+  color: #b8b4ae;
+}
+
+.one-eyrie-field--lnf:hover {
+  background: #5a564f;
+  border-color: rgba(200, 169, 106, 0.58);
+}
+
+.one-eyrie-field--lnf:focus,
+.one-eyrie-field--lnf:focus-visible {
+  background: #5a564f;
+  border-color: rgba(200, 169, 106, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
 /* ── Shared list / table row interactions ── */
 
 .one-eyrie-list-row {
@@ -672,9 +733,16 @@
 .one-eyrie-pm-schedule-header,
 .one-eyrie-pm-schedule-row {
   display: grid;
-  grid-template-columns: 1.35fr 1fr 0.95fr 1.05fr 0.85fr auto;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(0, 0.85fr) auto;
   gap: 12px;
   align-items: center;
+}
+
+.one-eyrie-pm-schedule-header > *,
+.one-eyrie-pm-schedule-row > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .one-eyrie-pm-schedule-header {
@@ -895,9 +963,16 @@
 .one-eyrie-area-schedule-header,
 .one-eyrie-area-schedule-row {
   display: grid;
-  grid-template-columns: 36px 1.35fr 1fr 1fr 0.85fr auto;
+  grid-template-columns: 36px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.85fr) auto;
   gap: 12px;
   align-items: center;
+}
+
+.one-eyrie-area-schedule-header > *,
+.one-eyrie-area-schedule-row > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .one-eyrie-area-schedule-header {

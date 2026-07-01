@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
   ONE_EYRIE_MODAL_BOX,
@@ -183,11 +183,11 @@ export default function MaintenancePage() {
   }
 
   return (
-    <main style={APP_SHELL}>
+    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Maintenance" />
 
       <section
-        className="maintenance-mobile-page-content"
+        className={`maintenance-mobile-page-content ${MAIN_CONTENT_CLASS}`}
         style={MAIN_CONTENT}
       >
         <div
@@ -248,10 +248,10 @@ export default function MaintenancePage() {
             <MaintenanceMetricCards metrics={dashboard.metrics} />
 
             <div
-              className="maintenance-mobile-dashboard-grid"
+              className="maintenance-mobile-dashboard-grid one-eyrie-split-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(0, 1.7fr) minmax(320px, 1fr)",
+                gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 1fr)",
                 gap: "16px",
                 alignItems: "start",
               }}
@@ -395,12 +395,12 @@ export default function MaintenancePage() {
                 />
               </label>
               <div
+                className="one-eyrie-modal-footer--wrap"
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: "10px",
-                  flexWrap: "nowrap",
                   marginTop: "4px",
                 }}
               >

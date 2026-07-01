@@ -1,0 +1,446 @@
+/**
+ * Compact-desktop responsive layout (768px–1920px).
+ * Goal: no horizontal scroll on hotel front-desk monitors.
+ */
+
+/* ── App shell: sidebar + scrolling main column only ── */
+
+.one-eyrie-app-shell {
+  min-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+.one-eyrie-main-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1366px) {
+  .one-eyrie-main-content {
+    padding: 28px 24px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .one-eyrie-main-content {
+    padding: 24px 20px !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .one-eyrie-main-content {
+    padding: 20px 16px !important;
+  }
+}
+
+/* ── Page header ── */
+
+.one-eyrie-page-header {
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.one-eyrie-page-header__title-block {
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.one-eyrie-page-header__actions {
+  flex-shrink: 0;
+}
+
+/* ── Truncation helpers ── */
+
+.one-eyrie-truncate,
+.one-eyrie-truncate-block {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.one-eyrie-truncate-block {
+  display: block;
+}
+
+[title].one-eyrie-truncate,
+[title].one-eyrie-truncate-block {
+  cursor: default;
+}
+
+/* ── KPI / stat card rows ── */
+
+.one-eyrie-kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.one-eyrie-kpi-row > * {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+/* ── Toolbar / filter rows ── */
+
+.one-eyrie-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.one-eyrie-toolbar-row__grow {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.one-eyrie-toolbar-row__grow input,
+.one-eyrie-toolbar-row__grow .one-eyrie-search-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Responsive form grids ── */
+
+.one-eyrie-form-grid--lnf-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(72px, 0.55fr) minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 0.75fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.one-eyrie-form-grid--lnf-add input,
+.one-eyrie-form-grid--lnf-add select,
+.one-eyrie-form-grid--lnf-add button {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.one-eyrie-form-grid--pass-on {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(110px, 130px);
+  gap: 12px;
+}
+
+.one-eyrie-form-grid--pass-on > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.one-eyrie-form-grid--pass-on__message {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1280px) {
+  .one-eyrie-form-grid--lnf-add {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .one-eyrie-form-grid--lnf-add button[type="submit"] {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .one-eyrie-form-grid--pass-on {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .one-eyrie-form-grid--pass-on button[type="submit"] {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 900px) {
+  .one-eyrie-form-grid--lnf-add,
+  .one-eyrie-form-grid--pass-on {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Split main + sidebar grids (Dashboard, Inspections, Maintenance) ── */
+
+.one-eyrie-split-grid {
+  min-width: 0;
+}
+
+.one-eyrie-split-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 1320px) {
+  .dashboard-command-grid,
+  .inspections-mobile-dashboard-grid,
+  .maintenance-mobile-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 1fr) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .dashboard-command-grid,
+  .inspections-mobile-dashboard-grid,
+  .maintenance-mobile-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-command-sidebar,
+  .inspections-mobile-dashboard-sidebar,
+  .maintenance-mobile-dashboard-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 1280px) {
+  .inspections-rpm-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .inspections-mobile-rankings-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Settings data grids ── */
+
+.one-eyrie-settings-data-grid {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.one-eyrie-settings-data-grid > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.one-eyrie-settings-data-grid--team {
+  grid-template-columns:
+    minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+}
+
+.one-eyrie-settings-data-grid--templates {
+  grid-template-columns:
+    minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.1fr);
+}
+
+.one-eyrie-settings-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.one-eyrie-settings-stats-row {
+  display: grid;
+  gap: 12px;
+}
+
+.one-eyrie-settings-stats-row--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .one-eyrie-settings-stats-row--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .one-eyrie-settings-stats-row--4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Pass-On entry rows ── */
+
+.one-eyrie-pass-on-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.one-eyrie-pass-on-toolbar .one-eyrie-pass-on-search-wrap {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.one-eyrie-pass-on-entry-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.one-eyrie-pass-on-entry-subject {
+  flex: 1 1 160px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.one-eyrie-pass-on-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+  .pass-on-expanded-actions {
+    width: auto !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* ── Responsive tables (fit container, ellipsis) ── */
+
+.one-eyrie-table-panel {
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #111111;
+  max-width: 100%;
+}
+
+.one-eyrie-table--fit {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.one-eyrie-table--fit th,
+.one-eyrie-table--fit td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.one-eyrie-table--fit .one-eyrie-table__cell--wrap,
+.one-eyrie-table--fit .one-eyrie-table__cell--actions {
+  overflow: visible;
+  white-space: normal;
+}
+
+.one-eyrie-table--fit .one-eyrie-table__cell--actions {
+  text-align: center;
+}
+
+.one-eyrie-table--fit select,
+.one-eyrie-table--fit input {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Lost & Found column widths — important cols get more space */
+.one-eyrie-lnf-table .col-delete { width: 40px; }
+.one-eyrie-lnf-table .col-guest { width: 11%; }
+.one-eyrie-lnf-table .col-location { width: 7%; }
+.one-eyrie-lnf-table .col-item { width: 16%; }
+.one-eyrie-lnf-table .col-status { width: 13%; }
+.one-eyrie-lnf-table .col-send-label { width: 15%; }
+.one-eyrie-lnf-table .col-date { width: 9%; }
+.one-eyrie-lnf-table .col-comments { width: 12%; }
+.one-eyrie-lnf-table .col-label { width: 7%; }
+.one-eyrie-lnf-table .col-view { width: 44px; }
+
+@media (max-width: 1320px) {
+  .one-eyrie-lnf-table .col-label {
+    display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  .one-eyrie-lnf-table .col-comments {
+    display: none;
+  }
+
+  .one-eyrie-lnf-table .col-send-label {
+    width: 18%;
+  }
+}
+
+@media (max-width: 1080px) {
+  .one-eyrie-lnf-table .col-date {
+    display: none;
+  }
+}
+
+/* ── Send label inline form ── */
+
+.one-eyrie-send-label-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.one-eyrie-send-label-form input {
+  flex: 1 1 72px;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100%;
+}
+
+.one-eyrie-send-label-form button {
+  flex-shrink: 0;
+}
+
+/* ── Section toolbars with search ── */
+
+.one-eyrie-section-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.one-eyrie-section-toolbar__search {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 180px;
+  max-width: 100%;
+}
+
+.one-eyrie-section-toolbar__search input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Modal footers ── */
+
+.one-eyrie-modal-footer--wrap {
+  flex-wrap: wrap;
+  display: flex;
+}
+
+/* ── Open work orders header ── */
+
+.one-eyrie-section-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.one-eyrie-section-header-row__main {
+  min-width: 0;
+  flex: 1 1 160px;
+}

@@ -2,21 +2,20 @@
 
 import { supabase } from "./supabaseClient";
 
-export default function SendLabelRequestForm({ 
-  itemId, 
-  id, 
-}: { 
+export default function SendLabelRequestForm({
+  itemId,
+  id,
+}: {
   itemId: number;
-id?: string; }) {
-  async function sendEmail(e: any) {
+  id?: string;
+}) {
+  async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const form = e.target as HTMLFormElement;
+    const form = e.currentTarget;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
 
     const link = `${window.location.origin}/label?id=${itemId}`;
-
-    console.log("ITEM ID BEING SENT:", itemId); // 👈 DEBUG
 
     const res = await fetch("/api/send-email", {
       method: "POST",
@@ -30,66 +29,47 @@ id?: string; }) {
       }),
     });
 
-    const data = await res.json();
-
     if (res.ok) {
-  await supabase
-  .from("lost_items")
-  .update({
-    status: "Label sent",
-    label_sent_at: new Date().toISOString(),
-  })
-  .eq("id", itemId);
+      await supabase
+        .from("lost_items")
+        .update({
+          status: "Label sent",
+          label_sent_at: new Date().toISOString(),
+        })
+        .eq("id", itemId);
 
-  alert("✅ Email sent successfully!");
-  window.location.reload();
-} else {
-  alert("❌ Error sending email");
-}
+      alert("✅ Email sent successfully!");
+      window.location.reload();
+    } else {
+      alert("❌ Error sending email");
+    }
   }
 
   return (
-   <form
-  onSubmit={sendEmail}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "6px", // tighter spacing
-  }}
->
-  <input
-    name="email"
-    type="email"
-    placeholder="Guest email"
-    required
-    style={{
-      background: "#0B0B0B",
-      color: "#fff",
-      border: "1px solid #2A2A2A",
-      borderRadius: "8px",
-      padding: "6px 8px", // smaller
-      fontSize: "12px",
-      width: "180px", // tighter width
-      outline: "none",
-    }}
-  />
+    <form onSubmit={sendEmail} className="one-eyrie-send-label-form">
+      <input
+        name="email"
+        type="email"
+        placeholder="Guest email"
+        required
+        className="one-eyrie-field one-eyrie-field--lnf one-eyrie-field--compact"
+      />
 
-  <button
-    type="submit"
-    style={{
-      background: "#C8A96A", // clean blue
-      color: "#111",
-      border: "none",
-      borderRadius: "8px",
-      padding: "6px 10px",
-      fontSize: "12px",
-      fontWeight: "bold",
-      cursor: "pointer",
-    }}
-  >
-    Send
-  </button>
-</form>
- 
+      <button
+        type="submit"
+        style={{
+          background: "#C8A96A",
+          color: "#111",
+          border: "none",
+          borderRadius: "8px",
+          padding: "6px 10px",
+          fontSize: "12px",
+          fontWeight: "bold",
+          cursor: "pointer",
+        }}
+      >
+        Send
+      </button>
+    </form>
   );
 }
