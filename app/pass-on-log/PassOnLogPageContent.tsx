@@ -29,8 +29,6 @@ import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeader
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   forestHoverHandlers,
-  forestOutlineHoverHandlers,
-  FOREST_OUTLINE_BUTTON,
   PRIMARY_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import WorkOrderModal, {
@@ -76,8 +74,11 @@ export default function PassOnLogPageContent() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
   const [editingMessage, setEditingMessage] = useState("");
+  const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
+  const [editingReplyMessage, setEditingReplyMessage] = useState("");
   const [currentUserName, setCurrentUserName] = useState("Unknown");
   const [currentAuthUserId, setCurrentAuthUserId] = useState<string | null>(null);
+  const [canDeleteAnyPassOn, setCanDeleteAnyPassOn] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([])
 
   const memberResolver = useMemo(
@@ -90,7 +91,32 @@ export default function PassOnLogPageContent() {
     return memberResolver.resolveStoredValue(stored) || stored;
   }
 
+  function isAuthorMatch(storedAuthor: string | null | undefined) {
+    if (!storedAuthor || !currentUserName || currentUserName === "Unknown") {
+      return false;
+    }
+
+    const stored = storedAuthor.trim().toLowerCase();
+    const current = currentUserName.trim().toLowerCase();
+    if (stored === current) return true;
+
+    return (
+      displayAuthor(storedAuthor).trim().toLowerCase() ===
+      displayAuthor(currentUserName).trim().toLowerCase()
+    );
+  }
+
+  function canDeletePassOnContent(storedAuthor: string | null | undefined) {
+    return canDeleteAnyPassOn || isAuthorMatch(storedAuthor);
+  }
+
  async function updateEntry(id: number) {
+  const entry = entries.find((item) => item.id === id);
+  if (!entry || !isAuthorMatch(entry.author)) {
+    alert("Only the author can edit this entry.");
+    return;
+  }
+
   const text = editingMessage.trim();
 
   console.log("Saving entry:", id, text);
@@ -100,10 +126,12 @@ export default function PassOnLogPageContent() {
     return;
   }
 
+  const editedAt = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("pass_on_log")
     .update({ message: text,
-    edited_at: new Date().toISOString(),
+    edited_at: editedAt,
      })
     .eq("id", id)
     .select();
@@ -122,12 +150,58 @@ export default function PassOnLogPageContent() {
 
   setEntries((prev) =>
     prev.map((entry) =>
-      entry.id === id ? { ...entry, message: text } : entry
+      entry.id === id ? { ...entry, message: text, edited_at: editedAt } : entry
     )
   );
 
   setEditingEntryId(null);
   setEditingMessage("");
+}
+
+async function updateReply(replyId: number) {
+  const replyEntry = entries
+    .flatMap((entry) => entry.pass_on_log_replies || [])
+    .find((reply) => reply.id === replyId);
+
+  if (!replyEntry || !isAuthorMatch(replyEntry.reply_author)) {
+    alert("Only the author can edit this reply.");
+    return;
+  }
+
+  const text = editingReplyMessage.trim();
+  if (!text) {
+    alert("Reply cannot be blank.");
+    return;
+  }
+
+  const editedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("pass_on_log_replies")
+    .update({
+      reply_message: text,
+      edited_at: editedAt,
+    })
+    .eq("id", replyId);
+
+  if (error) {
+    console.error("Reply update failed:", error);
+    alert(error.message);
+    return;
+  }
+
+  setEntries((prev) =>
+    prev.map((entry) => ({
+      ...entry,
+      pass_on_log_replies: (entry.pass_on_log_replies || []).map((reply: any) =>
+        reply.id === replyId
+          ? { ...reply, reply_message: text, edited_at: editedAt }
+          : reply
+      ),
+    }))
+  );
+
+  setEditingReplyId(null);
+  setEditingReplyMessage("");
 }
 
 
@@ -182,13 +256,19 @@ async function markAsViewed(entryId: number) {
 
     const { data: teamMember } = await supabase
       .from("team_members")
-      .select("first_name, last_name, username")
+      .select("first_name, last_name, username, job_title, is_administrator")
       .eq("auth_user_id", session.user.id)
       .single();
 
     if (teamMember) {
       setCurrentUserName(
         teamMember.username || "unknown"
+      );
+      const jobTitle = (teamMember.job_title || "").trim();
+      setCanDeleteAnyPassOn(
+        Boolean(teamMember.is_administrator) ||
+          jobTitle === "General Manager" ||
+          jobTitle === "Assistant General Manager"
       );
     }
 
@@ -288,13 +368,46 @@ setTeamMembers(allTeamMembers || []);
       },
     ]);
 
+    await markAsViewed(entryId);
+
     setReplyMessages((prev) => ({ ...prev, [entryId]: "" }));
     fetchEntries();
   }
 
   async function deleteEntry(id: number) {
+    const entry = entries.find((item) => item.id === id);
+    if (!entry || !canDeletePassOnContent(entry.author)) {
+      alert("Only the author or an administrator can delete this entry.");
+      return;
+    }
+
     if (!confirm("Delete this pass-on entry?")) return;
     await supabase.from("pass_on_log").delete().eq("id", id);
+    fetchEntries();
+  }
+
+  async function deleteReply(replyId: number) {
+    const reply = entries
+      .flatMap((entry) => entry.pass_on_log_replies || [])
+      .find((item) => item.id === replyId);
+
+    if (!reply || !canDeletePassOnContent(reply.reply_author)) {
+      alert("Only the author or an administrator can delete this reply.");
+      return;
+    }
+
+    if (!confirm("Delete this reply?")) return;
+
+    const { error } = await supabase
+      .from("pass_on_log_replies")
+      .delete()
+      .eq("id", replyId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
     fetchEntries();
   }
 
@@ -356,19 +469,6 @@ function dateHeader(dateString: string) {
             border-color: rgba(200,169,106,0.75) !important;
             box-shadow: 0 0 0 3px rgba(200,169,106,0.08);
           }
-
-          .reply-preview-box:hover {
-          border: 2px solid C8A96A !important;
-          box-shadow: 0 0 20px rgba(200,169,106,0.35);
-          transform: translateY(-1px);
-}  
-         .original-post-box:hover {
-  border-color: rgba(200,169,106,0.65) !important;
-  box-shadow: 0 0 12px rgba(200,169,106,0.15);
-}
-         .message-text-box:hover {
-         border-color: C8A96A !important;
-         box-shadow: 0 0 16px rgba(200,169,106,0.25);}
 
           .pass-on-message-row {
             display: flex;
@@ -695,32 +795,38 @@ function dateHeader(dateString: string) {
             </div>
 
             <div style={rowIcons}>
-              <button
-                type="button"
-                className="one-eyrie-icon-btn"
-                style={iconButton}
-                onClick={() => {
-  if (editingEntryId === entry.id) {
-    setEditingEntryId(null);
-    setEditingMessage("");
-  } else {
-    setEditingEntryId(entry.id);
-    setEditingMessage(entry.message || "");
-    setExpandedEntry(entry.id);
-  }
-  }}
->
-  <Edit2 size={14} />
-</button>
+              {isAuthorMatch(entry.author) ? (
+                <button
+                  type="button"
+                  className="one-eyrie-icon-btn"
+                  style={iconButton}
+                  onClick={() => {
+                    if (editingEntryId === entry.id) {
+                      setEditingEntryId(null);
+                      setEditingMessage("");
+                    } else {
+                      setEditingReplyId(null);
+                      setEditingReplyMessage("");
+                      setEditingEntryId(entry.id);
+                      setEditingMessage(entry.message || "");
+                      setExpandedEntry(entry.id);
+                    }
+                  }}
+                >
+                  <Edit2 size={14} />
+                </button>
+              ) : null}
 
-              <button
-                type="button"
-                className="one-eyrie-icon-btn"
-                onClick={() => deleteEntry(entry.id)}
-                style={iconButton}
-              >
-                <Trash2 size={14} />
-              </button>
+              {canDeletePassOnContent(entry.author) ? (
+                <button
+                  type="button"
+                  className="one-eyrie-icon-btn"
+                  onClick={() => deleteEntry(entry.id)}
+                  style={iconButton}
+                >
+                  <Trash2 size={14} />
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -730,18 +836,6 @@ function dateHeader(dateString: string) {
                 <div
                   className="original-post-box pass-on-message-text"
                   style={messageTextBox}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#C8A96A";
-                    e.currentTarget.style.boxShadow =
-                      "0 0 18px rgba(200,169,106,0.30)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderTopColor = "#2A2A2A";
-                    e.currentTarget.style.borderRightColor = "#2A2A2A";
-                    e.currentTarget.style.borderBottomColor = "#2A2A2A";
-                    e.currentTarget.style.borderLeftColor = gold;
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
                 >
                   {editingEntryId === entry.id ? (
                     <div style={{ width: "100%" }}>
@@ -837,26 +931,104 @@ function dateHeader(dateString: string) {
               {entry.pass_on_log_replies?.length > 0 && (
                 <div style={{ marginTop: "8px" }}>
                   {entry.pass_on_log_replies.map((reply: any) => (
-                      <div
-  key={reply.id}
-  className="reply-preview-box"
-  style={replyPreviewBox}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.borderColor = "#C8A96A";
-    e.currentTarget.style.boxShadow =
-      "0 0 12px rgba(200,169,106,0.15)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.borderColor = "#2A3345";
-    e.currentTarget.style.boxShadow = "none";
-  }}
->
-
-                      <strong>{displayAuthor(reply.reply_author)}:</strong>{" "}
-                      {reply.reply_message}
+                    <div
+                      key={reply.id}
+                      className="reply-preview-box"
+                      style={replyPreviewBox}
+                    >
+                      {editingReplyId === reply.id ? (
+                        <div style={{ width: "100%" }}>
+                          <textarea
+                            value={editingReplyMessage}
+                            onChange={(e) => setEditingReplyMessage(e.target.value)}
+                            className="one-eyrie-field"
+                            style={textareaStyle}
+                          />
+                          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                            <button
+                              type="button"
+                              style={replyPillButton}
+                              onClick={() => updateReply(reply.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              style={replyPillButton}
+                              onClick={() => {
+                                setEditingReplyId(null);
+                                setEditingReplyMessage("");
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            gap: "8px",
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div>
+                              <strong>{displayAuthor(reply.reply_author)}:</strong>{" "}
+                              {reply.reply_message}
+                            </div>
+                            {reply.edited_at ? (
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "#C8A96A",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                ✎ Edited {formatDateTime(reply.edited_at)}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: "4px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {isAuthorMatch(reply.reply_author) ? (
+                              <button
+                                type="button"
+                                className="one-eyrie-icon-btn"
+                                style={iconButton}
+                                onClick={() => {
+                                  setEditingEntryId(null);
+                                  setEditingMessage("");
+                                  setEditingReplyId(reply.id);
+                                  setEditingReplyMessage(reply.reply_message || "");
+                                }}
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                            ) : null}
+                            {canDeletePassOnContent(reply.reply_author) ? (
+                              <button
+                                type="button"
+                                className="one-eyrie-icon-btn"
+                                style={iconButton}
+                                onClick={() => deleteReply(reply.id)}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
-                </div> 
+                </div>
               )}
                {expandedReplyEntry === entry.id && (
   <div className="reply-input-wrap" style={replyInputWrap}>
@@ -885,30 +1057,6 @@ function dateHeader(dateString: string) {
     flexWrap: "wrap",
   }}
 >
-  <button
-    type="button"
-    onClick={() => {
-      setWorkOrderInitial({
-        subject: entry.subject,
-        description: entry.message,
-        priority: (entry.priority as "Normal" | "Important" | "Urgent") || "Normal",
-        source_module: "Pass-On Log",
-        source_record_id: String(entry.id),
-        source_note: entry.message,
-        created_by: currentUserName,
-      });
-      setWorkOrderModalOpen(true);
-    }}
-    style={{
-      ...FOREST_OUTLINE_BUTTON,
-      borderRadius: "999px",
-      padding: "8px 14px",
-      fontSize: "12px",
-    }}
-    {...forestOutlineHoverHandlers()}
-  >
-    Create Work Order
-  </button>
   <button
     type="button"
     onClick={() => addInlineReply(entry.id)}
@@ -1101,7 +1249,7 @@ const originalPostBox: React.CSSProperties = {
 const replyPreviewBox: React.CSSProperties = {
   background: "#0D0D0D",
   border: "1px solid #2A3345",
-  borderLeft: "3px solid #2A3345",
+  borderLeft: `3px solid ${gold}`,
   borderRadius: "8px",
   padding: "7px 10px",
   marginBottom: "5px",

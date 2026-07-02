@@ -43,7 +43,7 @@ export default function MobileInspectionSection({
   useEffect(() => {
     let mounted = true;
 
-    void fetchInspectionBootstrap()
+    void fetchInspectionBootstrap(program)
       .then((data) => {
         if (!mounted) return;
         setBootstrap(data);
@@ -57,7 +57,7 @@ export default function MobileInspectionSection({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [program]);
 
   useEffect(() => {
     if (!bootstrap) return;

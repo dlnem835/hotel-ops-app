@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { getInspectionAssociateFieldLabel } from "@/app/lib/role-permissions";
 import { templateMatchesDashboard } from "../lib/program-map";
 
 export type TemplateOption = {
@@ -137,7 +138,9 @@ export function StartInspectionForm({
       </label>
 
       <label className="start-inspection-form__field">
-        <span className="start-inspection-form__label">Associate</span>
+        <span className="start-inspection-form__label">
+          {getInspectionAssociateFieldLabel(program)}
+        </span>
         <select
           value={selectedAssociateId ?? ""}
           onChange={(event) =>

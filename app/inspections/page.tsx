@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { mapMembersToAssociateOptions } from "@/app/lib/member-display-name";
+import {
+  mapInspectionAssociateOptions,
+  type TeamMemberForAssociate,
+} from "./lib/inspection-associates";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
@@ -20,7 +23,6 @@ import InspectionRoomGrid from "./components/InspectionRoomGrid";
 import PriorityQueuePanel from "./components/PriorityQueuePanel";
 import StartInspectionModal from "./components/StartInspectionModal";
 import {
-  AssociateOption,
   RoomOption,
   TemplateOption,
 } from "./components/StartInspectionPanel";
@@ -65,7 +67,7 @@ export default function InspectionsPage() {
 
   const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
-  const [associates, setAssociates] = useState<AssociateOption[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberForAssociate[]>([]);
   const [inspectorId, setInspectorId] = useState<string | null>(null);
 
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
@@ -147,7 +149,9 @@ export default function InspectionsPage() {
       const [templatesRes, areasRes, membersRes] = await Promise.all([
         fetch("/api/inspections/sessions"),
         fetch("/api/buildings-areas"),
-        supabase.from("team_members").select("id, first_name, last_name, username"),
+        supabase
+          .from("team_members")
+          .select("id, first_name, last_name, username, job_title, role, status"),
       ]);
 
       const templatesJson = await templatesRes.json();
@@ -168,7 +172,7 @@ export default function InspectionsPage() {
         );
       }
 
-      setAssociates(mapMembersToAssociateOptions(membersRes.data || []));
+      setTeamMembers((membersRes.data || []) as TeamMemberForAssociate[]);
     }
 
     void init();
@@ -177,6 +181,19 @@ export default function InspectionsPage() {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  const associates = useMemo(
+    () => mapInspectionAssociateOptions(teamMembers, program),
+    [teamMembers, program]
+  );
+
+  useEffect(() => {
+    setSelectedAssociateId((current) =>
+      current && associates.some((associate) => associate.id === current)
+        ? current
+        : null
+    );
+  }, [associates]);
 
   const matchingTemplates = useMemo(
     () =>

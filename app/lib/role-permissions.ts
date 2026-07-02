@@ -17,6 +17,44 @@ export const JOB_TITLE_OPTIONS = [
 
 export type JobTitleOption = (typeof JOB_TITLE_OPTIONS)[number];
 
+export type InspectionAssociateProgram = "VR" | "RPM";
+
+/** Team members selectable as associate on housekeeping room inspections (VR / SO). */
+export const HOUSEKEEPING_ASSOCIATE_JOB_TITLES = [
+  "Executive Housekeeper",
+  "Housekeeping Supervisor",
+  "Housekeeper",
+] as const satisfies readonly JobTitleOption[];
+
+/** Team members selectable as associate on RPM inspections. */
+export const MAINTENANCE_ASSOCIATE_JOB_TITLES = [
+  "Chief Engineer",
+  "Maintenance Technician",
+] as const satisfies readonly JobTitleOption[];
+
+export function getAssociateJobTitlesForInspectionProgram(
+  program: InspectionAssociateProgram
+): readonly string[] {
+  return program === "RPM"
+    ? MAINTENANCE_ASSOCIATE_JOB_TITLES
+    : HOUSEKEEPING_ASSOCIATE_JOB_TITLES;
+}
+
+export function memberJobTitleMatchesInspectionProgram(
+  jobTitle: string | null | undefined,
+  program: InspectionAssociateProgram
+): boolean {
+  const normalized = (jobTitle || "").trim();
+  if (!normalized) return false;
+  return getAssociateJobTitlesForInspectionProgram(program).includes(normalized);
+}
+
+export function getInspectionAssociateFieldLabel(
+  program: InspectionAssociateProgram
+): string {
+  return program === "RPM" ? "Maintenance" : "Housekeeper";
+}
+
 /** Default access summary shown in Settings → Roles & Permissions. */
 export function getJobTitleDefaultAccessLabel(jobTitle: JobTitleOption): string {
   switch (jobTitle) {

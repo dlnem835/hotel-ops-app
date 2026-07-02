@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getInspectionAssociateFieldLabel } from "@/app/lib/role-permissions";
 import {
   AssociateOption,
   matchingTemplates,
@@ -78,7 +79,7 @@ export default function StartInspectionModal({
         </label>
 
         <label className="one-eyrie-mobile-field">
-          <span>Housekeeper</span>
+          <span>{getInspectionAssociateFieldLabel(program)}</span>
           <select
             value={associateId}
             onChange={(event) => setAssociateId(event.target.value)}

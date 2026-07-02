@@ -192,6 +192,8 @@ export async function addPassOnReply(entryId: number, author: string, text: stri
   ]);
 
   if (error) throw new Error(error.message);
+
+  await markPassOnAsViewed(entryId);
 }
 
 export function memberDisplayName(

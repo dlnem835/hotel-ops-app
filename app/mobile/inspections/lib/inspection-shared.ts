@@ -12,7 +12,10 @@ import {
 } from "@/app/inspections/lib/inspection-types";
 import { templateMatchesDashboard } from "@/app/inspections/lib/program-map";
 import { daysSince, parseDashboardProgram } from "@/app/inspections/lib/period-utils";
-import { mapMembersToAssociateOptions } from "@/app/lib/member-display-name";
+import {
+  mapInspectionAssociateOptions,
+  type TeamMemberForAssociate,
+} from "@/app/inspections/lib/inspection-associates";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 
@@ -39,7 +42,9 @@ export async function fetchInspectionDashboard(
   return result as DashboardPayload;
 }
 
-export async function fetchInspectionBootstrap(): Promise<InspectionBootstrap> {
+export async function fetchInspectionBootstrap(
+  program: "VR" | "RPM"
+): Promise<InspectionBootstrap> {
   const session = await getClientSession();
   if (!session) {
     throw new Error("Not signed in");
@@ -48,7 +53,9 @@ export async function fetchInspectionBootstrap(): Promise<InspectionBootstrap> {
   const [templatesRes, areasRes, membersRes, teamMemberRes] = await Promise.all([
     fetch("/api/inspections/sessions"),
     fetch("/api/buildings-areas"),
-    supabase.from("team_members").select("id, first_name, last_name, username"),
+    supabase
+      .from("team_members")
+      .select("id, first_name, last_name, username, job_title, role, status"),
     supabase
       .from("team_members")
       .select("id")
@@ -75,7 +82,10 @@ export async function fetchInspectionBootstrap(): Promise<InspectionBootstrap> {
       status: String(area.status),
     }));
 
-  const associates = mapMembersToAssociateOptions(membersRes.data || []);
+  const associates = mapInspectionAssociateOptions(
+    (membersRes.data || []) as TeamMemberForAssociate[],
+    program
+  );
 
   return {
     templates,

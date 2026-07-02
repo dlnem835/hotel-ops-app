@@ -1,5 +1,5 @@
-export const INACTIVITY_LOGOUT_MS = 30 * 60 * 1000;
-export const INACTIVITY_WARNING_MS = 28 * 60 * 1000;
+export const INACTIVITY_LOGOUT_MS = 2 * 60 * 60 * 1000;
+export const INACTIVITY_WARNING_MS = INACTIVITY_LOGOUT_MS - 2 * 60 * 1000;
 export const INACTIVITY_LOGOUT_MESSAGE =
   "You were logged out due to inactivity.";
 export const INACTIVITY_LOGOUT_STORAGE_KEY = "one_eyrie_logout_message";

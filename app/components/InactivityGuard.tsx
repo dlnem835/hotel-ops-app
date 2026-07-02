@@ -6,7 +6,6 @@ import {
   subscribeAuthSession,
   waitForInitialAuthSession,
 } from "@/app/lib/auth-session";
-import { isMobilePath } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -31,7 +30,6 @@ const PUBLIC_PATHS = new Set(["/login"]);
 
 export default function InactivityGuard() {
   const pathname = usePathname();
-  const isMobileRoute = isMobilePath(pathname);
   const [active, setActive] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
 
@@ -99,13 +97,6 @@ export default function InactivityGuard() {
   }, [active, pathname, resetTimers]);
 
   useEffect(() => {
-    if (isMobileRoute) {
-      setActive(false);
-      clearTimers();
-      setWarningOpen(false);
-      return;
-    }
-
     let mounted = true;
 
     void waitForInitialAuthSession().then((session) => {
@@ -137,7 +128,7 @@ export default function InactivityGuard() {
       unsubscribe();
       clearTimers();
     };
-  }, [pathname, clearTimers, isMobileRoute]);
+  }, [pathname, clearTimers]);
 
   useEffect(() => {
     if (!active || PUBLIC_PATHS.has(pathname)) {

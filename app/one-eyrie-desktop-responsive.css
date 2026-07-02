@@ -674,6 +674,16 @@
     border-bottom-color: #2a2a2a !important;
   }
 
+  .one-eyrie-pass-on-log-page .original-post-box.pass-on-message-text:hover,
+  .one-eyrie-pass-on-log-page .reply-preview-box:hover {
+    border-top-color: #c8a96a !important;
+    border-right-color: #c8a96a !important;
+    border-bottom-color: #c8a96a !important;
+    border-left-color: #c8a96a !important;
+    box-shadow: 0 0 18px rgba(200, 169, 106, 0.3) !important;
+    transform: translateY(-1px);
+  }
+
   .one-eyrie-pass-on-log-page h3 {
     color: #e0c47b;
     letter-spacing: 0.02em;
