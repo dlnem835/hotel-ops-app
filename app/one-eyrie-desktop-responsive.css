@@ -615,7 +615,43 @@
 
 /* ── Desktop contrast: Pass-On Log + Lost & Found rows ── */
 
+.one-eyrie-pass-on-log-page .pass-on-search-wrap {
+  position: relative;
+}
+
+.one-eyrie-pass-on-log-page .pass-on-search-wrap__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a948a;
+  pointer-events: none;
+}
+
 @media (min-width: 769px) {
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar .pass-on-search-wrap .one-eyrie-field {
+    background: #0b0b0b !important;
+    border-color: rgba(200, 169, 106, 0.78) !important;
+    color: #ece6dc;
+    box-shadow:
+      0 0 0 1px rgba(200, 169, 106, 0.35),
+      0 0 14px rgba(200, 169, 106, 0.18);
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar .pass-on-search-wrap .one-eyrie-field:hover,
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar .pass-on-search-wrap .one-eyrie-field:focus,
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar .pass-on-search-wrap .one-eyrie-field:focus-visible {
+    background: #0b0b0b !important;
+    border-color: rgba(200, 169, 106, 0.78) !important;
+    box-shadow:
+      0 0 0 1px rgba(200, 169, 106, 0.35),
+      0 0 14px rgba(200, 169, 106, 0.18);
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar .pass-on-search-wrap .one-eyrie-field::placeholder {
+    color: #9a948a;
+  }
+
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
     background-color: #2a2620;
     border-color: #3a352e;

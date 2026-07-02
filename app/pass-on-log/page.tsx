@@ -439,17 +439,18 @@ function dateHeader(dateString: string) {
         <div className="one-eyrie-pass-on-page-body" style={{ maxWidth: "1120px", margin: "0 auto" }}>
           <div style={panelStyle}>
   <div className="one-eyrie-pass-on-toolbar" style={searchHeaderRow}>
-    <div className="one-eyrie-pass-on-search-wrap" style={searchWrap}>
+    <div className="one-eyrie-pass-on-search-wrap pass-on-search-wrap" style={searchWrap}>
       <Search
-        size={20}
-        color="#E5E7EB"
-        style={{ position: "absolute", left: "20px", top: "17px" }}
+        size={18}
+        className="pass-on-search-wrap__icon"
+        aria-hidden
       />
       <input
+        type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search pass-on entries..."
-        className="one-eyrie-pass-on-search"
+        className="one-eyrie-field"
         style={searchInput}
       />
     </div>
@@ -975,12 +976,11 @@ const searchWrap: React.CSSProperties = {
 };
 
 const searchInput: React.CSSProperties = {
-  width: "100%",
-  height: "56px",
-  borderRadius: "14px",
-  padding: "0 20px 0 56px",
+  padding: "11px 12px",
+  paddingLeft: "42px",
   outline: "none",
-  fontSize: "18px",
+  width: "100%",
+  maxWidth: "100%",
   boxSizing: "border-box",
 };
 
