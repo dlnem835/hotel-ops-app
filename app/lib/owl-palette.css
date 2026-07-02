@@ -1,0 +1,46 @@
+/* Shared owl-inspired secondary tokens (gold brand unchanged elsewhere). */
+@media (min-width: 769px) {
+  .one-eyrie-dashboard-page,
+  .one-eyrie-lost-found-page {
+    --owl-panel: #1e1a16;
+    --owl-card-warm: #2a241c;
+    --owl-card-warm-hover: #332c24;
+    --owl-slate: #35322e;
+    --owl-slate-hover: #3d3934;
+    --owl-header-slate: #252220;
+    --owl-bronze-row: #3a342c;
+    --owl-bronze-row-alt: #2e2820;
+    --owl-bronze-row-hover: #443c34;
+    --owl-bronze-row-alt-hover: #383229;
+    --owl-feather-border: #5a534c;
+    --owl-feather-divider: #4a4540;
+    --owl-feather-text: #c4beb4;
+    --owl-feather-muted: #9a948a;
+    --owl-input-fill: #2e2a25;
+    --owl-input-border: #5a534c;
+    --owl-success-bg: #1c3428;
+    --owl-success-border: #3d6b4f;
+    --owl-success-text: #b8d4c4;
+    --owl-stored-bg: #35322e;
+    --owl-stored-border: #5a534c;
+    --owl-stored-text: #d8d2c8;
+    --owl-warning-bg: #2a2218;
+    --owl-warning-border: #8b6b3d;
+    --owl-warning-text: #e8d4b8;
+  }
+
+  /* Locked lighter feather tones — dashboard header, L&F discard KPI, pass-on rows */
+  .one-eyrie-dashboard-page,
+  .one-eyrie-lost-found-page,
+  .one-eyrie-pass-on-log-page {
+    --owl-feather-surface: #5c574f;
+    --owl-feather-surface-hover: #676158;
+    --owl-feather-light: #6e665c;
+    --owl-feather-lighter: #7a7268;
+    --owl-feather-highlight: #8a8278;
+    --owl-feather-text-bright: #ece6dc;
+    --owl-feather-text-light: #f5f0e8;
+    --owl-work-order-shell: #0b0b0b;
+    --owl-work-order-shell-border: #6e665c;
+  }
+}

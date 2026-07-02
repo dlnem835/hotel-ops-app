@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus } from "lucide-react";
+import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus, Search } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
@@ -23,6 +23,7 @@ import {
   forestHoverHandlers,
   PRIMARY_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
+import "./lost-and-found-responsive.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,15 +32,47 @@ const supabase = createClient(
 
 const gold = "#C8A96A";
 
+type LnfSortOrder = "newest" | "oldest" | "guest-az" | "guest-za";
+type LnfKpiFilter = "ready-to-ship" | "ready-to-discard";
+
+const STATUS_FILTER_OPTIONS = [
+  { label: "All", value: "All" },
+  { label: "Stored", value: "Stored" },
+  { label: "Label Sent", value: "Label sent" },
+  { label: "Ready to be Shipped", value: "Ready to be shipped" },
+  { label: "Shipped", value: "Shipped" },
+  { label: "Closed", value: "Closed" },
+] as const;
+
+const SORT_OPTIONS: { label: string; value: LnfSortOrder }[] = [
+  { label: "Newest First", value: "newest" },
+  { label: "Oldest First", value: "oldest" },
+  { label: "Guest A–Z", value: "guest-az" },
+  { label: "Guest Z–A", value: "guest-za" },
+];
+
+function getDiscardCutoffDate(): Date {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 6);
+  return cutoff;
+}
+
+function isEligibleForDiscard(item: { created_at?: string | null }, cutoff: Date): boolean {
+  return Boolean(item.created_at && new Date(item.created_at) <= cutoff);
+}
+
 export default function LostAndFoundPage() {
   const [lostItems, setLostItems] = useState<any[]>([]);
   const [searchterm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [sortOrder, setSortOrder] = useState("newest");
+  const [sortOrder, setSortOrder] = useState<LnfSortOrder>("newest");
+  const [kpiFilter, setKpiFilter] = useState<LnfKpiFilter | null>(null);
   const [currentUserName, setCurrentUserName] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersDropdownRef = useRef<HTMLDivElement>(null);
 
   const readyToShipCount = lostItems.filter(
     (item) => item.status === "Ready to be shipped"
@@ -47,11 +80,10 @@ export default function LostAndFoundPage() {
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const discardCutoff = getDiscardCutoffDate();
 
-  const readyToDiscardCount = lostItems.filter(
-    (item) => item.created_at && new Date(item.created_at) <= sixMonthsAgo
+  const readyToDiscardCount = lostItems.filter((item) =>
+    isEligibleForDiscard(item, discardCutoff)
   ).length;
 
   const filteredItems = lostItems.filter((item) => {
@@ -63,10 +95,24 @@ export default function LostAndFoundPage() {
     const matchesStatus =
       statusFilter === "All" || item.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesKpi =
+      kpiFilter === null
+        ? true
+        : kpiFilter === "ready-to-ship"
+          ? item.status === "Ready to be shipped"
+          : isEligibleForDiscard(item, discardCutoff);
+
+    return matchesSearch && matchesStatus && matchesKpi;
   });
 
   const displayItems = [...filteredItems].sort((a, b) => {
+    if (sortOrder === "guest-az" || sortOrder === "guest-za") {
+      const nameA = String(a.guest_last_name || "").toLowerCase();
+      const nameB = String(b.guest_last_name || "").toLowerCase();
+      const comparison = nameA.localeCompare(nameB);
+      return sortOrder === "guest-az" ? comparison : -comparison;
+    }
+
     const dateA = new Date(a.created_at).getTime();
     const dateB = new Date(b.created_at).getTime();
 
@@ -121,6 +167,34 @@ setTeamMembers(allTeamMembers || []);
     const timer = window.setTimeout(() => setSuccessToast(null), 3200);
     return () => window.clearTimeout(timer);
   }, [successToast]);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        filtersDropdownRef.current &&
+        !filtersDropdownRef.current.contains(target)
+      ) {
+        setFiltersOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [filtersOpen]);
 
   async function submitNewItem(data: LostFoundAddItemFormData, keepOpen: boolean) {
     const {
@@ -194,6 +268,34 @@ setTeamMembers(allTeamMembers || []);
     return { background: "#1F2937", color: "#E5E7EB", border: "1px solid #374151" };
   }
 
+  function statusPillClass(status: string): string {
+    if (status === "Ready to be shipped") return "lnf-status-pill--ready-ship";
+    if (status === "Label sent") return "lnf-status-pill--label-sent";
+    if (status === "Stored") return "lnf-status-pill--stored";
+    return "lnf-status-pill--default";
+  }
+
+  function handleKpiFilter(filter: LnfKpiFilter) {
+    setKpiFilter((current) => (current === filter ? null : filter));
+    setStatusFilter("All");
+  }
+
+  function handleStatusFilter(status: string) {
+    setStatusFilter(status);
+    setKpiFilter(null);
+  }
+
+  function clearKpiFilter() {
+    setKpiFilter(null);
+  }
+
+  const activeKpiLabel =
+    kpiFilter === "ready-to-ship"
+      ? "Ready to Ship"
+      : kpiFilter === "ready-to-discard"
+        ? "Ready to Discard"
+        : null;
+
   return (
     <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Lost & Found" />
@@ -219,11 +321,19 @@ setTeamMembers(allTeamMembers || []);
 
         {/* STATS */}
         <div className="one-eyrie-kpi-row" style={{ marginBottom: "22px" }}>
-          <div style={cardStyle}>
+          <button
+            type="button"
+            className={`lnf-kpi-card lnf-kpi-card--ready-ship${
+              kpiFilter === "ready-to-ship" ? " lnf-kpi-card--active" : ""
+            }`}
+            style={kpiCardButtonStyle}
+            onClick={() => handleKpiFilter("ready-to-ship")}
+            aria-pressed={kpiFilter === "ready-to-ship"}
+          >
             <div>
-              <p style={cardTitle}>Ready to Ship</p>
-              <p style={bigNumber}>{readyToShipCount}</p>
-              <p style={mutedText}>Items ready for shipping</p>
+              <p className="lnf-kpi-card__title" style={cardTitle}>Ready to Ship</p>
+              <p className="lnf-kpi-card__value" style={bigNumber}>{readyToShipCount}</p>
+              <p className="lnf-kpi-card__muted" style={mutedText}>Items ready for shipping</p>
             </div>
             <div
               style={{
@@ -235,13 +345,21 @@ setTeamMembers(allTeamMembers || []);
             >
               <Package size={24} strokeWidth={2} color={FOREST.text} />
             </div>
-          </div>
+          </button>
 
-          <div style={cardStyle}>
+          <button
+            type="button"
+            className={`lnf-kpi-card lnf-kpi-card--discard${
+              kpiFilter === "ready-to-discard" ? " lnf-kpi-card--active" : ""
+            }`}
+            style={kpiCardButtonStyle}
+            onClick={() => handleKpiFilter("ready-to-discard")}
+            aria-pressed={kpiFilter === "ready-to-discard"}
+          >
             <div>
-              <p style={cardTitle}>Ready to Discard</p>
-              <p style={bigNumber}>{readyToDiscardCount}</p>
-              <p style={mutedText}>Items older than 6 months</p>
+              <p className="lnf-kpi-card__title" style={cardTitle}>Ready to Discard</p>
+              <p className="lnf-kpi-card__value" style={bigNumber}>{readyToDiscardCount}</p>
+              <p className="lnf-kpi-card__muted" style={mutedText}>Items older than 6 months</p>
             </div>
             <div
               style={{
@@ -253,27 +371,46 @@ setTeamMembers(allTeamMembers || []);
             >
               <Trash2 size={22} strokeWidth={2} color={FLAT_RED.text} />
             </div>
-          </div>
+          </button>
         </div>
 
         {/* SEARCH/FILTER */}
         <div className="one-eyrie-toolbar-row" style={{ marginBottom: "18px" }}>
-  <input
-    type="text"
-    placeholder="Search guest, room, item, or status..."
-    value={searchterm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="one-eyrie-toolbar-row__grow one-eyrie-field"
-    style={inputStyle}
-  />
+  <div className="one-eyrie-toolbar-row__grow lnf-search-wrap">
+    <Search
+      size={18}
+      className="lnf-search-wrap__icon"
+      aria-hidden
+    />
+    <input
+      type="text"
+      placeholder="Search guest, room, item, or status..."
+      value={searchterm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="one-eyrie-field"
+      style={searchInputStyle}
+    />
+  </div>
 
-  <details style={{ position: "relative" }}>
-    <summary className="one-eyrie-filter-btn">
+  <div
+    ref={filtersDropdownRef}
+    className="lnf-filters-dropdown"
+    style={{ position: "relative" }}
+  >
+    <button
+      type="button"
+      className="one-eyrie-filter-btn"
+      onClick={() => setFiltersOpen((open) => !open)}
+      aria-expanded={filtersOpen}
+      aria-haspopup="true"
+    >
       <SlidersHorizontal size={18} />
       Filters
-    </summary>
+    </button>
 
+    {filtersOpen ? (
     <div
+      className="lnf-filter-menu"
       style={{
         position: "absolute",
         right: 0,
@@ -287,47 +424,64 @@ setTeamMembers(allTeamMembers || []);
         boxShadow: "0 18px 40px rgba(0,0,0,0.55)",
       }}
     >
-      <div style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
-        SORT BY
+      <div className="lnf-filter-menu__heading" style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
+        Sort
       </div>
 
-      <button type="button" onClick={() => setSortOrder("newest")} className="one-eyrie-menu-item" style={filterMenuButton}>
-        Newest First {sortOrder === "newest" ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
-      </button>
-
-      <button type="button" onClick={() => setSortOrder("oldest")} className="one-eyrie-menu-item" style={filterMenuButton}>
-        Oldest First {sortOrder === "oldest" ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
-      </button>
-
-      <div style={{ height: "1px", background: "#2A2A2A", margin: "14px 0" }} />
-
-      <div style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
-        FILTER BY STATUS
-      </div>
-
-      {["All", "Stored", "Label sent", "Ready to be shipped", "Shipped", "Closed"].map((status) => (
+      {SORT_OPTIONS.map((option) => (
         <button
-          key={status}
+          key={option.value}
           type="button"
-          onClick={() => setStatusFilter(status)}
+          onClick={() => setSortOrder(option.value)}
           className="one-eyrie-menu-item"
           style={filterMenuButton}
         >
-          {status} {statusFilter === status ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
+          {option.label} {sortOrder === option.value ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
+        </button>
+      ))}
+
+      <div className="lnf-filter-menu__divider" style={{ height: "1px", background: "#2A2A2A", margin: "14px 0" }} />
+
+      <div className="lnf-filter-menu__heading" style={{ color: "#E5E7EB", fontSize: "12px", fontWeight: "bold", marginBottom: "12px" }}>
+        Filter by Status
+      </div>
+
+      {STATUS_FILTER_OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => handleStatusFilter(option.value)}
+          className="one-eyrie-menu-item"
+          style={filterMenuButton}
+        >
+          {option.label} {statusFilter === option.value ? <Check size={14} style={{ marginLeft: "6px" }} /> : null}
         </button>
       ))}
     </div>
-  </details>
+    ) : null}
+  </div>
 </div>
 
-  
+        {activeKpiLabel ? (
+          <div className="lnf-active-filter-pill" style={{ marginBottom: "12px" }}>
+            <span>Showing: {activeKpiLabel}</span>
+            <button
+              type="button"
+              className="lnf-active-filter-pill__clear"
+              onClick={clearKpiFilter}
+              aria-label={`Clear ${activeKpiLabel} filter`}
+            >
+              <X size={14} aria-hidden />
+            </button>
+          </div>
+        ) : null}
 
         {/* TABLE */}
         <div className="one-eyrie-table-panel">
   {!lostItems.length ? (
-    <p style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
+    <p className="lnf-empty-text" style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
   ) : !filteredItems.length ? (
-    <p style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
+    <p className="lnf-empty-text" style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
   ) : (
     <table className="one-eyrie-table one-eyrie-table--fit one-eyrie-lnf-table" style={{ fontSize: "13px" }}>
       <thead>
@@ -387,7 +541,7 @@ setTeamMembers(allTeamMembers || []);
 
             <td className="col-status one-eyrie-table__cell--wrap one-eyrie-lnf-status-cell" style={tdStyle}>
               <div
-                className="one-eyrie-lnf-status-select-wrap"
+                className={`one-eyrie-lnf-status-select-wrap ${statusPillClass(item.status)}`}
                 style={statusStyle(item.status)}
               >
                 <select
@@ -544,6 +698,7 @@ setTeamMembers(allTeamMembers || []);
           <div
             role="status"
             aria-live="polite"
+            className="lnf-success-toast"
             style={{
               position: "fixed",
               bottom: "28px",
@@ -579,6 +734,15 @@ const cardStyle: React.CSSProperties = {
   alignItems: "flex-start",
 };
 
+const kpiCardButtonStyle: React.CSSProperties = {
+  ...cardStyle,
+  cursor: "pointer",
+  font: "inherit",
+  color: "inherit",
+  textAlign: "left",
+  width: "100%",
+};
+
 const cardTitle: React.CSSProperties = {
   margin: 0,
   fontSize: "14px",
@@ -609,6 +773,11 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
+};
+
+const searchInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  paddingLeft: "42px",
 };
 
 const thStyle: React.CSSProperties = {

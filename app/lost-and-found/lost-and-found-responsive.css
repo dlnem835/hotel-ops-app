@@ -1,0 +1,222 @@
+/* Lost & Found — owl-inspired secondary palette (desktop trial). Gold unchanged. */
+
+/* Toolbar — match table header charcoal */
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-field {
+  background: #0b0b0b !important;
+  border-color: #2a2a2a !important;
+  color: #ece6dc;
+}
+
+.one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field {
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field:hover,
+.one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field:focus,
+.one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field:focus-visible {
+  background: #0b0b0b !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-field::placeholder {
+  color: #9a948a;
+}
+
+.one-eyrie-lost-found-page .lnf-search-wrap {
+  position: relative;
+}
+
+.one-eyrie-lost-found-page .lnf-search-wrap__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a948a;
+  pointer-events: none;
+}
+
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-filter-btn {
+  background: #0b0b0b;
+  border: 1px solid rgba(200, 169, 106, 0.78);
+  color: #ece6dc;
+  font: inherit;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-filter-btn:hover,
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-filter-btn:focus,
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-filter-btn:focus-visible,
+.one-eyrie-lost-found-page .one-eyrie-toolbar-row .one-eyrie-filter-btn[aria-expanded="true"] {
+  background: #0b0b0b;
+  border-color: rgba(200, 169, 106, 0.78);
+  color: #ece6dc;
+  transform: none;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.one-eyrie-lost-found-page .lnf-filter-menu {
+  background: #0b0b0b !important;
+  border-color: #2a2a2a !important;
+}
+
+.one-eyrie-lost-found-page .lnf-filter-menu__divider {
+  background: #2a2a2a !important;
+}
+
+.one-eyrie-lost-found-page .lnf-kpi-card {
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.one-eyrie-lost-found-page .lnf-kpi-card--active {
+  border-color: #c8a96a !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+.one-eyrie-lost-found-page .lnf-active-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 169, 106, 0.45);
+  background: rgba(200, 169, 106, 0.1);
+  color: #e0c47b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.one-eyrie-lost-found-page .lnf-active-filter-pill__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #c8a96a;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.one-eyrie-lost-found-page .lnf-active-filter-pill__clear:hover {
+  color: #e0c47b;
+  background: rgba(200, 169, 106, 0.14);
+}
+
+@media (min-width: 769px) {
+  .one-eyrie-lost-found-page .one-eyrie-page-header__title-block p {
+    color: var(--owl-feather-text);
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card {
+    background: var(--owl-card-warm) !important;
+    border-color: var(--owl-feather-border) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship {
+    background: var(--owl-success-bg) !important;
+    border-color: var(--owl-success-border) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__title,
+  .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__muted,
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard .lnf-kpi-card__title,
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard .lnf-kpi-card__muted {
+    color: #ffffff !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__value {
+    color: #c8a96a !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard {
+    background: var(--owl-feather-lighter) !important;
+    border-color: var(--owl-feather-highlight) !important;
+    box-shadow:
+      0 2px 12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard:hover {
+    background: var(--owl-feather-highlight) !important;
+    border-color: rgba(200, 169, 106, 0.55) !important;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.26),
+      0 0 0 1px rgba(200, 169, 106, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard.lnf-kpi-card--active {
+    border-color: #c8a96a !important;
+    box-shadow:
+      0 0 0 1px rgba(200, 169, 106, 0.45),
+      0 4px 14px rgba(0, 0, 0, 0.22);
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card--discard .lnf-kpi-card__value {
+    color: #c8a96a !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-kpi-card__muted {
+    color: var(--owl-feather-muted) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-filter-menu__heading {
+    color: var(--owl-feather-text) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-empty-text {
+    color: var(--owl-feather-muted) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-status-pill--ready-ship.one-eyrie-lnf-status-select-wrap {
+    background: var(--owl-success-bg) !important;
+    border-color: var(--owl-success-border) !important;
+    color: var(--owl-success-text) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-status-pill--stored.one-eyrie-lnf-status-select-wrap {
+    background: var(--owl-stored-bg) !important;
+    border-color: var(--owl-stored-border) !important;
+    color: var(--owl-stored-text) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-status-pill--label-sent.one-eyrie-lnf-status-select-wrap {
+    background: var(--owl-warning-bg) !important;
+    border-color: var(--owl-warning-border) !important;
+    color: var(--owl-warning-text) !important;
+  }
+
+  .one-eyrie-lost-found-page .lnf-status-pill--default.one-eyrie-lnf-status-select-wrap {
+    background: var(--owl-slate) !important;
+    border-color: var(--owl-feather-border) !important;
+    color: var(--owl-feather-text) !important;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-send-label-form__btn {
+    background: #c8a96a;
+    border-color: rgba(200, 169, 106, 0.55);
+    color: #111111;
+  }
+
+  .one-eyrie-lost-found-page .lnf-success-toast {
+    background: var(--owl-panel) !important;
+    border-color: #c8a96a !important;
+    color: #c8a96a !important;
+  }
+}

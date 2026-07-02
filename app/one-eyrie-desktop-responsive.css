@@ -173,7 +173,8 @@
   box-sizing: border-box;
 }
 
-.one-eyrie-toolbar-row > details {
+.one-eyrie-toolbar-row > details,
+.one-eyrie-toolbar-row > .lnf-filters-dropdown {
   flex-shrink: 0;
 }
 
@@ -615,29 +616,26 @@
 /* ── Desktop contrast: Pass-On Log + Lost & Found rows ── */
 
 @media (min-width: 769px) {
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:nth-child(odd) {
-    background-color: #5c574f;
-    border-color: rgba(200, 169, 106, 0.28);
-  }
-
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:nth-child(even) {
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
     background-color: #2a2620;
     border-color: #3a352e;
   }
 
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:nth-child(odd):hover {
-    background-color: #676158;
-    border-color: rgba(200, 169, 106, 0.42);
-  }
-
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:nth-child(even):hover {
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:hover {
     background-color: #35312c;
     border-color: rgba(200, 169, 106, 0.32);
   }
 
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row--selected {
-    background-color: #575249;
+    background-color: #3a352e;
     border-color: rgba(200, 169, 106, 0.55);
+  }
+
+  .one-eyrie-pass-on-log-page .original-post-box.pass-on-message-text {
+    background: #0d0d0d !important;
+    border-top-color: #2a2a2a !important;
+    border-right-color: #2a2a2a !important;
+    border-bottom-color: #2a2a2a !important;
   }
 
   .one-eyrie-pass-on-log-page h3 {
@@ -646,18 +644,28 @@
   }
 
   .one-eyrie-lost-found-page .one-eyrie-table-panel {
-    border-color: rgba(200, 169, 106, 0.34);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-shadow: none;
+    padding: 4px 8px 10px;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead tr {
-    background: #0f0e0c;
+    background: #0b0b0b;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th {
-    background: #0f0e0c;
-    color: #f3f4f6;
-    border-bottom: 1px solid rgba(200, 169, 106, 0.4);
+    background: #0b0b0b;
+    color: #ece6dc;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row {
@@ -665,36 +673,36 @@
     transition: background-color 0.18s ease;
   }
 
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd) td {
-    background-color: #635242;
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td {
+    background-color: var(--owl-bronze-row, #3a342c);
+    border-top: 1px solid rgba(236, 230, 220, 0.22);
+    border-bottom: 1px solid rgba(236, 230, 220, 0.22);
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(even) td {
-    background-color: #1a1815;
+    background-color: var(--owl-bronze-row-alt, #2e2820);
   }
 
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd):hover td {
-    background-color: #6f5e4b;
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td:first-child {
+    border-left: 1px solid rgba(236, 230, 220, 0.28);
+    border-radius: 10px 0 0 10px;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td:last-child {
+    border-right: 1px solid rgba(236, 230, 220, 0.28);
+    border-radius: 0 10px 10px 0;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:hover td {
+    background-color: var(--owl-bronze-row-hover, #443c34);
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(even):hover td {
-    background-color: #252018;
+    background-color: var(--owl-bronze-row-alt-hover, #383229);
   }
 
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:nth-child(odd):hover td {
-    background-color: #75634f;
-  }
-
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:nth-child(even):hover td {
-    background-color: #2b261e;
-  }
-
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd) td {
-    border-top-color: #7a6550;
-  }
-
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(even) td {
-    border-top-color: #2a2a2a;
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:hover td {
+    background-color: #4a4238;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected td:first-child {
@@ -704,25 +712,29 @@
   /* Compact table density — more rows visible, spreadsheet-like */
   .one-eyrie-lost-found-page .one-eyrie-lnf-table {
     font-size: 12px !important;
+    border-collapse: separate !important;
+    border-spacing: 0 8px !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead tr {
     font-size: 10px !important;
-    background: #0f0e0c !important;
+    background: #0b0b0b !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th {
     padding: 9px 12px !important;
     font-size: 10px !important;
     letter-spacing: 0.05em;
-    background: #0f0e0c !important;
-    border-bottom: 1px solid rgba(200, 169, 106, 0.4) !important;
+    background: #0b0b0b !important;
+    border-bottom: 1px solid #2a2a2a !important;
+    color: #ece6dc !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td {
     padding: 12px 12px !important;
     font-size: 12px !important;
     line-height: 1.35;
+    color: #ece6dc;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-lnf-status-select {

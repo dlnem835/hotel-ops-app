@@ -37,15 +37,7 @@ function WorkCard({
         minHeight: "108px",
       }}
     >
-      <div
-        style={{
-          color: ONE_EYRIE.textSubtle,
-          fontSize: "12px",
-          fontWeight: 700,
-          letterSpacing: "0.02em",
-          marginBottom: "10px",
-        }}
-      >
+      <div className="dashboard-todays-work-card__title">
         {title}
       </div>
       <div

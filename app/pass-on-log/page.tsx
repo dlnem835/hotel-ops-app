@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -52,6 +53,7 @@ const supabase = createClient(
 const gold = "#C8A96A";
 
 export default function PassOnLogPage() {
+  const searchParams = useSearchParams();
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("");
@@ -201,6 +203,35 @@ setTeamMembers(allTeamMembers || []);
 
   checkAuth();
 }, []);
+
+  const deepLinkEntryId = useMemo(() => {
+    const raw = searchParams.get("entry");
+    if (!raw) return null;
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }, [searchParams]);
+
+  const deepLinkHandled = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!deepLinkEntryId || entries.length === 0) return;
+    if (deepLinkHandled.current === deepLinkEntryId) return;
+
+    const entry = entries.find((item) => item.id === deepLinkEntryId);
+    if (!entry) return;
+
+    deepLinkHandled.current = deepLinkEntryId;
+    setDateFilter("All");
+    setSearch("");
+    setExpandedEntry(deepLinkEntryId);
+    markAsViewed(deepLinkEntryId);
+
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`pass-on-entry-${deepLinkEntryId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [deepLinkEntryId, entries]);
 
   async function addEntry(e: any) {
     e.preventDefault();
@@ -574,6 +605,7 @@ function dateHeader(dateString: string) {
       return (
         <div
           key={entry.id}
+          id={`pass-on-entry-${entry.id}`}
           className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}${
             isRead ? " one-eyrie-list-row--read" : " one-eyrie-list-row--unread"
           }`}
@@ -703,9 +735,9 @@ function dateHeader(dateString: string) {
                       "0 0 18px rgba(200,169,106,0.30)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderTopColor = "#2A3345";
-                    e.currentTarget.style.borderRightColor = "#2A3345";
-                    e.currentTarget.style.borderBottomColor = "#2A3345";
+                    e.currentTarget.style.borderTopColor = "#2A2A2A";
+                    e.currentTarget.style.borderRightColor = "#2A2A2A";
+                    e.currentTarget.style.borderBottomColor = "#2A2A2A";
                     e.currentTarget.style.borderLeftColor = gold;
                     e.currentTarget.style.boxShadow = "none";
                   }}
@@ -1256,8 +1288,8 @@ const messageRowBox: React.CSSProperties = {
 };
 
 const messageTextBox: React.CSSProperties = {
-  background: ONE_EYRIE.row,
-  border: `1px solid ${ONE_EYRIE.border}`,
+  background: "#0D0D0D",
+  border: "1px solid #2A2A2A",
   borderLeft: `4px solid ${gold}`,
   borderRadius: "10px",
   padding: "12px 14px",
