@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
@@ -52,7 +52,7 @@ const supabase = createClient(
 
 const gold = "#C8A96A";
 
-export default function PassOnLogPage() {
+function PassOnLogPageContent() {
   const searchParams = useSearchParams();
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -1364,3 +1364,11 @@ const filterDropdown: React.CSSProperties = {
   fontSize: "14px",
   outline: "none",
 };
+
+export default function PassOnLogPage() {
+  return (
+    <Suspense fallback={null}>
+      <PassOnLogPageContent />
+    </Suspense>
+  );
+}
