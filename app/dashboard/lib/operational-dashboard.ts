@@ -5,10 +5,10 @@ import { RoomGridTile } from "@/app/inspections/lib/inspection-types";
 import { buildMaintenanceDashboard } from "@/app/maintenance/lib/maintenance-dashboard";
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import {
-  getLocalDateString,
-  isStoredToday,
-  shiftLocalDateString,
-} from "./date-utils";
+  groupPassOnEntriesForDashboard,
+  passOnDashboardDateKeys,
+} from "@/app/lib/hotel-business-date";
+import { isStoredToday } from "./date-utils";
 import {
   OperationalDashboardPayload,
   PassOnLogEntry,
@@ -56,9 +56,7 @@ function countPastDueInspectionRooms(rooms: RoomGridTile[]): number {
 export async function buildOperationalDashboard(
   supabase: SupabaseClient
 ): Promise<OperationalDashboardPayload> {
-  const today = getLocalDateString();
-  const yesterday = shiftLocalDateString(new Date(), -1);
-  const tomorrow = shiftLocalDateString(new Date(), 1);
+  const [today, yesterday, tomorrow] = passOnDashboardDateKeys();
 
   const [
     maintenance,
@@ -96,11 +94,7 @@ export async function buildOperationalDashboard(
   const passOnEntries = (passOnResult.data || []).map((row) =>
     normalizePassOnEntry(row, resolveAuthor)
   );
-  const passOnLog = {
-    today: passOnEntries.filter((entry) => entry.entryDate === today),
-    yesterday: passOnEntries.filter((entry) => entry.entryDate === yesterday),
-    tomorrow: passOnEntries.filter((entry) => entry.entryDate === tomorrow),
-  };
+  const passOnLog = groupPassOnEntriesForDashboard(passOnEntries);
 
   const lostItems = lostItemsResult.data || [];
   const readyToShip = lostItems.filter(

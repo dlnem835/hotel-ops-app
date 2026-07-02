@@ -37,6 +37,12 @@ import WorkOrderModal, {
 } from "@/app/maintenance/components/WorkOrderModal";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
+import {
+  formatPassOnBusinessDateHeader,
+  getHotelBusinessDateString,
+  matchesPassOnDateFilter,
+  type PassOnDateFilter,
+} from "@/app/lib/hotel-business-date";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,7 +57,7 @@ export default function PassOnLogPage() {
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [message, setMessage] = useState("");
-  const [entryDate, setEntryDate] = useState(getLocalDateString());
+  const [entryDate, setEntryDate] = useState(() => getHotelBusinessDateString());
   const [showForm, setShowForm] = useState(false);
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
@@ -63,7 +69,7 @@ export default function PassOnLogPage() {
   >(undefined);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
-  const [dateFilter, setDateFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState<PassOnDateFilter>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
@@ -196,15 +202,6 @@ setTeamMembers(allTeamMembers || []);
   checkAuth();
 }, []);
 
-  function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-
   async function addEntry(e: any) {
     e.preventDefault();
 
@@ -285,41 +282,9 @@ setTeamMembers(allTeamMembers || []);
     .toLowerCase()
     .includes(search.toLowerCase());
 
-  const today = getLocalDateString(new Date());
-
-  const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrow = getLocalDateString(tomorrowDate);
-
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterday = getLocalDateString(yesterdayDate);
-
-  let matchesDate = true;
-
-  if (dateFilter === "Today") {
-    matchesDate = entry.entry_date === today;
-  }
-
-  if (dateFilter === "Tomorrow") {
-    matchesDate = entry.entry_date === tomorrow;
-  }
-
-  if (dateFilter === "Yesterday") {
-    matchesDate = entry.entry_date === yesterday;
-  }
-
-  if (dateFilter === "Scheduled") {
-    matchesDate = entry.entry_date > tomorrow;
-  }
-
-  if (dateFilter === "Custom") {
-    matchesDate = entry.entry_date === entryDate;
-  }
-
-  if (dateFilter === "All") {
-    matchesDate = true;
-  }
+  const matchesDate = matchesPassOnDateFilter(entry.entry_date, dateFilter, {
+    customDate: entryDate,
+  });
 
   return matchesSearch && matchesDate;
 });
@@ -336,33 +301,7 @@ const groupedEntries = filteredEntries.reduce((acc: any, entry: any) => {
 }, {});
 
 function dateHeader(dateString: string) {
-  const today = getLocalDateString();
-
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterday = getLocalDateString(yesterdayDate);
-
-  const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrow = getLocalDateString(tomorrowDate);
-
-  if (dateString === today) return "Today";
-  if (dateString === tomorrow) return "Tomorrow";
-  if (dateString === yesterday) return "Yesterday";
-
-  if (dateString > tomorrow) return `Scheduled · ${new Date(dateString + "T00:00:00").toLocaleDateString([], {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })}`;
-
-  return new Date(dateString + "T00:00:00").toLocaleDateString([], {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPassOnBusinessDateHeader(dateString);
 }
 
 
@@ -522,7 +461,7 @@ function dateHeader(dateString: string) {
 
     <select
   value={dateFilter}
-  onChange={(e) => setDateFilter(e.target.value)}
+  onChange={(e) => setDateFilter(e.target.value as PassOnDateFilter)}
   style={filterDropdown}
 >
   <option value="All">All</option>

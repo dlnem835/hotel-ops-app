@@ -1,5 +1,11 @@
 import { getClientSession } from "@/app/lib/auth";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
+import {
+  formatPassOnBusinessDateHeader,
+  getHotelBusinessDateString,
+  getHotelBusinessDateWindow,
+  shiftHotelBusinessDateString,
+} from "@/app/lib/hotel-business-date";
 import { supabase } from "@/app/supabaseClient";
 
 export type PassOnReply = {
@@ -38,15 +44,12 @@ export type TeamMember = {
 };
 
 export function getLocalDateString(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return getHotelBusinessDateString(date);
 }
 
 export function resolveEntryDate(entry: Pick<PassOnEntry, "entry_date" | "created_at">): string {
   if (entry.entry_date) return String(entry.entry_date);
-  if (entry.created_at) return getLocalDateString(new Date(entry.created_at));
+  if (entry.created_at) return getHotelBusinessDateString(new Date(entry.created_at));
   return "";
 }
 
@@ -61,46 +64,18 @@ export function formatDateTime(value: string): string {
 }
 
 export function dateHeader(dateString: string): string {
-  const today = getLocalDateString();
-
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterday = getLocalDateString(yesterdayDate);
-
-  const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrow = getLocalDateString(tomorrowDate);
-
-  if (dateString === today) return "Today";
-  if (dateString === tomorrow) return "Tomorrow";
-  if (dateString === yesterday) return "Yesterday";
-
-  if (dateString > tomorrow) {
-    return `Scheduled · ${new Date(`${dateString}T00:00:00`).toLocaleDateString([], {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })}`;
-  }
-
-  return new Date(`${dateString}T00:00:00`).toLocaleDateString([], {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPassOnBusinessDateHeader(dateString);
 }
 
 export function isRecentPassOnEntry(entryDate: string, recentDays = 90): boolean {
   if (!entryDate) return true;
 
-  const today = getLocalDateString();
+  const { today } = getHotelBusinessDateWindow();
   if (entryDate >= today) return true;
 
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - recentDays);
-  return new Date(`${entryDate}T12:00:00`) >= cutoff;
+  const cutoff = getHotelBusinessDateString();
+  const cutoffShifted = shiftHotelBusinessDateString(cutoff, -recentDays);
+  return entryDate >= cutoffShifted;
 }
 
 export function filterRecentPassOnEntries(entries: PassOnEntry[], recentDays = 90): PassOnEntry[] {

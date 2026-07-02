@@ -1,17 +1,19 @@
+import {
+  getHotelBusinessDateString,
+  isStoredOnHotelBusinessDate,
+  shiftHotelBusinessDateString,
+} from "@/app/lib/hotel-business-date";
+
+/** @deprecated Use getHotelBusinessDateString — kept for dashboard imports. */
 export function getLocalDateString(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return getHotelBusinessDateString(date);
 }
 
 export function shiftLocalDateString(base: Date, dayOffset: number): string {
-  const next = new Date(base);
-  next.setDate(next.getDate() + dayOffset);
-  return getLocalDateString(next);
+  const anchor = getHotelBusinessDateString(base);
+  return shiftHotelBusinessDateString(anchor, dayOffset);
 }
 
 export function isStoredToday(createdAt: string | null, today: string): boolean {
-  if (!createdAt) return false;
-  return getLocalDateString(new Date(createdAt)) === today;
+  return isStoredOnHotelBusinessDate(createdAt, today);
 }

@@ -651,12 +651,18 @@
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead tr {
-    background: #1a1815;
+    background: #0f0e0c;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th {
+    background: #0f0e0c;
     color: #f3f4f6;
-    border-bottom: 1px solid rgba(200, 169, 106, 0.28);
+    border-bottom: 1px solid rgba(200, 169, 106, 0.4);
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row {
+    cursor: pointer;
+    transition: background-color 0.18s ease;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd) td {
@@ -665,6 +671,22 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(even) td {
     background-color: #1a1815;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd):hover td {
+    background-color: #6f5e4b;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(even):hover td {
+    background-color: #252018;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:nth-child(odd):hover td {
+    background-color: #75634f;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:nth-child(even):hover td {
+    background-color: #2b261e;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:nth-child(odd) td {
@@ -686,12 +708,15 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead tr {
     font-size: 10px !important;
+    background: #0f0e0c !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th {
     padding: 9px 12px !important;
     font-size: 10px !important;
     letter-spacing: 0.05em;
+    background: #0f0e0c !important;
+    border-bottom: 1px solid rgba(200, 169, 106, 0.4) !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td {
@@ -746,7 +771,7 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:hover,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row--selected:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: none;
+    box-shadow: none;
   }
 }
