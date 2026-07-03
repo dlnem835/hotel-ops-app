@@ -1179,13 +1179,13 @@ const expandButton: React.CSSProperties = {
 const rowSubject: React.CSSProperties = {
   fontSize: "16px",
   fontWeight: 700,
-  color: "#FFFFFF",
+  color: ONE_EYRIE.textRow,
 };
 
 const rowMeta: React.CSSProperties = {
   marginTop: "3px",
   fontSize: "12px",
-  color: "#B8C1D1",
+  color: ONE_EYRIE.textRow,
 };
 
 const rowCounts: React.CSSProperties = {
@@ -1241,7 +1241,7 @@ const originalPostBox: React.CSSProperties = {
   borderLeft: `3px solid ${gold}`,
   borderRadius: "8px",
   padding: "10px 12px",
-  color: "#FFFFFF",
+  color: ONE_EYRIE.textRow,
   fontSize: "14px",
   transition: "all 0.18s ease",
 };
@@ -1441,7 +1441,7 @@ const messageTextBox: React.CSSProperties = {
   borderLeft: `4px solid ${gold}`,
   borderRadius: "10px",
   padding: "12px 14px",
-  color: ONE_EYRIE.text,
+  color: ONE_EYRIE.textRow,
   lineHeight: 1.5,
   transition: "all 0.18s ease",
   wordBreak: "break-word",

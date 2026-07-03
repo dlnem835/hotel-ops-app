@@ -163,13 +163,14 @@
     border-color: rgba(200, 169, 106, 0.55);
   }
 
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__subject {
-    color: #ffffff;
+  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__subject,
+  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__meta,
+  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__message {
+    color: #e5e7eb;
   }
 
   .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__body {
     background: #0d0d0d;
     border-top-color: #2a2a2a;
-    color: #d8d2c8;
   }
 }
