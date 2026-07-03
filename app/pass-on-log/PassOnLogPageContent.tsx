@@ -60,7 +60,9 @@ export default function PassOnLogPageContent() {
   const [message, setMessage] = useState("");
   const [entryDate, setEntryDate] = useState(() => getHotelBusinessDateString());
   const [showForm, setShowForm] = useState(false);
-  const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
+  const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
+    () => new Set()
+  );
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
@@ -69,20 +71,8 @@ export default function PassOnLogPageContent() {
   >(undefined);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
-  const mainContentRef = useRef<HTMLElement | null>(null);
   const replyInputRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
-  const expandAnchorRef = useRef<{
-    entryId: number;
-    headerTop: number;
-    pass: number;
-    createdAt: number;
-  } | null>(null);
-  const pendingExpandRef = useRef<{
-    entryId: number;
-    headerTop: number;
-    collapseHeight: number;
-  } | null>(null);
-  const headerPinFrameRef = useRef<number | null>(null);
+  const pendingReplyFocusRef = useRef<number | null>(null);
   const [dateFilter, setDateFilter] = useState<PassOnDateFilter>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -233,11 +223,10 @@ async function markAsViewed(entryId: number) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  console.log("SESSION:", session);
 
   if (!session) return;
 
-  const result = await supabase
+  await supabase
     .from("pass_on_log_views")
     .upsert(
       {
@@ -250,166 +239,101 @@ async function markAsViewed(entryId: number) {
       }
     );
 
-  console.log("VIEW RESULT:", result);
+  const viewedAt = new Date().toISOString();
+  const userId = session.user.id;
 
-  await fetchEntries();
+  setEntries((prev) =>
+    prev.map((entry) => {
+      if (entry.id !== entryId) return entry;
+
+      const views = entry.pass_on_log_views || [];
+      const existingIndex = views.findIndex(
+        (view: { auth_user_id: string }) =>
+          String(view.auth_user_id).trim() === String(userId).trim()
+      );
+
+      if (existingIndex >= 0) {
+        const nextViews = [...views];
+        nextViews[existingIndex] = {
+          ...nextViews[existingIndex],
+          viewed_at: viewedAt,
+        };
+        return { ...entry, pass_on_log_views: nextViews };
+      }
+
+      return {
+        ...entry,
+        pass_on_log_views: [
+          ...views,
+          { entry_id: entryId, auth_user_id: userId, viewed_at: viewedAt },
+        ],
+      };
+    })
+  );
 }
 
-  function isPassOnEntryAbove(upperEntryId: number, lowerEntryId: number) {
-    const upperEl = document.getElementById(`pass-on-entry-${upperEntryId}`);
-    const lowerEl = document.getElementById(`pass-on-entry-${lowerEntryId}`);
-    if (!upperEl || !lowerEl) return false;
-
-    return (
-      (upperEl.compareDocumentPosition(lowerEl) &
-        Node.DOCUMENT_POSITION_FOLLOWING) !==
-      0
-    );
+  function queuePassOnReplyFocus(entryId: number) {
+    pendingReplyFocusRef.current = entryId;
   }
 
-  function measurePassOnEntryExpandDelta(entryId: number) {
-    const entryEl = document.getElementById(`pass-on-entry-${entryId}`);
-    const headerEl = getPassOnEntryHeader(entryId);
-    if (!entryEl || !headerEl) return 0;
+  function focusPassOnReplyInput(entryId: number) {
+    if (editingEntryId === entryId || editingReplyId !== null) return;
 
-    const expandedEl = entryEl.querySelector(".one-eyrie-pass-on-entry-expanded");
-    if (!expandedEl) return 0;
+    const scrollEl = document.querySelector(
+      ".one-eyrie-main-content.one-eyrie-pass-on-log-page"
+    ) as HTMLElement | null;
+    const lockedMainScroll = scrollEl?.scrollTop ?? 0;
+    const lockedWindowScroll = window.scrollY;
 
-    return Math.max(0, entryEl.getBoundingClientRect().height - headerEl.getBoundingClientRect().height);
-  }
+    replyInputRefs.current[entryId]?.focus({ preventScroll: true });
 
-  function getPassOnEntryHeader(entryId: number) {
-    return document
-      .getElementById(`pass-on-entry-${entryId}`)
-      ?.querySelector(".one-eyrie-pass-on-entry-row") as HTMLElement | null;
-  }
-
-  function pinPassOnEntryHeader(entryId: number, targetTop: number) {
-    const scrollEl = mainContentRef.current;
-    const headerEl = getPassOnEntryHeader(entryId);
-    if (!scrollEl || !headerEl) return;
-
-    const headerDelta = headerEl.getBoundingClientRect().top - targetTop;
-    if (Math.abs(headerDelta) > 0.5) {
-      scrollEl.scrollTop += headerDelta;
+    if (scrollEl) scrollEl.scrollTop = lockedMainScroll;
+    if (window.scrollY !== lockedWindowScroll) {
+      window.scrollTo({
+        top: lockedWindowScroll,
+        left: window.scrollX,
+        behavior: "auto",
+      });
     }
-  }
-
-  function startPassOnHeaderPinLoop(entryId: number, targetTop: number) {
-    if (headerPinFrameRef.current !== null) {
-      cancelAnimationFrame(headerPinFrameRef.current);
-    }
-
-    const startedAt = performance.now();
-
-    const step = () => {
-      if (performance.now() - startedAt > 700) {
-        headerPinFrameRef.current = null;
-        return;
-      }
-
-      pinPassOnEntryHeader(entryId, targetTop);
-      headerPinFrameRef.current = requestAnimationFrame(step);
-    };
-
-    headerPinFrameRef.current = requestAnimationFrame(step);
-  }
-
-  function beginPassOnExpandAnchor(entryId: number) {
-    const headerEl = getPassOnEntryHeader(entryId);
-    const headerTop = headerEl?.getBoundingClientRect().top ?? 0;
-
-    expandAnchorRef.current = {
-      entryId,
-      headerTop,
-      pass: 0,
-      createdAt: performance.now(),
-    };
-
-    startPassOnHeaderPinLoop(entryId, headerTop);
-  }
-
-  function stabilizePassOnExpand() {
-    const anchor = expandAnchorRef.current;
-    if (!anchor) return;
-
-    pinPassOnEntryHeader(anchor.entryId, anchor.headerTop);
-
-    anchor.pass += 1;
-    if (anchor.pass >= 3 || performance.now() - anchor.createdAt > 800) {
-      expandAnchorRef.current = null;
-    }
-  }
-
-  function openPassOnEntry(entryId: number) {
-    beginPassOnExpandAnchor(entryId);
-    setExpandedEntry(entryId);
-    void (async () => {
-      await markAsViewed(entryId);
-      const anchor = expandAnchorRef.current;
-      if (anchor?.entryId === entryId) {
-        pinPassOnEntryHeader(entryId, anchor.headerTop);
-      }
-    })();
   }
 
   function togglePassOnEntryExpand(entryId: number, isCurrentlyOpen: boolean) {
-    if (isCurrentlyOpen) {
-      beginPassOnExpandAnchor(entryId);
-      setExpandedEntry(null);
-      return;
-    }
+    setExpandedEntries((prev) => {
+      const next = new Set(prev);
+      if (isCurrentlyOpen) {
+        next.delete(entryId);
+      } else {
+        next.add(entryId);
+        queuePassOnReplyFocus(entryId);
+      }
+      return next;
+    });
 
-    const previousEntryId = expandedEntry;
-    if (
-      previousEntryId !== null &&
-      previousEntryId !== entryId &&
-      isPassOnEntryAbove(previousEntryId, entryId)
-    ) {
-      const headerEl = getPassOnEntryHeader(entryId);
-      pendingExpandRef.current = {
-        entryId,
-        headerTop: headerEl?.getBoundingClientRect().top ?? 0,
-        collapseHeight: measurePassOnEntryExpandDelta(previousEntryId),
-      };
-      setExpandedEntry(null);
-      return;
+    if (!isCurrentlyOpen) {
+      void markAsViewed(entryId);
     }
+  }
 
-    openPassOnEntry(entryId);
+  function expandPassOnEntry(entryId: number) {
+    setExpandedEntries((prev) => {
+      if (prev.has(entryId)) return prev;
+      const next = new Set(prev);
+      next.add(entryId);
+      return next;
+    });
   }
 
   useLayoutEffect(() => {
-    const pending = pendingExpandRef.current;
-    if (pending && expandedEntry === null) {
-      const scrollEl = mainContentRef.current;
-      if (scrollEl && pending.collapseHeight > 0) {
-        scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop - pending.collapseHeight);
-      }
-
-      pinPassOnEntryHeader(pending.entryId, pending.headerTop);
-
-      const nextEntryId = pending.entryId;
-      pendingExpandRef.current = null;
-      openPassOnEntry(nextEntryId);
+    const entryId = pendingReplyFocusRef.current;
+    if (entryId === null) return;
+    if (!expandedEntries.has(entryId)) {
+      pendingReplyFocusRef.current = null;
       return;
     }
 
-    stabilizePassOnExpand();
-
-    if (expandedEntry === null) return;
-    if (editingEntryId === expandedEntry || editingReplyId !== null) return;
-
-    replyInputRefs.current[expandedEntry]?.focus({ preventScroll: true });
-  }, [expandedEntry, entries, editingEntryId, editingReplyId]);
-
-  useEffect(() => {
-    return () => {
-      if (headerPinFrameRef.current !== null) {
-        cancelAnimationFrame(headerPinFrameRef.current);
-      }
-    };
-  }, []);
+    focusPassOnReplyInput(entryId);
+    pendingReplyFocusRef.current = null;
+  }, [expandedEntries, editingEntryId, editingReplyId]);
 
   useEffect(() => {
   async function checkAuth() {
@@ -473,14 +397,9 @@ setTeamMembers(allTeamMembers || []);
     deepLinkHandled.current = deepLinkEntryId;
     setDateFilter("All");
     setSearch("");
-    setExpandedEntry(deepLinkEntryId);
+    setExpandedEntries((prev) => new Set(prev).add(deepLinkEntryId));
+    queuePassOnReplyFocus(deepLinkEntryId);
     markAsViewed(deepLinkEntryId);
-
-    requestAnimationFrame(() => {
-      document
-        .getElementById(`pass-on-entry-${deepLinkEntryId}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
   }, [deepLinkEntryId, entries]);
 
   async function addEntry(e: any) {
@@ -716,7 +635,6 @@ function dateHeader(dateString: string) {
       <OneEyrieSidebar active="Pass-On Log" />
 
       <section
-        ref={mainContentRef}
         style={{ ...MAIN_CONTENT, maxWidth: "100%" }}
         className={`${MAIN_CONTENT_CLASS} one-eyrie-pass-on-log-page`}
       >
@@ -902,7 +820,7 @@ function dateHeader(dateString: string) {
 
     <div className="one-eyrie-pass-on-day-entries">
     {entriesForDate.map((entry: any) => {
-      const isOpen = expandedEntry === entry.id;
+      const isOpen = expandedEntries.has(entry.id);
       const replyCount = entry.pass_on_log_replies?.length || 0;
       const viewCount = entry.pass_on_log_views?.length || 0;
       const isRead = isPassOnReadByUser(entry, currentAuthUserId);
@@ -991,22 +909,7 @@ function dateHeader(dateString: string) {
                       setEditingReplyMessage("");
                       setEditingEntryId(entry.id);
                       setEditingMessage(entry.message || "");
-                      if (
-                        expandedEntry !== null &&
-                        expandedEntry !== entry.id &&
-                        isPassOnEntryAbove(expandedEntry, entry.id)
-                      ) {
-                        const headerEl = getPassOnEntryHeader(entry.id);
-                        pendingExpandRef.current = {
-                          entryId: entry.id,
-                          headerTop: headerEl?.getBoundingClientRect().top ?? 0,
-                          collapseHeight: measurePassOnEntryExpandDelta(expandedEntry),
-                        };
-                        setExpandedEntry(null);
-                      } else {
-                        beginPassOnExpandAnchor(entry.id);
-                        setExpandedEntry(entry.id);
-                      }
+                      expandPassOnEntry(entry.id);
                     }
                   }}
                 >

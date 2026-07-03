@@ -659,6 +659,11 @@
     transform: none;
   }
 
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-expanded {
+    flex-shrink: 0;
+    overflow-anchor: none;
+  }
+
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:hover,
   .one-eyrie-pass-on-log-page
     .one-eyrie-pass-on-day-entries
@@ -670,10 +675,6 @@
   }
 
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-row {
-    flex-shrink: 0;
-  }
-
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-expanded {
     flex-shrink: 0;
   }
 
