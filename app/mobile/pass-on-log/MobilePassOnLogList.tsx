@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getClientSession } from "@/app/lib/auth";
 import { priorityClassName } from "./lib/pass-on-priority";
@@ -68,38 +69,45 @@ export default function MobilePassOnLogList({ entries: initialEntries }: MobileP
                       : " one-eyrie-mobile-row--unread"
                   }`}
                 >
-                  <div className="one-eyrie-mobile-row__top">
-                    <div className="one-eyrie-mobile-row__title-wrap">
-                      <span
-                        className={`one-eyrie-mobile-pass-on-read-dot${
-                          isRead ? " one-eyrie-mobile-pass-on-read-dot--read" : ""
-                        }`}
-                        aria-label={isRead ? "Read" : "Unread"}
-                      />
-                      <p className="one-eyrie-mobile-row__title">{entry.subject}</p>
-                    </div>
-                    <span className={priorityClassName(entry.priority || "Normal")}>
-                      {entry.priority || "Normal"}
-                    </span>
-                  </div>
-                  <div className="one-eyrie-mobile-row__meta">
-                    <span>{resolvePassOnAuthorDisplay(teamMembers, entry.author)}</span>
-                    <span>
-                      {new Date(entry.created_at).toLocaleString([], {
-                        month: "numeric",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    {(entry.pass_on_log_replies?.length || 0) > 0 ? (
-                      <span>
-                        {entry.pass_on_log_replies.length} repl
-                        {entry.pass_on_log_replies.length === 1 ? "y" : "ies"}
+                  <div className="one-eyrie-mobile-pass-on-row__main">
+                    <div className="one-eyrie-mobile-row__top">
+                      <div className="one-eyrie-mobile-row__title-wrap">
+                        <span
+                          className={`one-eyrie-mobile-pass-on-read-dot${
+                            isRead ? " one-eyrie-mobile-pass-on-read-dot--read" : ""
+                          }`}
+                          aria-label={isRead ? "Read" : "Unread"}
+                        />
+                        <p className="one-eyrie-mobile-row__title">{entry.subject}</p>
+                      </div>
+                      <span className={priorityClassName(entry.priority || "Normal")}>
+                        {entry.priority || "Normal"}
                       </span>
-                    ) : null}
+                    </div>
+                    <div className="one-eyrie-mobile-row__meta">
+                      <span>{resolvePassOnAuthorDisplay(teamMembers, entry.author)}</span>
+                      <span>
+                        {new Date(entry.created_at).toLocaleString([], {
+                          month: "numeric",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      {(entry.pass_on_log_replies?.length || 0) > 0 ? (
+                        <span>
+                          {entry.pass_on_log_replies.length} repl
+                          {entry.pass_on_log_replies.length === 1 ? "y" : "ies"}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
+                  <ChevronRight
+                    size={18}
+                    className="one-eyrie-mobile-pass-on-row__chevron"
+                    aria-hidden
+                  />
                 </Link>
               );
             })}

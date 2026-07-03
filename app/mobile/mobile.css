@@ -265,6 +265,23 @@
   box-shadow: none;
 }
 
+.one-eyrie-mobile-pass-on .one-eyrie-mobile-row--list {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.one-eyrie-mobile-pass-on-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.one-eyrie-mobile-pass-on-row__chevron {
+  flex-shrink: 0;
+  color: #c8a96a;
+}
+
 .one-eyrie-mobile-row__top {
   display: flex;
   align-items: flex-start;
@@ -589,8 +606,7 @@
 
 .one-eyrie-mobile-work-order-card__chevron {
   flex-shrink: 0;
-  color: #8f8a82;
-  opacity: 0.75;
+  color: #c8a96a;
 }
 
 .one-eyrie-mobile-work-order-detail__header {
@@ -866,8 +882,7 @@
 
 .one-eyrie-mobile-pm-queue-row__chevron {
   flex-shrink: 0;
-  color: #8f8a82;
-  opacity: 0.75;
+  color: #c8a96a;
 }
 
 /* Room Inspections */
@@ -960,8 +975,7 @@
 
 .one-eyrie-mobile-inspections-queue__chevron {
   flex-shrink: 0;
-  color: #8f8a82;
-  opacity: 0.75;
+  color: #c8a96a;
 }
 
 .one-eyrie-mobile-inspections-search {
