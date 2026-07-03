@@ -681,7 +681,16 @@
     border-bottom-color: #c8a96a !important;
     border-left-color: #c8a96a !important;
     box-shadow: 0 0 18px rgba(200, 169, 106, 0.3) !important;
+  }
+
+  .one-eyrie-pass-on-log-page .original-post-box.pass-on-message-text:hover {
     transform: translateY(-1px);
+  }
+
+  .one-eyrie-pass-on-log-page .reply-preview-box__actions,
+  .one-eyrie-pass-on-log-page .reply-preview-box .one-eyrie-icon-btn {
+    position: relative;
+    z-index: 2;
   }
 
   .one-eyrie-pass-on-log-page h3 {

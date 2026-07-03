@@ -389,7 +389,7 @@ setTeamMembers(allTeamMembers || []);
   async function deleteReply(replyId: number) {
     const reply = entries
       .flatMap((entry) => entry.pass_on_log_replies || [])
-      .find((item) => item.id === replyId);
+      .find((item) => Number(item.id) === Number(replyId));
 
     if (!reply || !canDeletePassOnContent(reply.reply_author)) {
       alert("Only the author or an administrator can delete this reply.");
@@ -398,9 +398,9 @@ setTeamMembers(allTeamMembers || []);
 
     if (!confirm("Delete this reply?")) return;
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("pass_on_log_replies")
-      .delete()
+      .delete({ count: "exact" })
       .eq("id", replyId);
 
     if (error) {
@@ -408,7 +408,19 @@ setTeamMembers(allTeamMembers || []);
       return;
     }
 
-    fetchEntries();
+    if ((count ?? 0) === 0) {
+      alert("Unable to delete this reply. You may not have permission.");
+      return;
+    }
+
+    setEntries((prev) =>
+      prev.map((entry) => ({
+        ...entry,
+        pass_on_log_replies: (entry.pass_on_log_replies || []).filter(
+          (item: { id: number }) => Number(item.id) !== Number(replyId)
+        ),
+      }))
+    );
   }
 
   function formatDateTime(value: string) {
@@ -991,6 +1003,7 @@ function dateHeader(dateString: string) {
                             ) : null}
                           </div>
                           <div
+                            className="reply-preview-box__actions"
                             style={{
                               display: "flex",
                               alignItems: "flex-start",
@@ -1003,7 +1016,8 @@ function dateHeader(dateString: string) {
                                 type="button"
                                 className="one-eyrie-icon-btn"
                                 style={iconButton}
-                                onClick={() => {
+                                onClick={(event) => {
+                                  event.stopPropagation();
                                   setEditingEntryId(null);
                                   setEditingMessage("");
                                   setEditingReplyId(reply.id);
@@ -1018,7 +1032,10 @@ function dateHeader(dateString: string) {
                                 type="button"
                                 className="one-eyrie-icon-btn"
                                 style={iconButton}
-                                onClick={() => deleteReply(reply.id)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void deleteReply(reply.id);
+                                }}
                               >
                                 <Trash2 size={12} />
                               </button>
