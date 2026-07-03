@@ -652,19 +652,10 @@
     color: #9a948a;
   }
 
-  .one-eyrie-pass-on-log-page.one-eyrie-main-content {
-    overflow-anchor: none;
-  }
-
-  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries {
-    overflow-anchor: none;
-  }
-
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    overflow-anchor: none;
     transform: none;
   }
 

@@ -74,10 +74,15 @@ export default function PassOnLogPageContent() {
   const expandAnchorRef = useRef<{
     entryId: number;
     headerTop: number;
-    isOpening: boolean;
     pass: number;
     createdAt: number;
   } | null>(null);
+  const pendingExpandRef = useRef<{
+    entryId: number;
+    headerTop: number;
+    collapseHeight: number;
+  } | null>(null);
+  const headerPinFrameRef = useRef<number | null>(null);
   const [dateFilter, setDateFilter] = useState<PassOnDateFilter>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -250,70 +255,146 @@ async function markAsViewed(entryId: number) {
   await fetchEntries();
 }
 
-  function beginPassOnExpandAnchor(entryId: number, isOpening: boolean) {
+  function isPassOnEntryAbove(upperEntryId: number, lowerEntryId: number) {
+    const upperEl = document.getElementById(`pass-on-entry-${upperEntryId}`);
+    const lowerEl = document.getElementById(`pass-on-entry-${lowerEntryId}`);
+    if (!upperEl || !lowerEl) return false;
+
+    return (
+      (upperEl.compareDocumentPosition(lowerEl) &
+        Node.DOCUMENT_POSITION_FOLLOWING) !==
+      0
+    );
+  }
+
+  function measurePassOnEntryExpandDelta(entryId: number) {
     const entryEl = document.getElementById(`pass-on-entry-${entryId}`);
+    const headerEl = getPassOnEntryHeader(entryId);
+    if (!entryEl || !headerEl) return 0;
+
+    const expandedEl = entryEl.querySelector(".one-eyrie-pass-on-entry-expanded");
+    if (!expandedEl) return 0;
+
+    return Math.max(0, entryEl.getBoundingClientRect().height - headerEl.getBoundingClientRect().height);
+  }
+
+  function getPassOnEntryHeader(entryId: number) {
+    return document
+      .getElementById(`pass-on-entry-${entryId}`)
+      ?.querySelector(".one-eyrie-pass-on-entry-row") as HTMLElement | null;
+  }
+
+  function pinPassOnEntryHeader(entryId: number, targetTop: number) {
+    const scrollEl = mainContentRef.current;
+    const headerEl = getPassOnEntryHeader(entryId);
+    if (!scrollEl || !headerEl) return;
+
+    const headerDelta = headerEl.getBoundingClientRect().top - targetTop;
+    if (Math.abs(headerDelta) > 0.5) {
+      scrollEl.scrollTop += headerDelta;
+    }
+  }
+
+  function startPassOnHeaderPinLoop(entryId: number, targetTop: number) {
+    if (headerPinFrameRef.current !== null) {
+      cancelAnimationFrame(headerPinFrameRef.current);
+    }
+
+    const startedAt = performance.now();
+
+    const step = () => {
+      if (performance.now() - startedAt > 700) {
+        headerPinFrameRef.current = null;
+        return;
+      }
+
+      pinPassOnEntryHeader(entryId, targetTop);
+      headerPinFrameRef.current = requestAnimationFrame(step);
+    };
+
+    headerPinFrameRef.current = requestAnimationFrame(step);
+  }
+
+  function beginPassOnExpandAnchor(entryId: number) {
+    const headerEl = getPassOnEntryHeader(entryId);
+    const headerTop = headerEl?.getBoundingClientRect().top ?? 0;
+
     expandAnchorRef.current = {
       entryId,
-      headerTop: entryEl?.getBoundingClientRect().top ?? 0,
-      isOpening,
+      headerTop,
       pass: 0,
       createdAt: performance.now(),
     };
+
+    startPassOnHeaderPinLoop(entryId, headerTop);
   }
 
   function stabilizePassOnExpand() {
     const anchor = expandAnchorRef.current;
     if (!anchor) return;
 
-    const scrollEl = mainContentRef.current;
-    const entryEl = document.getElementById(`pass-on-entry-${anchor.entryId}`);
-    if (!scrollEl || !entryEl) {
-      expandAnchorRef.current = null;
-      return;
-    }
-
-    const headerDelta = entryEl.getBoundingClientRect().top - anchor.headerTop;
-    if (Math.abs(headerDelta) > 0.5) {
-      scrollEl.scrollTop += headerDelta;
-    }
-
-    if (anchor.isOpening && expandedEntry === anchor.entryId) {
-      const expandedEl = entryEl.querySelector(
-        ".one-eyrie-pass-on-entry-expanded"
-      ) as HTMLElement | null;
-
-      if (expandedEl) {
-        const visibleBottom = scrollEl.getBoundingClientRect().bottom;
-        const expandedBottom = expandedEl.getBoundingClientRect().bottom;
-        const padding = 16;
-        const overflow = expandedBottom - (visibleBottom - padding);
-
-        if (overflow > 0 && anchor.pass >= 1) {
-          scrollEl.scrollBy({ top: overflow, behavior: "smooth" });
-        }
-      }
-    }
+    pinPassOnEntryHeader(anchor.entryId, anchor.headerTop);
 
     anchor.pass += 1;
-    const passesNeeded = anchor.isOpening ? 2 : 1;
-    if (
-      anchor.pass >= passesNeeded ||
-      performance.now() - anchor.createdAt > 600
-    ) {
+    if (anchor.pass >= 3 || performance.now() - anchor.createdAt > 800) {
       expandAnchorRef.current = null;
     }
+  }
+
+  function openPassOnEntry(entryId: number) {
+    beginPassOnExpandAnchor(entryId);
+    setExpandedEntry(entryId);
+    void (async () => {
+      await markAsViewed(entryId);
+      const anchor = expandAnchorRef.current;
+      if (anchor?.entryId === entryId) {
+        pinPassOnEntryHeader(entryId, anchor.headerTop);
+      }
+    })();
   }
 
   function togglePassOnEntryExpand(entryId: number, isCurrentlyOpen: boolean) {
-    beginPassOnExpandAnchor(entryId, !isCurrentlyOpen);
-    setExpandedEntry(isCurrentlyOpen ? null : entryId);
-
-    if (!isCurrentlyOpen) {
-      void markAsViewed(entryId);
+    if (isCurrentlyOpen) {
+      beginPassOnExpandAnchor(entryId);
+      setExpandedEntry(null);
+      return;
     }
+
+    const previousEntryId = expandedEntry;
+    if (
+      previousEntryId !== null &&
+      previousEntryId !== entryId &&
+      isPassOnEntryAbove(previousEntryId, entryId)
+    ) {
+      const headerEl = getPassOnEntryHeader(entryId);
+      pendingExpandRef.current = {
+        entryId,
+        headerTop: headerEl?.getBoundingClientRect().top ?? 0,
+        collapseHeight: measurePassOnEntryExpandDelta(previousEntryId),
+      };
+      setExpandedEntry(null);
+      return;
+    }
+
+    openPassOnEntry(entryId);
   }
 
   useLayoutEffect(() => {
+    const pending = pendingExpandRef.current;
+    if (pending && expandedEntry === null) {
+      const scrollEl = mainContentRef.current;
+      if (scrollEl && pending.collapseHeight > 0) {
+        scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop - pending.collapseHeight);
+      }
+
+      pinPassOnEntryHeader(pending.entryId, pending.headerTop);
+
+      const nextEntryId = pending.entryId;
+      pendingExpandRef.current = null;
+      openPassOnEntry(nextEntryId);
+      return;
+    }
+
     stabilizePassOnExpand();
 
     if (expandedEntry === null) return;
@@ -321,6 +402,14 @@ async function markAsViewed(entryId: number) {
 
     replyInputRefs.current[expandedEntry]?.focus({ preventScroll: true });
   }, [expandedEntry, entries, editingEntryId, editingReplyId]);
+
+  useEffect(() => {
+    return () => {
+      if (headerPinFrameRef.current !== null) {
+        cancelAnimationFrame(headerPinFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
   async function checkAuth() {
@@ -902,8 +991,22 @@ function dateHeader(dateString: string) {
                       setEditingReplyMessage("");
                       setEditingEntryId(entry.id);
                       setEditingMessage(entry.message || "");
-                      beginPassOnExpandAnchor(entry.id, true);
-                      setExpandedEntry(entry.id);
+                      if (
+                        expandedEntry !== null &&
+                        expandedEntry !== entry.id &&
+                        isPassOnEntryAbove(expandedEntry, entry.id)
+                      ) {
+                        const headerEl = getPassOnEntryHeader(entry.id);
+                        pendingExpandRef.current = {
+                          entryId: entry.id,
+                          headerTop: headerEl?.getBoundingClientRect().top ?? 0,
+                          collapseHeight: measurePassOnEntryExpandDelta(expandedEntry),
+                        };
+                        setExpandedEntry(null);
+                      } else {
+                        beginPassOnExpandAnchor(entry.id);
+                        setExpandedEntry(entry.id);
+                      }
                     }
                   }}
                 >
