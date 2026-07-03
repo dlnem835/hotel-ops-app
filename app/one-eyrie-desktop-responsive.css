@@ -652,6 +652,40 @@
     color: #9a948a;
   }
 
+  .one-eyrie-pass-on-log-page.one-eyrie-main-content {
+    overflow-anchor: none;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries {
+    overflow-anchor: none;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow-anchor: none;
+    transform: none;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:hover,
+  .one-eyrie-pass-on-log-page
+    .one-eyrie-pass-on-day-entries
+    .one-eyrie-list-row--selected,
+  .one-eyrie-pass-on-log-page
+    .one-eyrie-pass-on-day-entries
+    .one-eyrie-list-row--selected:hover {
+    transform: none;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-row {
+    flex-shrink: 0;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-expanded {
+    flex-shrink: 0;
+  }
+
   .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
     background-color: #2a2620;
     border-color: #3a352e;
@@ -696,6 +730,19 @@
   .one-eyrie-pass-on-log-page h3 {
     color: #e0c47b;
     letter-spacing: 0.02em;
+  }
+
+  .one-eyrie-pass-on-log-page .pass-on-send-reply-btn {
+    padding: 7px 12px;
+    min-height: 30px;
+    font-size: 10px;
+    gap: 5px;
+    border-radius: 12px;
+  }
+
+  .one-eyrie-pass-on-log-page .pass-on-send-reply-btn svg {
+    width: 12px;
+    height: 12px;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-table-panel {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
@@ -16,6 +16,7 @@ import {
   Calendar,
   SlidersHorizontal,
   X,
+  Send,
 } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -61,7 +62,6 @@ export default function PassOnLogPageContent() {
   const [showForm, setShowForm] = useState(false);
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
-  const [expandedReplyEntry, setExpandedReplyEntry] = useState<number | null>(null);
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [workOrderInitial, setWorkOrderInitial] = useState<
@@ -69,6 +69,15 @@ export default function PassOnLogPageContent() {
   >(undefined);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const mainContentRef = useRef<HTMLElement | null>(null);
+  const replyInputRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
+  const expandAnchorRef = useRef<{
+    entryId: number;
+    headerTop: number;
+    isOpening: boolean;
+    pass: number;
+    createdAt: number;
+  } | null>(null);
   const [dateFilter, setDateFilter] = useState<PassOnDateFilter>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -238,8 +247,80 @@ async function markAsViewed(entryId: number) {
 
   console.log("VIEW RESULT:", result);
 
-  fetchEntries();
+  await fetchEntries();
 }
+
+  function beginPassOnExpandAnchor(entryId: number, isOpening: boolean) {
+    const entryEl = document.getElementById(`pass-on-entry-${entryId}`);
+    expandAnchorRef.current = {
+      entryId,
+      headerTop: entryEl?.getBoundingClientRect().top ?? 0,
+      isOpening,
+      pass: 0,
+      createdAt: performance.now(),
+    };
+  }
+
+  function stabilizePassOnExpand() {
+    const anchor = expandAnchorRef.current;
+    if (!anchor) return;
+
+    const scrollEl = mainContentRef.current;
+    const entryEl = document.getElementById(`pass-on-entry-${anchor.entryId}`);
+    if (!scrollEl || !entryEl) {
+      expandAnchorRef.current = null;
+      return;
+    }
+
+    const headerDelta = entryEl.getBoundingClientRect().top - anchor.headerTop;
+    if (Math.abs(headerDelta) > 0.5) {
+      scrollEl.scrollTop += headerDelta;
+    }
+
+    if (anchor.isOpening && expandedEntry === anchor.entryId) {
+      const expandedEl = entryEl.querySelector(
+        ".one-eyrie-pass-on-entry-expanded"
+      ) as HTMLElement | null;
+
+      if (expandedEl) {
+        const visibleBottom = scrollEl.getBoundingClientRect().bottom;
+        const expandedBottom = expandedEl.getBoundingClientRect().bottom;
+        const padding = 16;
+        const overflow = expandedBottom - (visibleBottom - padding);
+
+        if (overflow > 0 && anchor.pass >= 1) {
+          scrollEl.scrollBy({ top: overflow, behavior: "smooth" });
+        }
+      }
+    }
+
+    anchor.pass += 1;
+    const passesNeeded = anchor.isOpening ? 2 : 1;
+    if (
+      anchor.pass >= passesNeeded ||
+      performance.now() - anchor.createdAt > 600
+    ) {
+      expandAnchorRef.current = null;
+    }
+  }
+
+  function togglePassOnEntryExpand(entryId: number, isCurrentlyOpen: boolean) {
+    beginPassOnExpandAnchor(entryId, !isCurrentlyOpen);
+    setExpandedEntry(isCurrentlyOpen ? null : entryId);
+
+    if (!isCurrentlyOpen) {
+      void markAsViewed(entryId);
+    }
+  }
+
+  useLayoutEffect(() => {
+    stabilizePassOnExpand();
+
+    if (expandedEntry === null) return;
+    if (editingEntryId === expandedEntry || editingReplyId !== null) return;
+
+    replyInputRefs.current[expandedEntry]?.focus({ preventScroll: true });
+  }, [expandedEntry, entries, editingEntryId, editingReplyId]);
 
   useEffect(() => {
   async function checkAuth() {
@@ -474,7 +555,30 @@ function dateHeader(dateString: string) {
           .gold-button:hover,
           .plus-submit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 8px 22px rgba(61, 107, 79, 0.25);
+            box-shadow: 0 6px 18px rgba(200, 169, 106, 0.38);
+          }
+
+          .pass-on-reply-textarea {
+            min-height: 54px;
+            resize: vertical;
+            overflow: auto;
+            width: 100%;
+            box-sizing: border-box;
+          }
+
+          .pass-on-send-reply-btn:hover {
+            background: #d4b87a !important;
+            border-color: #d4b87a !important;
+          }
+
+          .pass-on-work-order-btn:hover {
+            background: rgba(200, 169, 106, 0.1) !important;
+            box-shadow: 0 0 14px rgba(200, 169, 106, 0.28);
+          }
+
+          .reply-input-wrap {
+            align-items: center;
+            gap: 12px;
           }
 
           .reply-input-wrap:focus-within {
@@ -501,9 +605,7 @@ function dateHeader(dateString: string) {
             flex-direction: column;
             justify-content: center;
             align-items: stretch;
-            gap: 8px;
             flex-shrink: 0;
-            width: 148px;
           }
 
           @media (max-width: 900px) {
@@ -525,6 +627,7 @@ function dateHeader(dateString: string) {
       <OneEyrieSidebar active="Pass-On Log" />
 
       <section
+        ref={mainContentRef}
         style={{ ...MAIN_CONTENT, maxWidth: "100%" }}
         className={`${MAIN_CONTENT_CLASS} one-eyrie-pass-on-log-page`}
       >
@@ -727,13 +830,7 @@ function dateHeader(dateString: string) {
           <div className="one-eyrie-pass-on-entry-row" style={collapsedRow}>
             <button
               type="button"
-              onClick={() => {
-  setExpandedEntry(isOpen ? null : entry.id);
-
-  if (!isOpen) {
-    markAsViewed(entry.id);
-  }
-}}
+              onClick={() => togglePassOnEntryExpand(entry.id, isOpen)}
             >
               {isOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
             </button>
@@ -750,13 +847,7 @@ function dateHeader(dateString: string) {
             </div>
 
             <div
-              onClick={() => {
-  setExpandedEntry(isOpen ? null : entry.id);
-
-  if (!isOpen) {
-    markAsViewed(entry.id);
-  }
-}}
+              onClick={() => togglePassOnEntryExpand(entry.id, isOpen)}
               style={{ flex: 1, cursor: "pointer" }}
               className="one-eyrie-pass-on-entry-subject"
             >
@@ -787,17 +878,7 @@ function dateHeader(dateString: string) {
 
               <button
                 type="button"
-                onClick={() => {
-  const isOpening = expandedEntry !== entry.id;
-
-  setExpandedEntry(isOpening ? entry.id : null);
-
-  if (isOpening) {
-    markAsViewed(entry.id);
-  }
-
-              
-                }}
+                onClick={() => togglePassOnEntryExpand(entry.id, isOpen)}
                 className="one-eyrie-icon-btn section-button"
                 style={smallActionButton}
               >
@@ -821,6 +902,7 @@ function dateHeader(dateString: string) {
                       setEditingReplyMessage("");
                       setEditingEntryId(entry.id);
                       setEditingMessage(entry.message || "");
+                      beginPassOnExpandAnchor(entry.id, true);
                       setExpandedEntry(entry.id);
                     }
                   }}
@@ -887,27 +969,6 @@ function dateHeader(dateString: string) {
                 <div className="pass-on-expanded-actions">
                   <button
                     type="button"
-                    onClick={() =>
-                      setExpandedReplyEntry(
-                        expandedReplyEntry === entry.id ? null : entry.id
-                      )
-                    }
-                    style={replyPillButton}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 16px rgba(200,169,106,0.35)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                  >
-                    + Reply
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => {
                       setWorkOrderInitial({
                         subject: entry.subject,
@@ -922,11 +983,12 @@ function dateHeader(dateString: string) {
                       });
                       setWorkOrderModalOpen(true);
                     }}
-                    style={replyPillButton}
+                    className="pass-on-work-order-btn"
+                    style={workOrderActionButton}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(200,169,106,0.12)";
+                      e.currentTarget.style.background = "rgba(200,169,106,0.1)";
                       e.currentTarget.style.boxShadow =
-                        "0 0 16px rgba(200,169,106,0.35)";
+                        "0 0 14px rgba(200,169,106,0.28)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
@@ -1047,44 +1109,33 @@ function dateHeader(dateString: string) {
                   ))}
                 </div>
               )}
-               {expandedReplyEntry === entry.id && (
-  <div className="reply-input-wrap" style={replyInputWrap}>
-   
+              <div className="reply-input-wrap" style={replyInputWrap}>
+                <textarea
+                  ref={(el) => {
+                    replyInputRefs.current[entry.id] = el;
+                  }}
+                  value={replyMessages[entry.id] || ""}
+                  onChange={(e) =>
+                    setReplyMessages((prev) => ({
+                      ...prev,
+                      [entry.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="Write a reply..."
+                  className="one-eyrie-field pass-on-reply-textarea"
+                  style={replyTextarea}
+                />
 
-    <textarea
-  value={replyMessages[entry.id] || ""}
-  onChange={(e) =>
-    setReplyMessages((prev) => ({
-      ...prev,
-      [entry.id]: e.target.value,
-    }))
-  }
-  placeholder="Write a reply..."
-  className="one-eyrie-field"
-  style={replyTextarea}
-/>
-
-<div
-  style={{
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "10px",
-    alignItems: "center",
-    flexWrap: "wrap",
-  }}
->
-  <button
-    type="button"
-    onClick={() => addInlineReply(entry.id)}
-    className="plus-submit"
-    style={replySendButton}
-  >
-    Send Reply
-  </button>
-</div>
-  </div>
-)}
+                <button
+                  type="button"
+                  onClick={() => addInlineReply(entry.id)}
+                  className="plus-submit pass-on-send-reply-btn"
+                  style={replySendButton}
+                >
+                  <Send size={14} strokeWidth={2.25} aria-hidden />
+                  Send Reply
+                </button>
+              </div>
 
 {entry.pass_on_log_views?.length > 0 && (
   <div style={viewedByRow}>
@@ -1320,12 +1371,13 @@ const viewRow: React.CSSProperties = {
 const replyInputWrap: React.CSSProperties = {
   marginTop: "10px",
   display: "flex",
-  alignItems: "stretch",
+  alignItems: "center",
+  gap: "12px",
   width: "100%",
   background: ONE_EYRIE.surface,
   border: `1px solid rgba(200, 169, 106, 0.35)`,
   borderRadius: "14px",
-  padding: "10px",
+  padding: "10px 12px",
   transition: "all 0.18s ease",
   boxSizing: "border-box",
 };
@@ -1333,9 +1385,9 @@ const replyInputWrap: React.CSSProperties = {
 const replyTextarea: React.CSSProperties = {
   ...textareaStyle,
   flex: 1,
-  minHeight: "70px",
+  minHeight: "54px",
   fontSize: "14px",
-  marginRight: "8px",
+  resize: "vertical",
 };
 
 const smallPlusButton: React.CSSProperties = {
@@ -1433,19 +1485,23 @@ const replyHint: React.CSSProperties = {
 };
 
 const replySendButton: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #C8A96A",
-  color: gold,
-
-  borderRadius: "16px",
+  background: gold,
+  border: `1px solid ${gold}`,
+  color: "#111111",
+  borderRadius: "14px",
   padding: "8px 14px",
+  minHeight: "36px",
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
-  fontSize: "11px",
+  fontSize: "12px",
+  flexShrink: 0,
   alignSelf: "center",
   display: "inline-flex",
-  
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+  transition: "all 0.18s ease",
 };
 
 const messageRowBox: React.CSSProperties = {
@@ -1478,7 +1534,20 @@ const replyPillButton: React.CSSProperties = {
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
-  transition: "all 0.18s ease"
+  transition: "all 0.18s ease",
+};
+
+const workOrderActionButton: React.CSSProperties = {
+  background: "transparent",
+  color: gold,
+  border: `1px solid ${gold}`,
+  borderRadius: "999px",
+  padding: "7px 12px",
+  fontSize: "12px",
+  fontWeight: 700,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+  transition: "all 0.18s ease",
 };
 
 const viewedByRow: React.CSSProperties = {
