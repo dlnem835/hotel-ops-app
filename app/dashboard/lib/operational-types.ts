@@ -5,6 +5,8 @@ export type PassOnLogEntry = {
   message: string;
   priority: string;
   entryDate: string;
+  createdAt: string;
+  editedAt?: string | null;
 };
 
 export type PassOnLogDay = "today" | "yesterday" | "tomorrow";

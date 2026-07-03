@@ -2,22 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { formatPassOnBusinessDateHeader, passOnDashboardDateKeys } from "@/app/lib/hotel-business-date";
+import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
 import { PassOnLogDay, PassOnLogEntry } from "../lib/operational-types";
-import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  goldHoverHandlers,
-  SETTINGS_BUTTON_BASE,
-} from "@/app/settings/lib/settings-ui-interactions";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { DashboardSectionTitle } from "./DashboardCard";
+import "../dashboard-pass-on-widget.css";
 
 type PassOnLogSectionProps = {
   passOnLog: Record<PassOnLogDay, PassOnLogEntry[]>;
 };
 
-const TABS: { key: PassOnLogDay; label: string }[] = [
-  { key: "today", label: "Today" },
-  { key: "yesterday", label: "Yesterday" },
-  { key: "tomorrow", label: "Tomorrow" },
+const DAY_SECTIONS: { key: PassOnLogDay; dateIndex: 0 | 1 }[] = [
+  { key: "today", dateIndex: 0 },
+  { key: "yesterday", dateIndex: 1 },
 ];
 
 const PASS_ON_PANEL = {
@@ -25,43 +23,89 @@ const PASS_ON_PANEL = {
   border: "1px solid #2A2A2A",
 } as const;
 
-function priorityPillStyle(priority: string) {
-  const color =
-    priority === "Urgent"
-      ? FLAT_RED.border
-      : priority === "Important"
-        ? ONE_EYRIE.gold
-        : FOREST.border;
+function authorFirstName(author: string): string {
+  const trimmed = author.trim();
+  if (!trimmed) return "Unknown";
+  return trimmed.split(/\s+/)[0] || trimmed;
+}
 
-  const textColor =
-    priority === "Urgent"
-      ? FLAT_RED.text
-      : priority === "Important"
-        ? ONE_EYRIE.gold
-        : FOREST.text;
+function formatEntryDateTime(createdAt: string): string {
+  if (!createdAt) return "";
+  return new Date(createdAt).toLocaleString([], {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
-  return {
-    display: "inline-block" as const,
-    color: textColor,
-    border: `1px solid ${color}`,
-    borderRadius: "999px",
-    padding: "4px 10px",
-    fontSize: "12px",
-    fontWeight: "bold" as const,
-    whiteSpace: "nowrap" as const,
-  };
+function daySectionTitle(dateKey: string): string {
+  return formatPassOnBusinessDateHeader(dateKey);
+}
+
+type DashboardPassOnEntryCardProps = {
+  entry: PassOnLogEntry;
+  expanded: boolean;
+  onToggle: () => void;
+};
+
+function DashboardPassOnEntryCard({
+  entry,
+  expanded,
+  onToggle,
+}: DashboardPassOnEntryCardProps) {
+  const priority = entry.priority || "Normal";
+
+  return (
+    <div
+      className={`dashboard-pass-on-entry${expanded ? " dashboard-pass-on-entry--expanded" : ""}`}
+    >
+      <button
+        type="button"
+        className="dashboard-pass-on-entry__toggle"
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
+        <div className="dashboard-pass-on-entry__top">
+          <p className="dashboard-pass-on-entry__subject">{entry.subject}</p>
+          <span className={priorityClassName(priority)}>{priority}</span>
+        </div>
+        <div className="dashboard-pass-on-entry__meta">
+          <span>{authorFirstName(entry.author)}</span>
+          <span>{formatEntryDateTime(entry.createdAt)}</span>
+          {entry.editedAt ? <span className="dashboard-pass-on-entry__edited">Edited</span> : null}
+        </div>
+      </button>
+      {expanded ? (
+        <div className="dashboard-pass-on-entry__body">
+          {entry.editedAt ? (
+            <p className="dashboard-pass-on-entry__edited-note">
+              Edited {formatEntryDateTime(entry.editedAt)}
+            </p>
+          ) : null}
+          <p className="dashboard-pass-on-entry__message">{entry.message}</p>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
-  const [activeTab, setActiveTab] = useState<PassOnLogDay>("today");
-  const entries = passOnLog[activeTab];
+  const [expandedEntryId, setExpandedEntryId] = useState<number | null>(null);
+  const dashboardDateKeys = passOnDashboardDateKeys();
+
+  function toggleEntry(entryId: number) {
+    setExpandedEntryId((current) => (current === entryId ? null : entryId));
+  }
 
   return (
     <section
+      className="dashboard-pass-on-widget"
       style={{
         ...PASS_ON_PANEL,
         borderRadius: "14px",
-        padding: "16px",
+        padding: "15px",
         minHeight: "320px",
         display: "flex",
         flexDirection: "column",
@@ -72,15 +116,18 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          gap: "12px",
-          marginBottom: "12px",
+          gap: "11px",
+          marginBottom: "11px",
           flexWrap: "wrap",
+          flexShrink: 0,
         }}
       >
-        <DashboardSectionTitle
-          title="Pass-On Log"
-          subtitle="Shift notes and hotel communication"
-        />
+        <div className="dashboard-pass-on-widget__header-title">
+          <DashboardSectionTitle
+            title="Pass-On Log"
+            subtitle="Shift notes and hotel communication"
+          />
+        </div>
         <Link
           href="/pass-on-log"
           style={{
@@ -94,95 +141,33 @@ export default function PassOnLogSection({ passOnLog }: PassOnLogSectionProps) {
         </Link>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "14px", flexWrap: "wrap" }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              ...SETTINGS_BUTTON_BASE,
-              background: activeTab === tab.key ? ONE_EYRIE.gold : "transparent",
-              color: activeTab === tab.key ? ONE_EYRIE.surface : ONE_EYRIE.text,
-              border: `1px solid ${activeTab === tab.key ? ONE_EYRIE.goldLight : ONE_EYRIE.border}`,
-              borderRadius: "999px",
-              padding: "7px 14px",
-              fontWeight: 800,
-              fontSize: "12px",
-            }}
-            {...goldHoverHandlers(activeTab === tab.key ? "primary" : "secondary")}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="dashboard-pass-on-widget__scroll">
+        {DAY_SECTIONS.map(({ key, dateIndex }) => {
+          const entries = passOnLog[key];
+          const sectionTitle = daySectionTitle(dashboardDateKeys[dateIndex]);
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
-        {entries.length === 0 ? (
-          <div style={{ color: "#9CA3AF", fontSize: "13px", padding: "8px 2px" }}>
-            No pass-on entries for {TABS.find((tab) => tab.key === activeTab)?.label.toLowerCase()}.
-          </div>
-        ) : (
-          entries.slice(0, 8).map((entry) => (
-            <Link
-              key={entry.id}
-              href="/pass-on-log"
-              className="one-eyrie-list-row dashboard-clickable-card"
-              style={{
-                display: "block",
-                padding: "10px 12px",
-                textDecoration: "none",
-                color: ONE_EYRIE.text,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "10px",
-                  alignItems: "flex-start",
-                  marginBottom: "6px",
-                }}
-              >
-                <div
-                  className="one-eyrie-pass-on-entry-subject-text"
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: "#FFFFFF",
-                    minWidth: 0,
-                  }}
-                >
-                  {entry.subject}
+          return (
+            <section key={key} className="dashboard-pass-on-widget__group">
+              <h3 className="dashboard-pass-on-widget__group-title">{sectionTitle}</h3>
+              {entries.length === 0 ? (
+                <p className="dashboard-pass-on-widget__empty">
+                  No pass-on entries for {sectionTitle.toLowerCase()}.
+                </p>
+              ) : (
+                <div className="dashboard-pass-on-widget__list">
+                  {entries.map((entry) => (
+                    <DashboardPassOnEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      expanded={expandedEntryId === entry.id}
+                      onToggle={() => toggleEntry(entry.id)}
+                    />
+                  ))}
                 </div>
-                <span style={priorityPillStyle(entry.priority)}>{entry.priority}</span>
-              </div>
-              <div
-                style={{
-                  marginTop: "3px",
-                  fontSize: "12px",
-                  color: "#B8C1D1",
-                  marginBottom: "6px",
-                }}
-              >
-                {entry.author}
-              </div>
-              <div
-                style={{
-                  color: "#9CA3AF",
-                  fontSize: "12px",
-                  lineHeight: 1.45,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {entry.message}
-              </div>
-            </Link>
-          ))
-        )}
+              )}
+            </section>
+          );
+        })}
       </div>
     </section>
   );

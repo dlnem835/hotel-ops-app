@@ -25,7 +25,7 @@ function WorkCard({
   return (
     <Link
       href={href}
-      className="one-eyrie-list-row dashboard-clickable-card"
+      className={`one-eyrie-list-row dashboard-clickable-card${hasWork ? " dashboard-todays-work-kpi-card--has-value" : ""}`}
       style={{
         display: "flex",
         flexDirection: "column",

@@ -49,33 +49,42 @@
   }
 
   .one-eyrie-dashboard-page .dashboard-todays-work-row .one-eyrie-list-row {
-    background: var(--owl-feather-lighter);
-    border-color: var(--owl-feather-highlight);
-    box-shadow:
-      0 2px 12px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    background: #45423e;
+    border: 1px solid #3a352e;
+    border-radius: 14px;
+    padding: 16px 18px !important;
+    min-height: 0 !important;
+    box-shadow: none;
   }
 
   .one-eyrie-dashboard-page .dashboard-todays-work-row .one-eyrie-list-row:hover {
-    background-color: var(--owl-feather-highlight) !important;
-    border-color: rgba(200, 169, 106, 0.55) !important;
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.26),
-      0 0 0 1px rgba(200, 169, 106, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    background-color: #4e4a45 !important;
+    border-color: #3a352e !important;
+    box-shadow: none !important;
+    transform: translateY(-1px);
   }
 
-  .one-eyrie-dashboard-page .dashboard-todays-work-row .one-eyrie-list-row > div:first-child,
+  .one-eyrie-dashboard-page .dashboard-todays-work-row .dashboard-clickable-card:hover {
+    border-color: #3a352e !important;
+    box-shadow: none !important;
+  }
+
   .one-eyrie-dashboard-page .dashboard-todays-work-card__title {
-    color: #ffffff !important;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    margin-bottom: 10px;
+    color: #9ca3af !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: normal;
+    margin-bottom: 8px !important;
   }
 
   .one-eyrie-dashboard-page .dashboard-todays-work-row .one-eyrie-list-row > div:last-child {
-    color: #f0e8dc;
+    line-height: 1.1;
+  }
+
+  .one-eyrie-dashboard-page .dashboard-todays-work-kpi-card--has-value > div:last-child {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
   }
 
   .one-eyrie-dashboard-page .dashboard-row-card {
@@ -212,24 +221,8 @@
       0 1px 0 rgba(255, 255, 255, 0.04) !important;
   }
 
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry-subject {
-    color: #ffffff !important;
-    font-weight: 800 !important;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry-author {
-    color: #c8a96a !important;
-    font-weight: 600 !important;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry-body {
+  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__body {
     color: #d8d2c8 !important;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-clickable-card:hover {
-    transform: none !important;
-    border-color: inherit !important;
-    box-shadow: none !important;
   }
 }
 
