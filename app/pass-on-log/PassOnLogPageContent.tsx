@@ -6,7 +6,6 @@ import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   Search,
-  Plus,
   Trash2,
   Edit2,
   Eye,
@@ -15,23 +14,14 @@ import {
   ChevronRight,
   Calendar,
   SlidersHorizontal,
-  X,
   Send,
 } from "lucide-react";
-import {
-  ONE_EYRIE_MODAL_CLOSE_BUTTON,
-  ONE_EYRIE_MODAL_BOX,
-  ONE_EYRIE_MODAL_HEADER,
-  ONE_EYRIE_MODAL_OVERLAY,
-} from "@/app/lib/one-eyrie-modal-styles";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
-  forestHoverHandlers,
   goldHoverHandlers,
-  PRIMARY_BUTTON,
   WARNING_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import WorkOrderModal, {
@@ -41,7 +31,8 @@ import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import {
   clearPassOnDraft,
   emptyPassOnDraftSnapshot,
-  formatPassOnDraftSavedTime,
+  getPassOnDraftSaveStatusLabel,
+  getPassOnDraftSaveStatusRefreshDelay,
   loadPassOnDraft,
   passOnDraftHasContent,
   passOnDraftSnapshotsEqual,
@@ -67,11 +58,7 @@ export default function PassOnLogPageContent() {
   const searchParams = useSearchParams();
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [subject, setSubject] = useState("");
-  const [priority, setPriority] = useState("Normal");
-  const [message, setMessage] = useState("");
   const [entryDate, setEntryDate] = useState(() => getHotelBusinessDateString());
-  const [showForm, setShowForm] = useState(false);
   const [showDraftCard, setShowDraftCard] = useState(false);
   const [draftSubject, setDraftSubject] = useState("");
   const [draftPriority, setDraftPriority] = useState("Normal");
@@ -93,6 +80,8 @@ export default function PassOnLogPageContent() {
   const [highlightEntryId, setHighlightEntryId] = useState<number | null>(null);
   const draftSaveResetTimerRef = useRef<number | null>(null);
   const draftHighlightTimerRef = useRef<number | null>(null);
+  const draftSaveStatusTimerRef = useRef<number | null>(null);
+  const [draftSaveStatusTick, setDraftSaveStatusTick] = useState(0);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     () => new Set()
   );
@@ -655,6 +644,9 @@ setTeamMembers(allTeamMembers || []);
       if (draftHighlightTimerRef.current) {
         window.clearTimeout(draftHighlightTimerRef.current);
       }
+      if (draftSaveStatusTimerRef.current) {
+        window.clearTimeout(draftSaveStatusTimerRef.current);
+      }
     };
   }, []);
 
@@ -673,6 +665,23 @@ setTeamMembers(allTeamMembers || []);
     [currentDraftSnapshot, draftSavedBaseline]
   );
 
+  useEffect(() => {
+    if (draftSaveStatusTimerRef.current) {
+      window.clearTimeout(draftSaveStatusTimerRef.current);
+      draftSaveStatusTimerRef.current = null;
+    }
+
+    if (!draftLastSavedAt || hasUnsavedDraftChanges) return;
+
+    const refreshDelay = getPassOnDraftSaveStatusRefreshDelay(draftLastSavedAt);
+    if (refreshDelay === null) return;
+
+    draftSaveStatusTimerRef.current = window.setTimeout(() => {
+      setDraftSaveStatusTick((tick) => tick + 1);
+      draftSaveStatusTimerRef.current = null;
+    }, refreshDelay);
+  }, [draftLastSavedAt, hasUnsavedDraftChanges]);
+
   const draftFieldsLocked = draftPublishButtonState !== "idle";
 
   const saveDraftLabel =
@@ -687,28 +696,25 @@ setTeamMembers(allTeamMembers || []);
       ? "Publishing…"
       : draftPublishButtonState === "published"
         ? "✓ Published"
-        : "Publish";
+        : "Post";
 
   const draftStatusText = useMemo(() => {
-    if (draftPublishButtonState === "publishing") return "Publishing…";
-    if (draftPublishButtonState === "published") return "✓ Published";
     if (draftSaveButtonState === "saving") return "Saving…";
     if (hasUnsavedDraftChanges) return "Unsaved changes";
     if (draftLastSavedAt) {
-      return `✓ Last saved at ${formatPassOnDraftSavedTime(draftLastSavedAt)}`;
+      return getPassOnDraftSaveStatusLabel(draftLastSavedAt);
     }
     return "";
   }, [
-    draftPublishButtonState,
     draftSaveButtonState,
     hasUnsavedDraftChanges,
     draftLastSavedAt,
+    draftSaveStatusTick,
   ]);
 
-  const draftStatusIsSuccess =
-    draftPublishButtonState === "published" ||
-    draftSaveButtonState === "saved" ||
-    Boolean(draftLastSavedAt && !hasUnsavedDraftChanges);
+  const draftStatusIsSuccess = Boolean(
+    draftLastSavedAt && !hasUnsavedDraftChanges && draftSaveButtonState !== "saving"
+  );
 
   const saveDraftDisabled =
     !hasUnsavedDraftChanges ||
@@ -742,25 +748,7 @@ setTeamMembers(allTeamMembers || []);
     markAsViewed(deepLinkEntryId);
   }, [deepLinkEntryId, entries]);
 
-  async function addEntry(e: any) {
-    e.preventDefault();
-
-    if (!subject || !message) {
-      alert("Please enter a subject and message.");
-      return;
-    }
-
-    const entryId = await insertPassOnEntry(subject, priority, message, entryDate);
-    if (!entryId) return;
-
-    setSubject("");
-    setPriority("Normal");
-    setMessage("");
-    setEntryDate(getHotelBusinessDateString());
-    setShowForm(false);
-  }
-
- async function toggleViews(entryId: number) {
+  async function toggleViews(entryId: number) {
   setExpandedViewsEntry(expandedViewsEntry === entryId ? null : entryId);
 }
 
@@ -935,6 +923,98 @@ function dateHeader(dateString: string) {
             flex-shrink: 0;
           }
 
+          @media (min-width: 769px) {
+            .pass-on-draft-card-wrap {
+              margin-top: 24px;
+            }
+
+            .pass-on-draft-card {
+              margin-bottom: 28px;
+              padding: 18px 20px;
+              border-radius: 14px;
+              border: 1px dashed rgba(200, 169, 106, 0.38);
+              background: #101010;
+              box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.32),
+                0 8px 24px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            }
+
+            .pass-on-draft-card .one-eyrie-form-grid--pass-on {
+              gap: 14px;
+            }
+
+            .pass-on-draft-card .one-eyrie-form-grid--pass-on__message {
+              margin-bottom: 0;
+              min-height: 96px !important;
+            }
+
+            .pass-on-draft-card__actions {
+              margin-top: 10px;
+              padding-top: 12px;
+            }
+
+            .pass-on-draft-card__actions-status {
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              min-height: 14px;
+              padding-left: 10px;
+              font-size: 10px;
+              font-weight: 500;
+              line-height: 1.35;
+              color: #727880;
+            }
+
+            .pass-on-draft-card__actions-status-text {
+              color: #9a9590;
+              animation: pass-on-draft-status-in 0.18s ease;
+            }
+
+            @keyframes pass-on-draft-status-in {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+
+            .pass-on-draft-card__actions-check {
+              color: #5cb87a;
+              font-size: 10px;
+              font-weight: 700;
+              line-height: 1;
+            }
+
+            .pass-on-draft-card__actions-status--success {
+              color: #727880;
+            }
+
+            .pass-on-draft-card .one-eyrie-field::placeholder {
+              color: #8a8480;
+            }
+
+            .pass-on-draft-card .one-eyrie-field:focus,
+            .pass-on-draft-card .one-eyrie-field:focus-visible {
+              border-color: rgba(200, 169, 106, 0.62) !important;
+              box-shadow:
+                0 0 0 1px rgba(200, 169, 106, 0.22),
+                0 0 14px rgba(200, 169, 106, 0.16) !important;
+            }
+
+            .pass-on-draft-discard-btn:active:not(:disabled),
+            .pass-on-draft-outline-btn:active:not(:disabled),
+            .pass-on-draft-publish-btn:active:not(:disabled) {
+              transform: scale(0.98);
+            }
+
+            .pass-on-draft-outline-btn:hover:not(:disabled) {
+              background: rgba(200, 169, 106, 0.08) !important;
+              border-color: #d4b87a !important;
+            }
+          }
+
           .pass-on-draft-card {
             margin-bottom: 18px;
             padding: 16px;
@@ -947,7 +1027,10 @@ function dateHeader(dateString: string) {
               transform 0.45s ease,
               max-height 0.45s ease,
               margin-bottom 0.45s ease,
-              padding 0.45s ease;
+              padding 0.45s ease,
+              box-shadow 0.18s ease,
+              border-color 0.18s ease,
+              background 0.18s ease;
             max-height: 900px;
           }
 
@@ -1025,12 +1108,12 @@ function dateHeader(dateString: string) {
             padding-left: 10px;
             font-size: 11px;
             line-height: 1.35;
-            color: #9ca3af;
+            color: #727880;
             text-align: left;
           }
 
           .pass-on-draft-card__actions-status--success {
-            color: #c8a96a;
+            color: #727880;
           }
 
           .pass-on-draft-card__actions-publish {
@@ -1041,6 +1124,17 @@ function dateHeader(dateString: string) {
           .pass-on-draft-discard-btn:hover:not(:disabled) {
             background: #3d3934 !important;
             border-color: #6a635c !important;
+          }
+
+          .pass-on-draft-discard-btn,
+          .pass-on-draft-outline-btn,
+          .pass-on-draft-publish-btn {
+            transition:
+              opacity 0.18s ease,
+              border-color 0.18s ease,
+              background 0.18s ease,
+              transform 0.18s ease,
+              box-shadow 0.18s ease;
           }
 
           .pass-on-draft-publish-btn:hover:not(:disabled) {
@@ -1101,14 +1195,6 @@ function dateHeader(dateString: string) {
                   {...goldHoverHandlers("secondary")}
                 >
                   New Draft
-                </button>
-                <button
-                  type="button"
-                  style={PRIMARY_BUTTON}
-                  onClick={() => setShowForm(true)}
-                  {...forestHoverHandlers()}
-                >
-                  <Plus size={18} /> New
                 </button>
               </OneEyrieDesktopHeaderActions>
             }
@@ -1183,99 +1269,17 @@ function dateHeader(dateString: string) {
 </select>
   </div>
   
-   {showForm && (
-              <div style={modalOverlay}>
-                <div style={modalBox}>
-                  <div style={modalHeader}>
-                    <h2 style={{ margin: 0 }}>New Pass-On Entry</h2>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowForm(false)}
-                      style={closeButton}
-                      aria-label="Close"
-                    >
-                      <X size={22} />
-                    </button>
-                  </div>
-
-                  <form onSubmit={addEntry} className="one-eyrie-form-grid--pass-on" style={formStyle}>
-                    <input
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Subject"
-                      className="one-eyrie-field"
-                      style={inputStyle}
-                    />
-
-                    <select
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
-                      className="one-eyrie-field"
-                      style={inputStyle}
-                    >
-                      <option>Normal</option>
-                      <option>Important</option>
-                      <option>Urgent</option>
-                    </select>
-
-                    <div className="one-eyrie-form-grid--pass-on__actions">
-                      <div style={dateInputWrap} className="pass-on-date-wrap">
-                        <button
-                          type="button"
-                          style={calendarButton}
-                          onClick={() => dateInputRef.current?.showPicker?.()}
-                        >
-                          <Calendar size={17} />
-                        </button>
-
-                        <input
-                          ref={dateInputRef}
-                          type="date"
-                          value={entryDate}
-                          onChange={(e) => setEntryDate(e.target.value)}
-                          style={dateInput}
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="gold-button one-eyrie-form-grid--pass-on__submit"
-                        style={goldButton}
-                      >
-                        Add Entry
-                      </button>
-                    </div>
-
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Write pass-on note..."
-                      className="one-eyrie-field one-eyrie-form-grid--pass-on__message"
-                      style={{
-                        ...inputStyle,
-                        gridColumn: "1 / -1",
-                        minHeight: "110px",
-                        resize: "vertical",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </form>
-                </div>
-              </div>
-            )}
-
             {showDraftCard ? (
-              <div
-                className={`pass-on-draft-card${
-                  draftCardExitAnimating ? " pass-on-draft-card--exit" : ""
-                }`}
-                style={{ marginTop: "18px" }}
-              >
+              <div className="pass-on-draft-card-wrap">
+                <div
+                  className={`pass-on-draft-card${
+                    draftCardExitAnimating ? " pass-on-draft-card--exit" : ""
+                  }`}
+                >
                 <div className="pass-on-draft-card__header">
                   <span className="pass-on-draft-card__badge">Draft</span>
                   <span className="pass-on-draft-card__hint">
-                    Only you can see this until published
+                    Only you can see this until posted
                   </span>
                 </div>
 
@@ -1366,6 +1370,7 @@ function dateHeader(dateString: string) {
                               opacity: saveDraftDisabled ? 0.55 : 1,
                               cursor: saveDraftDisabled ? "not-allowed" : "pointer",
                             }}
+                            className="pass-on-draft-outline-btn"
                             onClick={() => void saveDraftCard()}
                             disabled={saveDraftDisabled}
                           >
@@ -1381,7 +1386,20 @@ function dateHeader(dateString: string) {
                               }`}
                               aria-live="polite"
                             >
-                              {draftStatusText}
+                              {draftStatusIsSuccess ? (
+                                <span
+                                  className="pass-on-draft-card__actions-check"
+                                  aria-hidden="true"
+                                >
+                                  ✓
+                                </span>
+                              ) : null}
+                              <span
+                                key={draftStatusText}
+                                className="pass-on-draft-card__actions-status-text"
+                              >
+                                {draftStatusText}
+                              </span>
                             </div>
                           ) : null}
                         </div>
@@ -1406,16 +1424,22 @@ function dateHeader(dateString: string) {
                     </div>
                   </div>
                 </div>
+                </div>
               </div>
             ) : null}
 
-            <div style={{ marginTop: showDraftCard ? "0" : "18px" }}>
+            <div
+              className={`pass-on-entries-list${
+                showDraftCard ? " pass-on-entries-list--after-draft" : ""
+              }`}
+              style={{ marginTop: showDraftCard ? "0" : "18px" }}
+            >
               {!filteredEntries.length ? (
                 <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
               ) : (
              Object.entries(groupedEntries).map(([dateKey, entriesForDate]: any) => (
   <div key={dateKey}>
-    <h3 style={{ color: gold, fontSize: "14px", margin: "18px 0 8px" }}>
+    <h3 className="pass-on-day-heading" style={{ color: gold, fontSize: "14px", margin: "18px 0 8px" }}>
       {dateHeader(dateKey)}
     </h3>
 
@@ -1462,12 +1486,12 @@ function dateHeader(dateString: string) {
               <div className="one-eyrie-pass-on-entry-subject-text" style={rowSubject}>
                 {entry.subject}
               </div>
-              <div style={rowMeta}>
+              <div className="one-eyrie-pass-on-entry-meta-line" style={rowMeta}>
   {displayAuthor(entry.author)} · {formatDateTime(entry.created_at)}
 </div>
 
 {entry.edited_at && (
-  <div style={{ fontSize: "11px", color: "#C8A96A", marginTop: "2px" }}>
+  <div className="one-eyrie-pass-on-entry-edited" style={{ fontSize: "11px", color: "#C8A96A", marginTop: "2px" }}>
     ✎ Edited {formatDateTime(entry.edited_at)}
   </div>
 )}
@@ -1868,17 +1892,6 @@ const draftPublishButton: React.CSSProperties = {
   border: `1px solid ${gold}`,
 };
 
-const goldButton: React.CSSProperties = {
-  background: gold,
-  color: "#111111",
-  border: "none",
-  borderRadius: "12px",
-  padding: "12px 18px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  transition: "all 0.18s ease",
-};
-
 const collapsedRow: React.CSSProperties = {};
 
 const expandButton: React.CSSProperties = {
@@ -2037,19 +2050,6 @@ const replyTextarea: React.CSSProperties = {
   resize: "vertical",
 };
 
-const smallPlusButton: React.CSSProperties = {
-  width: "42px",
-  height: "42px",
-  borderRadius: "10px",
-  border: `1px solid ${gold}`,
-  background: "transparent",
-  color: gold,
-  fontSize: "26px",
-  cursor: "pointer",
-  transition: "all 0.18s ease",
-  marginLeft: "8px",
-};
-
 function priorityPill(priority: string): React.CSSProperties {
   const color =
     priority === "Urgent"
@@ -2076,11 +2076,6 @@ function priorityPill(priority: string): React.CSSProperties {
     whiteSpace: "nowrap",
   };
 }
-
-const modalOverlay = ONE_EYRIE_MODAL_OVERLAY;
-const modalBox = ONE_EYRIE_MODAL_BOX;
-const modalHeader = ONE_EYRIE_MODAL_HEADER;
-const closeButton = ONE_EYRIE_MODAL_CLOSE_BUTTON;
 
 const dateInputWrap: React.CSSProperties = {
   display: "flex",

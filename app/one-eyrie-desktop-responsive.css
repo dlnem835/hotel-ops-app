@@ -719,9 +719,8 @@
     z-index: 2;
   }
 
-  .one-eyrie-pass-on-log-page h3 {
-    color: #e0c47b;
-    letter-spacing: 0.02em;
+  .one-eyrie-pass-on-log-page h3.pass-on-day-heading {
+    color: #e8d4a0 !important;
   }
 
   .one-eyrie-pass-on-log-page .pass-on-send-reply-btn {
@@ -735,6 +734,60 @@
   .one-eyrie-pass-on-log-page .pass-on-send-reply-btn svg {
     width: 12px;
     height: 12px;
+  }
+
+  /* ── Pass-On desktop UI polish ── */
+
+  .one-eyrie-pass-on-log-page .pass-on-entries-list--after-draft {
+    margin-top: 28px !important;
+  }
+
+  .one-eyrie-pass-on-log-page .pass-on-day-heading {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    margin: 24px 0 10px !important;
+    color: #e8d4a0 !important;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-meta-line {
+    color: #7a756e !important;
+    font-size: 11px !important;
+    font-weight: 500;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-edited {
+    color: #8a8278 !important;
+    font-size: 10px !important;
+    opacity: 0.92;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-subject-text {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-expanded {
+    animation: pass-on-expand-in 0.18s ease;
+  }
+
+  @keyframes pass-on-expand-in {
+    from {
+      opacity: 0.6;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .one-eyrie-lost-found-page .one-eyrie-table-panel {

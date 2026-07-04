@@ -49,6 +49,28 @@ export function formatPassOnDraftSavedTime(iso: string) {
   });
 }
 
+/** Display-only: show “just now” for ~45s, then switch to clock time. */
+export const PASS_ON_DRAFT_SAVE_JUST_NOW_MS = 45_000;
+
+export function getPassOnDraftSaveStatusLabel(
+  updatedAt: string,
+  nowMs = Date.now()
+): string {
+  const ageMs = nowMs - new Date(updatedAt).getTime();
+  if (ageMs < PASS_ON_DRAFT_SAVE_JUST_NOW_MS) {
+    return "Saved just now";
+  }
+  return `Saved at ${formatPassOnDraftSavedTime(updatedAt)}`;
+}
+
+export function getPassOnDraftSaveStatusRefreshDelay(
+  updatedAt: string,
+  nowMs = Date.now()
+): number | null {
+  const ageMs = nowMs - new Date(updatedAt).getTime();
+  if (ageMs >= PASS_ON_DRAFT_SAVE_JUST_NOW_MS) return null;
+  return PASS_ON_DRAFT_SAVE_JUST_NOW_MS - ageMs;
+}
 
 export function loadPassOnDraft(authUserId: string): PassOnDraft | null {
   if (typeof window === "undefined" || !authUserId) return null;
