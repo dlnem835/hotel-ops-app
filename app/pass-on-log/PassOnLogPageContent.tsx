@@ -30,12 +30,24 @@ import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeader
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   forestHoverHandlers,
+  goldHoverHandlers,
   PRIMARY_BUTTON,
+  WARNING_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+import {
+  clearPassOnDraft,
+  emptyPassOnDraftSnapshot,
+  formatPassOnDraftSavedTime,
+  loadPassOnDraft,
+  passOnDraftHasContent,
+  passOnDraftSnapshotsEqual,
+  savePassOnDraft,
+  type PassOnDraftSnapshot,
+} from "@/app/pass-on-log/lib/pass-on-draft";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import {
   formatPassOnBusinessDateHeader,
@@ -60,6 +72,27 @@ export default function PassOnLogPageContent() {
   const [message, setMessage] = useState("");
   const [entryDate, setEntryDate] = useState(() => getHotelBusinessDateString());
   const [showForm, setShowForm] = useState(false);
+  const [showDraftCard, setShowDraftCard] = useState(false);
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftPriority, setDraftPriority] = useState("Normal");
+  const [draftMessage, setDraftMessage] = useState("");
+  const [draftEntryDate, setDraftEntryDate] = useState(() =>
+    getHotelBusinessDateString()
+  );
+  const [draftSavedBaseline, setDraftSavedBaseline] = useState<PassOnDraftSnapshot>(
+    () => emptyPassOnDraftSnapshot(getHotelBusinessDateString())
+  );
+  const [draftLastSavedAt, setDraftLastSavedAt] = useState<string | null>(null);
+  const [draftSaveButtonState, setDraftSaveButtonState] = useState<
+    "idle" | "saving" | "saved"
+  >("idle");
+  const [draftPublishButtonState, setDraftPublishButtonState] = useState<
+    "idle" | "publishing" | "published"
+  >("idle");
+  const [draftCardExitAnimating, setDraftCardExitAnimating] = useState(false);
+  const [highlightEntryId, setHighlightEntryId] = useState<number | null>(null);
+  const draftSaveResetTimerRef = useRef<number | null>(null);
+  const draftHighlightTimerRef = useRef<number | null>(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     () => new Set()
   );
@@ -71,6 +104,7 @@ export default function PassOnLogPageContent() {
   >(undefined);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const draftDateInputRef = useRef<HTMLInputElement | null>(null);
   const replyInputRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
   const pendingReplyFocusRef = useRef<number | null>(null);
   const [dateFilter, setDateFilter] = useState<PassOnDateFilter>("All");
@@ -272,6 +306,222 @@ async function markAsViewed(entryId: number) {
   );
 }
 
+  function resetDraftFeedbackState() {
+    if (draftSaveResetTimerRef.current) {
+      window.clearTimeout(draftSaveResetTimerRef.current);
+      draftSaveResetTimerRef.current = null;
+    }
+    if (draftHighlightTimerRef.current) {
+      window.clearTimeout(draftHighlightTimerRef.current);
+      draftHighlightTimerRef.current = null;
+    }
+    setDraftSaveButtonState("idle");
+    setDraftPublishButtonState("idle");
+    setDraftCardExitAnimating(false);
+  }
+
+  function getCurrentDraftSnapshot(): PassOnDraftSnapshot {
+    return {
+      subject: draftSubject,
+      priority: draftPriority,
+      entryDate: draftEntryDate,
+      message: draftMessage,
+    };
+  }
+
+  function applyDraftFields(draft: {
+    subject: string;
+    priority: string;
+    entryDate: string;
+    message: string;
+  }) {
+    setDraftSubject(draft.subject);
+    setDraftPriority(draft.priority);
+    setDraftEntryDate(draft.entryDate);
+    setDraftMessage(draft.message);
+  }
+
+  function syncDraftSavedBaseline(draft: PassOnDraftSnapshot, updatedAt: string | null) {
+    setDraftSavedBaseline(draft);
+    setDraftLastSavedAt(updatedAt);
+  }
+
+  function resetDraftFields() {
+    setDraftSubject("");
+    setDraftPriority("Normal");
+    setDraftMessage("");
+    setDraftEntryDate(getHotelBusinessDateString());
+    syncDraftSavedBaseline(
+      emptyPassOnDraftSnapshot(getHotelBusinessDateString()),
+      null
+    );
+  }
+
+  function startDraftCard() {
+    if (!currentAuthUserId) return;
+
+    resetDraftFeedbackState();
+
+    const existing = loadPassOnDraft(currentAuthUserId);
+    if (existing) {
+      applyDraftFields(existing);
+      syncDraftSavedBaseline(
+        {
+          subject: existing.subject,
+          priority: existing.priority,
+          entryDate: existing.entryDate,
+          message: existing.message,
+        },
+        existing.updatedAt
+      );
+    } else {
+      resetDraftFields();
+    }
+
+    setShowDraftCard(true);
+  }
+
+  function discardDraft() {
+    if (passOnDraftHasContent(getCurrentDraftSnapshot())) {
+      if (!confirm("Discard this draft? Your pass-on will be lost.")) return;
+    }
+
+    if (currentAuthUserId) {
+      clearPassOnDraft(currentAuthUserId);
+    }
+    resetDraftFields();
+    resetDraftFeedbackState();
+    setShowDraftCard(false);
+  }
+
+  async function saveDraftCard() {
+    if (!currentAuthUserId) return;
+    if (passOnDraftSnapshotsEqual(getCurrentDraftSnapshot(), draftSavedBaseline)) {
+      return;
+    }
+    if (draftSaveButtonState !== "idle" || draftPublishButtonState !== "idle") return;
+
+    if (draftSaveResetTimerRef.current) {
+      window.clearTimeout(draftSaveResetTimerRef.current);
+      draftSaveResetTimerRef.current = null;
+    }
+
+    setDraftSaveButtonState("saving");
+
+    const updatedAt = new Date().toISOString();
+    await new Promise((resolve) => window.setTimeout(resolve, 350));
+
+    savePassOnDraft({
+      authUserId: currentAuthUserId,
+      author: currentUserName,
+      subject: draftSubject,
+      priority: draftPriority,
+      entryDate: draftEntryDate,
+      message: draftMessage,
+      updatedAt,
+    });
+
+    setDraftSavedBaseline(getCurrentDraftSnapshot());
+    setDraftLastSavedAt(updatedAt);
+    setDraftSaveButtonState("saved");
+    setShowDraftCard(true);
+
+    draftSaveResetTimerRef.current = window.setTimeout(() => {
+      setDraftSaveButtonState("idle");
+      draftSaveResetTimerRef.current = null;
+    }, 2000);
+  }
+
+  async function insertPassOnEntry(
+    entrySubject: string,
+    entryPriority: string,
+    entryMessage: string,
+    entryDateValue: string
+  ): Promise<number | null> {
+    const now = new Date();
+    const selectedDateTime = new Date(
+      `${entryDateValue}T${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}:00`
+    ).toISOString();
+
+    const { data, error } = await supabase
+      .from("pass_on_log")
+      .insert([
+        {
+          subject: entrySubject,
+          author: currentUserName,
+          priority: entryPriority,
+          message: entryMessage,
+          created_at: selectedDateTime,
+          entry_date: entryDateValue,
+        },
+      ])
+      .select("id")
+      .single();
+
+    if (error) {
+      alert(error.message);
+      return null;
+    }
+
+    await fetchEntries();
+    return data?.id ?? null;
+  }
+
+  async function publishDraft() {
+    const trimmedSubject = draftSubject.trim();
+    const trimmedMessage = draftMessage.trim();
+
+    if (!trimmedSubject || !trimmedMessage) {
+      alert("Please enter a subject and pass-on note before publishing.");
+      return;
+    }
+
+    if (draftPublishButtonState !== "idle") return;
+
+    setDraftPublishButtonState("publishing");
+
+    const entryId = await insertPassOnEntry(
+      trimmedSubject,
+      draftPriority,
+      trimmedMessage,
+      draftEntryDate
+    );
+
+    if (!entryId) {
+      setDraftPublishButtonState("idle");
+      return;
+    }
+
+    setDraftPublishButtonState("published");
+    setDraftCardExitAnimating(true);
+    setHighlightEntryId(entryId);
+
+    await new Promise((resolve) => window.setTimeout(resolve, 550));
+
+    if (currentAuthUserId) {
+      clearPassOnDraft(currentAuthUserId);
+    }
+    resetDraftFields();
+    resetDraftFeedbackState();
+    setShowDraftCard(false);
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`pass-on-entry-${entryId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    if (draftHighlightTimerRef.current) {
+      window.clearTimeout(draftHighlightTimerRef.current);
+    }
+    draftHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightEntryId(null);
+      draftHighlightTimerRef.current = null;
+    }, 2600);
+  }
+
   function queuePassOnReplyFocus(entryId: number) {
     pendingReplyFocusRef.current = entryId;
   }
@@ -378,6 +628,96 @@ setTeamMembers(allTeamMembers || []);
   checkAuth();
 }, []);
 
+  useEffect(() => {
+    if (!currentAuthUserId) return;
+
+    const saved = loadPassOnDraft(currentAuthUserId);
+    if (!saved) return;
+
+    applyDraftFields(saved);
+    syncDraftSavedBaseline(
+      {
+        subject: saved.subject,
+        priority: saved.priority,
+        entryDate: saved.entryDate,
+        message: saved.message,
+      },
+      saved.updatedAt
+    );
+    setShowDraftCard(true);
+  }, [currentAuthUserId]);
+
+  useEffect(() => {
+    return () => {
+      if (draftSaveResetTimerRef.current) {
+        window.clearTimeout(draftSaveResetTimerRef.current);
+      }
+      if (draftHighlightTimerRef.current) {
+        window.clearTimeout(draftHighlightTimerRef.current);
+      }
+    };
+  }, []);
+
+  const currentDraftSnapshot = useMemo(
+    (): PassOnDraftSnapshot => ({
+      subject: draftSubject,
+      priority: draftPriority,
+      entryDate: draftEntryDate,
+      message: draftMessage,
+    }),
+    [draftSubject, draftPriority, draftEntryDate, draftMessage]
+  );
+
+  const hasUnsavedDraftChanges = useMemo(
+    () => !passOnDraftSnapshotsEqual(currentDraftSnapshot, draftSavedBaseline),
+    [currentDraftSnapshot, draftSavedBaseline]
+  );
+
+  const draftFieldsLocked = draftPublishButtonState !== "idle";
+
+  const saveDraftLabel =
+    draftSaveButtonState === "saving"
+      ? "Saving…"
+      : draftSaveButtonState === "saved"
+        ? "✓ Saved"
+        : "Save Draft";
+
+  const publishDraftLabel =
+    draftPublishButtonState === "publishing"
+      ? "Publishing…"
+      : draftPublishButtonState === "published"
+        ? "✓ Published"
+        : "Publish";
+
+  const draftStatusText = useMemo(() => {
+    if (draftPublishButtonState === "publishing") return "Publishing…";
+    if (draftPublishButtonState === "published") return "✓ Published";
+    if (draftSaveButtonState === "saving") return "Saving…";
+    if (hasUnsavedDraftChanges) return "Unsaved changes";
+    if (draftLastSavedAt) {
+      return `✓ Last saved at ${formatPassOnDraftSavedTime(draftLastSavedAt)}`;
+    }
+    return "";
+  }, [
+    draftPublishButtonState,
+    draftSaveButtonState,
+    hasUnsavedDraftChanges,
+    draftLastSavedAt,
+  ]);
+
+  const draftStatusIsSuccess =
+    draftPublishButtonState === "published" ||
+    draftSaveButtonState === "saved" ||
+    Boolean(draftLastSavedAt && !hasUnsavedDraftChanges);
+
+  const saveDraftDisabled =
+    !hasUnsavedDraftChanges ||
+    draftSaveButtonState !== "idle" ||
+    draftPublishButtonState !== "idle";
+
+  const publishDraftDisabled = draftPublishButtonState !== "idle";
+  const discardDraftDisabled = draftPublishButtonState !== "idle";
+
   const deepLinkEntryId = useMemo(() => {
     const raw = searchParams.get("entry");
     if (!raw) return null;
@@ -410,35 +750,14 @@ setTeamMembers(allTeamMembers || []);
       return;
     }
 
-    const now = new Date();
-    const selectedDateTime = new Date(
-      `${entryDate}T${String(now.getHours()).padStart(2, "0")}:${String(
-        now.getMinutes()
-      ).padStart(2, "0")}:00`
-    ).toISOString();
-
-    const { error } = await supabase.from("pass_on_log").insert([
-      {
-        subject,
-        author: currentUserName,
-        priority,
-        message,
-        created_at: selectedDateTime,
-        entry_date: entryDate,
-      },
-    ]);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    const entryId = await insertPassOnEntry(subject, priority, message, entryDate);
+    if (!entryId) return;
 
     setSubject("");
     setPriority("Normal");
     setMessage("");
-    setEntryDate(new Date().toISOString().split("T")[0]);
+    setEntryDate(getHotelBusinessDateString());
     setShowForm(false);
-    fetchEntries();
   }
 
  async function toggleViews(entryId: number) {
@@ -616,6 +935,136 @@ function dateHeader(dateString: string) {
             flex-shrink: 0;
           }
 
+          .pass-on-draft-card {
+            margin-bottom: 18px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px dashed rgba(200, 169, 106, 0.55);
+            background: rgba(200, 169, 106, 0.06);
+            overflow: hidden;
+            transition:
+              opacity 0.45s ease,
+              transform 0.45s ease,
+              max-height 0.45s ease,
+              margin-bottom 0.45s ease,
+              padding 0.45s ease;
+            max-height: 900px;
+          }
+
+          .pass-on-draft-card--exit {
+            opacity: 0;
+            transform: translateY(16px) scale(0.985);
+            max-height: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            pointer-events: none;
+          }
+
+          .pass-on-draft-card__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+          }
+
+          .pass-on-draft-card__badge {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #111111;
+            background: #c8a96a;
+          }
+
+          .pass-on-draft-card__hint {
+            color: #9ca3af;
+            font-size: 12px;
+          }
+
+          .pass-on-draft-card__actions {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(90, 83, 76, 0.35);
+          }
+
+          .pass-on-draft-card__actions-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+          }
+
+          .pass-on-draft-card__actions-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            flex-shrink: 0;
+          }
+
+          .pass-on-draft-card__actions-left-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .pass-on-draft-card__actions-draft-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+          }
+
+          .pass-on-draft-card__actions-status {
+            min-height: 16px;
+            padding-left: 10px;
+            font-size: 11px;
+            line-height: 1.35;
+            color: #9ca3af;
+            text-align: left;
+          }
+
+          .pass-on-draft-card__actions-status--success {
+            color: #c8a96a;
+          }
+
+          .pass-on-draft-card__actions-publish {
+            flex-shrink: 0;
+            margin-left: auto;
+          }
+
+          .pass-on-draft-discard-btn:hover:not(:disabled) {
+            background: #3d3934 !important;
+            border-color: #6a635c !important;
+          }
+
+          .pass-on-draft-publish-btn:hover:not(:disabled) {
+            background: #d4b87a !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(200, 169, 106, 0.38);
+          }
+
+          .one-eyrie-list-row--just-published {
+            animation: pass-on-entry-arrive 0.55s ease;
+            box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.55);
+          }
+
+          @keyframes pass-on-entry-arrive {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
           @media (max-width: 900px) {
             .pass-on-message-row {
               flex-direction: column;
@@ -645,6 +1094,14 @@ function dateHeader(dateString: string) {
             align="center"
             actions={
               <OneEyrieDesktopHeaderActions>
+                <button
+                  type="button"
+                  style={WARNING_BUTTON}
+                  onClick={startDraftCard}
+                  {...goldHoverHandlers("secondary")}
+                >
+                  New Draft
+                </button>
                 <button
                   type="button"
                   style={PRIMARY_BUTTON}
@@ -808,7 +1265,151 @@ function dateHeader(dateString: string) {
               </div>
             )}
 
-            <div style={{ marginTop: "18px" }}>
+            {showDraftCard ? (
+              <div
+                className={`pass-on-draft-card${
+                  draftCardExitAnimating ? " pass-on-draft-card--exit" : ""
+                }`}
+                style={{ marginTop: "18px" }}
+              >
+                <div className="pass-on-draft-card__header">
+                  <span className="pass-on-draft-card__badge">Draft</span>
+                  <span className="pass-on-draft-card__hint">
+                    Only you can see this until published
+                  </span>
+                </div>
+
+                <div className="one-eyrie-form-grid--pass-on" style={formStyle}>
+                  <input
+                    value={draftSubject}
+                    onChange={(e) => setDraftSubject(e.target.value)}
+                    placeholder="Subject"
+                    className="one-eyrie-field"
+                    style={inputStyle}
+                    disabled={draftFieldsLocked}
+                  />
+
+                  <select
+                    value={draftPriority}
+                    onChange={(e) => setDraftPriority(e.target.value)}
+                    className="one-eyrie-field"
+                    style={inputStyle}
+                    disabled={draftFieldsLocked}
+                  >
+                    <option>Normal</option>
+                    <option>Important</option>
+                    <option>Urgent</option>
+                  </select>
+
+                  <div className="one-eyrie-form-grid--pass-on__actions">
+                    <div style={dateInputWrap} className="pass-on-date-wrap">
+                      <button
+                        type="button"
+                        style={calendarButton}
+                        onClick={() => draftDateInputRef.current?.showPicker?.()}
+                        disabled={draftFieldsLocked}
+                      >
+                        <Calendar size={17} />
+                      </button>
+
+                      <input
+                        ref={draftDateInputRef}
+                        type="date"
+                        value={draftEntryDate}
+                        onChange={(e) => setDraftEntryDate(e.target.value)}
+                        style={dateInput}
+                        disabled={draftFieldsLocked}
+                      />
+                    </div>
+                  </div>
+
+                  <textarea
+                    value={draftMessage}
+                    onChange={(e) => setDraftMessage(e.target.value)}
+                    placeholder="Write pass-on note..."
+                    className="one-eyrie-field one-eyrie-form-grid--pass-on__message"
+                    style={{
+                      ...inputStyle,
+                      gridColumn: "1 / -1",
+                      minHeight: "110px",
+                      resize: "vertical",
+                      boxSizing: "border-box",
+                    }}
+                    disabled={draftFieldsLocked}
+                  />
+
+                  <div
+                    className="pass-on-draft-card__actions"
+                    style={{ gridColumn: "1 / -1" }}
+                  >
+                    <div className="pass-on-draft-card__actions-row">
+                      <div className="pass-on-draft-card__actions-left">
+                        <button
+                          type="button"
+                          style={{
+                            ...draftDiscardButton,
+                            opacity: discardDraftDisabled ? 0.55 : 1,
+                            cursor: discardDraftDisabled ? "not-allowed" : "pointer",
+                          }}
+                          className="pass-on-draft-discard-btn"
+                          onClick={discardDraft}
+                          disabled={discardDraftDisabled}
+                        >
+                          Discard
+                        </button>
+
+                        <div className="pass-on-draft-card__actions-draft-col">
+                          <button
+                            type="button"
+                            style={{
+                              ...draftOutlineButton,
+                              opacity: saveDraftDisabled ? 0.55 : 1,
+                              cursor: saveDraftDisabled ? "not-allowed" : "pointer",
+                            }}
+                            onClick={() => void saveDraftCard()}
+                            disabled={saveDraftDisabled}
+                          >
+                            {saveDraftLabel}
+                          </button>
+
+                          {draftStatusText ? (
+                            <div
+                              className={`pass-on-draft-card__actions-status${
+                                draftStatusIsSuccess
+                                  ? " pass-on-draft-card__actions-status--success"
+                                  : ""
+                              }`}
+                              aria-live="polite"
+                            >
+                              {draftStatusText}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="pass-on-draft-card__actions-publish">
+                        <button
+                          type="button"
+                          style={{
+                            ...draftPublishButton,
+                            opacity: publishDraftDisabled ? 0.55 : 1,
+                            cursor: publishDraftDisabled ? "not-allowed" : "pointer",
+                          }}
+                          className="gold-button pass-on-draft-publish-btn"
+                          onClick={() => void publishDraft()}
+                          disabled={publishDraftDisabled}
+                        >
+                          <Send size={14} strokeWidth={2.25} aria-hidden />
+                          {publishDraftLabel}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div style={{ marginTop: showDraftCard ? "0" : "18px" }}>
               {!filteredEntries.length ? (
                 <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
               ) : (
@@ -831,7 +1432,7 @@ function dateHeader(dateString: string) {
           id={`pass-on-entry-${entry.id}`}
           className={`one-eyrie-list-row${isOpen ? " one-eyrie-list-row--selected" : ""}${
             isRead ? " one-eyrie-list-row--read" : " one-eyrie-list-row--unread"
-          }`}
+          }${entry.id === highlightEntryId ? " one-eyrie-list-row--just-published" : ""}`}
           style={{ padding: "10px 12px", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}
         >
           <div className="one-eyrie-pass-on-entry-row" style={collapsedRow}>
@@ -1225,6 +1826,46 @@ const textareaStyle: React.CSSProperties = {
   fontSize: "15px",
   lineHeight: 1.5,
   resize: "vertical",
+};
+
+const draftActionButtonBase: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+  minHeight: "42px",
+  height: "42px",
+  padding: "0 18px",
+  borderRadius: "12px",
+  fontWeight: 700,
+  fontSize: "13px",
+  lineHeight: 1.2,
+  cursor: "pointer",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+  transition:
+    "opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
+};
+
+const draftDiscardButton: React.CSSProperties = {
+  ...draftActionButtonBase,
+  background: "#35322E",
+  color: "#C4BEB4",
+  border: "1px solid #5A534C",
+};
+
+const draftOutlineButton: React.CSSProperties = {
+  ...draftActionButtonBase,
+  background: "transparent",
+  color: gold,
+  border: `1px solid ${gold}`,
+};
+
+const draftPublishButton: React.CSSProperties = {
+  ...draftActionButtonBase,
+  background: gold,
+  color: "#111111",
+  border: `1px solid ${gold}`,
 };
 
 const goldButton: React.CSSProperties = {
