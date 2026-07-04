@@ -12,7 +12,9 @@ import {
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestHoverHandlers,
-  PRIMARY_BUTTON,
+  NEUTRAL_BUTTON,
+  neutralHoverHandlers,
+  START_WORK_BUTTON,
   SECONDARY_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 
@@ -280,10 +282,12 @@ export default function LostFoundAddItemModal({
               onClick={onClose}
               disabled={submitting}
               style={{
-                ...SECONDARY_BUTTON,
+                ...NEUTRAL_BUTTON,
                 opacity: submitting ? 0.6 : 1,
                 cursor: submitting ? "not-allowed" : "pointer",
               }}
+              className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
+              {...neutralHoverHandlers(submitting)}
             >
               Cancel
             </button>
@@ -303,11 +307,12 @@ export default function LostFoundAddItemModal({
               type="submit"
               disabled={submitting}
               style={{
-                ...PRIMARY_BUTTON,
+                ...START_WORK_BUTTON,
                 opacity: submitting ? 0.6 : 1,
                 cursor: submitting ? "not-allowed" : "pointer",
               }}
-              {...forestHoverHandlers()}
+              className="one-eyrie-btn one-eyrie-btn--start-work one-eyrie-btn--lg"
+              {...forestHoverHandlers(submitting)}
             >
               Add Item
             </button>

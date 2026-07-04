@@ -21,8 +21,13 @@ import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
+  goldFilledHoverHandlers,
   goldHoverHandlers,
-  WARNING_BUTTON,
+  GOLD_FILLED_BUTTON,
+  GOLD_OUTLINE_ACTION_BUTTON,
+  GOLD_OUTLINE_BUTTON,
+  NEUTRAL_BUTTON,
+  neutralHoverHandlers,
 } from "@/app/lib/oneEyrieButtons";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
@@ -1175,7 +1180,7 @@ function dateHeader(dateString: string) {
         `}
       </style>
 
-      <OneEyrieSidebar active="Pass-On Log" />
+      <OneEyrieSidebar active="Pass-On" />
 
       <section
         style={{ ...MAIN_CONTENT, maxWidth: "100%" }}
@@ -1190,7 +1195,8 @@ function dateHeader(dateString: string) {
               <OneEyrieDesktopHeaderActions>
                 <button
                   type="button"
-                  style={WARNING_BUTTON}
+                  style={GOLD_OUTLINE_BUTTON}
+                  className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--lg"
                   onClick={startDraftCard}
                   {...goldHoverHandlers("secondary")}
                 >
@@ -1351,13 +1357,14 @@ function dateHeader(dateString: string) {
                         <button
                           type="button"
                           style={{
-                            ...draftDiscardButton,
+                            ...NEUTRAL_BUTTON,
                             opacity: discardDraftDisabled ? 0.55 : 1,
                             cursor: discardDraftDisabled ? "not-allowed" : "pointer",
                           }}
-                          className="pass-on-draft-discard-btn"
+                          className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md pass-on-draft-discard-btn"
                           onClick={discardDraft}
                           disabled={discardDraftDisabled}
+                          {...neutralHoverHandlers(discardDraftDisabled)}
                         >
                           Discard
                         </button>
@@ -1366,13 +1373,14 @@ function dateHeader(dateString: string) {
                           <button
                             type="button"
                             style={{
-                              ...draftOutlineButton,
+                              ...GOLD_OUTLINE_ACTION_BUTTON,
                               opacity: saveDraftDisabled ? 0.55 : 1,
                               cursor: saveDraftDisabled ? "not-allowed" : "pointer",
                             }}
-                            className="pass-on-draft-outline-btn"
+                            className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md pass-on-draft-outline-btn"
                             onClick={() => void saveDraftCard()}
                             disabled={saveDraftDisabled}
+                            {...goldHoverHandlers("secondary", saveDraftDisabled)}
                           >
                             {saveDraftLabel}
                           </button>
@@ -1409,13 +1417,14 @@ function dateHeader(dateString: string) {
                         <button
                           type="button"
                           style={{
-                            ...draftPublishButton,
+                            ...GOLD_FILLED_BUTTON,
                             opacity: publishDraftDisabled ? 0.55 : 1,
                             cursor: publishDraftDisabled ? "not-allowed" : "pointer",
                           }}
-                          className="gold-button pass-on-draft-publish-btn"
+                          className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md pass-on-draft-publish-btn"
                           onClick={() => void publishDraft()}
                           disabled={publishDraftDisabled}
+                          {...goldFilledHoverHandlers(publishDraftDisabled)}
                         >
                           <Send size={14} strokeWidth={2.25} aria-hidden />
                           {publishDraftLabel}
@@ -1850,46 +1859,6 @@ const textareaStyle: React.CSSProperties = {
   fontSize: "15px",
   lineHeight: 1.5,
   resize: "vertical",
-};
-
-const draftActionButtonBase: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "6px",
-  minHeight: "42px",
-  height: "42px",
-  padding: "0 18px",
-  borderRadius: "12px",
-  fontWeight: 700,
-  fontSize: "13px",
-  lineHeight: 1.2,
-  cursor: "pointer",
-  boxSizing: "border-box",
-  whiteSpace: "nowrap",
-  transition:
-    "opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
-};
-
-const draftDiscardButton: React.CSSProperties = {
-  ...draftActionButtonBase,
-  background: "#35322E",
-  color: "#C4BEB4",
-  border: "1px solid #5A534C",
-};
-
-const draftOutlineButton: React.CSSProperties = {
-  ...draftActionButtonBase,
-  background: "transparent",
-  color: gold,
-  border: `1px solid ${gold}`,
-};
-
-const draftPublishButton: React.CSSProperties = {
-  ...draftActionButtonBase,
-  background: gold,
-  color: "#111111",
-  border: `1px solid ${gold}`,
 };
 
 const collapsedRow: React.CSSProperties = {};

@@ -132,10 +132,10 @@ export const DESKTOP_NAV_ITEMS: Array<{
   href: string;
 }> = [
   { key: "dashboard", label: "Dashboard", href: "/" },
-  { key: "lost_found", label: "Lost & Found", href: "/lost-and-found" },
-  { key: "pass_on", label: "Pass-On Log", href: "/pass-on-log" },
-  { key: "inspections", label: "Inspections", href: "/inspections" },
+  { key: "pass_on", label: "Pass-On", href: "/pass-on-log" },
   { key: "maintenance", label: "Maintenance", href: "/maintenance" },
+  { key: "inspections", label: "Inspections", href: "/inspections" },
+  { key: "lost_found", label: "Lost & Found", href: "/lost-and-found" },
   { key: "settings", label: "Settings", href: "/settings" },
 ];
 

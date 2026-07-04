@@ -14,11 +14,13 @@ import {
 } from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
-  PRIMARY_BUTTON,
-  secondaryHoverHandlers,
-  SECONDARY_BUTTON,
+  goldFilledHoverHandlers,
+  GOLD_FILLED_HEADER_BUTTON,
+  NEUTRAL_BUTTON,
+  neutralHoverHandlers,
   SETTINGS_BUTTON_BASE,
   settingsCardHoverHandlers,
+  START_WORK_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import {
   APP_SHELL,
@@ -409,7 +411,8 @@ async function saveItem() {
 
           <button
             type="button"
-            style={primaryButton}
+            style={START_WORK_BUTTON}
+            className="one-eyrie-btn one-eyrie-btn--start-work one-eyrie-btn--lg"
             onClick={() => openNew(activeSection as ModalType)}
             {...forestHoverHandlers()}
           >
@@ -879,8 +882,9 @@ async function saveItem() {
                 <button
                   type="button"
                   style={secondaryButton}
+                  className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
                   onClick={closeModal}
-                  {...secondaryHoverHandlers()}
+                  {...neutralHoverHandlers()}
                 >
                   Cancel
                 </button>
@@ -888,8 +892,9 @@ async function saveItem() {
                 <button
                   type="button"
                   style={primaryButton}
+                  className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--lg"
                   onClick={saveItem}
-                  {...forestHoverHandlers()}
+                  {...goldFilledHoverHandlers()}
                 >
                   Save
                 </button>
@@ -1091,7 +1096,11 @@ const searchInput: React.CSSProperties = {
 };
 
 const primaryButton: React.CSSProperties = {
-  ...PRIMARY_BUTTON,
+  ...GOLD_FILLED_HEADER_BUTTON,
+};
+
+const secondaryButton: React.CSSProperties = {
+  ...NEUTRAL_BUTTON,
 };
 
 const tableHeader: React.CSSProperties = {
@@ -1182,8 +1191,4 @@ const input: React.CSSProperties = {
   fontWeight: 600,
   outline: "none",
   boxSizing: "border-box",
-};
-
-const secondaryButton: React.CSSProperties = {
-  ...SECONDARY_BUTTON,
 };

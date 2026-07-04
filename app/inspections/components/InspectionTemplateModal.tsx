@@ -36,8 +36,10 @@ import {
 } from "../standards/types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
+  GOLD_OUTLINE_ACTION_BUTTON,
+  neutralHoverHandlers,
   secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
@@ -244,6 +246,13 @@ export default function InspectionTemplateModal({
     gap: "6px",
   };
 
+  const toolbarSaveButton: React.CSSProperties = {
+    ...GOLD_OUTLINE_ACTION_BUTTON,
+    height: "38px",
+    fontSize: "13px",
+    padding: "0 14px",
+  };
+
   const categoryCard: React.CSSProperties = {
     border: `1px solid ${ONE_EYRIE.border}`,
     borderRadius: "12px",
@@ -351,10 +360,11 @@ export default function InspectionTemplateModal({
             {!readOnly && (
               <button
                 type="button"
-                style={toolbarButton}
+                style={toolbarSaveButton}
+                className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
                 onClick={handleSave}
                 disabled={saving}
-                {...secondaryHoverHandlers(saving)}
+                {...goldHoverHandlers("secondary", saving)}
               >
                 <Save size={15} />
                 Save
@@ -634,8 +644,9 @@ export default function InspectionTemplateModal({
             <button
               type="button"
               style={{ ...secondaryButton, ...buttonBase }}
+              className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
               onClick={onClose}
-              {...secondaryHoverHandlers()}
+              {...neutralHoverHandlers()}
             >
               Close
             </button>
@@ -643,9 +654,10 @@ export default function InspectionTemplateModal({
               <button
                 type="button"
                 style={{ ...primaryButton, ...buttonBase }}
+                className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--lg"
                 onClick={handleSave}
                 disabled={saving}
-                {...forestHoverHandlers(saving)}
+                {...goldFilledHoverHandlers(saving)}
               >
                 {saving ? "Saving..." : "Save Template"}
               </button>

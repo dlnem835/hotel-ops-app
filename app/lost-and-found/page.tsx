@@ -21,7 +21,9 @@ import {
 } from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
-  PRIMARY_BUTTON,
+  NEUTRAL_BUTTON,
+  neutralHoverHandlers,
+  START_WORK_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
 import "./lost-and-found-responsive.css";
 
@@ -308,7 +310,8 @@ setTeamMembers(allTeamMembers || []);
             <OneEyrieDesktopHeaderActions>
               <button
                 type="button"
-                style={PRIMARY_BUTTON}
+                style={START_WORK_BUTTON}
+                className="one-eyrie-btn one-eyrie-btn--start-work one-eyrie-btn--lg"
                 onClick={() => setShowAddModal(true)}
                 {...forestHoverHandlers()}
               >
@@ -679,8 +682,9 @@ setTeamMembers(allTeamMembers || []);
       <button
         type="button"
         onClick={() => setSelectedItem(null)}
-        style={{ ...PRIMARY_BUTTON, height: "auto", padding: "10px 16px", marginTop: "16px" }}
-        {...forestHoverHandlers()}
+        style={{ ...NEUTRAL_BUTTON, marginTop: "16px" }}
+        className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
+        {...neutralHoverHandlers()}
       >
         Close
       </button>

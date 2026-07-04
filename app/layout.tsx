@@ -11,6 +11,7 @@ import "./one-eyrie-shell.css";
 import "./one-eyrie-themes.css";
 import "./components/one-eyrie-modal.css";
 import "./one-eyrie-desktop-responsive.css";
+import "./one-eyrie-button-standards.css";
 import "./lib/owl-palette.css";
 
 const geistSans = Geist({

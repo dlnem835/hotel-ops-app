@@ -16,8 +16,10 @@ import { calculateInspectionScore, formatInspectionScoreDisplay } from "../../li
 import { ItemResponseInput } from "../../lib/inspection-types";
 import { PropertyTemplateContent } from "../../standards/types";
 import {
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
+  GOLD_FILLED_BUTTON,
+  GOLD_OUTLINE_ACTION_BUTTON,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 import WorkOrderModal, {
@@ -714,15 +716,11 @@ export default function InspectionSessionPage() {
               onClick={() => void saveProgress()}
               disabled={saving}
               style={{
-                ...SETTINGS_BUTTON_BASE,
-                background: "transparent",
-                border: `1px solid ${ONE_EYRIE.gold}`,
-                color: ONE_EYRIE.gold,
-                borderRadius: "12px",
-                padding: "0 18px",
-                height: "44px",
-                fontWeight: 800,
+                ...GOLD_OUTLINE_ACTION_BUTTON,
+                opacity: saving ? 0.6 : 1,
+                cursor: saving ? "not-allowed" : "pointer",
               }}
+              className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
               {...goldHoverHandlers("secondary", saving)}
             >
               Save Progress
@@ -732,16 +730,12 @@ export default function InspectionSessionPage() {
               onClick={() => void completeInspection()}
               disabled={saving}
               style={{
-                ...SETTINGS_BUTTON_BASE,
-                background: FOREST.bg,
-                border: `1px solid ${FOREST.border}`,
-                color: FOREST.text,
-                borderRadius: "12px",
-                padding: "0 18px",
-                height: "44px",
-                fontWeight: 800,
+                ...GOLD_FILLED_BUTTON,
+                opacity: saving ? 0.6 : 1,
+                cursor: saving ? "not-allowed" : "pointer",
               }}
-              {...forestHoverHandlers(saving)}
+              className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
+              {...goldFilledHoverHandlers(saving)}
             >
               {saving ? "Submitting..." : "Complete Inspection"}
             </button>

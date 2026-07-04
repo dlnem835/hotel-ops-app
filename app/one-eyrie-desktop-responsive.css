@@ -26,6 +26,10 @@
     padding: 20px 12px 24px;
   }
 
+  .one-eyrie-main-content {
+    padding-left: 60px !important;
+  }
+
   .one-eyrie-wordmark--sidebar {
     font-size: 15px;
     letter-spacing: 0.22em;
@@ -77,6 +81,24 @@
 @media (max-width: 1100px) {
   .one-eyrie-main-content {
     padding: 20px 16px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1366px) {
+  .one-eyrie-main-content {
+    padding: 28px 24px 28px 44px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .one-eyrie-main-content {
+    padding: 24px 20px 24px 40px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .one-eyrie-main-content {
+    padding: 20px 16px 20px 36px !important;
   }
 }
 

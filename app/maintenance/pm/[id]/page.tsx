@@ -22,10 +22,10 @@ import {
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
 import {
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
-  PRIMARY_BUTTON,
-  SETTINGS_BUTTON_BASE,
+  GOLD_FILLED_BUTTON,
+  GOLD_OUTLINE_ACTION_BUTTON,
 } from "@/app/settings/lib/settings-ui-interactions";
 import "@/app/inspections/inspections-responsive.css";
 import "../../maintenance-responsive.css";
@@ -399,17 +399,11 @@ export default function PmSessionPage() {
                     onClick={() => void saveProgress()}
                     disabled={saving}
                     style={{
-                      ...SETTINGS_BUTTON_BASE,
-                      background: "transparent",
-                      border: `1px solid ${ONE_EYRIE.gold}`,
-                      color: ONE_EYRIE.gold,
-                      borderRadius: "12px",
-                      padding: "0 18px",
-                      height: "44px",
-                      fontWeight: 800,
+                      ...GOLD_OUTLINE_ACTION_BUTTON,
                       opacity: saving ? 0.6 : 1,
                       cursor: saving ? "not-allowed" : "pointer",
                     }}
+                    className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
                     {...goldHoverHandlers("secondary", saving)}
                   >
                     {saving ? "Saving..." : "Save Progress"}
@@ -419,11 +413,12 @@ export default function PmSessionPage() {
                     onClick={() => void completePm()}
                     disabled={saving}
                     style={{
-                      ...PRIMARY_BUTTON,
+                      ...GOLD_FILLED_BUTTON,
                       opacity: saving ? 0.6 : 1,
                       cursor: saving ? "not-allowed" : "pointer",
                     }}
-                    {...forestHoverHandlers(saving)}
+                    className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
+                    {...goldFilledHoverHandlers(saving)}
                   >
                     {saving ? "Saving..." : "Complete PM"}
                   </button>

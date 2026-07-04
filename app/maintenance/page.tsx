@@ -17,8 +17,11 @@ import {
 } from "@/app/lib/one-eyrie-modal-styles";
 import {
   forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
-  PRIMARY_BUTTON,
+  GOLD_FILLED_BUTTON,
+  GOLD_OUTLINE_ACTION_BUTTON,
+  START_WORK_BUTTON,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 import MaintenanceMetricCards from "./components/MaintenanceMetricCards";
@@ -201,10 +204,11 @@ export default function MaintenancePage() {
                 onClick={() => openWorkOrderModal()}
                 disabled={startingPm}
                 style={{
-                  ...PRIMARY_BUTTON,
+                  ...START_WORK_BUTTON,
                   opacity: startingPm ? 0.6 : 1,
                   cursor: startingPm ? "wait" : "pointer",
                 }}
+                className="one-eyrie-btn one-eyrie-btn--start-work one-eyrie-btn--lg"
                 {...forestHoverHandlers(startingPm)}
               >
                 + New Work Order
@@ -432,17 +436,11 @@ export default function MaintenancePage() {
                   onClick={() => void saveWorkOrderComments()}
                   disabled={completingWo || savingComments}
                   style={{
-                    ...SETTINGS_BUTTON_BASE,
-                    background: "transparent",
-                    border: `1px solid ${ONE_EYRIE.gold}`,
-                    color: ONE_EYRIE.gold,
-                    borderRadius: "12px",
-                    padding: "0 18px",
-                    height: "44px",
-                    fontWeight: 800,
+                    ...GOLD_OUTLINE_ACTION_BUTTON,
                     opacity: completingWo || savingComments ? 0.6 : 1,
                     cursor: completingWo || savingComments ? "not-allowed" : "pointer",
                   }}
+                  className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
                   {...goldHoverHandlers("secondary", completingWo || savingComments)}
                 >
                   {savingComments ? "Saving..." : "Save"}
@@ -452,11 +450,12 @@ export default function MaintenancePage() {
                   onClick={() => void completeWorkOrder()}
                   disabled={completingWo || savingComments}
                   style={{
-                    ...PRIMARY_BUTTON,
+                    ...GOLD_FILLED_BUTTON,
                     opacity: completingWo || savingComments ? 0.6 : 1,
                     cursor: completingWo || savingComments ? "not-allowed" : "pointer",
                   }}
-                  {...forestHoverHandlers(completingWo || savingComments)}
+                  className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
+                  {...goldFilledHoverHandlers(completingWo || savingComments)}
                 >
                   {completingWo ? "Saving..." : "Mark Completed"}
                 </button>

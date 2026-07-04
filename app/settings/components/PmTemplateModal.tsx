@@ -25,8 +25,10 @@ import {
 import { BuildingArea } from "../lib/buildings-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
-  forestHoverHandlers,
-  secondaryHoverHandlers,
+  goldFilledHoverHandlers,
+  goldHoverHandlers,
+  GOLD_OUTLINE_BUTTON,
+  neutralHoverHandlers,
 } from "../lib/settings-ui-interactions";
 
 type PmTemplateModalProps = {
@@ -466,18 +468,26 @@ export default function PmTemplateModal({
           <button
             type="button"
             style={secondaryButton}
+            className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
             onClick={onClose}
             disabled={saving}
-            {...secondaryHoverHandlers()}
+            {...neutralHoverHandlers(saving)}
           >
             Cancel
           </button>
           <button
             type="button"
-            style={primaryButton}
+            style={isDuplicate ? GOLD_OUTLINE_BUTTON : primaryButton}
+            className={
+              isDuplicate
+                ? "one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--lg"
+                : "one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--lg"
+            }
             onClick={() => void handleSave()}
             disabled={saving}
-            {...forestHoverHandlers()}
+            {...(isDuplicate
+              ? goldHoverHandlers("secondary", saving)
+              : goldFilledHoverHandlers(saving))}
           >
             {saving
               ? "Saving…"
