@@ -130,7 +130,7 @@ export async function updatePmOccurrence(
   patch: {
     responses?: PmOccurrenceResponses;
     sessionNotes?: string | null;
-    status?: "open" | "completed";
+    status?: "open" | "completed" | "missed";
     completedBy?: string | null;
   }
 ): Promise<PmOccurrence> {

@@ -19,13 +19,44 @@ const PERIOD_LABELS: Record<PmCompliancePeriod, string> = {
   ytd: "YTD",
 };
 
+function StatItem({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ textAlign: "center", flex: 1, minWidth: 0 }}>
+      <div
+        style={{
+          color: ONE_EYRIE.textSubtle,
+          fontSize: "10px",
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          marginBottom: "4px",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          color: ONE_EYRIE.text,
+          fontSize: "22px",
+          fontWeight: 800,
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export default function EngineeringPerformancePanel({
   performance,
 }: EngineeringPerformancePanelProps) {
-  const [period, setPeriod] = useState<PmCompliancePeriod>("mtd");
-  const { completionRate, onTimeRate } = performance.performanceByPeriod[period];
-  const grade = getPmComplianceGrade(completionRate);
-  const clampedPercent = Math.max(0, Math.min(100, completionRate));
+  const [period, setPeriod] = useState<PmCompliancePeriod>("ytd");
+  const { healthPercent, currentPms, pastDueCount, incompleteCycles } =
+    performance.pmHealth;
+  const { completionRate } = performance.performanceByPeriod[period];
+  const grade = getPmComplianceGrade(healthPercent);
+  const clampedPercent = Math.max(0, Math.min(100, healthPercent));
 
   return (
     <div
@@ -51,7 +82,7 @@ export default function EngineeringPerformancePanel({
         <select
           value={period}
           onChange={(event) => setPeriod(event.target.value as PmCompliancePeriod)}
-          aria-label="PM completion timeframe"
+          aria-label="PM health timeframe"
           style={{
             fontSize: "11px",
             fontWeight: 700,
@@ -90,7 +121,7 @@ export default function EngineeringPerformancePanel({
             marginBottom: "10px",
           }}
         >
-          PM Completion Rate
+          PM Health
         </div>
         <div
           style={{
@@ -101,32 +132,7 @@ export default function EngineeringPerformancePanel({
             marginBottom: "12px",
           }}
         >
-          {completionRate}%
-        </div>
-
-        <div style={{ marginBottom: "14px" }}>
-          <div
-            style={{
-              color: ONE_EYRIE.textSubtle,
-              fontSize: "10px",
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}
-          >
-            On-Time Compliance
-          </div>
-          <div
-            style={{
-              color: ONE_EYRIE.textMuted,
-              fontSize: "20px",
-              fontWeight: 700,
-              lineHeight: 1,
-            }}
-          >
-            {onTimeRate === null ? "—" : `${onTimeRate}%`}
-          </div>
+          {healthPercent}%
         </div>
 
         <div
@@ -136,6 +142,7 @@ export default function EngineeringPerformancePanel({
             background: ONE_EYRIE.black,
             border: `1px solid ${ONE_EYRIE.borderDivider}`,
             overflow: "hidden",
+            marginBottom: "16px",
           }}
         >
           <div
@@ -147,6 +154,28 @@ export default function EngineeringPerformancePanel({
               transition: "width 0.35s ease, background 0.35s ease",
             }}
           />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            marginBottom: "14px",
+          }}
+        >
+          <StatItem label="Current PMs" value={currentPms} />
+          <StatItem label="Past Due" value={pastDueCount} />
+          <StatItem label="Incomplete Cycles" value={incompleteCycles} />
+        </div>
+
+        <div
+          style={{
+            color: ONE_EYRIE.textSubtle,
+            fontSize: "10px",
+            fontWeight: 600,
+          }}
+        >
+          {PERIOD_LABELS[period]} completion: {completionRate}%
         </div>
       </div>
     </div>

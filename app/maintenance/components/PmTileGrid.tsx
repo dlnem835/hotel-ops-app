@@ -1,9 +1,9 @@
 "use client";
 
-import { PmTile } from "../lib/maintenance-types";
-import { formatPmCompletionDate } from "../lib/pm-urgency";
+import { PmCycleEntry, PmTile } from "../lib/maintenance-types";
+import { formatPmCycleStatusLabel } from "../lib/pm-cycle";
 import { getPmTileStyle, PM_TILE_LEGEND } from "../lib/pm-tile-styles";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { ONE_EYRIE, FOREST, FLAT_RED } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_CARD_TRANSITION } from "@/app/settings/lib/settings-ui-interactions";
 
 type PmTileGridProps = {
@@ -13,20 +13,58 @@ type PmTileGridProps = {
   totalCount?: number;
 };
 
-function PmCompletionHistory({ tile }: { tile: PmTile }) {
-  if (!tile.lastCompletedAt) {
-    return <span>Never completed</span>;
+function cycleEntryColor(status: PmCycleEntry["status"]): string {
+  switch (status) {
+    case "completed":
+      return FOREST.text;
+    case "missed":
+      return FLAT_RED.text;
+    case "due":
+      return ONE_EYRIE.gold;
+    case "upcoming":
+    default:
+      return ONE_EYRIE.textSubtle;
+  }
+}
+
+function PmCycleHistoryPanel({ tile }: { tile: PmTile }) {
+  const { cycleHistory } = tile;
+
+  if (cycleHistory.totalCount === 0 && cycleHistory.entries.length === 0) {
+    return <span>No cycle history yet</span>;
   }
 
   return (
     <span style={{ display: "block" }}>
-      <span style={{ display: "block" }}>Last completed:</span>
-      <span style={{ display: "block" }}>
-        {formatPmCompletionDate(tile.lastCompletedAt)}
+      <span
+        style={{
+          display: "block",
+          fontWeight: 700,
+          marginBottom: cycleHistory.entries.length > 0 ? "4px" : 0,
+        }}
+      >
+        {cycleHistory.summaryLabel}
       </span>
-      {tile.lastCompletedBy && (
-        <span style={{ display: "block" }}>
-          by {tile.lastCompletedByLabel || tile.lastCompletedBy}
+      {cycleHistory.entries.length > 0 && (
+        <span
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px 8px",
+            lineHeight: 1.4,
+          }}
+        >
+          {cycleHistory.entries.map((entry) => (
+            <span
+              key={`${entry.dueDate}-${entry.label}`}
+              style={{
+                color: cycleEntryColor(entry.status),
+                fontWeight: entry.status === "due" ? 700 : 600,
+              }}
+            >
+              {entry.label} {formatPmCycleStatusLabel(entry.status)}
+            </span>
+          ))}
         </span>
       )}
     </span>
@@ -121,7 +159,7 @@ export default function PmTileGrid({
                   color: style.color,
                   cursor: "pointer",
                   transition: SETTINGS_CARD_TRANSITION,
-                  minHeight: "132px",
+                  minHeight: "148px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "5px",
@@ -150,12 +188,12 @@ export default function PmTileGrid({
                 <div
                   style={{
                     fontSize: "10px",
-                    opacity: 0.82,
+                    opacity: 0.88,
                     marginTop: "auto",
                     lineHeight: 1.35,
                   }}
                 >
-                  <PmCompletionHistory tile={tile} />
+                  <PmCycleHistoryPanel tile={tile} />
                 </div>
               </button>
             );

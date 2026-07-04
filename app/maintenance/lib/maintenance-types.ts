@@ -60,6 +60,21 @@ export type PmTileUrgency =
   | "current"
   | "completed";
 
+export type PmCycleStatus = "completed" | "missed" | "due" | "upcoming";
+
+export type PmCycleEntry = {
+  label: string;
+  dueDate: string;
+  status: PmCycleStatus;
+};
+
+export type PmCycleHistory = {
+  entries: PmCycleEntry[];
+  completedCount: number;
+  totalCount: number;
+  summaryLabel: string;
+};
+
 export type PmTile = {
   key: string;
   assignmentId: number;
@@ -79,6 +94,7 @@ export type PmTile = {
   lastCompletedBy: string | null;
   /** UI-only label resolved from team member first name */
   lastCompletedByLabel?: string | null;
+  cycleHistory: PmCycleHistory;
 };
 
 export type PmPriorityQueueItem = {
@@ -102,7 +118,15 @@ export type PmPeriodPerformance = {
   onTimeRate: number | null;
 };
 
+export type PmHealthSummary = {
+  healthPercent: number;
+  currentPms: number;
+  pastDueCount: number;
+  incompleteCycles: number;
+};
+
 export type EngineeringPerformance = {
+  pmHealth: PmHealthSummary;
   performanceByPeriod: Record<PmCompliancePeriod, PmPeriodPerformance>;
   completedMtd: number;
   pastDueCount: number;
@@ -144,7 +168,7 @@ export type PmOccurrence = {
   templateId: number;
   assignmentId: number;
   dueDate: string;
-  status: "open" | "completed";
+  status: "open" | "completed" | "missed";
   responses: PmOccurrenceResponses;
   sessionNotes: string | null;
   startedAt: string | null;

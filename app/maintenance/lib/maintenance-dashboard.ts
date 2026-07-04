@@ -12,6 +12,12 @@ import { fetchPmDashboardData } from "./pm-db";
 import { PM_FREQUENCY_LABELS } from "./pm-types";
 import { calculatePmPerformanceByPeriod } from "./pm-compliance";
 import {
+  buildPmCycleHistory,
+  calculatePmHealthPercent,
+  PmOccurrenceLookupStatus,
+} from "./pm-cycle";
+import { reconcilePmMissedCycles } from "./pm-cycle-reconcile";
+import {
   classifyPmUrgency,
   formatPmDueLabel,
   formatPmTileStatusLine,
@@ -43,6 +49,48 @@ function occurrenceKey(assignmentId: number, dueDate: string): string {
   return `${assignmentId}::${dueDate}`;
 }
 
+function parseOccurrenceDueDate(iso: string): Date {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function buildPmHealthSummary(
+  pmTiles: PmTile[],
+  completedByKey: Map<string, OccurrenceRow>,
+  missedByKey: Map<string, OccurrenceRow>,
+  now: Date
+) {
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+  let completedYtd = 0;
+  let missedYtd = 0;
+  const pastDueOpen = pmTiles.filter((tile) => tile.urgency === "past_due").length;
+
+  for (const [, row] of completedByKey) {
+    const dueDate = parseOccurrenceDueDate(String(row.due_date));
+    if (dueDate >= yearStart) {
+      completedYtd += 1;
+    }
+  }
+
+  for (const [, row] of missedByKey) {
+    const dueDate = parseOccurrenceDueDate(String(row.due_date));
+    if (dueDate >= yearStart) {
+      missedYtd += 1;
+    }
+  }
+
+  return {
+    healthPercent: calculatePmHealthPercent({
+      completed: completedYtd,
+      missed: missedYtd,
+      pastDueOpen,
+    }),
+    currentPms: pmTiles.filter((tile) => tile.urgency !== "completed").length,
+    pastDueCount: pastDueOpen,
+    incompleteCycles: missedYtd,
+  };
+}
+
 function countFailedSteps(responses: PmOccurrenceResponses | null | undefined): number {
   return (responses?.steps || []).filter((step) => step.outcome === "fail").length;
 }
@@ -51,9 +99,27 @@ export async function buildMaintenanceDashboard(
   supabase: SupabaseClient
 ): Promise<MaintenanceDashboardPayload> {
   const now = new Date();
-  const [pmData, workOrderResult, closedWorkOrdersResult, occurrenceResult] =
+  const pmData = await fetchPmDashboardData(supabase);
+
+  const reconcileSchedules = pmData.schedules
+    .filter(
+      (schedule) =>
+        schedule.templateStatus === "Active" &&
+        schedule.assignmentStatus === "Active" &&
+        schedule.nextDueDate
+    )
+    .map((schedule) => ({
+      assignmentId: schedule.assignmentId,
+      templateId: schedule.templateId,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      frequency: schedule.frequency,
+    }));
+
+  await reconcilePmMissedCycles(supabase, reconcileSchedules, now);
+
+  const [workOrderResult, closedWorkOrdersResult, occurrenceResult] =
     await Promise.all([
-      fetchPmDashboardData(supabase),
       supabase
         .from("work_orders")
         .select("*")
@@ -84,12 +150,23 @@ export async function buildMaintenanceDashboard(
   const occurrences = (occurrenceResult.data || []) as OccurrenceRow[];
   const completedByKey = new Map<string, OccurrenceRow>();
   const openByKey = new Map<string, OccurrenceRow>();
+  const missedByKey = new Map<string, OccurrenceRow>();
+  const occurrenceStatusByAssignment = new Map<number, Map<string, PmOccurrenceLookupStatus>>();
   const lastCompletedByAssignment = new Map<number, LastCompletion>();
   let failedPmItems = 0;
+
+  const yearStart = new Date(now.getFullYear(), 0, 1);
 
   for (const row of occurrences) {
     const assignmentId = Number(row.assignment_id);
     const key = occurrenceKey(assignmentId, String(row.due_date));
+
+    if (!occurrenceStatusByAssignment.has(assignmentId)) {
+      occurrenceStatusByAssignment.set(assignmentId, new Map());
+    }
+    occurrenceStatusByAssignment
+      .get(assignmentId)!
+      .set(String(row.due_date), row.status as PmOccurrenceLookupStatus);
 
     if (row.status === "completed") {
       completedByKey.set(key, row);
@@ -106,6 +183,8 @@ export async function buildMaintenanceDashboard(
     } else if (row.status === "open") {
       openByKey.set(key, row);
       failedPmItems += countFailedSteps(row.responses);
+    } else if (row.status === "missed") {
+      missedByKey.set(key, row);
     }
   }
 
@@ -123,6 +202,16 @@ export async function buildMaintenanceDashboard(
     const openOccurrence = openByKey.get(key);
     const urgency = classifyPmUrgency(dueDate, isCompleted, now);
     const lastCompletion = lastCompletedByAssignment.get(schedule.assignmentId);
+    const occurrenceByDueDate =
+      occurrenceStatusByAssignment.get(schedule.assignmentId) ?? new Map();
+    const cycleHistory = buildPmCycleHistory({
+      frequency: schedule.frequency,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      activeDueDate: dueDate,
+      occurrenceByDueDate,
+      now,
+    });
 
     return {
       key: `${schedule.assignmentId}-${dueDate}`,
@@ -141,6 +230,7 @@ export async function buildMaintenanceDashboard(
       estimatedMinutes: schedule.estimatedMinutes,
       lastCompletedAt: lastCompletion?.completedAt ?? null,
       lastCompletedBy: lastCompletion?.completedBy ?? null,
+      cycleHistory,
     };
   });
 
@@ -217,6 +307,7 @@ export async function buildMaintenanceDashboard(
   }).length;
 
   const engineeringPerformance: EngineeringPerformance = {
+    pmHealth: buildPmHealthSummary(pmTiles, completedByKey, missedByKey, now),
     performanceByPeriod,
     completedMtd: metrics.completedMtd,
     pastDueCount: metrics.pastDuePms,
