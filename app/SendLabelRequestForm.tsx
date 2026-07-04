@@ -55,10 +55,7 @@ export default function SendLabelRequestForm({
         className="one-eyrie-field one-eyrie-field--compact"
       />
 
-      <button
-        type="submit"
-        className="one-eyrie-send-label-form__btn one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
-      >
+      <button type="submit" className="one-eyrie-send-label-form__btn">
         Send
       </button>
     </form>

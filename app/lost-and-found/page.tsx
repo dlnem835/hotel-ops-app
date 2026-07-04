@@ -8,6 +8,7 @@ import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus, Search } from 
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
+import LostFoundCommentCell from "@/app/lost-and-found/components/LostFoundCommentCell";
 import LostFoundAddItemModal, {
   combineLostFoundLocation,
   type LostFoundAddItemFormData,
@@ -245,9 +246,19 @@ setTeamMembers(allTeamMembers || []);
     fetchItems();
   }
 
-  async function updateComments(id: string, comments: string) {
-    await supabase.from("lost_items").update({ comments }).eq("id", id);
-    fetchItems();
+  async function updateComments(id: string | number, comments: string) {
+    const { error } = await supabase
+      .from("lost_items")
+      .update({ comments })
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    setLostItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, comments } : item))
+    );
   }
 
   function statusStyle(status: string) {
@@ -482,9 +493,9 @@ setTeamMembers(allTeamMembers || []);
         {/* TABLE */}
         <div className="one-eyrie-table-panel">
   {!lostItems.length ? (
-    <p className="lnf-empty-text" style={{ padding: "24px", color: "#9CA3AF" }}>No lost items yet.</p>
+    <p className="lnf-empty-text" style={{ padding: "24px 0", color: "#9CA3AF" }}>No lost items yet.</p>
   ) : !filteredItems.length ? (
-    <p className="lnf-empty-text" style={{ padding: "24px", color: "#9CA3AF" }}>No matching items found.</p>
+    <p className="lnf-empty-text" style={{ padding: "24px 0", color: "#9CA3AF" }}>No matching items found.</p>
   ) : (
     <table className="one-eyrie-table one-eyrie-table--fit one-eyrie-lnf-table" style={{ fontSize: "13px" }}>
       <thead>
@@ -573,16 +584,10 @@ setTeamMembers(allTeamMembers || []);
             </td>
 
             <td className="col-comments one-eyrie-table__cell--wrap" style={tdStyle}>
-              <input
-                type="text"
-                value={item.comments || ""}
-                placeholder="Add comment..."
-                onChange={(e) => updateComments(item.id, e.target.value)}
-                className="one-eyrie-field one-eyrie-field--compact"
-                style={{
-                  ...inputStyle,
-                  padding: "8px 10px",
-                }}
+              <LostFoundCommentCell
+                itemId={item.id}
+                comments={item.comments}
+                onSave={updateComments}
               />
             </td>
 
@@ -785,13 +790,13 @@ const searchInputStyle: React.CSSProperties = {
 };
 
 const thStyle: React.CSSProperties = {
-  padding: "14px 12px",
+  padding: "9px 8px",
   fontSize: "12px",
   textTransform: "uppercase",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "16px 14px",
+  padding: "10px 8px",
   verticalAlign: "middle",
   fontSize: "13px",
 };
