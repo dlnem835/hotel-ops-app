@@ -149,6 +149,7 @@ export type MaintenanceMetrics = {
   dueTodayPms: number;
   dueTomorrowPms: number;
   upcomingThisWeekPms: number;
+  totalOpenPms: number;
   completedMtd: number;
   compliancePercent: number;
 };

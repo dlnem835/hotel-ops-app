@@ -58,7 +58,7 @@ export default function WorkOrderMetricCards({
       className={`maintenance-wo-kpi-cards${className ? ` ${className}` : ""}`}
     >
       <CompactKpiCard
-        label="Open"
+        label="Total Open Work Orders"
         value={String(openWorkOrders)}
         accent={openWorkOrders > 0 ? FLAT_RED.text : ONE_EYRIE.text}
       />

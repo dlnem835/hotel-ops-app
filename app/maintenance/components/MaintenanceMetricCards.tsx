@@ -68,11 +68,13 @@ export default function MaintenanceMetricCards({
         value={String(metrics.dueTodayPms)}
         accent={metrics.dueTodayPms > 0 ? ONE_EYRIE.gold : ONE_EYRIE.text}
       />
-      <MetricCard
-        label="Upcoming This Week"
-        value={String(metrics.upcomingThisWeekPms)}
-      />
       <MetricCard label="PMs Completed" value={String(metrics.completedMtd)} />
+      <MetricCard
+        label="Total Open PMs"
+        value={String(
+          metrics.totalOpenPms ?? metrics.pastDuePms + metrics.dueTodayPms
+        )}
+      />
     </div>
   );
 }

@@ -350,9 +350,7 @@ function buildMetrics(
   const pastDuePms = pmTiles.filter((tile) => tile.urgency === "past_due").length;
   const dueTodayPms = pmTiles.filter((tile) => tile.urgency === "due_today").length;
   const dueTomorrowPms = pmTiles.filter((tile) => tile.urgency === "due_tomorrow").length;
-  const upcomingThisWeekPms = pmTiles.filter(
-    (tile) => tile.urgency === "upcoming"
-  ).length;
+  const totalOpenPms = pastDuePms + dueTodayPms;
 
   const completedByPeriod = countCompletedPmsByAllPeriods(completedByKey, pmTiles, now);
   const completedMtd = completedByPeriod.mtd;
@@ -370,7 +368,8 @@ function buildMetrics(
     pastDuePms,
     dueTodayPms,
     dueTomorrowPms,
-    upcomingThisWeekPms,
+    upcomingThisWeekPms: pmTiles.filter((tile) => tile.urgency === "upcoming").length,
+    totalOpenPms,
     completedMtd,
     compliancePercent,
   };
