@@ -60,12 +60,7 @@ export default function MaintenanceMetricCards({
   className,
 }: MaintenanceMetricCardsProps) {
   return (
-    <div className={`maintenance-metric-cards${className ? ` ${className}` : ""}`}>
-      <MetricCard
-        label="Open Work Orders"
-        value={String(metrics.openWorkOrders)}
-        accent={metrics.openWorkOrders > 0 ? FLAT_RED.text : ONE_EYRIE.text}
-      />
+    <div className={`maintenance-metric-cards maintenance-pm-metric-cards${className ? ` ${className}` : ""}`}>
       <MetricCard
         label="Past Due PMs"
         value={String(metrics.pastDuePms)}
@@ -80,10 +75,10 @@ export default function MaintenanceMetricCards({
         label="Upcoming This Week"
         value={String(metrics.upcomingThisWeekPms)}
       />
+      <MetricCard label="PMs Completed" value={String(metrics.completedMtd)} />
       {onPmHealthClick ? (
         <PmHealthReportTile onClick={onPmHealthClick} />
       ) : null}
-      <MetricCard label="PMs Completed" value={String(metrics.completedMtd)} />
     </div>
   );
 }

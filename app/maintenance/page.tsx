@@ -25,7 +25,9 @@ import {
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 import MaintenanceMetricCards from "./components/MaintenanceMetricCards";
+import MaintenanceSectionHeader from "./components/MaintenanceSectionHeader";
 import PmTileGridSection from "./components/PmTileGridSection";
+import WorkOrderMetricCards from "./components/WorkOrderMetricCards";
 import WorkOrdersPanel from "./components/WorkOrdersPanel";
 import PmHealthDetailModal from "./components/PmHealthDetailModal";
 import WorkOrderModal, {
@@ -252,23 +254,34 @@ export default function MaintenancePage() {
             Loading maintenance dashboard...
           </div>
         ) : (
-          <div className="maintenance-mobile-dashboard-grid maintenance-desktop-dashboard-grid one-eyrie-split-grid">
-            <MaintenanceMetricCards
-              className="maintenance-dashboard-kpis"
-              metrics={dashboard.metrics}
-              onPmHealthClick={() => setPmHealthModalOpen(true)}
-            />
+          <div className="maintenance-workspaces-grid maintenance-mobile-dashboard-grid one-eyrie-split-grid">
+            <div className="maintenance-pm-workspace">
+              <MaintenanceSectionHeader title="Preventive Maintenance" />
 
-            <PmTileGridSection
-              tiles={dashboard.pmTiles}
-              onOpenPm={handleOpenPmTile}
-            />
+              <MaintenanceMetricCards
+                metrics={dashboard.metrics}
+                onPmHealthClick={() => setPmHealthModalOpen(true)}
+              />
 
-            <WorkOrdersPanel
-              className="maintenance-dashboard-wo"
-              workOrders={dashboard.workOrders}
-              onOpenWorkOrder={setSelectedWorkOrder}
-            />
+              <PmTileGridSection tiles={dashboard.pmTiles} onOpenPm={handleOpenPmTile} />
+            </div>
+
+            <div className="maintenance-wo-workspace">
+              <MaintenanceSectionHeader title="Work Orders" uppercase showDivider />
+
+              <WorkOrderMetricCards
+                openWorkOrders={dashboard.metrics.openWorkOrders}
+                urgentWorkOrders={dashboard.workOrders.filter(
+                  (order) => order.priority === "Urgent"
+                ).length}
+              />
+
+              <WorkOrdersPanel
+                hideHeader
+                workOrders={dashboard.workOrders}
+                onOpenWorkOrder={setSelectedWorkOrder}
+              />
+            </div>
           </div>
         )}
 

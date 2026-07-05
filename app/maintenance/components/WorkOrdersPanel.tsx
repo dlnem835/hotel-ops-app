@@ -11,6 +11,7 @@ type WorkOrdersPanelProps = {
   onOpenWorkOrder?: (workOrder: WorkOrder) => void;
   compact?: boolean;
   className?: string;
+  hideHeader?: boolean;
 };
 
 export default function WorkOrdersPanel({
@@ -18,6 +19,7 @@ export default function WorkOrdersPanel({
   onOpenWorkOrder,
   compact = false,
   className,
+  hideHeader = false,
 }: WorkOrdersPanelProps) {
   return (
     <div
@@ -33,10 +35,22 @@ export default function WorkOrdersPanel({
       }}
     >
       <div>
-        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-          {compact ? "Today's Work Orders" : "Work Order Checklist"}
-        </div>
-        <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
+        {!hideHeader ? (
+          <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+            {compact ? "Today's Work Orders" : "Work Order Checklist"}
+          </div>
+        ) : (
+          <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
+            Work Order Checklist
+          </div>
+        )}
+        <div
+          style={{
+            color: ONE_EYRIE.textMuted,
+            fontSize: hideHeader ? "11px" : "12px",
+            marginTop: "4px",
+          }}
+        >
           Guest-impacting · Urgent → Important → Normal · oldest first
         </div>
       </div>

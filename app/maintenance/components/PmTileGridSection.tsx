@@ -144,18 +144,6 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
             marginBottom: "10px",
           }}
         >
-        <div
-          style={{
-            color: ONE_EYRIE.gold,
-            fontWeight: 800,
-            fontSize: "15px",
-            marginRight: "4px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          PM Tile Grid
-        </div>
-
         {PM_TILE_FILTER_OPTIONS.map((option) => {
           const active = activeFilters.has(option.key);
           return (
