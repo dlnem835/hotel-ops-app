@@ -14,7 +14,11 @@ export async function resolveWorkOrderCreatedBy(): Promise<string | null> {
 
   if (!teamMember) return null;
 
-  return teamMember?.username || null;
+  return (
+    teamMember.username ||
+    [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
+    null
+  );
 }
 
 export async function fetchOpenWorkOrders(): Promise<WorkOrder[]> {
@@ -59,11 +63,17 @@ export async function saveWorkOrderComments(
   return result.workOrder as WorkOrder;
 }
 
-export async function completeWorkOrder(id: number): Promise<WorkOrder> {
+export async function completeWorkOrder(
+  id: number,
+  completedBy?: string | null
+): Promise<WorkOrder> {
   const response = await fetch(`/api/work-orders/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "Completed" }),
+    body: JSON.stringify({
+      status: "Completed",
+      completed_by: completedBy ?? null,
+    }),
   });
   const result = await response.json();
 

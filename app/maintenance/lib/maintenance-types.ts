@@ -33,6 +33,9 @@ export type WorkOrder = {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  completedBy: string | null;
+  /** UI-only label resolved from team member first name */
+  completedByLabel?: string | null;
 };
 
 export type WorkOrderInput = {
@@ -50,6 +53,7 @@ export type WorkOrderInput = {
   category?: WorkOrderCategory | null;
   item?: string | null;
   created_by?: string | null;
+  completed_by?: string | null;
 };
 
 export type PmTileUrgency =
@@ -118,17 +122,22 @@ export type PmPeriodPerformance = {
   onTimeRate: number | null;
 };
 
+export type PmHealthStatus = "healthy" | "needs_attention" | "critical";
+
 export type PmHealthSummary = {
-  healthPercent: number;
+  status: PmHealthStatus;
   currentPms: number;
+  completedOnTime: number;
+  completedLate: number;
   pastDueCount: number;
-  incompleteCycles: number;
+  missedCount: number;
 };
 
 export type EngineeringPerformance = {
   pmHealth: PmHealthSummary;
   performanceByPeriod: Record<PmCompliancePeriod, PmPeriodPerformance>;
   completedMtd: number;
+  completedByPeriod: Record<PmCompliancePeriod, number>;
   pastDueCount: number;
   failedPmItems: number;
   workOrdersClosedMtd: number;
@@ -175,4 +184,7 @@ export type PmOccurrence = {
   completedAt: string | null;
   completedBy: string | null;
   createdAt: string;
+  createdBy: string | null;
+  lastSavedAt: string | null;
+  lastSavedBy: string | null;
 };

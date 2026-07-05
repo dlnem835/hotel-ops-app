@@ -2,10 +2,6 @@
 
 import { ChevronRight } from "lucide-react";
 import { WorkOrder } from "../lib/maintenance-types";
-import {
-  formatWorkOrderAge,
-  workOrderListDescription,
-} from "../lib/work-order-display";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
 import "@/app/components/dashboard-list-card.css";
@@ -14,15 +10,18 @@ type WorkOrdersPanelProps = {
   workOrders: WorkOrder[];
   onOpenWorkOrder?: (workOrder: WorkOrder) => void;
   compact?: boolean;
+  className?: string;
 };
 
 export default function WorkOrdersPanel({
   workOrders,
   onOpenWorkOrder,
   compact = false,
+  className,
 }: WorkOrdersPanelProps) {
   return (
     <div
+      className={`maintenance-work-order-panel${className ? ` ${className}` : ""}`}
       style={{
         background: ONE_EYRIE.surface,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -47,9 +46,8 @@ export default function WorkOrdersPanel({
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        <div className="dashboard-list-panel__rows">
+        <div className="dashboard-list-panel__rows maintenance-work-order-panel__rows">
           {workOrders.map((order) => {
-            const description = workOrderListDescription(order);
             const clickable = Boolean(onOpenWorkOrder);
 
             return (
@@ -57,7 +55,7 @@ export default function WorkOrdersPanel({
                 key={order.id}
                 role={clickable ? "button" : undefined}
                 tabIndex={clickable ? 0 : undefined}
-                className="dashboard-list-card"
+                className="dashboard-list-card maintenance-work-order-card"
                 onClick={clickable ? () => onOpenWorkOrder?.(order) : undefined}
                 onKeyDown={
                   clickable
@@ -80,14 +78,6 @@ export default function WorkOrdersPanel({
                   </div>
                   <div className="dashboard-list-card__location">
                     {order.areaLabel || "No area specified"}
-                    {order.sourceModule ? ` · From ${order.sourceModule}` : ""}
-                  </div>
-                  {description ? (
-                    <div className="dashboard-list-card__description">{description}</div>
-                  ) : null}
-                  <div className="dashboard-list-card__meta">
-                    {formatWorkOrderAge(order.createdAt)}
-                    {order.createdByLabel || order.createdBy ? ` · ${order.createdByLabel || order.createdBy}` : ""}
                   </div>
                 </div>
                 {clickable ? (

@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     const supabase = getSupabaseAdmin();
     const occurrence = await resolvePmOccurrenceForAssignment(
       supabase,
-      assignmentId
+      assignmentId,
+      body.created_by ? String(body.created_by) : null
     );
     return NextResponse.json({ occurrence });
   } catch (error: unknown) {

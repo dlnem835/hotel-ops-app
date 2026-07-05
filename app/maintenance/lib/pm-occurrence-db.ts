@@ -18,6 +18,9 @@ type OccurrenceRow = {
   completed_at: string | null;
   completed_by: string | null;
   created_at: string;
+  created_by: string | null;
+  last_saved_at: string | null;
+  last_saved_by: string | null;
 };
 
 function normalizeOccurrence(row: OccurrenceRow): PmOccurrence {
@@ -33,6 +36,9 @@ function normalizeOccurrence(row: OccurrenceRow): PmOccurrence {
     completedAt: row.completed_at ? String(row.completed_at) : null,
     completedBy: row.completed_by ? String(row.completed_by) : null,
     createdAt: String(row.created_at),
+    createdBy: row.created_by ? String(row.created_by) : null,
+    lastSavedAt: row.last_saved_at ? String(row.last_saved_at) : null,
+    lastSavedBy: row.last_saved_by ? String(row.last_saved_by) : null,
   };
 }
 
@@ -57,6 +63,7 @@ export async function startPmOccurrence(
     assignmentId: number;
     templateId: number;
     dueDate: string;
+    createdBy?: string | null;
   }
 ): Promise<PmOccurrence> {
   const { data: existing, error: existingError } = await supabase
@@ -69,7 +76,18 @@ export async function startPmOccurrence(
 
   if (existingError) throw new Error(existingError.message);
   if (existing) {
-    return normalizeOccurrence(existing as OccurrenceRow);
+    const normalized = normalizeOccurrence(existing as OccurrenceRow);
+    if (!normalized.createdBy && input.createdBy) {
+      const { data, error } = await supabase
+        .from("pm_occurrences")
+        .update({ created_by: input.createdBy })
+        .eq("id", normalized.id)
+        .select("*")
+        .single();
+      if (error) throw new Error(error.message);
+      return normalizeOccurrence(data as OccurrenceRow);
+    }
+    return normalized;
   }
 
   const { data, error } = await supabase
@@ -80,6 +98,7 @@ export async function startPmOccurrence(
       due_date: input.dueDate,
       status: "open",
       started_at: new Date().toISOString(),
+      created_by: input.createdBy ?? null,
       responses: { steps: [] },
     })
     .select("*")
@@ -91,7 +110,8 @@ export async function startPmOccurrence(
 
 export async function resolvePmOccurrenceForAssignment(
   supabase: SupabaseClient,
-  assignmentId: number
+  assignmentId: number,
+  createdBy?: string | null
 ): Promise<PmOccurrence> {
   const { data: assignment, error: assignmentError } = await supabase
     .from("pm_schedule_assignments")
@@ -121,6 +141,7 @@ export async function resolvePmOccurrenceForAssignment(
     assignmentId,
     templateId: Number(template.id),
     dueDate,
+    createdBy,
   });
 }
 
@@ -132,19 +153,28 @@ export async function updatePmOccurrence(
     sessionNotes?: string | null;
     status?: "open" | "completed" | "missed";
     completedBy?: string | null;
+    savedBy?: string | null;
   }
 ): Promise<PmOccurrence> {
   const payload: Record<string, unknown> = {};
 
   if (patch.responses !== undefined) payload.responses = patch.responses;
   if (patch.sessionNotes !== undefined) payload.session_notes = patch.sessionNotes;
+  if (patch.savedBy !== undefined) {
+    payload.last_saved_by = patch.savedBy;
+    payload.last_saved_at = new Date().toISOString();
+  }
   if (patch.status !== undefined) {
     payload.status = patch.status;
     if (patch.status === "completed") {
       payload.completed_at = new Date().toISOString();
+      if (patch.completedBy !== undefined) {
+        payload.completed_by = patch.completedBy;
+      }
     }
+  } else if (patch.completedBy !== undefined) {
+    payload.completed_by = patch.completedBy;
   }
-  if (patch.completedBy !== undefined) payload.completed_by = patch.completedBy;
 
   const { data, error } = await supabase
     .from("pm_occurrences")

@@ -4,10 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
+import WorkOrderDetailMetadata from "@/app/maintenance/components/WorkOrderDetailMetadata";
 import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import {
+  resolveMemberDisplayLabel,
+  useMemberDisplayNameResolver,
+} from "@/app/lib/use-member-display-name";
 import {
   completeWorkOrder,
   fetchWorkOrderById,
+  resolveWorkOrderCreatedBy,
   saveWorkOrderComments,
 } from "./lib/work-order-shared";
 import WorkOrderPhotoAttachment from "@/app/maintenance/components/WorkOrderPhotoAttachment";
@@ -18,7 +24,9 @@ type MobileWorkOrderDetailProps = {
 
 export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDetailProps) {
   const router = useRouter();
+  const memberResolver = useMemberDisplayNameResolver();
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [comments, setComments] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +34,10 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
   const [completing, setCompleting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void resolveWorkOrderCreatedBy().then(setCurrentUserName);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -89,7 +101,7 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
     setActionError(null);
 
     try {
-      await completeWorkOrder(workOrder.id);
+      await completeWorkOrder(workOrder.id, currentUserName);
       router.push("/mobile/work-orders");
     } catch (completeError) {
       setActionError(
@@ -133,10 +145,25 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         </span>
       </div>
 
-      <div className="one-eyrie-mobile-work-order-detail__meta">
-        {workOrder.areaLabel || "No area specified"}
-        {workOrder.sourceModule ? ` · from ${workOrder.sourceModule}` : ""}
-      </div>
+      <WorkOrderDetailMetadata
+        locationLabel={workOrder.areaLabel || "No area specified"}
+        sourceModule={workOrder.sourceModule}
+        createdByLabel={
+          workOrder.createdByLabel ||
+          (workOrder.createdBy
+            ? resolveMemberDisplayLabel(memberResolver, workOrder.createdBy)
+            : null)
+        }
+        createdAt={workOrder.createdAt}
+        isCompleted={workOrder.status === "Completed"}
+        completedByLabel={
+          workOrder.completedByLabel ||
+          (workOrder.completedBy
+            ? resolveMemberDisplayLabel(memberResolver, workOrder.completedBy)
+            : null)
+        }
+        completedAt={workOrder.completedAt}
+      />
 
       {workOrder.description ? (
         <div className="one-eyrie-mobile-work-order-detail__panel">

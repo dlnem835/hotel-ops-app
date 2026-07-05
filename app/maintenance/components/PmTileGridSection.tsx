@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PmTile } from "../lib/maintenance-types";
 import {
   DEFAULT_PM_TILE_FILTERS,
@@ -36,6 +36,7 @@ function readInitialPmFiltersFromUrl(): PmTileFilterKey[] {
 type PmTileGridSectionProps = {
   tiles: PmTile[];
   onOpenPm: (tile: PmTile) => void;
+  className?: string;
 };
 
 function CarouselArrow({
@@ -77,7 +78,7 @@ function CarouselArrow({
   );
 }
 
-export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSectionProps) {
+export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTileGridSectionProps) {
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
     () => new Set(readInitialPmFiltersFromUrl())
   );
@@ -98,6 +99,7 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
   const pageStart = safePage * PM_QUEUE_PAGE_SIZE;
   const pageEnd = Math.min(pageStart + PM_QUEUE_PAGE_SIZE, filteredTiles.length);
   const visibleTiles = filteredTiles.slice(pageStart, pageEnd);
+  const remainingCount = Math.max(0, filteredTiles.length - pageEnd);
 
   const showingLabel = formatPmQueueShowingLabel(
     filteredTiles.length === 0 ? 0 : pageStart + 1,
@@ -131,92 +133,52 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
   const canGoNext = safePage < totalPages - 1;
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "6px",
-        }}
-      >
+    <>
+      <div className="maintenance-dashboard-pm-controls">
         <div
           style={{
             display: "flex",
             flexWrap: "wrap",
             gap: "8px",
             alignItems: "center",
-            flex: 1,
-            minWidth: 0,
+            marginBottom: "10px",
           }}
         >
-          <div
-            style={{
-              color: ONE_EYRIE.gold,
-              fontWeight: 800,
-              fontSize: "15px",
-              marginRight: "4px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            PM Tile Grid
-          </div>
-
-          {PM_TILE_FILTER_OPTIONS.map((option) => {
-            const active = activeFilters.has(option.key);
-            return (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => toggleFilter(option.key)}
-                style={{
-                  ...SETTINGS_BUTTON_BASE,
-                  background: active ? ONE_EYRIE.gold : "transparent",
-                  color: active ? ONE_EYRIE.surface : ONE_EYRIE.text,
-                  border: `1px solid ${active ? ONE_EYRIE.goldLight : ONE_EYRIE.border}`,
-                  borderRadius: "999px",
-                  padding: "8px 14px",
-                  fontWeight: 800,
-                  fontSize: "13px",
-                }}
-                {...goldHoverHandlers(active ? "primary" : "secondary")}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+        <div
+          style={{
+            color: ONE_EYRIE.gold,
+            fontWeight: 800,
+            fontSize: "15px",
+            marginRight: "4px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          PM Tile Grid
         </div>
 
-        <div style={{ position: "relative", minWidth: "180px", flex: "0 1 220px" }}>
-          <Search
-            size={15}
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: ONE_EYRIE.textSubtle,
-            }}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search PMs..."
-            className="one-eyrie-pm-grid-search"
-            style={{
-              width: "100%",
-              height: "36px",
-              paddingLeft: "32px",
-              paddingRight: "10px",
-              borderRadius: "8px",
-              fontSize: "13px",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
+        {PM_TILE_FILTER_OPTIONS.map((option) => {
+          const active = activeFilters.has(option.key);
+          return (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => toggleFilter(option.key)}
+              style={{
+                ...SETTINGS_BUTTON_BASE,
+                background: active ? ONE_EYRIE.gold : "transparent",
+                color: active ? ONE_EYRIE.surface : ONE_EYRIE.text,
+                border: `1px solid ${active ? ONE_EYRIE.goldLight : ONE_EYRIE.border}`,
+                borderRadius: "999px",
+                padding: "8px 14px",
+                fontWeight: 800,
+                fontSize: "13px",
+              }}
+              {...goldHoverHandlers(active ? "primary" : "secondary")}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
 
       <div
@@ -229,9 +191,11 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
       >
         {showingLabel}
       </div>
+      </div>
 
-      <div
-        className="maintenance-pm-carousel"
+      <div className={`maintenance-dashboard-pm-panel${className ? ` ${className}` : ""}`}>
+        <div
+          className="maintenance-pm-carousel"
         style={{
           display: "flex",
           alignItems: "stretch",
@@ -250,6 +214,8 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
           <PmTileGrid
             tiles={visibleTiles}
             onOpenPm={onOpenPm}
+            search={search}
+            onSearchChange={setSearch}
             emptyMessage={
               search.trim()
                 ? "No PM assignments match your search."
@@ -263,12 +229,62 @@ export default function PmTileGridSection({ tiles, onOpenPm }: PmTileGridSection
           <CarouselArrow
             direction="next"
             disabled={!canGoNext}
-            onClick={() =>
-              setPage((current) => Math.min(totalPages - 1, current + 1))
-            }
+            onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
           />
         </div>
       </div>
-    </div>
+
+      {canGoNext ? (
+        <div className="maintenance-pm-show-more-wrap">
+          <button
+            type="button"
+            className="maintenance-pm-show-more"
+            onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
+            style={{
+              ...SETTINGS_BUTTON_BASE,
+              marginTop: "12px",
+              width: "100%",
+              borderRadius: "10px",
+              border: `1px solid ${ONE_EYRIE.border}`,
+              background: ONE_EYRIE.surface,
+              color: ONE_EYRIE.gold,
+              padding: "10px 14px",
+              fontWeight: 800,
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+            {...goldHoverHandlers("secondary")}
+          >
+            Show More ({remainingCount} remaining)
+          </button>
+        </div>
+      ) : null}
+
+      {canGoPrev ? (
+        <div className="maintenance-pm-show-previous-wrap">
+          <button
+            type="button"
+            className="maintenance-pm-show-previous"
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+            style={{
+              ...SETTINGS_BUTTON_BASE,
+              marginTop: "8px",
+              width: "100%",
+              borderRadius: "10px",
+              border: `1px solid ${ONE_EYRIE.border}`,
+              background: "transparent",
+              color: ONE_EYRIE.textMuted,
+              padding: "8px 14px",
+              fontWeight: 700,
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            Show Previous
+          </button>
+        </div>
+      ) : null}
+      </div>
+    </>
   );
 }

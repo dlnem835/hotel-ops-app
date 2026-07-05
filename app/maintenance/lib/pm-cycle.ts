@@ -169,7 +169,7 @@ export function buildPmCycleHistory(input: {
       entries: [],
       completedCount: 0,
       totalCount: 0,
-      summaryLabel: "0 / 0 Completed",
+      summaryLabel: "0 of 0 Completed",
     };
   }
 
@@ -198,15 +198,16 @@ export function buildPmCycleHistory(input: {
   });
 
   const completedCount = entries.filter((entry) => entry.status === "completed").length;
-  const totalCount = entries.filter((entry) => entry.status !== "upcoming").length;
-  const showDetails =
-    usesDetailedCycleLabels(input.frequency) && entries.length <= 12;
+  const totalCount = entries.length;
 
   return {
-    entries: showDetails ? entries : [],
+    entries: [],
     completedCount,
-    totalCount: totalCount || entries.length,
-    summaryLabel: `${completedCount} / ${totalCount || entries.length} Completed`,
+    totalCount,
+    summaryLabel:
+      totalCount === 0
+        ? "0 of 0 Completed"
+        : `${completedCount} of ${totalCount} Completed`,
   };
 }
 

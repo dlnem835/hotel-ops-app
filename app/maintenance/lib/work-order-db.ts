@@ -27,6 +27,7 @@ export type WorkOrderRow = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  completed_by: string | null;
 };
 
 export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
@@ -49,6 +50,7 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     completedAt: row.completed_at ? String(row.completed_at) : null,
+    completedBy: row.completed_by ? String(row.completed_by) : null,
   };
 }
 
@@ -129,6 +131,9 @@ export async function updateWorkOrder(
     payload.status = patch.status;
     if (patch.status === "Completed") {
       payload.completed_at = new Date().toISOString();
+      if (patch.completed_by !== undefined) {
+        payload.completed_by = patch.completed_by;
+      }
     }
   }
   if (patch.area_id !== undefined) payload.area_id = patch.area_id;

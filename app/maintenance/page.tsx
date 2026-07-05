@@ -27,18 +27,21 @@ import {
 import MaintenanceMetricCards from "./components/MaintenanceMetricCards";
 import PmTileGridSection from "./components/PmTileGridSection";
 import WorkOrdersPanel from "./components/WorkOrdersPanel";
-import Next3PmsPanel from "./components/Next3PmsPanel";
-import EngineeringPerformancePanel from "./components/EngineeringPerformancePanel";
+import PmHealthDetailModal from "./components/PmHealthDetailModal";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "./components/WorkOrderModal";
 import WorkOrderPhotoAttachment from "./components/WorkOrderPhotoAttachment";
+import WorkOrderDetailMetadata from "./components/WorkOrderDetailMetadata";
 import {
   MaintenanceDashboardPayload,
-  PmPriorityQueueItem,
   PmTile,
   WorkOrder,
 } from "./lib/maintenance-types";
+import {
+  resolveMemberDisplayLabel,
+  useMemberDisplayNameResolver,
+} from "@/app/lib/use-member-display-name";
 import "./maintenance-responsive.css";
 
 const supabase = createClient(
@@ -62,6 +65,8 @@ export default function MaintenancePage() {
   const [completingWo, setCompletingWo] = useState(false);
   const [savingComments, setSavingComments] = useState(false);
   const [commentsSaveMessage, setCommentsSaveMessage] = useState<string | null>(null);
+  const [pmHealthModalOpen, setPmHealthModalOpen] = useState(false);
+  const memberResolver = useMemberDisplayNameResolver();
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -95,7 +100,11 @@ export default function MaintenancePage() {
         .maybeSingle();
 
       if (teamMember) {
-        setCreatedByName(teamMember.username || null);
+        setCreatedByName(
+          teamMember.username ||
+            [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
+            null
+        );
       }
 
       await loadDashboard();
@@ -114,7 +123,10 @@ export default function MaintenancePage() {
     const response = await fetch("/api/maintenance/pm-occurrences", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignment_id: assignmentId }),
+      body: JSON.stringify({
+        assignment_id: assignmentId,
+        created_by: createdByName,
+      }),
     });
     const result = await response.json();
     setStartingPm(false);
@@ -125,10 +137,6 @@ export default function MaintenancePage() {
     }
 
     router.push(`/maintenance/pm/${result.occurrence.id}`);
-  }
-
-  function handleStartPmFromQueue(item: PmPriorityQueueItem) {
-    void startPmForAssignment(item.assignmentId);
   }
 
   function handleOpenPmTile(tile: PmTile) {
@@ -172,7 +180,10 @@ export default function MaintenancePage() {
     const response = await fetch(`/api/work-orders/${selectedWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "Completed" }),
+      body: JSON.stringify({
+        status: "Completed",
+        completed_by: createdByName,
+      }),
     });
     setCompletingWo(false);
 
@@ -191,7 +202,7 @@ export default function MaintenancePage() {
       <OneEyrieSidebar active="Maintenance" />
 
       <section
-        className={`maintenance-mobile-page-content ${MAIN_CONTENT_CLASS}`}
+        className={`maintenance-mobile-page-content maintenance-page-content ${MAIN_CONTENT_CLASS}`}
         style={MAIN_CONTENT}
       >
         <OneEyriePageHeader
@@ -241,44 +252,24 @@ export default function MaintenancePage() {
             Loading maintenance dashboard...
           </div>
         ) : (
-          <>
-            <MaintenanceMetricCards metrics={dashboard.metrics} />
+          <div className="maintenance-mobile-dashboard-grid maintenance-desktop-dashboard-grid one-eyrie-split-grid">
+            <MaintenanceMetricCards
+              className="maintenance-dashboard-kpis"
+              metrics={dashboard.metrics}
+              onPmHealthClick={() => setPmHealthModalOpen(true)}
+            />
 
-            <div
-              className="maintenance-mobile-dashboard-grid one-eyrie-split-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(360px, 1.7fr) minmax(300px, 1fr)",
-                gap: "16px",
-                alignItems: "start",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <WorkOrdersPanel
-                  workOrders={dashboard.workOrders}
-                  onOpenWorkOrder={setSelectedWorkOrder}
-                />
+            <PmTileGridSection
+              tiles={dashboard.pmTiles}
+              onOpenPm={handleOpenPmTile}
+            />
 
-                <PmTileGridSection
-                  tiles={dashboard.pmTiles}
-                  onOpenPm={handleOpenPmTile}
-                />
-              </div>
-
-              <div
-                className="maintenance-mobile-dashboard-sidebar"
-                style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-              >
-                <EngineeringPerformancePanel
-                  performance={dashboard.engineeringPerformance}
-                />
-                <Next3PmsPanel
-                  items={dashboard.pmPriorityQueue}
-                  onStartPm={handleStartPmFromQueue}
-                />
-              </div>
-            </div>
-          </>
+            <WorkOrdersPanel
+              className="maintenance-dashboard-wo"
+              workOrders={dashboard.workOrders}
+              onOpenWorkOrder={setSelectedWorkOrder}
+            />
+          </div>
         )}
 
         <WorkOrderModal
@@ -288,6 +279,14 @@ export default function MaintenancePage() {
           onClose={() => setWorkOrderModalOpen(false)}
           onCreated={() => void loadDashboard()}
         />
+
+        {dashboard ? (
+          <PmHealthDetailModal
+            open={pmHealthModalOpen}
+            pmHealth={dashboard.engineeringPerformance.pmHealth}
+            onClose={() => setPmHealthModalOpen(false)}
+          />
+        ) : null}
 
         {selectedWorkOrder && (
           <div
@@ -311,18 +310,25 @@ export default function MaintenancePage() {
                   <X size={22} />
                 </button>
               </div>
-              <div
-                style={{
-                  color: ONE_EYRIE.textMuted,
-                  fontSize: "13px",
-                  marginBottom: "18px",
-                }}
-              >
-                {selectedWorkOrder.areaLabel || "No area"}
-                {selectedWorkOrder.sourceModule
-                  ? ` · from ${selectedWorkOrder.sourceModule}`
-                  : ""}
-              </div>
+              <WorkOrderDetailMetadata
+                locationLabel={selectedWorkOrder.areaLabel || "No area"}
+                sourceModule={selectedWorkOrder.sourceModule}
+                createdByLabel={
+                  selectedWorkOrder.createdByLabel ||
+                  (selectedWorkOrder.createdBy
+                    ? resolveMemberDisplayLabel(memberResolver, selectedWorkOrder.createdBy)
+                    : null)
+                }
+                createdAt={selectedWorkOrder.createdAt}
+                isCompleted={selectedWorkOrder.status === "Completed"}
+                completedByLabel={
+                  selectedWorkOrder.completedByLabel ||
+                  (selectedWorkOrder.completedBy
+                    ? resolveMemberDisplayLabel(memberResolver, selectedWorkOrder.completedBy)
+                    : null)
+                }
+                completedAt={selectedWorkOrder.completedAt}
+              />
               {selectedWorkOrder.description && (
                 <div
                   style={{

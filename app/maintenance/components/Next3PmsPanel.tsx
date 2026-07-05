@@ -9,6 +9,7 @@ import "@/app/components/dashboard-list-card.css";
 type Next3PmsPanelProps = {
   items: PmPriorityQueueItem[];
   onStartPm: (item: PmPriorityQueueItem) => void;
+  className?: string;
 };
 
 function areaLabel(item: PmPriorityQueueItem): string {
@@ -18,9 +19,10 @@ function areaLabel(item: PmPriorityQueueItem): string {
   return item.areaName || item.assetLabel || "Property-wide";
 }
 
-export default function Next3PmsPanel({ items, onStartPm }: Next3PmsPanelProps) {
+export default function Next3PmsPanel({ items, onStartPm, className }: Next3PmsPanelProps) {
   return (
     <div
+      className={className}
       style={{
         background: ONE_EYRIE.surface,
         border: `1px solid ${ONE_EYRIE.border}`,

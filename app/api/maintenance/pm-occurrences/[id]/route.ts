@@ -34,12 +34,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       sessionNotes?: string | null;
       status?: "open" | "completed";
       completedBy?: string | null;
+      savedBy?: string | null;
     } = {};
 
     if (body.responses !== undefined) patch.responses = body.responses;
     if (body.session_notes !== undefined) patch.sessionNotes = body.session_notes;
     if (body.status !== undefined) patch.status = body.status;
     if (body.completed_by !== undefined) patch.completedBy = body.completed_by;
+    if (body.saved_by !== undefined) patch.savedBy = body.saved_by;
 
     const occurrence = await updatePmOccurrence(supabase, Number(id), patch);
     return NextResponse.json({ occurrence });

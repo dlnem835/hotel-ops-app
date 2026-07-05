@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import PmChecklistItemRow from "../../components/PmChecklistItemRow";
+import PmSessionMetadata from "../../components/PmSessionMetadata";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "../../components/WorkOrderModal";
@@ -14,6 +16,7 @@ import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { PmChecklist, PmStepOutcome, PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { PmOccurrenceResponses } from "../../lib/maintenance-types";
 import {
+  isMobilePmSession,
   pmSessionBackLabel,
   pmSessionReturnPath,
 } from "../../lib/pm-session-return";
@@ -44,6 +47,7 @@ export default function PmSessionPage() {
   const occurrenceId = Number(params.id);
   const pmReturnPath = pmSessionReturnPath(searchParams);
   const pmBackLabel = pmSessionBackLabel(searchParams);
+  const isMobileSession = isMobilePmSession(searchParams);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,7 +64,12 @@ export default function PmSessionPage() {
   const [assetLabel, setAssetLabel] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
   const [frequency, setFrequency] = useState("");
-  const [completedBy, setCompletedBy] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [occurrenceCreatedBy, setOccurrenceCreatedBy] = useState<string | null>(null);
+  const [occurrenceSavedBy, setOccurrenceSavedBy] = useState<string | null>(null);
+  const [occurrenceSavedAt, setOccurrenceSavedAt] = useState<string | null>(null);
+  const [occurrenceCompletedBy, setOccurrenceCompletedBy] = useState<string | null>(null);
+  const [occurrenceCompletedAt, setOccurrenceCompletedAt] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [workOrderInitial, setWorkOrderInitial] = useState<
@@ -85,7 +94,11 @@ export default function PmSessionPage() {
         .maybeSingle();
 
       if (teamMember) {
-        setCompletedBy(teamMember.username || null);
+        const displayName =
+          teamMember.username ||
+          [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ") ||
+          null;
+        setCurrentUserName(displayName);
       }
 
       const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
@@ -107,6 +120,11 @@ export default function PmSessionPage() {
       setAssetLabel(result.assetLabel);
       setDueDate(result.occurrence.dueDate);
       setFrequency(result.frequency || "");
+      setOccurrenceCreatedBy(result.occurrence.createdBy || null);
+      setOccurrenceSavedBy(result.occurrence.lastSavedBy || null);
+      setOccurrenceSavedAt(result.occurrence.lastSavedAt || null);
+      setOccurrenceCompletedBy(result.occurrence.completedBy || null);
+      setOccurrenceCompletedAt(result.occurrence.completedAt || null);
 
       const nextResponses: ResponseMap = {};
       const nextNotes: Record<string, string> = {};
@@ -144,7 +162,7 @@ export default function PmSessionPage() {
       areaId,
       areaName,
       assetLabel,
-      completedBy,
+      completedBy: currentUserName,
       onCreateWorkOrder: (initial: WorkOrderModalInitialValues) => {
         setWorkOrderInitial(initial);
         setWorkOrderModalOpen(true);
@@ -156,7 +174,7 @@ export default function PmSessionPage() {
       areaId,
       areaName,
       assetLabel,
-      completedBy,
+      currentUserName,
     ]
   );
 
@@ -223,6 +241,7 @@ export default function PmSessionPage() {
       body: JSON.stringify({
         responses: buildResponsesPayload(),
         session_notes: sessionNotes,
+        saved_by: currentUserName,
       }),
     });
     setSaving(false);
@@ -232,6 +251,10 @@ export default function PmSessionPage() {
       alert(result.error || "Unable to save PM progress");
       return;
     }
+
+    const result = await response.json();
+    setOccurrenceSavedBy(result.occurrence.lastSavedBy || null);
+    setOccurrenceSavedAt(result.occurrence.lastSavedAt || null);
 
     setSaveMessage("Progress saved");
     window.setTimeout(() => setSaveMessage(null), 2500);
@@ -254,7 +277,7 @@ export default function PmSessionPage() {
         responses: buildResponsesPayload(),
         session_notes: sessionNotes,
         status: "completed",
-        completed_by: completedBy,
+        completed_by: currentUserName,
       }),
     });
     setSaving(false);
@@ -273,50 +296,105 @@ export default function PmSessionPage() {
       ? `${areaName} · ${assetLabel}`
       : areaName || assetLabel || "Property-wide";
 
-  return (
-    <main style={APP_SHELL}>
-      <OneEyrieSidebar active="Maintenance" />
+  const frequencyLabel =
+    PM_FREQUENCY_LABELS[frequency as keyof typeof PM_FREQUENCY_LABELS] || frequency || null;
 
-      <section style={{ ...MAIN_CONTENT, padding: 0 }}>
+  return (
+    <main
+      className={isMobileSession ? "maintenance-pm-session--mobile" : undefined}
+      style={
+        isMobileSession
+          ? {
+              minHeight: "100vh",
+              background: ONE_EYRIE.surface,
+              color: ONE_EYRIE.text,
+            }
+          : APP_SHELL
+      }
+    >
+      {!isMobileSession ? <OneEyrieSidebar active="Maintenance" /> : null}
+
+      <section
+        style={isMobileSession ? undefined : { ...MAIN_CONTENT, padding: 0 }}
+        className={isMobileSession ? "maintenance-pm-session--mobile__inner" : undefined}
+      >
         <div
           className="maintenance-mobile-session-header"
-          style={{
-            padding: "22px 28px",
-            borderBottom: `1px solid ${ONE_EYRIE.border}`,
-          }}
+          style={
+            isMobileSession
+              ? undefined
+              : {
+                  padding: "22px 28px",
+                  borderBottom: `1px solid ${ONE_EYRIE.border}`,
+                }
+          }
         >
-          <button
-            type="button"
-            onClick={() => router.push(pmReturnPath)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "transparent",
-              border: "none",
-              color: ONE_EYRIE.gold,
-              cursor: "pointer",
-              fontWeight: 700,
-              marginBottom: "10px",
-              padding: 0,
-            }}
+          {isMobileSession ? (
+            <Link href={pmReturnPath} className="one-eyrie-mobile-back">
+              ← PMs
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => router.push(pmReturnPath)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "transparent",
+                border: "none",
+                color: ONE_EYRIE.gold,
+                cursor: "pointer",
+                fontWeight: 700,
+                marginBottom: "10px",
+                padding: 0,
+              }}
+            >
+              <ArrowLeft size={16} />
+              {pmBackLabel}
+            </button>
+          )}
+          <h1
+            className={isMobileSession ? "one-eyrie-mobile-page-title" : undefined}
+            style={
+              isMobileSession
+                ? { margin: "0 0 8px" }
+                : { margin: 0, color: ONE_EYRIE.text, fontSize: "22px" }
+            }
           >
-            <ArrowLeft size={16} />
-            {pmBackLabel}
-          </button>
-          <h1 style={{ margin: 0, color: ONE_EYRIE.text, fontSize: "22px" }}>
             {templateName}
           </h1>
-          <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", marginTop: "6px" }}>
-            {locationLabel}
-            {dueDate ? ` · due ${dueDate}` : ""}
-            {frequency ? ` · ${PM_FREQUENCY_LABELS[frequency as keyof typeof PM_FREQUENCY_LABELS] || frequency}` : ""}
-          </div>
+          <PmSessionMetadata
+            locationLabel={locationLabel}
+            frequencyLabel={frequencyLabel}
+            createdByLabel={
+              occurrenceCreatedBy
+                ? resolveMemberDisplayLabel(memberResolver, occurrenceCreatedBy)
+                : null
+            }
+            savedByLabel={
+              occurrenceSavedBy
+                ? resolveMemberDisplayLabel(memberResolver, occurrenceSavedBy)
+                : null
+            }
+            savedAt={occurrenceSavedAt}
+            isCompleted={isCompleted}
+            completedByLabel={
+              occurrenceCompletedBy
+                ? resolveMemberDisplayLabel(memberResolver, occurrenceCompletedBy)
+                : null
+            }
+            completedAt={occurrenceCompletedAt}
+          />
         </div>
 
         <div
           className="maintenance-mobile-session-body"
-          style={{ padding: "18px 28px 100px", maxWidth: "900px" }}
+          style={
+            isMobileSession
+              ? undefined
+              : { padding: "18px 28px 100px", maxWidth: "900px" }
+          }
         >
           {loading ? (
             <div style={{ color: ONE_EYRIE.textMuted }}>Loading PM checklist...</div>
@@ -436,23 +514,6 @@ export default function PmSessionPage() {
                 </div>
               )}
 
-              {isCompleted && (
-                <div
-                  style={{
-                    marginTop: "16px",
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: `1px solid ${ONE_EYRIE.border}`,
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "13px",
-                  }}
-                >
-                  This PM was completed
-                  {completedBy
-                    ? ` by ${resolveMemberDisplayLabel(memberResolver, completedBy)}`
-                    : ""}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -461,7 +522,7 @@ export default function PmSessionPage() {
       <WorkOrderModal
         open={workOrderModalOpen}
         initialValues={workOrderInitial}
-        createdBy={completedBy}
+        createdBy={currentUserName}
         onClose={() => setWorkOrderModalOpen(false)}
         onCreated={() => setWorkOrderModalOpen(false)}
       />

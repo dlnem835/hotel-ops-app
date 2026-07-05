@@ -1,3 +1,219 @@
+/* Base layout: single-column stack on mobile (KPI row → PM grid → work orders). */
+
+.maintenance-metric-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.maintenance-pm-health-report-tile .maintenance-pm-health-report-title {
+  margin-bottom: 4px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.maintenance-pm-health-report-tile .maintenance-pm-health-report-subtext {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+.maintenance-dashboard-kpis {
+  min-width: 0;
+}
+
+.maintenance-desktop-dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.maintenance-eng-performance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.maintenance-eng-performance-health-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.maintenance-eng-performance-health-label {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.maintenance-eng-performance-health-value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.maintenance-eng-performance-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.maintenance-eng-performance-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.maintenance-eng-performance-stat {
+  text-align: center;
+  min-width: 0;
+}
+
+.maintenance-eng-performance-stat__label {
+  color: #9ca3af;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.maintenance-eng-performance-stat__value {
+  color: #f9fafb;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.maintenance-eng-performance-period-note {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.maintenance-work-order-panel__rows {
+  gap: 8px;
+}
+
+.maintenance-work-order-card {
+  padding: 10px 12px;
+}
+
+.maintenance-work-order-card .dashboard-list-card__title-row {
+  margin-bottom: 2px;
+}
+
+.maintenance-work-order-card .dashboard-list-card__title {
+  font-size: 13px;
+}
+
+.maintenance-work-order-card .dashboard-list-card__location {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.maintenance-pm-show-more-wrap,
+.maintenance-pm-show-previous-wrap {
+  display: none;
+}
+
+.maintenance-pm-carousel-arrow {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.maintenance-pm-grid-search-wrap {
+  position: relative;
+}
+
+.maintenance-pm-grid-search-wrap .pass-on-search-wrap__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a948a;
+  pointer-events: none;
+}
+
+.maintenance-pm-grid-search-wrap .one-eyrie-field {
+  background: #0b0b0b !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  color: #ece6dc;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+  padding: 11px 12px;
+  padding-left: 42px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.maintenance-pm-grid-search-wrap .one-eyrie-field:hover,
+.maintenance-pm-grid-search-wrap .one-eyrie-field:focus,
+.maintenance-pm-grid-search-wrap .one-eyrie-field:focus-visible {
+  background: #0b0b0b !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.maintenance-pm-grid-search-wrap .one-eyrie-field::placeholder {
+  color: #9a948a;
+}
+
+.maintenance-pm-session--mobile {
+  box-sizing: border-box;
+}
+
+.maintenance-pm-session--mobile__inner {
+  padding: 16px 14px calc(120px + env(safe-area-inset-bottom, 0px));
+}
+
+.maintenance-pm-session--mobile .maintenance-mobile-session-header {
+  padding: 0 !important;
+  border-bottom: none !important;
+  margin-bottom: 4px;
+}
+
+.maintenance-pm-session--mobile .maintenance-mobile-session-body {
+  padding: 0 !important;
+}
+
+.maintenance-pm-session--mobile .one-eyrie-mobile-back {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #c8a96a;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.maintenance-pm-session--mobile .one-eyrie-mobile-page-title {
+  margin: 0 0 8px;
+  color: #f9fafb;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 @media (max-width: 767px) {
   .maintenance-mobile-page-content {
     padding: 16px 14px 24px !important;
@@ -5,6 +221,28 @@
 
   .maintenance-mobile-dashboard-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .maintenance-desktop-sidebar-only {
+    display: none !important;
+  }
+
+  .maintenance-panel-primary {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .maintenance-panel-wo {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .maintenance-dashboard-kpis,
+  .maintenance-dashboard-pm-controls,
+  .maintenance-dashboard-pm-panel,
+  .maintenance-dashboard-wo {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .maintenance-pm-tile-grid {
@@ -16,8 +254,12 @@
   }
 
   .maintenance-pm-carousel-arrow {
-    width: 30px !important;
-    height: 30px !important;
+    display: none !important;
+  }
+
+  .maintenance-pm-show-more-wrap,
+  .maintenance-pm-show-previous-wrap {
+    display: block;
   }
 
   .maintenance-mobile-session-header {
@@ -26,5 +268,128 @@
 
   .maintenance-mobile-session-body {
     padding: 12px 12px calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Desktop: PM-primary left workspace + right status panel. */
+
+@media (min-width: 768px) {
+  .maintenance-metric-cards {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 0;
+  }
+
+  .maintenance-dashboard-kpis.maintenance-metric-cards {
+    margin-bottom: 0;
+  }
+
+  .maintenance-metric-card {
+    padding: 14px 16px !important;
+  }
+
+  .maintenance-metric-card > div:first-child {
+    font-size: 11px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .maintenance-metric-card > div:last-child {
+    font-size: 22px !important;
+  }
+
+  .maintenance-metric-card.maintenance-pm-health-report-tile > .maintenance-pm-health-report-subtext {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+  }
+
+  .maintenance-pm-health-report-tile .maintenance-pm-health-report-title {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    margin-bottom: 3px !important;
+  }
+
+  .maintenance-metric-card--clickable:hover {
+    border-color: rgba(200, 169, 106, 0.58) !important;
+  }
+
+  .maintenance-metric-card--clickable > div:first-child {
+    font-size: 11px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .maintenance-metric-card--clickable > div:last-child {
+    font-size: 22px !important;
+  }
+
+  .maintenance-desktop-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 340px);
+    grid-template-rows: auto auto auto;
+    gap: 14px 20px;
+    align-items: start;
+  }
+
+  .maintenance-dashboard-kpis {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .maintenance-dashboard-pm-controls {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .maintenance-dashboard-pm-panel {
+    grid-column: 1;
+    grid-row: 3;
+    min-width: 0;
+  }
+
+  .maintenance-dashboard-wo {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: start;
+  }
+
+  .maintenance-pm-carousel {
+    align-items: stretch;
+  }
+
+  .maintenance-pm-carousel-arrow {
+    display: flex !important;
+    align-self: center;
+  }
+
+  .maintenance-pm-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .maintenance-pm-tile-card {
+    min-height: 172px !important;
+    padding: 16px !important;
+    gap: 7px !important;
+  }
+
+  .maintenance-pm-tile-card > div:first-child {
+    font-size: 14px !important;
+  }
+}
+
+@media (min-width: 1100px) {
+  .maintenance-dashboard-kpis.maintenance-metric-cards {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1400px) {
+  .maintenance-desktop-dashboard-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 360px);
+  }
+
+  .maintenance-pm-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }

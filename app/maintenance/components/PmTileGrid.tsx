@@ -1,9 +1,13 @@
 "use client";
 
-import { PmCycleEntry, PmTile } from "../lib/maintenance-types";
-import { formatPmCycleStatusLabel } from "../lib/pm-cycle";
+import { Search } from "lucide-react";
+import { PmTile } from "../lib/maintenance-types";
+import {
+  formatPmCycleProgressLabel,
+  formatPmNextDueDate,
+} from "../lib/pm-tile-display";
 import { getPmTileStyle, PM_TILE_LEGEND } from "../lib/pm-tile-styles";
-import { ONE_EYRIE, FOREST, FLAT_RED } from "@/app/lib/oneEyrieColors";
+import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_CARD_TRANSITION } from "@/app/settings/lib/settings-ui-interactions";
 
 type PmTileGridProps = {
@@ -11,65 +15,9 @@ type PmTileGridProps = {
   onOpenPm: (tile: PmTile) => void;
   emptyMessage?: string;
   totalCount?: number;
+  search: string;
+  onSearchChange: (value: string) => void;
 };
-
-function cycleEntryColor(status: PmCycleEntry["status"]): string {
-  switch (status) {
-    case "completed":
-      return FOREST.text;
-    case "missed":
-      return FLAT_RED.text;
-    case "due":
-      return ONE_EYRIE.gold;
-    case "upcoming":
-    default:
-      return ONE_EYRIE.textSubtle;
-  }
-}
-
-function PmCycleHistoryPanel({ tile }: { tile: PmTile }) {
-  const { cycleHistory } = tile;
-
-  if (cycleHistory.totalCount === 0 && cycleHistory.entries.length === 0) {
-    return <span>No cycle history yet</span>;
-  }
-
-  return (
-    <span style={{ display: "block" }}>
-      <span
-        style={{
-          display: "block",
-          fontWeight: 700,
-          marginBottom: cycleHistory.entries.length > 0 ? "4px" : 0,
-        }}
-      >
-        {cycleHistory.summaryLabel}
-      </span>
-      {cycleHistory.entries.length > 0 && (
-        <span
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "4px 8px",
-            lineHeight: 1.4,
-          }}
-        >
-          {cycleHistory.entries.map((entry) => (
-            <span
-              key={`${entry.dueDate}-${entry.label}`}
-              style={{
-                color: cycleEntryColor(entry.status),
-                fontWeight: entry.status === "due" ? 700 : 600,
-              }}
-            >
-              {entry.label} {formatPmCycleStatusLabel(entry.status)}
-            </span>
-          ))}
-        </span>
-      )}
-    </span>
-  );
-}
 
 function areaLabel(tile: PmTile): string {
   if (tile.areaName && tile.assetLabel) {
@@ -78,14 +26,54 @@ function areaLabel(tile: PmTile): string {
   return tile.areaName || tile.assetLabel || "Property-wide";
 }
 
+function PmTileDetailLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ fontSize: "10px", lineHeight: 1.45 }}>
+      <div style={{ opacity: 0.78, fontWeight: 600, marginBottom: "1px" }}>{label}</div>
+      <div style={{ fontWeight: 700 }}>{value}</div>
+    </div>
+  );
+}
+
+function PmTileProgressPanel({ tile }: { tile: PmTile }) {
+  const { cycleHistory } = tile;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "6px",
+        marginTop: "auto",
+      }}
+    >
+      <PmTileDetailLine
+        label="Completed"
+        value={formatPmCycleProgressLabel(
+          cycleHistory.completedCount,
+          cycleHistory.totalCount
+        )}
+      />
+      <PmTileDetailLine label="Frequency" value={tile.frequencyLabel} />
+      <PmTileDetailLine
+        label="Next Due"
+        value={formatPmNextDueDate(tile.nextDueDate)}
+      />
+    </div>
+  );
+}
+
 export default function PmTileGrid({
   tiles,
   onOpenPm,
   emptyMessage = "No PMs match the selected filters.",
   totalCount = 0,
+  search,
+  onSearchChange,
 }: PmTileGridProps) {
   return (
     <div
+      className="maintenance-pm-tile-grid-panel"
       style={{
         background: ONE_EYRIE.surfaceInset,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -93,12 +81,25 @@ export default function PmTileGrid({
         padding: "14px",
       }}
     >
+      <div className="maintenance-pm-grid-search-wrap pass-on-search-wrap">
+        <Search size={18} className="pass-on-search-wrap__icon" aria-hidden />
+        <input
+          type="text"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Search PMs..."
+          className="one-eyrie-field"
+          aria-label="Search PMs"
+        />
+      </div>
+
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: "12px",
           marginBottom: "12px",
+          marginTop: "12px",
         }}
       >
         {PM_TILE_LEGEND.map((item) => {
@@ -149,6 +150,7 @@ export default function PmTileGrid({
               <button
                 key={tile.key}
                 type="button"
+                className="maintenance-pm-tile-card"
                 onClick={() => onOpenPm(tile)}
                 style={{
                   textAlign: "left",
@@ -159,18 +161,18 @@ export default function PmTileGrid({
                   color: style.color,
                   cursor: "pointer",
                   transition: SETTINGS_CARD_TRANSITION,
-                  minHeight: "148px",
+                  minHeight: "168px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "5px",
+                  gap: "6px",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.25)";
+                onMouseEnter={(event) => {
+                  event.currentTarget.style.transform = "translateY(-1px)";
+                  event.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.25)";
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "none";
+                onMouseLeave={(event) => {
+                  event.currentTarget.style.transform = "none";
+                  event.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <div style={{ fontWeight: 800, fontSize: "13px", lineHeight: 1.35 }}>
@@ -179,22 +181,8 @@ export default function PmTileGrid({
                 <div style={{ fontSize: "11px", opacity: 0.92, lineHeight: 1.35 }}>
                   {areaLabel(tile)}
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 700 }}>
-                  {tile.dueStatusLine}
-                </div>
-                <div style={{ fontSize: "10px", opacity: 0.88 }}>
-                  {tile.frequencyLabel}
-                </div>
-                <div
-                  style={{
-                    fontSize: "10px",
-                    opacity: 0.88,
-                    marginTop: "auto",
-                    lineHeight: 1.35,
-                  }}
-                >
-                  <PmCycleHistoryPanel tile={tile} />
-                </div>
+                <div style={{ fontSize: "11px", fontWeight: 700 }}>{tile.dueStatusLine}</div>
+                <PmTileProgressPanel tile={tile} />
               </button>
             );
           })}

@@ -69,4 +69,4 @@ export function filterPmTilesBySearch(tiles: PmTile[], search: string): PmTile[]
   );
 }
 
-export const PM_QUEUE_PAGE_SIZE = 9;
+export const PM_QUEUE_PAGE_SIZE = 12;

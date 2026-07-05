@@ -11,9 +11,11 @@ import {
 import { fetchPmDashboardData } from "./pm-db";
 import { PM_FREQUENCY_LABELS } from "./pm-types";
 import { calculatePmPerformanceByPeriod } from "./pm-compliance";
+import { countCompletedPmsByAllPeriods } from "./pm-completed-count";
+import { isPmCompletedOnTime } from "./pm-compliance";
+import { resolvePmHealthStatus } from "./pm-health-status";
 import {
   buildPmCycleHistory,
-  calculatePmHealthPercent,
   PmOccurrenceLookupStatus,
 } from "./pm-cycle";
 import { reconcilePmMissedCycles } from "./pm-cycle-reconcile";
@@ -61,33 +63,43 @@ function buildPmHealthSummary(
   now: Date
 ) {
   const yearStart = new Date(now.getFullYear(), 0, 1);
-  let completedYtd = 0;
-  let missedYtd = 0;
-  const pastDueOpen = pmTiles.filter((tile) => tile.urgency === "past_due").length;
+  let completedOnTime = 0;
+  let completedLate = 0;
+  let missedCount = 0;
+  const pastDueCount = pmTiles.filter((tile) => tile.urgency === "past_due").length;
 
   for (const [, row] of completedByKey) {
     const dueDate = parseOccurrenceDueDate(String(row.due_date));
-    if (dueDate >= yearStart) {
-      completedYtd += 1;
+    if (dueDate < yearStart) continue;
+
+    if (isPmCompletedOnTime(row.completed_at, String(row.due_date))) {
+      completedOnTime += 1;
+    } else {
+      completedLate += 1;
     }
   }
 
   for (const [, row] of missedByKey) {
     const dueDate = parseOccurrenceDueDate(String(row.due_date));
     if (dueDate >= yearStart) {
-      missedYtd += 1;
+      missedCount += 1;
     }
   }
 
+  const status = resolvePmHealthStatus({
+    completedOnTime,
+    completedLate,
+    pastDueCount,
+    missedCount,
+  });
+
   return {
-    healthPercent: calculatePmHealthPercent({
-      completed: completedYtd,
-      missed: missedYtd,
-      pastDueOpen,
-    }),
+    status,
     currentPms: pmTiles.filter((tile) => tile.urgency !== "completed").length,
-    pastDueCount: pastDueOpen,
-    incompleteCycles: missedYtd,
+    completedOnTime,
+    completedLate,
+    pastDueCount,
+    missedCount,
   };
 }
 
@@ -269,6 +281,9 @@ export async function buildMaintenanceDashboard(
     createdByLabel: order.createdBy
       ? memberResolver.resolveStoredValue(order.createdBy)
       : null,
+    completedByLabel: order.completedBy
+      ? memberResolver.resolveStoredValue(order.completedBy)
+      : null,
   }));
 
   const pmTilesWithLabels = pmTiles.map((tile) => ({
@@ -279,6 +294,7 @@ export async function buildMaintenanceDashboard(
   }));
 
   const metrics = buildMetrics(pmTiles, workOrders, completedByKey, now);
+  const completedByPeriod = countCompletedPmsByAllPeriods(completedByKey, pmTiles, now);
   const complianceSchedules = pmData.schedules
     .filter(
       (schedule) =>
@@ -309,7 +325,8 @@ export async function buildMaintenanceDashboard(
   const engineeringPerformance: EngineeringPerformance = {
     pmHealth: buildPmHealthSummary(pmTiles, completedByKey, missedByKey, now),
     performanceByPeriod,
-    completedMtd: metrics.completedMtd,
+    completedMtd: completedByPeriod.mtd,
+    completedByPeriod,
     pastDueCount: metrics.pastDuePms,
     failedPmItems,
     workOrdersClosedMtd,
@@ -337,39 +354,13 @@ function buildMetrics(
     (tile) => tile.urgency === "upcoming"
   ).length;
 
-  let dueMtd = 0;
-  let completedMtd = 0;
+  const completedByPeriod = countCompletedPmsByAllPeriods(completedByKey, pmTiles, now);
+  const completedMtd = completedByPeriod.mtd;
 
-  for (const tile of pmTiles) {
-    if (!tile.nextDueDate) continue;
-    if (!isDateInCurrentMonth(tile.nextDueDate, now) && tile.urgency !== "past_due") {
-      continue;
-    }
-    dueMtd += 1;
-    const key = occurrenceKey(tile.assignmentId, tile.nextDueDate);
-    if (completedByKey.has(key)) {
-      completedMtd += 1;
-    }
-  }
-
-  for (const [, row] of completedByKey) {
-    if (row.completed_at) {
-      const completedDate = new Date(row.completed_at);
-      if (
-        completedDate.getFullYear() === now.getFullYear() &&
-        completedDate.getMonth() === now.getMonth()
-      ) {
-        const counted = pmTiles.some(
-          (tile) =>
-            tile.assignmentId === Number(row.assignment_id) &&
-            tile.nextDueDate === String(row.due_date)
-        );
-        if (!counted) {
-          completedMtd += 1;
-        }
-      }
-    }
-  }
+  const dueMtd = pmTiles.filter((tile) => {
+    if (!tile.nextDueDate) return false;
+    return isDateInCurrentMonth(tile.nextDueDate, now) || tile.urgency === "past_due";
+  }).length;
 
   const compliancePercent =
     dueMtd === 0 ? 100 : Math.round((completedMtd / dueMtd) * 100);

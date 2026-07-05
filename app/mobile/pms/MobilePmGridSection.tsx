@@ -15,7 +15,7 @@ import {
 } from "@/app/maintenance/lib/pm-tile-filters";
 import { getPmTileStyle, PM_TILE_LEGEND } from "@/app/maintenance/lib/pm-tile-styles";
 import { pmSessionUrl } from "@/app/maintenance/lib/pm-session-return";
-import { fetchPmTiles, pmAreaLabel, startPmAssignment } from "./lib/pm-shared";
+import { fetchPmTiles, pmAreaLabel, resolvePmCreatedBy, startPmAssignment } from "./lib/pm-shared";
 
 function PmCompletionHistory({ tile }: { tile: PmTile }) {
   if (!tile.lastCompletedAt) {
@@ -43,6 +43,11 @@ export default function MobilePmGridSection() {
     () => new Set(DEFAULT_PM_TILE_FILTERS)
   );
   const [search, setSearch] = useState("");
+  const [createdByName, setCreatedByName] = useState<string | null>(null);
+
+  useEffect(() => {
+    void resolvePmCreatedBy().then(setCreatedByName);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -97,7 +102,7 @@ export default function MobilePmGridSection() {
     setError(null);
 
     try {
-      const occurrenceId = await startPmAssignment(tile.assignmentId);
+      const occurrenceId = await startPmAssignment(tile.assignmentId, createdByName);
       router.push(pmSessionUrl(occurrenceId, true));
     } catch (startError) {
       setStartingKey(null);

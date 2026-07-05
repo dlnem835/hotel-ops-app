@@ -49,6 +49,13 @@ function isCompletedOnTime(
   );
 }
 
+export function isPmCompletedOnTime(
+  completedAt: string | null,
+  dueDateIso: string
+): boolean {
+  return isCompletedOnTime(completedAt, dueDateIso);
+}
+
 function isPmCompleted(occurrence: CompletedOccurrenceRow | undefined): boolean {
   return occurrence?.status === "completed";
 }
