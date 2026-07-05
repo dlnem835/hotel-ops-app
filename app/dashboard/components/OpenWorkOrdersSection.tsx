@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DashboardWorkOrder } from "../lib/operational-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
 import "@/app/components/dashboard-list-card.css";
 
 type OpenWorkOrdersSectionProps = {
@@ -32,7 +32,7 @@ export default function OpenWorkOrdersSection({
       <div className="one-eyrie-section-header-row">
         <div className="one-eyrie-section-header-row__main">
           <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-            Work Order Checklist
+            Open Work Orders
           </div>
           <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
             Guest-impacting · Urgent → Important → Normal · oldest first
@@ -71,7 +71,7 @@ export default function OpenWorkOrdersSection({
               <div className="dashboard-list-card__body">
                 <div className="dashboard-list-card__title-row">
                   <span className="dashboard-list-card__title">{order.subject}</span>
-                  <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                  <span className={getWorkOrderPriorityBadgeClassName(order.priority)}>
                     {order.priority}
                   </span>
                 </div>

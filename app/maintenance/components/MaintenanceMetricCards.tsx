@@ -2,11 +2,9 @@
 
 import { MaintenanceMetrics } from "../lib/maintenance-types";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import PmHealthReportTile from "./PmHealthReportTile";
 
 type MaintenanceMetricCardsProps = {
   metrics: MaintenanceMetrics;
-  onPmHealthClick?: () => void;
   className?: string;
 };
 
@@ -21,12 +19,12 @@ function MetricCard({
 }) {
   return (
     <div
-      className="maintenance-metric-card"
+      className="maintenance-metric-card maintenance-pm-metric-card"
       style={{
         background: ONE_EYRIE.listRow,
         border: `1px solid ${ONE_EYRIE.border}`,
         borderRadius: "14px",
-        padding: "16px 18px",
+        padding: "20px 22px",
         minWidth: 0,
       }}
     >
@@ -35,7 +33,7 @@ function MetricCard({
           color: ONE_EYRIE.textSubtle,
           fontSize: "12px",
           fontWeight: 700,
-          marginBottom: "8px",
+          marginBottom: "10px",
         }}
       >
         {label}
@@ -43,7 +41,7 @@ function MetricCard({
       <div
         style={{
           color: accent || ONE_EYRIE.text,
-          fontSize: "24px",
+          fontSize: "28px",
           fontWeight: 800,
           lineHeight: 1.1,
         }}
@@ -56,7 +54,6 @@ function MetricCard({
 
 export default function MaintenanceMetricCards({
   metrics,
-  onPmHealthClick,
   className,
 }: MaintenanceMetricCardsProps) {
   return (
@@ -76,9 +73,6 @@ export default function MaintenanceMetricCards({
         value={String(metrics.upcomingThisWeekPms)}
       />
       <MetricCard label="PMs Completed" value={String(metrics.completedMtd)} />
-      {onPmHealthClick ? (
-        <PmHealthReportTile onClick={onPmHealthClick} />
-      ) : null}
     </div>
   );
 }

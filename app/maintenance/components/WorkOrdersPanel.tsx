@@ -3,7 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import { WorkOrder } from "../lib/maintenance-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
 import "@/app/components/dashboard-list-card.css";
 
 type WorkOrdersPanelProps = {
@@ -37,11 +37,11 @@ export default function WorkOrdersPanel({
       <div>
         {!hideHeader ? (
           <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-            {compact ? "Today's Work Orders" : "Work Order Checklist"}
+            {compact ? "Today's Work Orders" : "Open Work Orders"}
           </div>
         ) : (
           <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-            Work Order Checklist
+            Open Work Orders
           </div>
         )}
         <div
@@ -86,7 +86,7 @@ export default function WorkOrdersPanel({
                 <div className="dashboard-list-card__body">
                   <div className="dashboard-list-card__title-row">
                     <span className="dashboard-list-card__title">{order.subject}</span>
-                    <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                    <span className={getWorkOrderPriorityBadgeClassName(order.priority)}>
                       {order.priority}
                     </span>
                   </div>

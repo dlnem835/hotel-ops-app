@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PmTile } from "../lib/maintenance-types";
 import {
   DEFAULT_PM_TILE_FILTERS,
@@ -38,45 +37,6 @@ type PmTileGridSectionProps = {
   onOpenPm: (tile: PmTile) => void;
   className?: string;
 };
-
-function CarouselArrow({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: "prev" | "next";
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={direction === "prev" ? "Previous PM cards" : "Next PM cards"}
-      style={{
-        ...SETTINGS_BUTTON_BASE,
-        flexShrink: 0,
-        alignSelf: "center",
-        width: "30px",
-        height: "30px",
-        borderRadius: "8px",
-        border: `1px solid ${ONE_EYRIE.border}`,
-        background: ONE_EYRIE.surface,
-        color: disabled ? ONE_EYRIE.textSubtle : ONE_EYRIE.gold,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: disabled ? 0.4 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-    >
-      <Icon size={16} />
-    </button>
-  );
-}
 
 export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTileGridSectionProps) {
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
@@ -137,6 +97,17 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
       <div className="maintenance-dashboard-pm-controls">
         <div
           style={{
+            color: ONE_EYRIE.gold,
+            fontWeight: 800,
+            fontSize: "15px",
+            marginBottom: "10px",
+          }}
+        >
+          PM Tile Grid
+        </div>
+
+        <div
+          style={{
             display: "flex",
             flexWrap: "wrap",
             gap: "8px",
@@ -144,134 +115,111 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
             marginBottom: "10px",
           }}
         >
-        {PM_TILE_FILTER_OPTIONS.map((option) => {
-          const active = activeFilters.has(option.key);
-          return (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => toggleFilter(option.key)}
-              style={{
-                ...SETTINGS_BUTTON_BASE,
-                background: active ? ONE_EYRIE.gold : "transparent",
-                color: active ? ONE_EYRIE.surface : ONE_EYRIE.text,
-                border: `1px solid ${active ? ONE_EYRIE.goldLight : ONE_EYRIE.border}`,
-                borderRadius: "999px",
-                padding: "8px 14px",
-                fontWeight: 800,
-                fontSize: "13px",
-              }}
-              {...goldHoverHandlers(active ? "primary" : "secondary")}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+          {PM_TILE_FILTER_OPTIONS.map((option) => {
+            const active = activeFilters.has(option.key);
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => toggleFilter(option.key)}
+                style={{
+                  ...SETTINGS_BUTTON_BASE,
+                  background: active ? ONE_EYRIE.gold : "transparent",
+                  color: active ? ONE_EYRIE.surface : ONE_EYRIE.text,
+                  border: `1px solid ${active ? ONE_EYRIE.goldLight : ONE_EYRIE.border}`,
+                  borderRadius: "999px",
+                  padding: "8px 14px",
+                  fontWeight: 800,
+                  fontSize: "13px",
+                }}
+                {...goldHoverHandlers(active ? "primary" : "secondary")}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
 
-      <div
-        style={{
-          color: ONE_EYRIE.textMuted,
-          fontSize: "12px",
-          fontWeight: 600,
-          marginBottom: "10px",
-        }}
-      >
-        {showingLabel}
-      </div>
+        <div
+          style={{
+            color: ONE_EYRIE.textMuted,
+            fontSize: "12px",
+            fontWeight: 600,
+            marginBottom: "10px",
+          }}
+        >
+          {showingLabel}
+        </div>
       </div>
 
       <div className={`maintenance-dashboard-pm-panel${className ? ` ${className}` : ""}`}>
-        <div
-          className="maintenance-pm-carousel"
-        style={{
-          display: "flex",
-          alignItems: "stretch",
-          gap: "8px",
-        }}
-      >
-        <div className="maintenance-pm-carousel-arrow">
-          <CarouselArrow
-            direction="prev"
-            disabled={!canGoPrev}
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-          />
-        </div>
+        <PmTileGrid
+          tiles={visibleTiles}
+          onOpenPm={onOpenPm}
+          search={search}
+          onSearchChange={setSearch}
+          emptyMessage={
+            search.trim()
+              ? "No PM assignments match your search."
+              : "No PMs match the selected filters."
+          }
+          totalCount={filteredTiles.length}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+          onPrev={() => setPage((current) => Math.max(0, current - 1))}
+          onNext={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
+        />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <PmTileGrid
-            tiles={visibleTiles}
-            onOpenPm={onOpenPm}
-            search={search}
-            onSearchChange={setSearch}
-            emptyMessage={
-              search.trim()
-                ? "No PM assignments match your search."
-                : "No PMs match the selected filters."
-            }
-            totalCount={filteredTiles.length}
-          />
-        </div>
+        {canGoNext ? (
+          <div className="maintenance-pm-show-more-wrap">
+            <button
+              type="button"
+              className="maintenance-pm-show-more"
+              onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
+              style={{
+                ...SETTINGS_BUTTON_BASE,
+                marginTop: "12px",
+                width: "100%",
+                borderRadius: "10px",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                background: ONE_EYRIE.surface,
+                color: ONE_EYRIE.gold,
+                padding: "10px 14px",
+                fontWeight: 800,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+              {...goldHoverHandlers("secondary")}
+            >
+              Show More ({remainingCount} remaining)
+            </button>
+          </div>
+        ) : null}
 
-        <div className="maintenance-pm-carousel-arrow">
-          <CarouselArrow
-            direction="next"
-            disabled={!canGoNext}
-            onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
-          />
-        </div>
-      </div>
-
-      {canGoNext ? (
-        <div className="maintenance-pm-show-more-wrap">
-          <button
-            type="button"
-            className="maintenance-pm-show-more"
-            onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
-            style={{
-              ...SETTINGS_BUTTON_BASE,
-              marginTop: "12px",
-              width: "100%",
-              borderRadius: "10px",
-              border: `1px solid ${ONE_EYRIE.border}`,
-              background: ONE_EYRIE.surface,
-              color: ONE_EYRIE.gold,
-              padding: "10px 14px",
-              fontWeight: 800,
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-            {...goldHoverHandlers("secondary")}
-          >
-            Show More ({remainingCount} remaining)
-          </button>
-        </div>
-      ) : null}
-
-      {canGoPrev ? (
-        <div className="maintenance-pm-show-previous-wrap">
-          <button
-            type="button"
-            className="maintenance-pm-show-previous"
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
-            style={{
-              ...SETTINGS_BUTTON_BASE,
-              marginTop: "8px",
-              width: "100%",
-              borderRadius: "10px",
-              border: `1px solid ${ONE_EYRIE.border}`,
-              background: "transparent",
-              color: ONE_EYRIE.textMuted,
-              padding: "8px 14px",
-              fontWeight: 700,
-              fontSize: "12px",
-              cursor: "pointer",
-            }}
-          >
-            Show Previous
-          </button>
-        </div>
-      ) : null}
+        {canGoPrev ? (
+          <div className="maintenance-pm-show-previous-wrap">
+            <button
+              type="button"
+              className="maintenance-pm-show-previous"
+              onClick={() => setPage((current) => Math.max(0, current - 1))}
+              style={{
+                ...SETTINGS_BUTTON_BASE,
+                marginTop: "8px",
+                width: "100%",
+                borderRadius: "10px",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                background: "transparent",
+                color: ONE_EYRIE.textMuted,
+                padding: "8px 14px",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Show Previous
+            </button>
+          </div>
+        ) : null}
       </div>
     </>
   );

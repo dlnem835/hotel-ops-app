@@ -258,10 +258,7 @@ export default function MaintenancePage() {
             <div className="maintenance-pm-workspace">
               <MaintenanceSectionHeader title="Preventive Maintenance" />
 
-              <MaintenanceMetricCards
-                metrics={dashboard.metrics}
-                onPmHealthClick={() => setPmHealthModalOpen(true)}
-              />
+              <MaintenanceMetricCards metrics={dashboard.metrics} />
 
               <PmTileGridSection tiles={dashboard.pmTiles} onOpenPm={handleOpenPmTile} />
             </div>
@@ -274,6 +271,7 @@ export default function MaintenancePage() {
                 urgentWorkOrders={dashboard.workOrders.filter(
                   (order) => order.priority === "Urgent"
                 ).length}
+                workOrders={dashboard.workOrders}
               />
 
               <WorkOrdersPanel

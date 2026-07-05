@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import WorkOrderDetailMetadata from "@/app/maintenance/components/WorkOrderDetailMetadata";
-import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
+import "@/app/components/dashboard-list-card.css";
 import {
   resolveMemberDisplayLabel,
   useMemberDisplayNameResolver,
@@ -138,9 +139,9 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         ← Work Orders
       </Link>
 
-      <div className="one-eyrie-mobile-work-order-detail__header">
-        <h1 className="one-eyrie-mobile-page-title">{workOrder.subject}</h1>
-        <span style={getWorkOrderPriorityPillStyle(workOrder.priority)}>
+      <div className="one-eyrie-mobile-work-order-detail__header dashboard-list-card__title-row">
+        <h1 className="one-eyrie-mobile-page-title dashboard-list-card__title">{workOrder.subject}</h1>
+        <span className={getWorkOrderPriorityBadgeClassName(workOrder.priority)}>
           {workOrder.priority}
         </span>
       </div>

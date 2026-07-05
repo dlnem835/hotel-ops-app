@@ -49,17 +49,64 @@
 .maintenance-wo-workspace {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
 }
 
-.maintenance-wo-metric-cards {
-  grid-template-columns: 1fr;
+.maintenance-wo-kpi-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: 0;
+}
+
+.maintenance-wo-kpi-card {
+  background: #2e2b27;
+  border: 1px solid rgba(200, 169, 106, 0.48);
+  border-radius: 10px;
+  padding: 8px 8px 7px;
+  min-width: 0;
+  text-align: center;
+}
+
+.maintenance-wo-kpi-card__label {
+  color: #9ca3af;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.maintenance-wo-kpi-card__value {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .maintenance-pm-metric-cards {
   margin-bottom: 0;
+}
+
+.maintenance-pm-metric-cards .maintenance-pm-metric-card {
+  min-height: 92px;
+}
+
+.maintenance-pm-tile-grid-carousel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.maintenance-pm-tile-grid-carousel__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.maintenance-pm-tile-grid-panel .maintenance-pm-carousel-arrow {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .maintenance-desktop-dashboard-grid {
@@ -322,12 +369,41 @@
   }
 
   .maintenance-pm-metric-cards {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .maintenance-wo-metric-cards {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .maintenance-pm-metric-cards .maintenance-pm-metric-card {
+    padding: 20px 22px !important;
+    min-height: 94px !important;
+  }
+
+  .maintenance-pm-metric-cards .maintenance-pm-metric-card > div:first-child {
+    font-size: 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .maintenance-pm-metric-cards .maintenance-pm-metric-card > div:last-child {
+    font-size: 28px !important;
+  }
+
+  .maintenance-wo-kpi-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .maintenance-wo-kpi-card {
+    padding: 7px 6px 6px !important;
+    background: #35312c !important;
+    border-color: rgba(200, 169, 106, 0.52) !important;
+  }
+
+  .maintenance-wo-kpi-card__label {
+    font-size: 9px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .maintenance-wo-kpi-card__value {
+    font-size: 16px !important;
   }
 
   .maintenance-metric-card {
@@ -380,13 +456,13 @@
     border-left: 1px solid rgba(200, 169, 106, 0.1);
   }
 
-  .maintenance-pm-carousel {
-    align-items: stretch;
-  }
-
-  .maintenance-pm-carousel-arrow {
+  .maintenance-pm-tile-grid-panel .maintenance-pm-carousel-arrow {
     display: flex !important;
     align-self: center;
+  }
+
+  .maintenance-pm-tile-grid-carousel {
+    align-items: center;
   }
 
   .maintenance-pm-tile-grid {
@@ -407,7 +483,7 @@
 
 @media (min-width: 1100px) {
   .maintenance-pm-metric-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

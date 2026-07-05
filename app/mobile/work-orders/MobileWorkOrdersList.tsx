@@ -8,7 +8,8 @@ import {
   workOrderListDescription,
 } from "@/app/maintenance/lib/work-order-display";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
-import { getWorkOrderPriorityPillStyle } from "@/app/lib/workOrderPriority";
+import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
+import "@/app/components/dashboard-list-card.css";
 import { fetchOpenWorkOrders } from "./lib/work-order-shared";
 
 type MobileWorkOrdersListProps = {
@@ -78,7 +79,7 @@ export default function MobileWorkOrdersList({
                 <p className="one-eyrie-mobile-work-order-card__title">
                   {order.subject}
                 </p>
-                <span style={getWorkOrderPriorityPillStyle(order.priority)}>
+                <span className={getWorkOrderPriorityBadgeClassName(order.priority)}>
                   {order.priority}
                 </span>
               </div>
