@@ -16,6 +16,8 @@ export type DashboardWorkOrder = {
   subject: string;
   priority: string;
   areaLabel: string | null;
+  createdAt: string;
+  commentsUpdatedAt: string | null;
 };
 
 export type TodaysWorkCard = {

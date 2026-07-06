@@ -79,7 +79,7 @@
 
 .maintenance-wo-kpi-card__label {
   color: #9ca3af;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.03em;
   line-height: 1.15;
@@ -88,7 +88,7 @@
 }
 
 .maintenance-wo-kpi-card__value {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1;
 }
@@ -483,12 +483,12 @@
   }
 
   .maintenance-wo-kpi-card__label {
-    font-size: 8px !important;
+    font-size: 9px !important;
     margin-bottom: 2px !important;
   }
 
   .maintenance-wo-kpi-card__value {
-    font-size: 18px !important;
+    font-size: 20px !important;
   }
 
   .maintenance-metric-card {

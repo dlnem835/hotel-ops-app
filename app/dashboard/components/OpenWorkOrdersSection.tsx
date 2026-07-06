@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DashboardWorkOrder } from "../lib/operational-types";
+import { formatWorkOrderCardTimestamp } from "@/app/maintenance/lib/work-order-display";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
+import "@/app/lib/one-eyrie-updated-timestamp.css";
 import "@/app/components/dashboard-list-card.css";
 
 type OpenWorkOrdersSectionProps = {
@@ -32,10 +34,10 @@ export default function OpenWorkOrdersSection({
       <div className="one-eyrie-section-header-row">
         <div className="one-eyrie-section-header-row__main">
           <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-            Open Work Orders
+            Priority Queue
           </div>
           <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
-            Guest-impacting · Urgent → Important → Normal · oldest first
+            Guest-impacting • Urgent → Important → Normal • Oldest first
           </div>
         </div>
         <Link
@@ -57,12 +59,12 @@ export default function OpenWorkOrdersSection({
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (
-        <div className="dashboard-list-panel__rows">
+        <div className="dashboard-list-panel__rows dashboard-priority-queue__rows">
           {workOrders.map((order) => (
             <Link
               key={order.id}
               href="/maintenance"
-              className="dashboard-list-card dashboard-clickable-card"
+              className="dashboard-list-card dashboard-priority-queue-card dashboard-clickable-card"
               style={{
                 textDecoration: "none",
                 color: "inherit",
@@ -77,6 +79,15 @@ export default function OpenWorkOrdersSection({
                 </div>
                 <div className="dashboard-list-card__location">
                   {order.areaLabel || "No area specified"}
+                </div>
+                <div
+                  className={
+                    order.commentsUpdatedAt
+                      ? "one-eyrie-updated-timestamp"
+                      : "dashboard-priority-queue-card__opened"
+                  }
+                >
+                  {formatWorkOrderCardTimestamp(order)}
                 </div>
               </div>
               <ChevronRight

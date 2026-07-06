@@ -142,6 +142,8 @@ export async function buildOperationalDashboard(
       subject: order.subject,
       priority: order.priority,
       areaLabel: order.areaLabel,
+      createdAt: order.createdAt,
+      commentsUpdatedAt: order.commentsUpdatedAt,
     })),
     openWorkOrderCount: maintenance.workOrders.length,
     lostFound: {
