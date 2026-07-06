@@ -16,6 +16,35 @@ export function formatWorkOrderAge(createdAt: string): string {
   return `Open ${days} days`;
 }
 
+export function formatWorkOrderOpenedTimestamp(
+  createdAt: string,
+  now = new Date()
+): string {
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return "";
+
+  const timePart = created.toLocaleString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const isToday =
+    created.getFullYear() === now.getFullYear() &&
+    created.getMonth() === now.getMonth() &&
+    created.getDate() === now.getDate();
+
+  if (isToday) {
+    return `Opened today, ${timePart}`;
+  }
+
+  const datePart = created.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+  });
+
+  return `Opened ${datePart}, ${timePart}`;
+}
+
 export function truncateWorkOrderText(
   value: string | null | undefined,
   max = 120

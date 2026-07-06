@@ -5,7 +5,6 @@ import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 type WorkOrderMetricCardsProps = {
   openWorkOrders: number;
-  urgentWorkOrders: number;
   workOrders: WorkOrder[];
   className?: string;
 };
@@ -47,7 +46,6 @@ function CompactKpiCard({
 
 export default function WorkOrderMetricCards({
   openWorkOrders,
-  urgentWorkOrders,
   workOrders,
   className,
 }: WorkOrderMetricCardsProps) {
@@ -61,11 +59,6 @@ export default function WorkOrderMetricCards({
         label="Total Open Work Orders"
         value={String(openWorkOrders)}
         accent={openWorkOrders > 0 ? FLAT_RED.text : ONE_EYRIE.text}
-      />
-      <CompactKpiCard
-        label="Urgent"
-        value={String(urgentWorkOrders)}
-        accent={urgentWorkOrders > 0 ? FLAT_RED.text : ONE_EYRIE.text}
       />
       <CompactKpiCard label="Avg Open Days" value={avgOpenDays} />
     </div>

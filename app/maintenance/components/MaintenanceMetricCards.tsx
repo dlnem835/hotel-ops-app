@@ -5,6 +5,7 @@ import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 type MaintenanceMetricCardsProps = {
   metrics: MaintenanceMetrics;
+  completedPms?: number;
   className?: string;
 };
 
@@ -54,6 +55,7 @@ function MetricCard({
 
 export default function MaintenanceMetricCards({
   metrics,
+  completedPms,
   className,
 }: MaintenanceMetricCardsProps) {
   return (
@@ -68,7 +70,10 @@ export default function MaintenanceMetricCards({
         value={String(metrics.dueTodayPms)}
         accent={metrics.dueTodayPms > 0 ? ONE_EYRIE.gold : ONE_EYRIE.text}
       />
-      <MetricCard label="PMs Completed" value={String(metrics.completedMtd)} />
+      <MetricCard
+        label="PMs Completed"
+        value={String(completedPms ?? metrics.completedMtd)}
+      />
       <MetricCard
         label="Total Open PMs"
         value={String(

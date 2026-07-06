@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { InspectionPeriod } from "@/app/inspections/lib/inspection-types";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { X } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   START_WORK_BUTTON,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
+import MaintenanceKpiPeriodFilters from "./components/MaintenanceKpiPeriodFilters";
 import MaintenanceMetricCards from "./components/MaintenanceMetricCards";
 import MaintenanceSectionHeader from "./components/MaintenanceSectionHeader";
 import PmTileGridSection from "./components/PmTileGridSection";
@@ -44,6 +46,11 @@ import {
   resolveMemberDisplayLabel,
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
+import {
+  applyWorkOrderListFilters,
+  DEFAULT_WORK_ORDER_LIST_FILTERS,
+  WorkOrderListFilters,
+} from "./lib/work-order-list-filters";
 import "./maintenance-responsive.css";
 
 const supabase = createClient(
@@ -68,6 +75,10 @@ export default function MaintenancePage() {
   const [savingComments, setSavingComments] = useState(false);
   const [commentsSaveMessage, setCommentsSaveMessage] = useState<string | null>(null);
   const [pmHealthModalOpen, setPmHealthModalOpen] = useState(false);
+  const [kpiPeriod, setKpiPeriod] = useState<InspectionPeriod>("mtd");
+  const [workOrderFilters, setWorkOrderFilters] = useState<WorkOrderListFilters>(
+    DEFAULT_WORK_ORDER_LIST_FILTERS
+  );
   const memberResolver = useMemberDisplayNameResolver();
 
   const loadDashboard = useCallback(async () => {
@@ -199,6 +210,11 @@ export default function MaintenancePage() {
     await loadDashboard();
   }
 
+  const filteredWorkOrders = useMemo(() => {
+    if (!dashboard) return [];
+    return applyWorkOrderListFilters(dashboard.workOrders, workOrderFilters);
+  }, [dashboard, workOrderFilters]);
+
   return (
     <main style={APP_SHELL} className={APP_SHELL_CLASS}>
       <OneEyrieSidebar active="Maintenance" />
@@ -249,6 +265,13 @@ export default function MaintenancePage() {
           </div>
         )}
 
+        {!loading && dashboard ? (
+          <MaintenanceKpiPeriodFilters
+            period={kpiPeriod}
+            onPeriodChange={setKpiPeriod}
+          />
+        ) : null}
+
         {loading || !dashboard ? (
           <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
             Loading maintenance dashboard...
@@ -258,7 +281,12 @@ export default function MaintenancePage() {
             <div className="maintenance-pm-workspace">
               <MaintenanceSectionHeader title="Preventive Maintenance" />
 
-              <MaintenanceMetricCards metrics={dashboard.metrics} />
+              <MaintenanceMetricCards
+                metrics={dashboard.metrics}
+                completedPms={
+                  dashboard.engineeringPerformance.completedByKpiPeriod[kpiPeriod]
+                }
+              />
 
               <PmTileGridSection tiles={dashboard.pmTiles} onOpenPm={handleOpenPmTile} />
             </div>
@@ -268,15 +296,14 @@ export default function MaintenancePage() {
 
               <WorkOrderMetricCards
                 openWorkOrders={dashboard.metrics.openWorkOrders}
-                urgentWorkOrders={dashboard.workOrders.filter(
-                  (order) => order.priority === "Urgent"
-                ).length}
                 workOrders={dashboard.workOrders}
               />
 
               <WorkOrdersPanel
                 hideHeader
-                workOrders={dashboard.workOrders}
+                workOrders={filteredWorkOrders}
+                workOrderFilters={workOrderFilters}
+                onWorkOrderFiltersChange={setWorkOrderFilters}
                 onOpenWorkOrder={setSelectedWorkOrder}
               />
             </div>

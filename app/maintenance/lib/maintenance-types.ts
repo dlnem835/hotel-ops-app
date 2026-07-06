@@ -1,3 +1,4 @@
+import { InspectionPeriod } from "@/app/inspections/lib/inspection-types";
 import {
   WorkOrderCategory,
 } from "./work-order-categories";
@@ -138,6 +139,7 @@ export type EngineeringPerformance = {
   performanceByPeriod: Record<PmCompliancePeriod, PmPeriodPerformance>;
   completedMtd: number;
   completedByPeriod: Record<PmCompliancePeriod, number>;
+  completedByKpiPeriod: Record<InspectionPeriod, number>;
   pastDueCount: number;
   failedPmItems: number;
   workOrdersClosedMtd: number;

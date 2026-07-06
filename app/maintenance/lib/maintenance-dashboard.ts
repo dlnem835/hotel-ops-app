@@ -11,7 +11,10 @@ import {
 import { fetchPmDashboardData } from "./pm-db";
 import { PM_FREQUENCY_LABELS } from "./pm-types";
 import { calculatePmPerformanceByPeriod } from "./pm-compliance";
-import { countCompletedPmsByAllPeriods } from "./pm-completed-count";
+import {
+  countCompletedPmsByAllPeriods,
+  countCompletedPmsByKpiPeriods,
+} from "./pm-completed-count";
 import { isPmCompletedOnTime } from "./pm-compliance";
 import { resolvePmHealthStatus } from "./pm-health-status";
 import {
@@ -295,6 +298,11 @@ export async function buildMaintenanceDashboard(
 
   const metrics = buildMetrics(pmTiles, workOrders, completedByKey, now);
   const completedByPeriod = countCompletedPmsByAllPeriods(completedByKey, pmTiles, now);
+  const completedByKpiPeriod = countCompletedPmsByKpiPeriods(
+    completedByKey,
+    pmTiles,
+    now
+  );
   const complianceSchedules = pmData.schedules
     .filter(
       (schedule) =>
@@ -327,6 +335,7 @@ export async function buildMaintenanceDashboard(
     performanceByPeriod,
     completedMtd: completedByPeriod.mtd,
     completedByPeriod,
+    completedByKpiPeriod,
     pastDueCount: metrics.pastDuePms,
     failedPmItems,
     workOrdersClosedMtd,

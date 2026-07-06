@@ -1,3 +1,5 @@
+import { InspectionPeriod } from "@/app/inspections/lib/inspection-types";
+import { getPeriodBounds } from "@/app/inspections/lib/period-utils";
 import { PmCompliancePeriod, PmTile } from "./maintenance-types";
 import { getPmCompliancePeriodStart } from "./pm-compliance";
 import { parseDate, startOfDay } from "./pm-urgency";
@@ -28,14 +30,12 @@ function resolvePmCompletionDate(
   return startOfDay(parseDate(String(row.due_date)));
 }
 
-export function countCompletedPmsByPeriod(
+function countCompletedPmsInDateRange(
   completedByKey: Map<string, CompletedOccurrenceRow>,
   pmTiles: PmTile[],
-  period: PmCompliancePeriod,
-  now = new Date()
+  periodStart: Date,
+  periodEnd: Date
 ): number {
-  const periodStart = getPmCompliancePeriodStart(period, now);
-  const end = startOfDay(now);
   const countedKeys = new Set<string>();
   const tileByKey = new Map<string, PmTile>();
 
@@ -51,7 +51,7 @@ export function countCompletedPmsByPeriod(
     const tile = tileByKey.get(key);
     const completedAt = resolvePmCompletionDate(row, tile);
 
-    if (completedAt >= periodStart && completedAt <= end) {
+    if (completedAt >= periodStart && completedAt <= periodEnd) {
       countedKeys.add(key);
     }
   }
@@ -67,14 +67,58 @@ export function countCompletedPmsByPeriod(
       ? resolvePmCompletionDate(row, tile)
       : tile.lastCompletedAt
         ? startOfDay(new Date(tile.lastCompletedAt))
-        : end;
+        : periodEnd;
 
-    if (completedAt >= periodStart && completedAt <= end) {
+    if (completedAt >= periodStart && completedAt <= periodEnd) {
       countedKeys.add(key);
     }
   }
 
   return countedKeys.size;
+}
+
+export function countCompletedPmsByPeriod(
+  completedByKey: Map<string, CompletedOccurrenceRow>,
+  pmTiles: PmTile[],
+  period: PmCompliancePeriod,
+  now = new Date()
+): number {
+  const periodStart = getPmCompliancePeriodStart(period, now);
+  return countCompletedPmsInDateRange(
+    completedByKey,
+    pmTiles,
+    periodStart,
+    startOfDay(now)
+  );
+}
+
+export function countCompletedPmsForKpiPeriod(
+  completedByKey: Map<string, CompletedOccurrenceRow>,
+  pmTiles: PmTile[],
+  period: InspectionPeriod,
+  now = new Date()
+): number {
+  const bounds = getPeriodBounds(period, now);
+  return countCompletedPmsInDateRange(
+    completedByKey,
+    pmTiles,
+    startOfDay(new Date(bounds.start)),
+    startOfDay(new Date(bounds.end))
+  );
+}
+
+export function countCompletedPmsByKpiPeriods(
+  completedByKey: Map<string, CompletedOccurrenceRow>,
+  pmTiles: PmTile[],
+  now = new Date()
+): Record<InspectionPeriod, number> {
+  return {
+    today: countCompletedPmsForKpiPeriod(completedByKey, pmTiles, "today", now),
+    wtd: countCompletedPmsForKpiPeriod(completedByKey, pmTiles, "wtd", now),
+    mtd: countCompletedPmsForKpiPeriod(completedByKey, pmTiles, "mtd", now),
+    qtd: countCompletedPmsForKpiPeriod(completedByKey, pmTiles, "qtd", now),
+    ytd: countCompletedPmsForKpiPeriod(completedByKey, pmTiles, "ytd", now),
+  };
 }
 
 export function countCompletedPmsByAllPeriods(
