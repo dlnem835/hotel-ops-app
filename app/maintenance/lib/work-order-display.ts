@@ -1,4 +1,5 @@
 import { WorkOrder } from "./maintenance-types";
+import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 
 export function isGuestImpactingWorkOrder(
   order: Pick<WorkOrder, "areaLabel">
@@ -43,6 +44,23 @@ export function formatWorkOrderOpenedTimestamp(
   });
 
   return `Opened ${datePart}, ${timePart}`;
+}
+
+export function formatWorkOrderUpdatedTimestamp(
+  updatedAt: string,
+  now = new Date()
+): string {
+  return formatOneEyrieUpdatedTimestamp(updatedAt, now);
+}
+
+export function formatWorkOrderCardTimestamp(
+  order: Pick<WorkOrder, "createdAt" | "commentsUpdatedAt">,
+  now = new Date()
+): string {
+  if (order.commentsUpdatedAt) {
+    return formatWorkOrderUpdatedTimestamp(order.commentsUpdatedAt, now);
+  }
+  return formatWorkOrderOpenedTimestamp(order.createdAt, now);
 }
 
 export function truncateWorkOrderText(

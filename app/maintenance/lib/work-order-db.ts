@@ -26,6 +26,7 @@ export type WorkOrderRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  comments_updated_at: string | null;
   completed_at: string | null;
   completed_by: string | null;
 };
@@ -49,6 +50,9 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+    commentsUpdatedAt: row.comments_updated_at
+      ? String(row.comments_updated_at)
+      : null,
     completedAt: row.completed_at ? String(row.completed_at) : null,
     completedBy: row.completed_by ? String(row.completed_by) : null,
   };
@@ -138,7 +142,10 @@ export async function updateWorkOrder(
   }
   if (patch.area_id !== undefined) payload.area_id = patch.area_id;
   if (patch.area_label !== undefined) payload.area_label = patch.area_label;
-  if (patch.comments !== undefined) payload.comments = patch.comments;
+  if (patch.comments !== undefined) {
+    payload.comments = patch.comments;
+    payload.comments_updated_at = new Date().toISOString();
+  }
   if (patch.photo_url !== undefined) payload.photo_url = patch.photo_url;
 
   const { data, error } = await supabase

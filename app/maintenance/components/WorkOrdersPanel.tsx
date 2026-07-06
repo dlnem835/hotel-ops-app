@@ -3,8 +3,9 @@
 import { ChevronRight } from "lucide-react";
 import { WorkOrder } from "../lib/maintenance-types";
 import { WorkOrderListFilters } from "../lib/work-order-list-filters";
-import { formatWorkOrderOpenedTimestamp } from "../lib/work-order-display";
+import { formatWorkOrderCardTimestamp } from "../lib/work-order-display";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import "@/app/lib/one-eyrie-updated-timestamp.css";
 import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
 import WorkOrderFiltersButton from "./WorkOrderFiltersButton";
 import "@/app/components/dashboard-list-card.css";
@@ -48,21 +49,21 @@ export default function WorkOrdersPanel({
           <div className="maintenance-work-order-panel__header-copy">
             {!hideHeader ? (
               <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-                {compact ? "Today's Work Orders" : "Open Work Orders"}
+                {compact ? "Today's Work Orders" : "Priority Queue"}
               </div>
             ) : (
-              <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
-                Open Work Orders
+              <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+                Priority Queue
               </div>
             )}
             <div
               style={{
-                color: ONE_EYRIE.textMuted,
-                fontSize: hideHeader ? "11px" : "12px",
+                color: ONE_EYRIE.textSubtle,
+                fontSize: "12px",
                 marginTop: "4px",
               }}
             >
-              Guest-impacting · Urgent → Important → Normal · oldest first
+              Guest-impacting • Urgent → Important → Normal • Oldest first
             </div>
           </div>
 
@@ -113,8 +114,14 @@ export default function WorkOrdersPanel({
                   <div className="dashboard-list-card__location">
                     {order.areaLabel || "No area specified"}
                   </div>
-                  <div className="maintenance-work-order-card__opened">
-                    {formatWorkOrderOpenedTimestamp(order.createdAt)}
+                  <div
+                    className={
+                      order.commentsUpdatedAt
+                        ? "one-eyrie-updated-timestamp"
+                        : "maintenance-work-order-card__opened"
+                    }
+                  >
+                    {formatWorkOrderCardTimestamp(order)}
                   </div>
                 </div>
                 {clickable ? (

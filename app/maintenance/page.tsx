@@ -73,7 +73,7 @@ export default function MaintenancePage() {
   const [workOrderComments, setWorkOrderComments] = useState("");
   const [completingWo, setCompletingWo] = useState(false);
   const [savingComments, setSavingComments] = useState(false);
-  const [commentsSaveMessage, setCommentsSaveMessage] = useState<string | null>(null);
+  const [commentsSaved, setCommentsSaved] = useState(false);
   const [pmHealthModalOpen, setPmHealthModalOpen] = useState(false);
   const [kpiPeriod, setKpiPeriod] = useState<InspectionPeriod>("mtd");
   const [workOrderFilters, setWorkOrderFilters] = useState<WorkOrderListFilters>(
@@ -128,8 +128,8 @@ export default function MaintenancePage() {
 
   useEffect(() => {
     setWorkOrderComments(selectedWorkOrder?.comments || "");
-    setCommentsSaveMessage(null);
-  }, [selectedWorkOrder]);
+    setCommentsSaved(false);
+  }, [selectedWorkOrder?.id]);
 
   async function startPmForAssignment(assignmentId: number) {
     setStartingPm(true);
@@ -164,7 +164,7 @@ export default function MaintenancePage() {
   async function saveWorkOrderComments() {
     if (!selectedWorkOrder) return;
     setSavingComments(true);
-    setCommentsSaveMessage(null);
+    setCommentsSaved(false);
 
     const response = await fetch(`/api/work-orders/${selectedWorkOrder.id}`, {
       method: "PATCH",
@@ -182,8 +182,7 @@ export default function MaintenancePage() {
     const result = await response.json();
     setSelectedWorkOrder(result.workOrder);
     setWorkOrderComments(result.workOrder.comments || "");
-    setCommentsSaveMessage("Comments saved.");
-    window.setTimeout(() => setCommentsSaveMessage(null), 2500);
+    setCommentsSaved(true);
     await loadDashboard();
   }
 
@@ -418,7 +417,10 @@ export default function MaintenancePage() {
                 </div>
                 <textarea
                   value={workOrderComments}
-                  onChange={(e) => setWorkOrderComments(e.target.value)}
+                  onChange={(e) => {
+                    setWorkOrderComments(e.target.value);
+                    setCommentsSaved(false);
+                  }}
                   rows={4}
                   placeholder="Add notes about progress, parts needed, or completion details..."
                   className="one-eyrie-maintenance-field"
@@ -444,18 +446,6 @@ export default function MaintenancePage() {
                   marginTop: "4px",
                 }}
               >
-                {commentsSaveMessage ? (
-                  <span
-                    style={{
-                      marginRight: "auto",
-                      color: ONE_EYRIE.textMuted,
-                      fontSize: "13px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {commentsSaveMessage}
-                  </span>
-                ) : null}
                 <button
                   type="button"
                   onClick={() => setSelectedWorkOrder(null)}
@@ -487,7 +477,7 @@ export default function MaintenancePage() {
                   className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
                   {...goldHoverHandlers("secondary", completingWo || savingComments)}
                 >
-                  {savingComments ? "Saving..." : "Save"}
+                  {savingComments ? "Saving..." : commentsSaved ? "Saved" : "Save"}
                 </button>
                 <button
                   type="button"

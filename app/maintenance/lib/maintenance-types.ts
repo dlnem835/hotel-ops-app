@@ -33,6 +33,7 @@ export type WorkOrder = {
   createdByLabel?: string | null;
   createdAt: string;
   updatedAt: string;
+  commentsUpdatedAt: string | null;
   completedAt: string | null;
   completedBy: string | null;
   /** UI-only label resolved from team member first name */

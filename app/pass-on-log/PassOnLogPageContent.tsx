@@ -33,6 +33,8 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
+import "@/app/lib/one-eyrie-updated-timestamp.css";
 import {
   clearPassOnDraft,
   emptyPassOnDraftSnapshot,
@@ -1500,8 +1502,8 @@ function dateHeader(dateString: string) {
 </div>
 
 {entry.edited_at && (
-  <div className="one-eyrie-pass-on-entry-edited" style={{ fontSize: "11px", color: "#C8A96A", marginTop: "2px" }}>
-    ✎ Edited {formatDateTime(entry.edited_at)}
+  <div className="one-eyrie-updated-timestamp">
+    {formatOneEyrieUpdatedTimestamp(entry.edited_at)}
   </div>
 )}
 </div>
@@ -1693,14 +1695,8 @@ function dateHeader(dateString: string) {
                               {reply.reply_message}
                             </div>
                             {reply.edited_at ? (
-                              <div
-                                style={{
-                                  fontSize: "11px",
-                                  color: "#C8A96A",
-                                  marginTop: "4px",
-                                }}
-                              >
-                                ✎ Edited {formatDateTime(reply.edited_at)}
+                              <div className="one-eyrie-updated-timestamp">
+                                {formatOneEyrieUpdatedTimestamp(reply.edited_at)}
                               </div>
                             ) : null}
                           </div>
