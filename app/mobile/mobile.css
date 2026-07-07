@@ -1160,10 +1160,34 @@
   gap: 10px;
 }
 
+.one-eyrie-mobile-inspection-session-footer__actions--hub {
+  grid-template-columns: 1fr;
+}
+
+.one-eyrie-mobile-inspection-session-footer__actions--category {
+  grid-template-columns: 1fr;
+}
+
+.one-eyrie-mobile-inspection-session-footer__validation {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 168, 168, 0.45);
+  background: rgba(139, 82, 82, 0.18);
+  color: #e8c4c4;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
 .one-eyrie-mobile-inspection-complete-btn {
   background: #1c3428;
   border: 1px solid #3d6b4f;
   color: #b8d4c4;
+}
+
+.one-eyrie-mobile-inspection-complete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .one-eyrie-mobile-inspection-item {

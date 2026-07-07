@@ -97,8 +97,11 @@ export default function MobileInspectionCategoryPage() {
           const outcome = responses[responseKey];
 
           return (
-            <MobileInspectionItemCard
+            <div
               key={item.key}
+              id={`mobile-inspection-item-${categoryKey}-${item.key}`}
+            >
+              <MobileInspectionItemCard
               item={item}
               outcome={outcome}
               notes={notes[responseKey] || ""}
@@ -132,11 +135,12 @@ export default function MobileInspectionCategoryPage() {
                 />
               }
             />
+            </div>
           );
         })}
       </div>
 
-      <MobileInspectionSessionFooter />
+      <MobileInspectionSessionFooter mode="category" categoryKey={categoryKey} />
 
       <WorkOrderModal
         open={workOrderModalOpen}

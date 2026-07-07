@@ -64,6 +64,13 @@ type MobileInspectionSessionContextValue = {
   removeItemPhoto: (categoryKey: string, itemKey: string) => void;
   saveProgress: () => Promise<boolean>;
   completeInspection: () => Promise<boolean>;
+  categoryKeys: string[];
+  getNextCategoryKey: (currentKey: string) => string | null;
+  validateCategorySection: (categoryKey: string) => {
+    valid: boolean;
+    firstUnansweredItemKey: string | null;
+  };
+  isInspectionReadyToComplete: boolean;
   listHref: string;
   listLabel: string;
 };
@@ -241,8 +248,59 @@ export function MobileInspectionSessionProvider({
 
   const listHref = useMemo(() => mobileInspectionListHref(program), [program]);
   const listLabel = useMemo(() => mobileInspectionListLabel(program), [program]);
+  const categoryKeys = useMemo(
+    () => content?.categories.map((category) => category.key) ?? [],
+    [content]
+  );
   const totalItems = content?.categories.reduce((sum, cat) => sum + cat.items.length, 0) ?? 0;
   const answeredItems = responseInputs.length;
+
+  const isInspectionReadyToComplete = useMemo(() => {
+    if (!content) return false;
+
+    for (const category of content.categories) {
+      for (const item of category.items) {
+        if (!item.required) continue;
+        if (!responses[itemResponseKey(category.key, item.key)]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }, [content, responses]);
+
+  const getNextCategoryKey = useCallback(
+    (currentKey: string) => {
+      const index = categoryKeys.indexOf(currentKey);
+      if (index === -1) return null;
+      return categoryKeys[index + 1] ?? null;
+    },
+    [categoryKeys]
+  );
+
+  const validateCategorySection = useCallback(
+    (categoryKeyValue: string) => {
+      if (!content) {
+        return { valid: false, firstUnansweredItemKey: null };
+      }
+
+      const category = content.categories.find((entry) => entry.key === categoryKeyValue);
+      if (!category) {
+        return { valid: false, firstUnansweredItemKey: null };
+      }
+
+      for (const item of category.items) {
+        if (!item.required) continue;
+        if (!responses[itemResponseKey(categoryKeyValue, item.key)]) {
+          return { valid: false, firstUnansweredItemKey: item.key };
+        }
+      }
+
+      return { valid: true, firstUnansweredItemKey: null };
+    },
+    [content, responses]
+  );
 
   const countAnsweredInCategory = useCallback(
     (categoryKeyValue: string) => {
@@ -427,6 +485,10 @@ export function MobileInspectionSessionProvider({
     removeItemPhoto,
     saveProgress,
     completeInspection,
+    categoryKeys,
+    getNextCategoryKey,
+    validateCategorySection,
+    isInspectionReadyToComplete,
     listHref,
     listLabel,
   };

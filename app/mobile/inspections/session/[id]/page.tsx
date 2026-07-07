@@ -124,7 +124,7 @@ export default function MobileInspectionSessionHubPage() {
         />
       </label>
 
-      <MobileInspectionSessionFooter showNotes={false} />
+      <MobileInspectionSessionFooter mode="hub" />
     </div>
   );
 }

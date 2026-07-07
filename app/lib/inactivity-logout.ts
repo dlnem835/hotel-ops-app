@@ -1,4 +1,4 @@
-export const INACTIVITY_LOGOUT_MS = 2 * 60 * 60 * 1000;
+export const INACTIVITY_LOGOUT_MS = 9 * 60 * 60 * 1000;
 export const INACTIVITY_WARNING_MS = INACTIVITY_LOGOUT_MS - 2 * 60 * 1000;
 export const INACTIVITY_LOGOUT_MESSAGE =
   "You were logged out due to inactivity.";
