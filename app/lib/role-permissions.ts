@@ -99,6 +99,7 @@ export function buildSettingsRoleCatalog(): Array<{
 
 export const MODULE_PERMISSION_KEYS = [
   "dashboard",
+  "reports",
   "lost_found",
   "pass_on",
   "inspections",
@@ -112,6 +113,7 @@ export type ModulePermissions = Record<ModulePermissionKey, boolean>;
 
 export const MODULE_PERMISSION_LABELS: Record<ModulePermissionKey, string> = {
   dashboard: "Dashboard",
+  reports: "Reports",
   lost_found: "Lost & Found",
   pass_on: "Pass-On Log",
   inspections: "Inspections",
@@ -136,6 +138,7 @@ export const DESKTOP_NAV_ITEMS: Array<{
   { key: "maintenance", label: "Maintenance", href: "/maintenance" },
   { key: "inspections", label: "Inspections", href: "/inspections" },
   { key: "lost_found", label: "Lost & Found", href: "/lost-and-found" },
+  { key: "reports", label: "Reports", href: "/reports" },
   { key: "settings", label: "Settings", href: "/settings" },
 ];
 
@@ -156,6 +159,7 @@ export type UserAccessProfile = {
 export function createEmptyPermissions(): ModulePermissions {
   return {
     dashboard: false,
+    reports: false,
     lost_found: false,
     pass_on: false,
     inspections: false,
@@ -167,6 +171,7 @@ export function createEmptyPermissions(): ModulePermissions {
 export function getAdministratorPermissions(): ModulePermissions {
   return {
     dashboard: true,
+    reports: true,
     lost_found: true,
     pass_on: true,
     inspections: true,
@@ -190,6 +195,7 @@ function permissionsFromLegacyRole(role: string | null | undefined): ModulePermi
 
   permissions.dashboard = true;
   permissions.pass_on = true;
+  permissions.reports = true;
 
   if (value === "manager") {
     permissions.lost_found = true;
@@ -303,6 +309,7 @@ export function isMobileAppPath(pathname: string): boolean {
 
 function canAccessDesktopPath(permissions: ModulePermissions, path: string): boolean {
   if (path === "/" || path === "") return permissions.dashboard;
+  if (path.startsWith("/reports")) return permissions.reports;
   if (path.startsWith("/lost-and-found")) return permissions.lost_found;
   if (path.startsWith("/pass-on-log")) return permissions.pass_on;
   if (path.startsWith("/inspections")) return permissions.inspections;
