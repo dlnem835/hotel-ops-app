@@ -51,6 +51,7 @@ import RoomsAreasSection from "./components/RoomsAreasSection";
 import {
   buildUserAccessProfile,
   buildSettingsRoleCatalog,
+  createEmptyPermissions,
   draftFlagsToPermissions,
   getAdministratorPermissions,
   getJobTitleDefaultAccessLabel,
@@ -263,12 +264,8 @@ useEffect(() => {
         username: "",
         tempPassword: "",
         ...permissionsToDraftFlags({
-          dashboard: false,
-          lost_found: false,
+          ...createEmptyPermissions(),
           pass_on: true,
-          inspections: false,
-          maintenance: false,
-          settings: false,
         }),
       };
     }
