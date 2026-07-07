@@ -326,6 +326,7 @@ export default function InspectionSessionPage() {
         action: "complete",
         responses: responseInputs,
         sessionNotes,
+        completedBy: inspectorName,
       }),
     });
     const result = await response.json();

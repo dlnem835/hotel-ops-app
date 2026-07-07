@@ -1,9 +1,9 @@
-export type ReportsTabId = "all" | "saved" | "generated";
+export type ReportsTabId = "all" | "favorites" | "scheduled";
 
 export const REPORTS_TABS: Array<{ id: ReportsTabId; label: string }> = [
   { id: "all", label: "All Reports" },
-  { id: "saved", label: "Saved Reports" },
-  { id: "generated", label: "Generated Reports" },
+  { id: "favorites", label: "Favorites" },
+  { id: "scheduled", label: "Scheduled" },
 ];
 
 export type PmReportId =
@@ -12,19 +12,49 @@ export type PmReportId =
   | "failed-pm-items"
   | "pm-report";
 
+export type WorkOrderReportId =
+  | "all-work-orders"
+  | "work-order-completion-time"
+  | "days-open"
+  | "work-orders-by-category"
+  | "work-orders-by-area";
+
+export type InspectionModuleReportId =
+  | "associate-ranking"
+  | "average-time"
+  | "top-failed-sections"
+  | "top-failed-items"
+  | "rooms-not-done"
+  | "rooms-done"
+  | "scores-by-room";
+
+export type LostFoundReportId =
+  | "all-items"
+  | "closed-items"
+  | "shipped-items"
+  | "ready-to-discard";
+
+export type PassOnReportId =
+  | "entries-by-associate"
+  | "entries-by-shift"
+  | "edited-entries"
+  | "keyword-search";
+
 export type ReportRowDefinition = {
   id: string;
   title: string;
-  description: string;
   enabled: boolean;
   pmReportId?: PmReportId;
+  woReportId?: WorkOrderReportId;
+  roomInspectionReportId?: InspectionModuleReportId;
+  rpmInspectionReportId?: InspectionModuleReportId;
+  lnfReportId?: LostFoundReportId;
+  passOnReportId?: PassOnReportId;
 };
 
 export type ReportCategorySection = {
   id: string;
   title: string;
-  description: string;
-  optional?: boolean;
   reports: ReportRowDefinition[];
 };
 
@@ -55,171 +85,257 @@ export const DEFAULT_PM_REPORT_FILTERS: PmReportFilters = {
   dateEnd: "",
 };
 
-export const PREVENTIVE_MAINTENANCE_SECTION: ReportCategorySection = {
-  id: "preventative-maintenance",
-  title: "Preventative Maintenance",
-  description:
-    "Property-wide PM cycles, completions, missed work, and failed checklist items.",
+export const WORK_ORDER_STATUS_FILTER_OPTIONS = ["All", "Open", "Completed"] as const;
+
+export type WorkOrderReportFilters = {
+  propertyName: string;
+  status: (typeof WORK_ORDER_STATUS_FILTER_OPTIONS)[number];
+  areaId: number | null;
+  areaLabel: string;
+  category: string;
+  dateStart: string;
+  dateEnd: string;
+};
+
+export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  status: "All",
+  areaId: null,
+  areaLabel: "All",
+  category: "All",
+  dateStart: "",
+  dateEnd: "",
+};
+
+export const LOST_FOUND_STATUS_FILTER_OPTIONS = [
+  "All",
+  "Stored",
+  "Label Sent",
+  "Ready to Ship",
+  "Shipped",
+  "Guest Declined",
+  "Closed",
+] as const;
+
+export type LostFoundReportFilters = {
+  propertyName: string;
+  status: (typeof LOST_FOUND_STATUS_FILTER_OPTIONS)[number];
+  guestLastName: string;
+  roomNumber: string;
+  itemName: string;
+  dateStart: string;
+  dateEnd: string;
+};
+
+export const DEFAULT_LOST_FOUND_REPORT_FILTERS: LostFoundReportFilters = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  status: "All",
+  guestLastName: "",
+  roomNumber: "",
+  itemName: "",
+  dateStart: "",
+  dateEnd: "",
+};
+
+export const PASS_ON_SHIFT_FILTER_OPTIONS = [
+  "All",
+  "AM",
+  "PM",
+  "Overnight",
+] as const;
+
+export type PassOnReportFilters = {
+  propertyName: string;
+  associate: string;
+  shift: (typeof PASS_ON_SHIFT_FILTER_OPTIONS)[number];
+  keyword: string;
+  dateStart: string;
+  dateEnd: string;
+};
+
+export const DEFAULT_PASS_ON_REPORT_FILTERS: PassOnReportFilters = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  associate: "All",
+  shift: "All",
+  keyword: "",
+  dateStart: "",
+  dateEnd: "",
+};
+
+function report(
+  id: string,
+  title: string,
+  bindings: Omit<ReportRowDefinition, "id" | "title" | "enabled">
+): ReportRowDefinition {
+  return { id, title, enabled: true, ...bindings };
+}
+
+export const ROOM_PREVENTIVE_MAINTENANCE_SECTION: ReportCategorySection = {
+  id: "room-pm",
+  title: "Room Preventive Maintenance",
   reports: [
-    {
-      id: "completed-pms",
-      title: "Completed PMs",
-      description: "PMs completed within the selected date range and property.",
-      enabled: true,
-      pmReportId: "completed-pms",
-    },
-    {
-      id: "missed-pms",
-      title: "Missed PMs",
-      description: "Scheduled PMs that were missed during the selected period.",
-      enabled: true,
-      pmReportId: "missed-pms",
-    },
-    {
-      id: "failed-pm-items",
-      title: "Failed PM Items",
-      description: "Checklist items marked failed, with source PM traceability.",
-      enabled: true,
-      pmReportId: "failed-pm-items",
-    },
-    {
-      id: "pm-report",
-      title: "PM Report",
-      description: "Frequency-grouped PM progress with period completion markers.",
-      enabled: true,
-      pmReportId: "pm-report",
-    },
+    report("rpm-associate-rankings", "Associate Rankings", {
+      rpmInspectionReportId: "associate-ranking",
+    }),
+    report("rpm-average-time", "Average RPM Time", {
+      rpmInspectionReportId: "average-time",
+    }),
+    report("rpm-rooms-completed", "Rooms Completed", {
+      rpmInspectionReportId: "rooms-done",
+    }),
+    report("rpm-rooms-not-completed", "Rooms Not Completed", {
+      rpmInspectionReportId: "rooms-not-done",
+    }),
+    report("rpm-failed-areas", "Failed Areas", {
+      rpmInspectionReportId: "top-failed-sections",
+    }),
+    report("rpm-failed-items", "Failed Items", {
+      rpmInspectionReportId: "top-failed-items",
+    }),
+    report("rpm-scores-by-room", "Scores by Room", {
+      rpmInspectionReportId: "scores-by-room",
+    }),
   ],
 };
 
-/** Blueprint sections shown on All Reports — PM is interactive; others are placeholders. */
+export const PREVENTIVE_MAINTENANCE_SECTION: ReportCategorySection = {
+  id: "preventative-maintenance",
+  title: "Preventive Maintenance",
+  reports: [
+    report("completed-pms", "Completed PMs", { pmReportId: "completed-pms" }),
+    report("missed-pms", "Missed PMs", { pmReportId: "missed-pms" }),
+    report("failed-pm-items", "Failed Items", { pmReportId: "failed-pm-items" }),
+    report("pm-completion-status", "PM Completion Status", { pmReportId: "pm-report" }),
+  ],
+};
+
+export const WORK_ORDERS_SECTION: ReportCategorySection = {
+  id: "work-orders",
+  title: "Work Orders",
+  reports: [
+    report("all-work-orders", "All Work Orders", { woReportId: "all-work-orders" }),
+    report("average-completion-time", "Average Completion Time", {
+      woReportId: "work-order-completion-time",
+    }),
+    report("days-open", "Days Open", { woReportId: "days-open" }),
+    report("top-categories", "Top Categories", { woReportId: "work-orders-by-category" }),
+    report("top-areas", "Top Areas", { woReportId: "work-orders-by-area" }),
+  ],
+};
+
+export const ROOM_INSPECTIONS_SECTION: ReportCategorySection = {
+  id: "room-inspections",
+  title: "Room Inspections",
+  reports: [
+    report("associate-rankings", "Associate Rankings", {
+      roomInspectionReportId: "associate-ranking",
+    }),
+    report("average-inspection-time", "Average Inspection Time", {
+      roomInspectionReportId: "average-time",
+    }),
+    report("rooms-inspected", "Rooms Inspected", {
+      roomInspectionReportId: "rooms-done",
+    }),
+    report("rooms-not-inspected", "Rooms Not Inspected", {
+      roomInspectionReportId: "rooms-not-done",
+    }),
+    report("failed-areas", "Failed Areas", {
+      roomInspectionReportId: "top-failed-sections",
+    }),
+    report("failed-items", "Failed Items", {
+      roomInspectionReportId: "top-failed-items",
+    }),
+    report("scores-by-room", "Scores by Room", {
+      roomInspectionReportId: "scores-by-room",
+    }),
+  ],
+};
+
+export const LOST_AND_FOUND_SECTION: ReportCategorySection = {
+  id: "lost-and-found",
+  title: "Lost & Found",
+  reports: [
+    report("active-items", "Active Items", { lnfReportId: "all-items" }),
+    report("closed-items", "Closed Items", { lnfReportId: "closed-items" }),
+    report("shipping-report", "Shipping Report", { lnfReportId: "shipped-items" }),
+    report("aging-report", "Aging Report", { lnfReportId: "ready-to-discard" }),
+  ],
+};
+
+export const PASS_ON_LOG_SECTION: ReportCategorySection = {
+  id: "pass-on-log",
+  title: "Pass-On Log",
+  reports: [
+    report("entries-by-associate", "Entries by Associate", {
+      passOnReportId: "entries-by-associate",
+    }),
+    report("entries-by-shift", "Entries by Shift", {
+      passOnReportId: "entries-by-shift",
+    }),
+    report("edited-entries", "Edited Entries", { passOnReportId: "edited-entries" }),
+    report("keyword-search", "Keyword Search", { passOnReportId: "keyword-search" }),
+  ],
+};
+
+/** StayPMS-inspired category grid — six primary report modules. */
 export const ALL_REPORT_SECTIONS: ReportCategorySection[] = [
+  ROOM_PREVENTIVE_MAINTENANCE_SECTION,
   PREVENTIVE_MAINTENANCE_SECTION,
-  {
-    id: "room-pm",
-    title: "Room Preventative Maintenance",
-    description: "RPM schedules, completion tracking, and room-level PM history.",
-    reports: [
-      {
-        id: "past-due-rpms",
-        title: "Past Due RPMs",
-        description: "Rooms with overdue RPM assignments.",
-        enabled: false,
-      },
-      {
-        id: "upcoming-rpms",
-        title: "Upcoming RPMs",
-        description: "RPM work scheduled in the near term.",
-        enabled: false,
-      },
-      {
-        id: "completed-rpms",
-        title: "Completed RPMs",
-        description: "RPM completions by room and date.",
-        enabled: false,
-      },
-    ],
-  },
-  {
-    id: "work-orders",
-    title: "Work Orders",
-    description: "Open queue, completion trends, and technician workload.",
-    reports: [
-      {
-        id: "open-work-orders",
-        title: "Open Work Orders",
-        description: "Current open work order backlog.",
-        enabled: false,
-      },
-      {
-        id: "completed-work-orders",
-        title: "Completed Work Orders",
-        description: "Closed work orders in a selected period.",
-        enabled: false,
-      },
-      {
-        id: "wo-by-priority",
-        title: "Work Orders by Priority",
-        description: "Volume breakdown by priority level.",
-        enabled: false,
-      },
-    ],
-  },
-  {
-    id: "room-inspections",
-    title: "Room Inspections",
-    description: "Housekeeping inspection scores, failures, and coverage.",
-    reports: [
-      {
-        id: "inspection-scores",
-        title: "Inspection Scores",
-        description: "Score trends by room and inspector.",
-        enabled: false,
-      },
-      {
-        id: "failed-items",
-        title: "Failed Items",
-        description: "Items marked fail during room inspections.",
-        enabled: false,
-      },
-      {
-        id: "daily-inspection-summary",
-        title: "Daily Inspection Summary",
-        description: "Day-over-day inspection activity.",
-        enabled: false,
-      },
-    ],
-  },
-  {
-    id: "lost-and-found",
-    title: "Lost & Found",
-    description: "Stored items, returns, discards, and shipping activity.",
-    reports: [
-      {
-        id: "active-items",
-        title: "Active Items",
-        description: "Items currently in storage.",
-        enabled: false,
-      },
-      {
-        id: "items-discarded",
-        title: "Items Discarded",
-        description: "Items removed from inventory.",
-        enabled: false,
-      },
-      {
-        id: "shipping-history",
-        title: "Shipping History",
-        description: "Label requests and shipment activity.",
-        enabled: false,
-      },
-    ],
-  },
-  {
-    id: "pass-on-log",
-    title: "Pass-On Log",
-    description: "Shift handoffs, department notes, and daily operational activity.",
-    optional: true,
-    reports: [
-      {
-        id: "daily-log",
-        title: "Daily Log",
-        description: "Published pass-on entries by day.",
-        enabled: false,
-      },
-      {
-        id: "department-notes",
-        title: "Department Notes",
-        description: "Notes grouped by department.",
-        enabled: false,
-      },
-    ],
-  },
+  WORK_ORDERS_SECTION,
+  ROOM_INSPECTIONS_SECTION,
+  LOST_AND_FOUND_SECTION,
+  PASS_ON_LOG_SECTION,
 ];
 
-export function getPmReportTitle(reportId: PmReportId): string {
-  const match = PREVENTIVE_MAINTENANCE_SECTION.reports.find(
-    (report) => report.pmReportId === reportId
-  );
-  return match?.title ?? "PM Report";
+function findReportTitle(
+  predicate: (report: ReportRowDefinition) => boolean,
+  fallback: string
+): string {
+  for (const section of ALL_REPORT_SECTIONS) {
+    const match = section.reports.find(predicate);
+    if (match) return match.title;
+  }
+  return fallback;
 }
+
+export function getPmReportTitle(reportId: PmReportId): string {
+  return findReportTitle((report) => report.pmReportId === reportId, "PM Report");
+}
+
+export function getWorkOrderReportTitle(reportId: WorkOrderReportId): string {
+  return findReportTitle((report) => report.woReportId === reportId, "Work Order Report");
+}
+
+export function getRoomInspectionReportTitle(reportId: InspectionModuleReportId): string {
+  return findReportTitle(
+    (report) => report.roomInspectionReportId === reportId,
+    "Room Inspection Report"
+  );
+}
+
+export function getRpmInspectionReportTitle(reportId: InspectionModuleReportId): string {
+  return findReportTitle(
+    (report) => report.rpmInspectionReportId === reportId,
+    "RPM Report"
+  );
+}
+
+export function getLostFoundReportTitle(reportId: LostFoundReportId): string {
+  return findReportTitle((report) => report.lnfReportId === reportId, "Lost & Found Report");
+}
+
+export function getPassOnReportTitle(reportId: PassOnReportId): string {
+  return findReportTitle((report) => report.passOnReportId === reportId, "Pass-On Report");
+}
+
+export type InspectionReportModalTarget =
+  | { variant: "room"; reportId: InspectionModuleReportId }
+  | { variant: "rpm"; reportId: InspectionModuleReportId };
+
+export const DEFAULT_INSPECTION_REPORT_FILTERS = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  type: "All",
+  associate: "All",
+  dateStart: "",
+  dateEnd: "",
+};

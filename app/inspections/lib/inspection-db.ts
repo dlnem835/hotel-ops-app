@@ -52,6 +52,7 @@ type SessionRow = {
   associate_id: string | null;
   started_at: string;
   completed_at: string | null;
+  completed_by: string | null;
   earned_points: number;
   possible_points: number;
   score_percent: number | null;
@@ -73,6 +74,7 @@ function normalizeSession(row: SessionRow): InspectionSession {
     associate_id: row.associate_id ? String(row.associate_id) : null,
     started_at: row.started_at,
     completed_at: row.completed_at,
+    completed_by: row.completed_by ? String(row.completed_by) : null,
     earned_points: row.earned_points,
     possible_points: row.possible_points,
     score_percent:
@@ -914,6 +916,7 @@ export async function completeInspectionSession(
   input: {
     responses: ItemResponseInput[];
     sessionNotes?: string;
+    completedBy?: string | null;
   }
 ) {
   const session = await fetchInspectionSession(supabase, id);
@@ -998,6 +1001,7 @@ export async function completeInspectionSession(
     .update({
       status: "completed",
       completed_at: completedAt,
+      completed_by: input.completedBy?.trim() || null,
       earned_points: score.earnedPoints,
       possible_points: score.possiblePoints,
       score_percent: scorePercent,

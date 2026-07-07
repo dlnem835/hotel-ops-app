@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -44,7 +44,7 @@ const STATUS_FILTER_OPTIONS = [
   { label: "Label Sent", value: "Label sent" },
   { label: "Ready to be Shipped", value: "Ready to be shipped" },
   { label: "Shipped", value: "Shipped" },
-  { label: "Closed", value: "Closed" },
+  { label: "Discarded", value: "Discarded" },
 ] as const;
 
 const SORT_OPTIONS: { label: string; value: LnfSortOrder }[] = [
@@ -568,7 +568,7 @@ setTeamMembers(allTeamMembers || []);
                   <option>Ready to be shipped</option>
                   <option>Label sent</option>
                   <option>Shipped</option>
-                  <option>Closed</option>
+                  <option>Discarded</option>
                 </select>
               </div>
             </td>

@@ -117,6 +117,7 @@ export type InspectionSession = {
   associate_id: string | null;
   started_at: string;
   completed_at: string | null;
+  completed_by: string | null;
   earned_points: number;
   possible_points: number;
   score_percent: number | null;

@@ -430,6 +430,7 @@ export function MobileInspectionSessionProvider({
         action: "complete",
         responses: responseInputs,
         sessionNotes,
+        completedBy: inspectorName,
       }),
     });
     const result = await response.json();

@@ -32,6 +32,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       const session = await completeInspectionSession(supabase, Number(id), {
         responses: body.responses || [],
         sessionNotes: body.sessionNotes,
+        completedBy: body.completedBy ?? body.completed_by ?? null,
       });
       return NextResponse.json({ session });
     }

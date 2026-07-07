@@ -222,6 +222,22 @@ function permissionsFromLegacyRole(role: string | null | undefined): ModulePermi
   return permissions;
 }
 
+/** Reports is available to any user with standard desktop module access. */
+function withDesktopReportsAccess(permissions: ModulePermissions): ModulePermissions {
+  const hasDesktopModuleAccess =
+    permissions.dashboard ||
+    permissions.pass_on ||
+    permissions.maintenance ||
+    permissions.inspections ||
+    permissions.lost_found;
+
+  if (!hasDesktopModuleAccess) {
+    return permissions;
+  }
+
+  return { ...permissions, reports: true };
+}
+
 export function normalizeModulePermissions(
   value: Partial<ModulePermissions> | Record<string, boolean> | null | undefined
 ): ModulePermissions {
@@ -246,10 +262,10 @@ export function resolveEffectivePermissions(input: {
 
   const stored = normalizeModulePermissions(input.modulePermissions);
   if (hasAnyExplicitPermission(stored)) {
-    return stored;
+    return withDesktopReportsAccess(stored);
   }
 
-  return permissionsFromLegacyRole(input.legacyRole);
+  return withDesktopReportsAccess(permissionsFromLegacyRole(input.legacyRole));
 }
 
 export function buildUserAccessProfile(input: {

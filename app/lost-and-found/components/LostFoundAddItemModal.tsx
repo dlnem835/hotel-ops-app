@@ -254,7 +254,7 @@ export default function LostFoundAddItemModal({
               <option>Ready to be shipped</option>
               <option>Label sent</option>
               <option>Shipped</option>
-              <option>Closed</option>
+              <option>Discarded</option>
             </select>
           </label>
 
