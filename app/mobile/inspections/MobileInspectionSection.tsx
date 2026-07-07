@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatInspectionAgeLabel } from "@/app/inspections/lib/inspection-age";
 import { PriorityQueueItem } from "@/app/inspections/lib/inspection-types";
@@ -142,14 +142,17 @@ export default function MobileInspectionSection({
           overdue first
         </div>
 
-        <input
-          type="search"
-          className="one-eyrie-mobile-inspections-search"
-          placeholder="Search room number…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          aria-label="Search rooms"
-        />
+        <div className="one-eyrie-mobile-search-wrap one-eyrie-mobile-inspections-search-wrap pass-on-search-wrap">
+          <Search size={18} className="pass-on-search-wrap__icon" aria-hidden />
+          <input
+            type="search"
+            className="one-eyrie-mobile-search"
+            placeholder="Search room number…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            aria-label="Search rooms"
+          />
+        </div>
 
         {loading ? (
           <div className="one-eyrie-mobile-status">Loading queue…</div>

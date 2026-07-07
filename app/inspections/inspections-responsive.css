@@ -1,6 +1,49 @@
 /* Mobile-only overrides for One Eyrie inspections.
    Desktop (768px+) keeps original inline layouts unchanged. */
 
+.inspection-room-grid-search-wrap {
+  position: relative;
+  min-width: 180px;
+}
+
+.inspection-room-grid-search-wrap .pass-on-search-wrap__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a948a;
+  pointer-events: none;
+}
+
+.inspection-room-grid-search-wrap .one-eyrie-field {
+  background: #0b0b0b !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  color: #ece6dc;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 42px;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.inspection-room-grid-search-wrap .one-eyrie-field:hover,
+.inspection-room-grid-search-wrap .one-eyrie-field:focus,
+.inspection-room-grid-search-wrap .one-eyrie-field:focus-visible {
+  background: #0b0b0b !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+}
+
+.inspection-room-grid-search-wrap .one-eyrie-field::placeholder {
+  color: #9a948a;
+}
+
 @media (max-width: 767px) {
   .one-eyrie-sidebar {
     display: none;

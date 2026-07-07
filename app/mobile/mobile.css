@@ -150,6 +150,52 @@
 
 .one-eyrie-mobile-pass-on__subtitle {
   margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.one-eyrie-mobile-search-wrap {
+  position: relative;
+}
+
+.one-eyrie-mobile-pass-on-search-wrap {
+  margin-bottom: 12px;
+}
+
+.one-eyrie-mobile-pm-search-wrap {
+  margin-bottom: 10px;
+}
+
+.one-eyrie-mobile-inspections-search-wrap {
+  margin-bottom: 10px;
+}
+
+.one-eyrie-mobile-search-wrap .pass-on-search-wrap__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a948a;
+  pointer-events: none;
+}
+
+.one-eyrie-mobile-search {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px 0 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(200, 169, 106, 0.78);
+  background: #0b0b0b;
+  color: #ece6dc;
+  font-size: 15px;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18);
+  outline: none;
+}
+
+.one-eyrie-mobile-search::placeholder {
+  color: #9a948a;
 }
 
 .one-eyrie-mobile-work-orders__header {
@@ -735,19 +781,6 @@
   opacity: 0.9;
 }
 
-.one-eyrie-mobile-pm-search {
-  width: 100%;
-  box-sizing: border-box;
-  height: 42px;
-  padding: 0 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid #4a4a4a;
-  background: #151515;
-  color: #ffffff;
-  font-size: 15px;
-}
-
 .one-eyrie-mobile-pm-grid-section__count {
   color: #9ca3af;
   font-size: 12px;
@@ -988,19 +1021,6 @@
 .one-eyrie-mobile-inspections-queue__chevron {
   flex-shrink: 0;
   color: #c8a96a;
-}
-
-.one-eyrie-mobile-inspections-search {
-  width: 100%;
-  box-sizing: border-box;
-  height: 42px;
-  padding: 0 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid #4a4a4a;
-  background: #151515;
-  color: #ffffff;
-  font-size: 15px;
 }
 
 .one-eyrie-mobile-inspection-modal {

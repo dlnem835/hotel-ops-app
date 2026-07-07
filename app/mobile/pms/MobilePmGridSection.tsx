@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import { formatPmCompletionDate } from "@/app/maintenance/lib/pm-urgency";
@@ -135,14 +135,17 @@ export default function MobilePmGridSection() {
         </div>
       </div>
 
-      <input
-        type="search"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder="Search PMs..."
-        className="one-eyrie-mobile-pm-search"
-        aria-label="Search PMs"
-      />
+      <div className="one-eyrie-mobile-search-wrap one-eyrie-mobile-pm-search-wrap pass-on-search-wrap">
+        <Search size={18} className="pass-on-search-wrap__icon" aria-hidden />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search PMs..."
+          className="one-eyrie-mobile-search"
+          aria-label="Search PMs"
+        />
+      </div>
 
       <div className="one-eyrie-mobile-pm-grid-section__count">{showingLabel}</div>
 

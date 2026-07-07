@@ -82,6 +82,20 @@ export function filterRecentPassOnEntries(entries: PassOnEntry[], recentDays = 9
   return entries.filter((entry) => isRecentPassOnEntry(resolveEntryDate(entry), recentDays));
 }
 
+export function filterPassOnEntriesBySearch(
+  entries: PassOnEntry[],
+  search: string
+): PassOnEntry[] {
+  const query = search.trim().toLowerCase();
+  if (!query) return entries;
+
+  return entries.filter((entry) =>
+    `${entry.subject} ${entry.author} ${entry.message} ${entry.priority}`
+      .toLowerCase()
+      .includes(query)
+  );
+}
+
 export function groupEntriesByDate(entries: PassOnEntry[]): [string, PassOnEntry[]][] {
   const grouped = entries.reduce<Record<string, PassOnEntry[]>>((acc, entry) => {
     const date = resolveEntryDate(entry);
