@@ -38,7 +38,7 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     status: "Open",
     createdBy: "Front Desk",
     createdAt: "Jun 18, 2026 · 2:14 PM",
-    source: "Guest Request",
+    source: "Manual",
     completedBy: null,
     completedAt: null,
     comments: "Guest reports room at 78°F. Maintenance notified.",
@@ -54,7 +54,7 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     status: "Completed",
     createdBy: "J. Martinez",
     createdAt: "Jun 10, 2026 · 9:05 AM",
-    source: "Inspections",
+    source: "Room Inspection",
     completedBy: "D. Chen",
     completedAt: "Jun 12, 2026 · 4:30 PM",
     comments: "Fixture replaced and tested.",
@@ -70,7 +70,7 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     status: "Completed",
     createdBy: "D. Chen",
     createdAt: "Jun 4, 2026 · 7:40 AM",
-    source: "PM",
+    source: "Preventive Maintenance",
     completedBy: "D. Chen",
     completedAt: "Jun 5, 2026 · 11:15 AM",
     comments: "Bearing assembly adjusted.",
@@ -86,7 +86,7 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     status: "Open",
     createdBy: "Housekeeping",
     createdAt: "Jun 15, 2026 · 10:22 AM",
-    source: "Inspections",
+    source: "Room Inspection",
     completedBy: null,
     completedAt: null,
     comments: "Snake scheduled for tomorrow.",
@@ -102,7 +102,7 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     status: "Completed",
     createdBy: "PM Checklist",
     createdAt: "May 28, 2026 · 1:50 PM",
-    source: "PM",
+    source: "Preventive Maintenance",
     completedBy: "R. Patel",
     completedAt: "May 29, 2026 · 8:10 AM",
     comments: "Re-secured to wall anchor.",
@@ -137,4 +137,72 @@ export const SAMPLE_WO_BY_AREA = [
   { area: "Room 312", count: 4 },
   { area: "Kitchen", count: 4 },
   { area: "Boiler Room", count: 3 },
+];
+
+export type SampleWorkOrderBySourceRow = {
+  source: string;
+  total: number;
+  open: number;
+  completed: number;
+  avgCompletionTime: string;
+  avgDaysOpen: number;
+};
+
+export const SAMPLE_WO_BY_SOURCE: SampleWorkOrderBySourceRow[] = [
+  {
+    source: "Pass-On Log",
+    total: 12,
+    open: 3,
+    completed: 9,
+    avgCompletionTime: "1.8 days",
+    avgDaysOpen: 2.4,
+  },
+  {
+    source: "Room Inspection",
+    total: 8,
+    open: 2,
+    completed: 6,
+    avgCompletionTime: "2.4 days",
+    avgDaysOpen: 3.1,
+  },
+  {
+    source: "RPM",
+    total: 5,
+    open: 1,
+    completed: 4,
+    avgCompletionTime: "1.2 days",
+    avgDaysOpen: 1.6,
+  },
+  {
+    source: "Manual",
+    total: 9,
+    open: 2,
+    completed: 7,
+    avgCompletionTime: "2.1 days",
+    avgDaysOpen: 2.8,
+  },
+  {
+    source: "Preventive Maintenance",
+    total: 7,
+    open: 2,
+    completed: 5,
+    avgCompletionTime: "1.5 days",
+    avgDaysOpen: 2.0,
+  },
+  {
+    source: "Lost & Found",
+    total: 4,
+    open: 1,
+    completed: 3,
+    avgCompletionTime: "3.2 days",
+    avgDaysOpen: 4.1,
+  },
+  {
+    source: "Other",
+    total: 2,
+    open: 1,
+    completed: 1,
+    avgCompletionTime: "4.0 days",
+    avgDaysOpen: 5.5,
+  },
 ];

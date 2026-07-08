@@ -41,6 +41,44 @@
   margin-bottom: -1px;
 }
 
+/* ── Report modal date presets ── */
+
+.reports-date-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reports-date-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reports-date-presets__btn {
+  appearance: none;
+  border: 1px solid #3a352e;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.reports-date-presets__btn:hover {
+  color: #e5e7eb;
+  background: rgba(200, 169, 106, 0.08);
+}
+
+.reports-date-presets__btn--active {
+  color: #c8a96a;
+  background: #211f1b;
+  border-color: #3a352e;
+}
+
 /* ── Global report search ── */
 
 .reports-search-wrap {

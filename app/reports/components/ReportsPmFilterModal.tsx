@@ -24,7 +24,13 @@ import {
   type PmReportFilters,
   type PmReportId,
 } from "@/app/reports/lib/report-definitions";
+import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPmPlaceholderResults from "@/app/reports/components/ReportsPmPlaceholderResults";
+import {
+  applyDefaultReportDateRange,
+  DEFAULT_REPORT_DATE_PRESET,
+  type ReportDatePreset,
+} from "@/app/reports/lib/report-date-presets";
 
 type ReportsPmFilterModalProps = {
   open: boolean;
@@ -45,12 +51,16 @@ export default function ReportsPmFilterModal({
   reportId,
   onClose,
 }: ReportsPmFilterModalProps) {
-  const [filters, setFilters] = useState<PmReportFilters>(DEFAULT_PM_REPORT_FILTERS);
+  const [filters, setFilters] = useState<PmReportFilters>(() =>
+    applyDefaultReportDateRange(DEFAULT_PM_REPORT_FILTERS)
+  );
+  const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setFilters(DEFAULT_PM_REPORT_FILTERS);
+      setFilters(applyDefaultReportDateRange(DEFAULT_PM_REPORT_FILTERS));
+      setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
     }
   }, [open, reportId]);
@@ -59,6 +69,20 @@ export default function ReportsPmFilterModal({
 
   function updateFilter<K extends keyof PmReportFilters>(key: K, value: PmReportFilters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setShowResults(false);
+  }
+
+  function updateDateRange(value: {
+    preset: ReportDatePreset;
+    dateStart: string;
+    dateEnd: string;
+  }) {
+    setDatePreset(value.preset);
+    setFilters((prev) => ({
+      ...prev,
+      dateStart: value.dateStart,
+      dateEnd: value.dateEnd,
+    }));
     setShowResults(false);
   }
 
@@ -139,26 +163,13 @@ export default function ReportsPmFilterModal({
             </select>
           </label>
 
-          <div className="reports-pm-modal__date-row">
-            <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range Start</span>
-              <input
-                type="date"
-                className="one-eyrie-field"
-                value={filters.dateStart}
-                onChange={(event) => updateFilter("dateStart", event.target.value)}
-              />
-            </label>
-            <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range End</span>
-              <input
-                type="date"
-                className="one-eyrie-field"
-                value={filters.dateEnd}
-                onChange={(event) => updateFilter("dateEnd", event.target.value)}
-              />
-            </label>
-          </div>
+          <ReportsDateRangeField
+            preset={datePreset}
+            dateStart={filters.dateStart}
+            dateEnd={filters.dateEnd}
+            onChange={updateDateRange}
+            fieldLabelStyle={fieldLabel}
+          />
         </div>
 
         <div style={ONE_EYRIE_MODAL_FOOTER}>

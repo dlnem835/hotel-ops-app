@@ -17,7 +17,8 @@ export type WorkOrderReportId =
   | "work-order-completion-time"
   | "days-open"
   | "work-orders-by-category"
-  | "work-orders-by-area";
+  | "work-orders-by-area"
+  | "work-orders-by-source";
 
 export type InspectionModuleReportId =
   | "associate-ranking"
@@ -87,9 +88,21 @@ export const DEFAULT_PM_REPORT_FILTERS: PmReportFilters = {
 
 export const WORK_ORDER_STATUS_FILTER_OPTIONS = ["All", "Open", "Completed"] as const;
 
+export const WORK_ORDER_SOURCE_FILTER_OPTIONS = [
+  "All",
+  "Manual",
+  "Pass-On Log",
+  "Room Inspection",
+  "RPM",
+  "Preventive Maintenance",
+  "Lost & Found",
+  "Other",
+] as const;
+
 export type WorkOrderReportFilters = {
   propertyName: string;
   status: (typeof WORK_ORDER_STATUS_FILTER_OPTIONS)[number];
+  source: (typeof WORK_ORDER_SOURCE_FILTER_OPTIONS)[number];
   areaId: number | null;
   areaLabel: string;
   category: string;
@@ -100,6 +113,7 @@ export type WorkOrderReportFilters = {
 export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
   propertyName: REPORT_PROPERTY_OPTIONS[0],
   status: "All",
+  source: "All",
   areaId: null,
   areaLabel: "All",
   category: "All",
@@ -220,6 +234,9 @@ export const WORK_ORDERS_SECTION: ReportCategorySection = {
     report("days-open", "Days Open", { woReportId: "days-open" }),
     report("top-categories", "Top Categories", { woReportId: "work-orders-by-category" }),
     report("top-areas", "Top Areas", { woReportId: "work-orders-by-area" }),
+    report("work-orders-by-source", "Work Orders by Source", {
+      woReportId: "work-orders-by-source",
+    }),
   ],
 };
 

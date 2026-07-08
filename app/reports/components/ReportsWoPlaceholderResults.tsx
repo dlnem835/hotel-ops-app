@@ -2,8 +2,12 @@ import type { WorkOrderReportId } from "@/app/reports/lib/report-definitions";
 import {
   SAMPLE_WO_BY_AREA,
   SAMPLE_WO_BY_CATEGORY,
+  SAMPLE_WO_BY_SOURCE,
   SAMPLE_WORK_ORDER_ROWS,
 } from "@/app/reports/lib/work-order-report-sample-data";
+
+const SAMPLE_PREVIEW_LEAD =
+  "Sample preview — live report data will appear after backend integration.";
 
 type ReportsWoPlaceholderResultsProps = {
   reportId: WorkOrderReportId;
@@ -12,11 +16,45 @@ type ReportsWoPlaceholderResultsProps = {
 export default function ReportsWoPlaceholderResults({
   reportId,
 }: ReportsWoPlaceholderResultsProps) {
+  if (reportId === "work-orders-by-source") {
+    return (
+      <div className="reports-wo-results">
+        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
+        <div className="reports-pm-results__table-wrap">
+          <table className="reports-pm-results__table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Total Work Orders</th>
+                <th>Open</th>
+                <th>Completed</th>
+                <th>Average Completion Time</th>
+                <th>Average Days Open</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SAMPLE_WO_BY_SOURCE.map((row) => (
+                <tr key={row.source}>
+                  <td>{row.source}</td>
+                  <td>{row.total}</td>
+                  <td>{row.open}</td>
+                  <td>{row.completed}</td>
+                  <td>{row.avgCompletionTime}</td>
+                  <td>{row.avgDaysOpen} days</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   if (reportId === "days-open") {
     const openRows = SAMPLE_WORK_ORDER_ROWS.filter((row) => row.status === "Open");
     return (
       <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">Sample preview — open work orders with days open.</p>
+        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
         <div className="reports-pm-results__table-wrap">
           <table className="reports-pm-results__table">
             <thead>
@@ -48,7 +86,7 @@ export default function ReportsWoPlaceholderResults({
   if (reportId === "work-orders-by-category") {
     return (
       <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">Sample preview — work orders grouped by category.</p>
+        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
         <div className="reports-wo-group-list">
           {SAMPLE_WO_BY_CATEGORY.map((row) => (
             <div key={row.category} className="reports-wo-group-row">
@@ -64,7 +102,7 @@ export default function ReportsWoPlaceholderResults({
   if (reportId === "work-orders-by-area") {
     return (
       <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">Sample preview — work orders grouped by room / area.</p>
+        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
         <div className="reports-wo-group-list">
           {SAMPLE_WO_BY_AREA.map((row) => (
             <div key={row.area} className="reports-wo-group-row">
@@ -81,9 +119,7 @@ export default function ReportsWoPlaceholderResults({
     const completedRows = SAMPLE_WORK_ORDER_ROWS.filter((row) => row.status === "Completed");
     return (
       <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">
-          Sample preview — completed work orders with time-to-close.
-        </p>
+        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
         <div className="reports-pm-results__table-wrap">
           <table className="reports-pm-results__table">
             <thead>
@@ -116,7 +152,7 @@ export default function ReportsWoPlaceholderResults({
 
   return (
     <div className="reports-wo-results">
-      <p className="reports-pm-results__lead">Sample preview — all work orders matching filters.</p>
+      <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
       <div className="reports-pm-results__table-wrap reports-wo-results__table-wrap--wide">
         <table className="reports-pm-results__table reports-wo-results__table">
           <thead>

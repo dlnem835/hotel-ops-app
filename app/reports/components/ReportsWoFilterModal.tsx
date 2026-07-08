@@ -21,13 +21,20 @@ import {
   DEFAULT_WORK_ORDER_REPORT_FILTERS,
   getWorkOrderReportTitle,
   REPORT_PROPERTY_OPTIONS,
+  WORK_ORDER_SOURCE_FILTER_OPTIONS,
   WORK_ORDER_STATUS_FILTER_OPTIONS,
   type WorkOrderReportFilters,
   type WorkOrderReportId,
 } from "@/app/reports/lib/report-definitions";
 import { SAMPLE_WORK_ORDER_LOCATION_OPTIONS } from "@/app/reports/lib/work-order-report-sample-data";
+import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsWoPlaceholderResults from "@/app/reports/components/ReportsWoPlaceholderResults";
 import ReportsWorkOrderAreaField from "@/app/reports/components/ReportsWorkOrderAreaField";
+import {
+  applyDefaultReportDateRange,
+  DEFAULT_REPORT_DATE_PRESET,
+  type ReportDatePreset,
+} from "@/app/reports/lib/report-date-presets";
 
 type ReportsWoFilterModalProps = {
   open: boolean;
@@ -48,23 +55,45 @@ export default function ReportsWoFilterModal({
   reportId,
   onClose,
 }: ReportsWoFilterModalProps) {
-  const [filters, setFilters] = useState<WorkOrderReportFilters>(DEFAULT_WORK_ORDER_REPORT_FILTERS);
+  const [filters, setFilters] = useState<WorkOrderReportFilters>(() =>
+    applyDefaultReportDateRange(DEFAULT_WORK_ORDER_REPORT_FILTERS)
+  );
+  const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setFilters(DEFAULT_WORK_ORDER_REPORT_FILTERS);
+      setFilters(applyDefaultReportDateRange(DEFAULT_WORK_ORDER_REPORT_FILTERS));
+      setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
     }
   }, [open, reportId]);
 
   if (!open || !reportId) return null;
 
+  const isBySourceReport = reportId === "work-orders-by-source";
+  const showSourceFilter = reportId === "all-work-orders" || isBySourceReport;
+  const showExtendedFilters = !isBySourceReport;
+
   function updateFilter<K extends keyof WorkOrderReportFilters>(
     key: K,
     value: WorkOrderReportFilters[K]
   ) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setShowResults(false);
+  }
+
+  function updateDateRange(value: {
+    preset: ReportDatePreset;
+    dateStart: string;
+    dateEnd: string;
+  }) {
+    setDatePreset(value.preset);
+    setFilters((prev) => ({
+      ...prev,
+      dateStart: value.dateStart,
+      dateEnd: value.dateEnd,
+    }));
     setShowResults(false);
   }
 
@@ -130,6 +159,28 @@ export default function ReportsWoFilterModal({
             </select>
           </label>
 
+          {isBySourceReport ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>Source</span>
+              <select
+                className="one-eyrie-field"
+                value={filters.source}
+                onChange={(event) =>
+                  updateFilter(
+                    "source",
+                    event.target.value as WorkOrderReportFilters["source"]
+                  )
+                }
+              >
+                {WORK_ORDER_SOURCE_FILTER_OPTIONS.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           <label className="reports-pm-modal__field">
             <span style={fieldLabel}>Status</span>
             <select
@@ -150,75 +201,88 @@ export default function ReportsWoFilterModal({
             </select>
           </label>
 
-          <div className="reports-pm-modal__field">
-            <span style={fieldLabel}>Room / Area</span>
-            <ReportsWorkOrderAreaField
-              options={SAMPLE_WORK_ORDER_LOCATION_OPTIONS}
-              selectedId={filters.areaId}
-              selectedLabel={filters.areaLabel}
-              onSelectAll={() => {
-                setFilters((prev) => ({
-                  ...prev,
-                  areaId: null,
-                  areaLabel: "All",
-                }));
-                setShowResults(false);
-              }}
-              onSelect={(id, label) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  areaId: id,
-                  areaLabel: label,
-                }));
-                setShowResults(false);
-              }}
-              onClearSelection={() => {
-                setFilters((prev) => ({
-                  ...prev,
-                  areaId: null,
-                  areaLabel: "",
-                }));
-                setShowResults(false);
-              }}
-            />
-          </div>
-
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Category</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.category}
-              onChange={(event) => updateFilter("category", event.target.value)}
-            >
-              <option value="All">All</option>
-              {WORK_ORDER_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="reports-pm-modal__date-row">
+          {showSourceFilter && !isBySourceReport ? (
             <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range Start</span>
-              <input
-                type="date"
+              <span style={fieldLabel}>Source</span>
+              <select
                 className="one-eyrie-field"
-                value={filters.dateStart}
-                onChange={(event) => updateFilter("dateStart", event.target.value)}
-              />
+                value={filters.source}
+                onChange={(event) =>
+                  updateFilter(
+                    "source",
+                    event.target.value as WorkOrderReportFilters["source"]
+                  )
+                }
+              >
+                {WORK_ORDER_SOURCE_FILTER_OPTIONS.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range End</span>
-              <input
-                type="date"
-                className="one-eyrie-field"
-                value={filters.dateEnd}
-                onChange={(event) => updateFilter("dateEnd", event.target.value)}
-              />
-            </label>
-          </div>
+          ) : null}
+
+          {showExtendedFilters ? (
+            <>
+              <div className="reports-pm-modal__field">
+                <span style={fieldLabel}>Room / Area</span>
+                <ReportsWorkOrderAreaField
+                  options={SAMPLE_WORK_ORDER_LOCATION_OPTIONS}
+                  selectedId={filters.areaId}
+                  selectedLabel={filters.areaLabel}
+                  onSelectAll={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      areaId: null,
+                      areaLabel: "All",
+                    }));
+                    setShowResults(false);
+                  }}
+                  onSelect={(id, label) => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      areaId: id,
+                      areaLabel: label,
+                    }));
+                    setShowResults(false);
+                  }}
+                  onClearSelection={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      areaId: null,
+                      areaLabel: "",
+                    }));
+                    setShowResults(false);
+                  }}
+                />
+              </div>
+
+              <label className="reports-pm-modal__field">
+                <span style={fieldLabel}>Category</span>
+                <select
+                  className="one-eyrie-field"
+                  value={filters.category}
+                  onChange={(event) => updateFilter("category", event.target.value)}
+                >
+                  <option value="All">All</option>
+                  {WORK_ORDER_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
+
+          <ReportsDateRangeField
+            preset={datePreset}
+            dateStart={filters.dateStart}
+            dateEnd={filters.dateEnd}
+            onChange={updateDateRange}
+            fieldLabelStyle={fieldLabel}
+          />
         </div>
 
         <div style={ONE_EYRIE_MODAL_FOOTER}>

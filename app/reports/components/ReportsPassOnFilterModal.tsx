@@ -24,8 +24,14 @@ import {
   type PassOnReportFilters,
   type PassOnReportId,
 } from "@/app/reports/lib/report-definitions";
+import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPassOnPlaceholderResults from "@/app/reports/components/ReportsPassOnPlaceholderResults";
 import { SAMPLE_INSPECTION_ASSOCIATES } from "@/app/reports/lib/inspection-report-sample-data";
+import {
+  applyDefaultReportDateRange,
+  DEFAULT_REPORT_DATE_PRESET,
+  type ReportDatePreset,
+} from "@/app/reports/lib/report-date-presets";
 
 type ReportsPassOnFilterModalProps = {
   open: boolean;
@@ -46,12 +52,16 @@ export default function ReportsPassOnFilterModal({
   reportId,
   onClose,
 }: ReportsPassOnFilterModalProps) {
-  const [filters, setFilters] = useState<PassOnReportFilters>(DEFAULT_PASS_ON_REPORT_FILTERS);
+  const [filters, setFilters] = useState<PassOnReportFilters>(() =>
+    applyDefaultReportDateRange(DEFAULT_PASS_ON_REPORT_FILTERS)
+  );
+  const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setFilters(DEFAULT_PASS_ON_REPORT_FILTERS);
+      setFilters(applyDefaultReportDateRange(DEFAULT_PASS_ON_REPORT_FILTERS));
+      setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
     }
   }, [open, reportId]);
@@ -63,6 +73,20 @@ export default function ReportsPassOnFilterModal({
     value: PassOnReportFilters[K]
   ) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setShowResults(false);
+  }
+
+  function updateDateRange(value: {
+    preset: ReportDatePreset;
+    dateStart: string;
+    dateEnd: string;
+  }) {
+    setDatePreset(value.preset);
+    setFilters((prev) => ({
+      ...prev,
+      dateStart: value.dateStart,
+      dateEnd: value.dateEnd,
+    }));
     setShowResults(false);
   }
 
@@ -167,26 +191,13 @@ export default function ReportsPassOnFilterModal({
             />
           </label>
 
-          <div className="reports-pm-modal__date-row">
-            <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range Start</span>
-              <input
-                type="date"
-                className="one-eyrie-field"
-                value={filters.dateStart}
-                onChange={(event) => updateFilter("dateStart", event.target.value)}
-              />
-            </label>
-            <label className="reports-pm-modal__field">
-              <span style={fieldLabel}>Date Range End</span>
-              <input
-                type="date"
-                className="one-eyrie-field"
-                value={filters.dateEnd}
-                onChange={(event) => updateFilter("dateEnd", event.target.value)}
-              />
-            </label>
-          </div>
+          <ReportsDateRangeField
+            preset={datePreset}
+            dateStart={filters.dateStart}
+            dateEnd={filters.dateEnd}
+            onChange={updateDateRange}
+            fieldLabelStyle={fieldLabel}
+          />
         </div>
 
         <div style={ONE_EYRIE_MODAL_FOOTER}>
