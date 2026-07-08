@@ -124,7 +124,7 @@ export default function LoginPage() {
           padding: "32px",
         }}
       >
-        <OneEyrieWordmark className="one-eyrie-wordmark--login" />
+        <OneEyrieWordmark className="one-eyrie-wordmark--sidebar one-eyrie-wordmark--login" />
         <p style={{ color: "#C8A96A", marginTop: 0 }}>Staff Login</p>
 
         {logoutMessage && (

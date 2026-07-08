@@ -74,7 +74,7 @@ html[data-theme="light"] .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--acti
 }
 
 .one-eyrie-wordmark {
-  color: var(--oe-gold);
+  /* Staggered ONE / EYRIE lines set per-line colors in one-eyrie-shell.css */
 }
 
 /* ── User profile menu ── */

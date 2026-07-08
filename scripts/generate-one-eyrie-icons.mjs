@@ -9,12 +9,7 @@ const rootDir = path.join(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const appDir = path.join(rootDir, "app");
 
-/** Eagle artwork fills this share of the final square (80–85% target). */
-const EAGLE_FILL = 0.825;
-const ICON_BG = { r: 17, g: 17, b: 17, alpha: 1 };
-
-const STACKED_LOGO = path.join(publicDir, "one-eyrie-logo-stacked.png");
-const EAGLE_SOURCE = path.join(publicDir, "one-eyrie-icon-source.png");
+const PLACEHOLDER_SOURCE = path.join(publicDir, "one-eyrie-placeholder-icon.png");
 
 const OUTPUTS = {
   public: {
@@ -30,48 +25,8 @@ const OUTPUTS = {
   },
 };
 
-async function extractEagleArtwork() {
-  const meta = await sharp(STACKED_LOGO).metadata();
-  const size = meta.width ?? 1024;
-
-  const cropped = await sharp(STACKED_LOGO)
-    .extract({
-      left: Math.round(size * 0.255),
-      top: Math.round(size * 0.07),
-      width: Math.round(size * 0.49),
-      height: Math.round(size * 0.49),
-    })
-    .png()
-    .toBuffer();
-
-  const trimmed = await sharp(cropped).trim({ threshold: 8 }).png().toBuffer();
-  await fs.writeFile(EAGLE_SOURCE, trimmed);
-  return trimmed;
-}
-
-async function renderSquareIcon(size, eagleArtwork) {
-  const eagleSize = Math.round(size * EAGLE_FILL);
-  const offset = Math.round((size - eagleSize) / 2);
-
-  const eagle = await sharp(eagleArtwork)
-    .resize(eagleSize, eagleSize, {
-      fit: "contain",
-      background: ICON_BG,
-    })
-    .png()
-    .toBuffer();
-
-  return sharp({
-    create: {
-      width: size,
-      height: size,
-      channels: 4,
-      background: ICON_BG,
-    },
-  })
-    .composite([{ input: eagle, left: offset, top: offset }])
-    .png()
-    .toBuffer();
+async function resizeIcon(size, source) {
+  return sharp(source).resize(size, size, { fit: "cover" }).png().toBuffer();
 }
 
 async function writePng(filePath, buffer) {
@@ -79,14 +34,14 @@ async function writePng(filePath, buffer) {
 }
 
 async function generate() {
-  const eagleArtwork = await extractEagleArtwork();
+  const source = await fs.readFile(PLACEHOLDER_SOURCE);
 
-  const icon16 = await renderSquareIcon(16, eagleArtwork);
-  const icon32 = await renderSquareIcon(32, eagleArtwork);
-  const icon48 = await renderSquareIcon(48, eagleArtwork);
-  const icon180 = await renderSquareIcon(180, eagleArtwork);
-  const icon192 = await renderSquareIcon(192, eagleArtwork);
-  const icon512 = await renderSquareIcon(512, eagleArtwork);
+  const icon16 = await resizeIcon(16, source);
+  const icon32 = await resizeIcon(32, source);
+  const icon48 = await resizeIcon(48, source);
+  const icon180 = await resizeIcon(180, source);
+  const icon192 = await resizeIcon(192, source);
+  const icon512 = await resizeIcon(512, source);
 
   const faviconBuffer = await toIco([icon16, icon32, icon48]);
 
@@ -99,10 +54,9 @@ async function generate() {
   await writePng(OUTPUTS.app.appleIcon, icon180);
   await fs.writeFile(OUTPUTS.app.favicon, faviconBuffer);
 
-  console.log("Generated One Eyrie app icons:");
+  console.log("Generated One Eyrie app icons from public/one-eyrie-placeholder-icon.png");
   console.log("  public/favicon.ico, apple-touch-icon.png, icon-192.png, icon-512.png");
   console.log("  app/favicon.ico, icon.png, apple-icon.png");
-  console.log(`  Eagle fill: ${Math.round(EAGLE_FILL * 100)}% of square`);
 }
 
 await generate();

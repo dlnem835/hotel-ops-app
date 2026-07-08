@@ -16,16 +16,9 @@
   margin: 0 auto;
 }
 
-.one-eyrie-wordmark--mobile {
-  align-items: flex-start;
-  font-size: 15px;
-  letter-spacing: 0.21em;
+.one-eyrie-placeholder-icon--mobile {
+  width: 56px;
   margin: 0 0 14px;
-  text-align: left;
-}
-
-.one-eyrie-wordmark--mobile .one-eyrie-wordmark__line--second {
-  margin-left: 0.4em;
 }
 
 .one-eyrie-mobile-heading {

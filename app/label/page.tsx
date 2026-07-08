@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Suspense } from "react";
+import { ONE_EYRIE_BRAND } from "@/app/lib/one-eyrie-brand";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 export function LabelUploadPageContent() {
@@ -75,16 +76,16 @@ export function LabelUploadPageContent() {
           }}
         >
           <Image
-            src="/one-eyrie-logo-stacked.png"
-            alt="One Eyrie"
+            src={ONE_EYRIE_BRAND.placeholderIcon}
+            alt={ONE_EYRIE_BRAND.alt}
             width={168}
-            height={120}
+            height={168}
             priority
             style={{
               display: "block",
               margin: "0 auto",
               height: "auto",
-              width: "168px",
+              width: "72px",
             }}
           />
           <p
