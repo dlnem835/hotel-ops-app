@@ -27,7 +27,12 @@ import {
   type LostFoundReportFilters,
   type LostFoundReportId,
 } from "@/app/reports/lib/report-definitions";
-import { SAMPLE_LNF_CREATED_BY_ASSOCIATES, SAMPLE_LNF_FOUND_BY_ASSOCIATES } from "@/app/reports/lib/lost-found-report-sample-data";
+import {
+  buildLostFoundFilterOptions,
+  createReportsSupabaseClient,
+  fetchLostFoundReportSource,
+} from "@/app/reports/lib/lost-found-report-data";
+import type { LostFoundFilterOptions } from "@/app/reports/lib/lost-found-report-types";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsLnfPlaceholderResults from "@/app/reports/components/ReportsLnfPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
@@ -65,6 +70,10 @@ export default function ReportsLnfFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<LostFoundFilterOptions>({
+    foundBy: ["All"],
+    createdBy: ["All"],
+  });
 
   useEffect(() => {
     if (!open) {
@@ -72,13 +81,38 @@ export default function ReportsLnfFilterModal({
       setFoundByFilters(applyDefaultReportDateRange(DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
+      return;
     }
+
+    let cancelled = false;
+
+    async function loadFilterOptions() {
+      try {
+        const supabase = createReportsSupabaseClient();
+        const source = await fetchLostFoundReportSource(supabase);
+        if (cancelled) return;
+        setFilterOptions(buildLostFoundFilterOptions(source.items));
+      } catch {
+        if (!cancelled) {
+          setFilterOptions({ foundBy: ["All"], createdBy: ["All"] });
+        }
+      }
+    }
+
+    void loadFilterOptions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, reportId]);
 
   if (!open || !reportId) return null;
 
   const isFoundByReport = reportId === "found-by";
   const isAllItemsReport = reportId === "all-items";
+  const isShippingReport = reportId === "shipped-items";
+  const isAgingReport = reportId === "ready-to-discard";
+  const usesSharedItemFilters = isAllItemsReport || isShippingReport || isAgingReport;
 
   function updateFilter<K extends keyof LostFoundReportFilters>(
     key: K,
@@ -125,11 +159,11 @@ export default function ReportsLnfFilterModal({
         `Found By: ${foundByFilters.foundBy}`,
         `Department: ${foundByFilters.department}`,
       ]
-    : isAllItemsReport
+    : usesSharedItemFilters
       ? [
           `Status: ${filters.status}`,
           `Found By: ${filters.foundBy}`,
-          `Created By: ${filters.createdBy}`,
+          ...(isAllItemsReport ? [`Created By: ${filters.createdBy}`] : []),
         ]
       : [];
 
@@ -195,7 +229,7 @@ export default function ReportsLnfFilterModal({
             </select>
           </label>
 
-          {isAllItemsReport ? (
+          {usesSharedItemFilters ? (
             <>
               <label className="reports-pm-modal__field">
                 <span style={fieldLabel}>Status</span>
@@ -224,7 +258,7 @@ export default function ReportsLnfFilterModal({
                   value={filters.foundBy}
                   onChange={(event) => updateFilter("foundBy", event.target.value)}
                 >
-                  {SAMPLE_LNF_FOUND_BY_ASSOCIATES.map((associate) => (
+                  {filterOptions.foundBy.map((associate) => (
                     <option key={associate} value={associate}>
                       {associate}
                     </option>
@@ -232,20 +266,22 @@ export default function ReportsLnfFilterModal({
                 </select>
               </label>
 
-              <label className="reports-pm-modal__field">
-                <span style={fieldLabel}>Created By</span>
-                <select
-                  className="one-eyrie-field"
-                  value={filters.createdBy}
-                  onChange={(event) => updateFilter("createdBy", event.target.value)}
-                >
-                  {SAMPLE_LNF_CREATED_BY_ASSOCIATES.map((associate) => (
-                    <option key={associate} value={associate}>
-                      {associate}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {isAllItemsReport ? (
+                <label className="reports-pm-modal__field">
+                  <span style={fieldLabel}>Created By</span>
+                  <select
+                    className="one-eyrie-field"
+                    value={filters.createdBy}
+                    onChange={(event) => updateFilter("createdBy", event.target.value)}
+                  >
+                    {filterOptions.createdBy.map((associate) => (
+                      <option key={associate} value={associate}>
+                        {associate}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </>
           ) : null}
 
@@ -258,7 +294,7 @@ export default function ReportsLnfFilterModal({
                   value={foundByFilters.foundBy}
                   onChange={(event) => updateFoundByFilter("foundBy", event.target.value)}
                 >
-                  {SAMPLE_LNF_FOUND_BY_ASSOCIATES.map((associate) => (
+                  {filterOptions.foundBy.map((associate) => (
                     <option key={associate} value={associate}>
                       {associate}
                     </option>
@@ -348,13 +384,13 @@ export default function ReportsLnfFilterModal({
                       foundBy: foundByFilters.foundBy,
                       department: foundByFilters.department,
                     }
-                  : isAllItemsReport
+                  : usesSharedItemFilters
                     ? {
-                        reportVariant: "all-items",
+                        reportVariant: reportId,
                         propertyName: filters.propertyName,
                         status: filters.status,
                         foundBy: filters.foundBy,
-                        createdBy: filters.createdBy,
+                        ...(isAllItemsReport ? { createdBy: filters.createdBy } : {}),
                       }
                     : {
                         reportVariant: reportId,

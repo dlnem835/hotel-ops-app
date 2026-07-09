@@ -124,13 +124,10 @@ export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
 export const LOST_FOUND_STATUS_FILTER_OPTIONS = [
   "All",
   "Stored",
-  "Label Requested",
-  "Label Sent",
-  "Ready to Ship",
+  "Label sent",
+  "Ready to be shipped",
   "Shipped",
-  "Returned",
   "Discarded",
-  "Closed",
 ] as const;
 
 export const LNF_DEPARTMENT_FILTER_OPTIONS = [

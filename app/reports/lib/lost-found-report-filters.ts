@@ -2,10 +2,11 @@ import type {
   LostFoundFoundByReportFilters,
   LostFoundReportFilters,
 } from "@/app/reports/lib/report-definitions";
+import { isLostFoundItemAging } from "@/app/reports/lib/lost-found-report-data";
 import type {
-  SampleLostFoundFoundByRow,
-  SampleLostFoundItem,
-} from "@/app/reports/lib/lost-found-report-sample-data";
+  LostFoundFoundByRow,
+  LostFoundReportItem,
+} from "@/app/reports/lib/lost-found-report-types";
 
 function matchesDateRange(
   createdAtIso: string | null | undefined,
@@ -20,39 +21,45 @@ function matchesDateRange(
   return true;
 }
 
+function matchesStatus(
+  rowStatus: string,
+  filterStatus: LostFoundReportFilters["status"]
+): boolean {
+  if (filterStatus === "All") return true;
+  return rowStatus === filterStatus;
+}
+
+function matchesFoundBy(rowFoundBy: string, filterFoundBy: string): boolean {
+  if (filterFoundBy === "All") return true;
+  return rowFoundBy === filterFoundBy;
+}
+
+function matchesCreatedBy(rowCreatedBy: string, filterCreatedBy: string): boolean {
+  if (filterCreatedBy === "All") return true;
+  return rowCreatedBy === filterCreatedBy;
+}
+
 export function filterLostFoundAllItemsReportRows(
-  rows: SampleLostFoundItem[],
+  rows: LostFoundReportItem[],
   filters: LostFoundReportFilters
-): SampleLostFoundItem[] {
+): LostFoundReportItem[] {
   return rows.filter((row) => {
-    if (filters.status !== "All" && row.status !== filters.status) {
-      return false;
-    }
-
-    if (filters.foundBy !== "All" && row.foundBy !== filters.foundBy) {
-      return false;
-    }
-
-    if (filters.createdBy !== "All" && row.createdBy !== filters.createdBy) {
-      return false;
-    }
-
+    if (!matchesStatus(row.status, filters.status)) return false;
+    if (!matchesFoundBy(row.foundBy, filters.foundBy)) return false;
+    if (!matchesCreatedBy(row.createdBy, filters.createdBy)) return false;
     if (!matchesDateRange(row.createdAtIso, filters.dateStart, filters.dateEnd)) {
       return false;
     }
-
     return true;
   });
 }
 
 export function filterLostFoundFoundByReportRows(
-  rows: SampleLostFoundFoundByRow[],
+  rows: LostFoundFoundByRow[],
   filters: LostFoundFoundByReportFilters
-): SampleLostFoundFoundByRow[] {
+): LostFoundFoundByRow[] {
   return rows.filter((row) => {
-    if (filters.foundBy !== "All" && row.associateName !== filters.foundBy) {
-      return false;
-    }
+    if (!matchesFoundBy(row.associateName, filters.foundBy)) return false;
 
     if (filters.department !== "All" && row.department !== filters.department) {
       return false;
@@ -66,14 +73,57 @@ export function filterLostFoundFoundByReportRows(
   });
 }
 
+export function filterLostFoundItemsForFoundByReport(
+  items: LostFoundReportItem[],
+  filters: LostFoundFoundByReportFilters
+): LostFoundReportItem[] {
+  return items.filter((item) => {
+    if (!matchesFoundBy(item.foundBy, filters.foundBy)) return false;
+    if (!matchesDateRange(item.createdAtIso, filters.dateStart, filters.dateEnd)) {
+      return false;
+    }
+    return true;
+  });
+}
+
 export function filterLostFoundItemsForAssociateDrillDown(
-  items: SampleLostFoundItem[],
+  items: LostFoundReportItem[],
   associateName: string,
   filters: LostFoundFoundByReportFilters
-): SampleLostFoundItem[] {
+): LostFoundReportItem[] {
   return items.filter((item) => {
     if (item.foundBy !== associateName) return false;
     if (!matchesDateRange(item.createdAtIso, filters.dateStart, filters.dateEnd)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export function filterLostFoundShippingReportRows(
+  rows: LostFoundReportItem[],
+  filters: Pick<LostFoundReportFilters, "status" | "foundBy" | "dateStart" | "dateEnd">
+): LostFoundReportItem[] {
+  return rows.filter((row) => {
+    if (row.status !== "Shipped") return false;
+    if (!matchesStatus(row.status, filters.status)) return false;
+    if (!matchesFoundBy(row.foundBy, filters.foundBy)) return false;
+    if (!matchesDateRange(row.createdAtIso, filters.dateStart, filters.dateEnd)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export function filterLostFoundAgingReportRows(
+  rows: LostFoundReportItem[],
+  filters: Pick<LostFoundReportFilters, "status" | "foundBy" | "dateStart" | "dateEnd">
+): LostFoundReportItem[] {
+  return rows.filter((row) => {
+    if (!isLostFoundItemAging(row)) return false;
+    if (!matchesStatus(row.status, filters.status)) return false;
+    if (!matchesFoundBy(row.foundBy, filters.foundBy)) return false;
+    if (!matchesDateRange(row.createdAtIso, filters.dateStart, filters.dateEnd)) {
       return false;
     }
     return true;

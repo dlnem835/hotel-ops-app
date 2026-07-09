@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS,
   DEFAULT_LOST_FOUND_REPORT_FILTERS,
@@ -9,14 +9,23 @@ import {
   type LostFoundReportId,
 } from "@/app/reports/lib/report-definitions";
 import {
+  buildLostFoundFoundByRows,
+  createReportsSupabaseClient,
+  fetchLostFoundReportSource,
+} from "@/app/reports/lib/lost-found-report-data";
+import {
   filterLostFoundAllItemsReportRows,
+  filterLostFoundAgingReportRows,
   filterLostFoundFoundByReportRows,
   filterLostFoundItemsForAssociateDrillDown,
+  filterLostFoundItemsForFoundByReport,
+  filterLostFoundShippingReportRows,
 } from "@/app/reports/lib/lost-found-report-filters";
-import {
-  SAMPLE_LOST_FOUND_ITEMS,
-  SAMPLE_LNF_FOUND_BY_ROWS,
-} from "@/app/reports/lib/lost-found-report-sample-data";
+import type {
+  LostFoundFoundByRow,
+  LostFoundReportItem,
+} from "@/app/reports/lib/lost-found-report-types";
+import type { TeamMemberRow } from "@/app/reports/lib/lost-found-report-data";
 
 type ReportsLnfPlaceholderResultsProps = {
   reportId: LostFoundReportId;
@@ -30,16 +39,106 @@ export default function ReportsLnfPlaceholderResults({
   foundByFilters,
 }: ReportsLnfPlaceholderResultsProps) {
   const [selectedAssociate, setSelectedAssociate] = useState<string | null>(null);
+  const [items, setItems] = useState<LostFoundReportItem[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedAssociate(null);
+  }, [reportId, filters, foundByFilters]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReportData() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const supabase = createReportsSupabaseClient();
+        const source = await fetchLostFoundReportSource(supabase);
+        if (cancelled) return;
+
+        setItems(source.items);
+        setTeamMembers(source.teamMembers);
+      } catch (loadError) {
+        if (cancelled) return;
+        const message =
+          loadError instanceof Error ? loadError.message : "Unable to load Lost & Found data.";
+        setError(message);
+        setItems([]);
+        setTeamMembers([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadReportData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reportId, filters, foundByFilters]);
+
+  const activeAllItemsFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
+  const activeFoundByFilters = foundByFilters ?? DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS;
+  const sharedFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
+
+  const allItems = useMemo(
+    () => filterLostFoundAllItemsReportRows(items, activeAllItemsFilters),
+    [items, activeAllItemsFilters]
+  );
+  const foundBySourceItems = useMemo(
+    () => filterLostFoundItemsForFoundByReport(items, activeFoundByFilters),
+    [items, activeFoundByFilters]
+  );
+
+  const foundByRows = useMemo(
+    () => buildLostFoundFoundByRows(foundBySourceItems, teamMembers),
+    [foundBySourceItems, teamMembers]
+  );
+
+  const foundByReportRows = useMemo(
+    () => filterLostFoundFoundByReportRows(foundByRows, activeFoundByFilters),
+    [foundByRows, activeFoundByFilters]
+  );
+  const shippingItems = useMemo(
+    () => filterLostFoundShippingReportRows(items, sharedFilters),
+    [items, sharedFilters]
+  );
+  const agingItems = useMemo(
+    () => filterLostFoundAgingReportRows(items, sharedFilters),
+    [items, sharedFilters]
+  );
+  const selectedAssociateItems = useMemo(
+    () =>
+      selectedAssociate == null
+        ? []
+        : filterLostFoundItemsForAssociateDrillDown(
+            items,
+            selectedAssociate,
+            activeFoundByFilters
+          ),
+    [items, selectedAssociate, activeFoundByFilters]
+  );
+
+  if (loading) {
+    return <ReportStateMessage message="Loading Lost & Found report data…" />;
+  }
+
+  if (error) {
+    return <ReportStateMessage message={error} />;
+  }
 
   if (reportId === "all-items") {
-    const activeFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
-    const items = filterLostFoundAllItemsReportRows(SAMPLE_LOST_FOUND_ITEMS, activeFilters);
-
     return (
       <ItemTable
-        lead="Sample preview — all Lost & Found items matching the selected filters."
+        lead="All Lost & Found items matching the selected filters."
         headers={["Guest", "Room", "Item", "Status", "Found by", "Created by", "Created"]}
-        rows={items.map((item) => [
+        rows={allItems.map((item) => [
           item.guestLastName,
           item.roomNumber,
           item.itemName,
@@ -54,21 +153,10 @@ export default function ReportsLnfPlaceholderResults({
   }
 
   if (reportId === "found-by") {
-    const activeFilters = foundByFilters ?? DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS;
-    const rows = filterLostFoundFoundByReportRows(SAMPLE_LNF_FOUND_BY_ROWS, activeFilters);
-    const selectedAssociateItems =
-      selectedAssociate == null
-        ? []
-        : filterLostFoundItemsForAssociateDrillDown(
-            SAMPLE_LOST_FOUND_ITEMS,
-            selectedAssociate,
-            activeFilters
-          );
-
     return (
       <div className="reports-wo-results">
         <p className="reports-pm-results__lead">
-          Sample preview — associates who turned in lost items during the selected date range.
+          Associates who turned in lost items during the selected date range.
         </p>
         <div className="reports-pm-results__table-wrap">
           <table className="reports-pm-results__table">
@@ -82,8 +170,8 @@ export default function ReportsLnfPlaceholderResults({
               </tr>
             </thead>
             <tbody>
-              {rows.length > 0 ? (
-                rows.map((row) => (
+              {foundByReportRows.length > 0 ? (
+                foundByReportRows.map((row) => (
                   <tr key={row.associateName}>
                     <td>
                       <button
@@ -116,8 +204,7 @@ export default function ReportsLnfPlaceholderResults({
         {selectedAssociate ? (
           <div style={{ marginTop: "16px" }}>
             <p className="reports-pm-results__lead">
-              Items turned in by {selectedAssociate} during the selected date range — sample
-              drill-down preview.
+              Items turned in by {selectedAssociate} during the selected date range.
             </p>
             <ItemTable
               lead=""
@@ -138,30 +225,27 @@ export default function ReportsLnfPlaceholderResults({
   }
 
   if (reportId === "shipped-items") {
-    const items = SAMPLE_LOST_FOUND_ITEMS.filter((item) => item.status === "Shipped");
     return (
       <ItemTable
-        lead="Sample preview — shipped items."
+        lead="Shipped Lost & Found items matching the selected filters."
         headers={["Guest", "Room", "Item", "Shipped", "Found by"]}
-        rows={items.map((item) => [
+        rows={shippingItems.map((item) => [
           item.guestLastName,
           item.roomNumber,
           item.itemName,
           item.shippedAt ?? "—",
           item.foundBy,
         ])}
+        emptyMessage="No shipped items match the selected filters."
       />
     );
   }
 
-  const items = SAMPLE_LOST_FOUND_ITEMS.filter(
-    (item) => (item.daysStored ?? 0) >= 180 && item.status === "Stored"
-  );
   return (
     <ItemTable
-      lead="Sample preview — aging items past retention period."
+      lead="Stored items past the 6-month retention period."
       headers={["Guest", "Room", "Item", "Created", "Days stored", "Status", "Found by"]}
-      rows={items.map((item) => [
+      rows={agingItems.map((item) => [
         item.guestLastName,
         item.roomNumber,
         item.itemName,
@@ -170,7 +254,16 @@ export default function ReportsLnfPlaceholderResults({
         item.status,
         item.foundBy,
       ])}
+      emptyMessage="No aging items match the selected filters."
     />
+  );
+}
+
+function ReportStateMessage({ message }: { message: string }) {
+  return (
+    <div className="reports-wo-results">
+      <p className="reports-pm-results__lead">{message}</p>
+    </div>
   );
 }
 
