@@ -343,10 +343,12 @@ export function printReportDocument(
         "Report"
       : contentRootOrOptions.reportName ||
         contentRoot.querySelector(".reports-printable-output__title")?.textContent?.trim() ||
-        "Report";  const header = contentRoot.querySelector(".reports-printable-output__header");
+        "Report";
+
+  const header = contentRoot.querySelector(".reports-printable-output__header");
   const body = contentRoot.querySelector(".reports-printable-output__body");
 
-  if (!header || !body) return;
+  if (!(header instanceof HTMLElement) || !(body instanceof HTMLElement)) return;
 
   const orientation = getPrintOrientation(body);
   const html = buildReportPrintHtml(
