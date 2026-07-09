@@ -9,6 +9,8 @@ export type LostFoundReportItem = {
   comments: string;
   createdAt: string;
   createdAtIso: string;
+  /** Full created_at timestamp from lost_items for retention comparisons. */
+  createdAtSource: string;
   labelUrl: string | null;
   labelSentAt: string | null;
   /** Closest available shipped timestamp — no shipped_at column yet. */

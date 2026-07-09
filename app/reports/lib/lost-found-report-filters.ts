@@ -117,15 +117,12 @@ export function filterLostFoundShippingReportRows(
 
 export function filterLostFoundAgingReportRows(
   rows: LostFoundReportItem[],
-  filters: Pick<LostFoundReportFilters, "status" | "foundBy" | "dateStart" | "dateEnd">
+  filters: Pick<LostFoundReportFilters, "status" | "foundBy">
 ): LostFoundReportItem[] {
   return rows.filter((row) => {
     if (!isLostFoundItemAging(row)) return false;
-    if (!matchesStatus(row.status, filters.status)) return false;
+    if (row.status !== filters.status) return false;
     if (!matchesFoundBy(row.foundBy, filters.foundBy)) return false;
-    if (!matchesDateRange(row.createdAtIso, filters.dateStart, filters.dateEnd)) {
-      return false;
-    }
     return true;
   });
 }

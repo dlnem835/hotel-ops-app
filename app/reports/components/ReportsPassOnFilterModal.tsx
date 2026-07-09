@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -22,7 +22,6 @@ import {
   getPassOnReportTitle,
   PASS_ON_DEPARTMENT_FILTER_OPTIONS,
   PASS_ON_SHIFT_FILTER_OPTIONS,
-  REPORT_PROPERTY_OPTIONS,
   type PassOnReportFilters,
   type PassOnReportId,
   type PassOnUnreadReportFilters,
@@ -31,6 +30,8 @@ import { PASS_ON_USER_FILTER_OPTIONS } from "@/app/reports/lib/pass-on-report-sa
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPassOnPlaceholderResults from "@/app/reports/components/ReportsPassOnPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
+import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
+import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import { SAMPLE_INSPECTION_ASSOCIATES } from "@/app/reports/lib/inspection-report-sample-data";
 import {
   applyDefaultReportDateRange,
@@ -66,6 +67,14 @@ export default function ReportsPassOnFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
+
+  const syncPropertyName = useCallback((name: string) => {
+    setFilters((prev) => ({ ...prev, propertyName: name }));
+    setUnreadFilters((prev) => ({ ...prev, propertyName: name }));
+  }, []);
+
+  useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
   useEffect(() => {
     if (!open) {
@@ -79,6 +88,8 @@ export default function ReportsPassOnFilterModal({
   if (!open || !reportId) return null;
 
   const isUnreadReport = reportId === "unread-entries-by-user";
+  const activePropertyName =
+    propertyName || (isUnreadReport ? unreadFilters.propertyName : filters.propertyName);
 
   function updateFilter<K extends keyof PassOnReportFilters>(
     key: K,
@@ -167,24 +178,10 @@ export default function ReportsPassOnFilterModal({
         </div>
 
         <div className="reports-pm-modal__form">
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Property Name</span>
-            <select
-              className="one-eyrie-field"
-              value={isUnreadReport ? unreadFilters.propertyName : filters.propertyName}
-              onChange={(event) =>
-                isUnreadReport
-                  ? updateUnreadFilter("propertyName", event.target.value)
-                  : updateFilter("propertyName", event.target.value)
-              }
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ReportsPropertyNameField
+            propertyName={activePropertyName}
+            loading={propertyLoading}
+          />
 
           {isUnreadReport ? (
             <>
@@ -291,7 +288,7 @@ export default function ReportsPassOnFilterModal({
           <div className="reports-pm-modal__results">
             <ReportsPrintableOutput
               reportName={getPassOnReportTitle(reportId)}
-              propertyName={isUnreadReport ? unreadFilters.propertyName : filters.propertyName}
+              propertyName={activePropertyName}
               dateRangeLabel={formatReportDateRangeLabel(
                 datePreset,
                 activeDateStart,
@@ -302,7 +299,7 @@ export default function ReportsPassOnFilterModal({
                 reportModule: "pass-on",
                 reportId,
                 reportName: getPassOnReportTitle(reportId),
-                propertyName: isUnreadReport ? unreadFilters.propertyName : filters.propertyName,
+                propertyName: activePropertyName,
                 dateRangeLabel: formatReportDateRangeLabel(
                   datePreset,
                   activeDateStart,
@@ -315,13 +312,13 @@ export default function ReportsPassOnFilterModal({
                 filterSnapshot: isUnreadReport
                   ? {
                       reportVariant: "unread-entries-by-user",
-                      propertyName: unreadFilters.propertyName,
+                      propertyName: activePropertyName,
                       department: unreadFilters.department,
                       user: unreadFilters.user,
                     }
                   : {
                       reportVariant: reportId,
-                      propertyName: filters.propertyName,
+                      propertyName: activePropertyName,
                       associate: filters.associate,
                       shift: filters.shift,
                     },

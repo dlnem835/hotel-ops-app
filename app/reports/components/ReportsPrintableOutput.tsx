@@ -7,6 +7,7 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import ReportsScheduleModal from "@/app/reports/components/ReportsScheduleModal";
 import { extractReportPdfTables } from "@/app/reports/lib/extract-report-print-content";
 import { generateReportPdf } from "@/app/reports/lib/generate-report-pdf";
+import { printReportDocument } from "@/app/reports/lib/print-report-document";
 import { formatReportGeneratedAt } from "@/app/reports/lib/report-output-utils";
 import type { ReportScheduleContext } from "@/app/reports/lib/report-schedule-types";
 
@@ -43,7 +44,11 @@ export default function ReportsPrintableOutput({
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
   function handlePrint() {
-    window.print();
+    if (!printRootRef.current) return;
+    printReportDocument({
+      contentRoot: printRootRef.current,
+      reportName,
+    });
   }
 
   function handleDownloadPdf() {

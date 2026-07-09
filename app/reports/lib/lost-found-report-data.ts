@@ -30,6 +30,14 @@ export type TeamMemberRow = {
 
 const AGING_RETENTION_MONTHS = 6;
 
+export const LOST_FOUND_AGING_ELIGIBLE_STATUSES = [
+  "Stored",
+  "Label sent",
+  "Ready to be shipped",
+] as const;
+
+export type LostFoundAgingEligibleStatus = (typeof LOST_FOUND_AGING_ELIGIBLE_STATUSES)[number];
+
 export function createReportsSupabaseClient(): SupabaseClient {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,12 +52,20 @@ export function getLostFoundAgingCutoffDate(now = new Date()): Date {
 }
 
 export function isLostFoundItemAging(
-  item: Pick<LostFoundReportItem, "status" | "createdAtIso">,
+  item: Pick<LostFoundReportItem, "status" | "createdAtSource">,
   cutoff = getLostFoundAgingCutoffDate()
 ): boolean {
-  if (item.status !== "Stored") return false;
-  if (!item.createdAtIso) return false;
-  return new Date(`${item.createdAtIso}T00:00:00`) <= cutoff;
+  if (
+    !LOST_FOUND_AGING_ELIGIBLE_STATUSES.includes(
+      item.status as LostFoundAgingEligibleStatus
+    )
+  ) {
+    return false;
+  }
+  if (!item.createdAtSource) return false;
+  const createdAt = new Date(item.createdAtSource);
+  if (Number.isNaN(createdAt.getTime())) return false;
+  return createdAt <= cutoff;
 }
 
 function formatDisplayDateTime(iso: string | null | undefined): string {
@@ -148,6 +164,7 @@ function mapLostItemRowToReportItem(
     comments: row.comments?.trim() || "",
     createdAt: formatDisplayDateTime(createdAt),
     createdAtIso: toDateOnly(createdAt),
+    createdAtSource: createdAt,
     labelUrl: row.label_url ?? null,
     labelSentAt: row.label_sent_at ? formatDisplayDateTime(row.label_sent_at) : null,
     shippedAt,

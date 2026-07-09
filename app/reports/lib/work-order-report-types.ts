@@ -23,10 +23,25 @@ export const WORK_ORDER_REPORT_FORBIDDEN_CREATED_BY_LABELS = [
   "PM Checklist",
 ] as const;
 
+export type WorkOrderReportGroupRow = {
+  label: string;
+  count: number;
+};
+
+export type WorkOrderReportBySourceRow = {
+  source: WorkOrderReportSource;
+  total: number;
+  open: number;
+  completed: number;
+  avgCompletionTime: string;
+  avgDaysOpen: number;
+};
+
 export type WorkOrderReportRow = {
   id: string;
   title: string;
   area: string;
+  areaId: number | null;
   category: string;
   priority: string;
   status: string;
@@ -68,6 +83,31 @@ export function resolveWorkOrderReportCreatedByLabel(input: {
   }
 
   return "—";
+}
+
+/** Maps work_orders.source_module to report Source filter labels. */
+export function mapWorkOrderSourceModule(
+  sourceModule: string | null | undefined
+): WorkOrderReportSource {
+  const value = (sourceModule || "").trim();
+
+  if (!value || value === "Maintenance") return "Manual";
+  if (value === "Pass-On Log") return "Pass-On Log";
+  if (value === "Inspections" || value === "Room Inspection") return "Room Inspection";
+  if (value === "RPM") return "RPM";
+  if (value === "Preventive Maintenance" || value === "PM") return "Preventive Maintenance";
+  if (value === "Lost & Found" || value === "Lost and Found") return "Lost & Found";
+
+  // Future: add explicit source_module values as they are introduced in workflows.
+  return "Other";
+}
+
+export function matchesWorkOrderReportSourceFilter(
+  source: WorkOrderReportSource,
+  filterSource: WorkOrderReportSource | "All"
+): boolean {
+  if (filterSource === "All") return true;
+  return source === filterSource;
 }
 
 export function isForbiddenWorkOrderReportCreatedByLabel(

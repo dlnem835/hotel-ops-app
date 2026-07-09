@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -20,13 +20,14 @@ import {
   DEFAULT_PM_REPORT_FILTERS,
   getPmReportTitle,
   PM_TYPE_FILTER_OPTIONS,
-  REPORT_PROPERTY_OPTIONS,
   type PmReportFilters,
   type PmReportId,
 } from "@/app/reports/lib/report-definitions";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPmPlaceholderResults from "@/app/reports/components/ReportsPmPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
+import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
+import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
@@ -59,6 +60,13 @@ export default function ReportsPmFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
+
+  const syncPropertyName = useCallback((name: string) => {
+    setFilters((prev) => ({ ...prev, propertyName: name }));
+  }, []);
+
+  useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
   useEffect(() => {
     if (!open) {
@@ -138,20 +146,10 @@ export default function ReportsPmFilterModal({
         </div>
 
         <div className="reports-pm-modal__form">
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Property Name</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.propertyName}
-              onChange={(event) => updateFilter("propertyName", event.target.value)}
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ReportsPropertyNameField
+            propertyName={propertyName || filters.propertyName}
+            loading={propertyLoading}
+          />
 
           <label className="reports-pm-modal__field">
             <span style={fieldLabel}>PM Type</span>
@@ -217,7 +215,7 @@ export default function ReportsPmFilterModal({
           <div className="reports-pm-modal__results">
             <ReportsPrintableOutput
               reportName={getPmReportTitle(reportId)}
-              propertyName={filters.propertyName}
+              propertyName={propertyName || filters.propertyName}
               dateRangeLabel={formatReportDateRangeLabel(
                 datePreset,
                 filters.dateStart,
@@ -233,7 +231,7 @@ export default function ReportsPmFilterModal({
                 reportModule: "pm",
                 reportId,
                 reportName: getPmReportTitle(reportId),
-                propertyName: filters.propertyName,
+                propertyName: propertyName || filters.propertyName,
                 dateRangeLabel: formatReportDateRangeLabel(
                   datePreset,
                   filters.dateStart,

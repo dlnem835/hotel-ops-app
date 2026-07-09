@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -17,12 +17,13 @@ import {
   neutralHoverHandlers,
 } from "@/app/lib/oneEyrieButtons";
 import {
+  DEFAULT_LOST_FOUND_AGING_REPORT_FILTERS,
   DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS,
   DEFAULT_LOST_FOUND_REPORT_FILTERS,
   getLostFoundReportTitle,
   LNF_DEPARTMENT_FILTER_OPTIONS,
+  LOST_FOUND_AGING_STATUS_FILTER_OPTIONS,
   LOST_FOUND_STATUS_FILTER_OPTIONS,
-  REPORT_PROPERTY_OPTIONS,
   type LostFoundFoundByReportFilters,
   type LostFoundReportFilters,
   type LostFoundReportId,
@@ -36,6 +37,9 @@ import type { LostFoundFilterOptions } from "@/app/reports/lib/lost-found-report
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsLnfPlaceholderResults from "@/app/reports/components/ReportsLnfPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
+import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
+import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
+import { LOST_FOUND_AGING_RETENTION_LABEL } from "@/app/reports/lib/report-property";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
@@ -74,6 +78,12 @@ export default function ReportsLnfFilterModal({
     foundBy: ["All"],
     createdBy: ["All"],
   });
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
+
+  const syncPropertyName = useCallback((name: string) => {
+    setFilters((prev) => ({ ...prev, propertyName: name }));
+    setFoundByFilters((prev) => ({ ...prev, propertyName: name }));
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -82,6 +92,29 @@ export default function ReportsLnfFilterModal({
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
       return;
+    }
+
+    if (reportId === "ready-to-discard") {
+      setFilters({
+        ...DEFAULT_LOST_FOUND_AGING_REPORT_FILTERS,
+        propertyName,
+      });
+    } else if (reportId === "found-by") {
+      setFoundByFilters(
+        applyDefaultReportDateRange({
+          ...DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS,
+          propertyName,
+        })
+      );
+      setDatePreset(DEFAULT_REPORT_DATE_PRESET);
+    } else {
+      setFilters(
+        applyDefaultReportDateRange({
+          ...DEFAULT_LOST_FOUND_REPORT_FILTERS,
+          propertyName,
+        })
+      );
+      setDatePreset(DEFAULT_REPORT_DATE_PRESET);
     }
 
     let cancelled = false;
@@ -104,7 +137,9 @@ export default function ReportsLnfFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId]);
+  }, [open, reportId, propertyName]);
+
+  useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
   if (!open || !reportId) return null;
 
@@ -113,6 +148,9 @@ export default function ReportsLnfFilterModal({
   const isShippingReport = reportId === "shipped-items";
   const isAgingReport = reportId === "ready-to-discard";
   const usesSharedItemFilters = isAllItemsReport || isShippingReport || isAgingReport;
+  const statusFilterOptions = isAgingReport
+    ? LOST_FOUND_AGING_STATUS_FILTER_OPTIONS
+    : LOST_FOUND_STATUS_FILTER_OPTIONS;
 
   function updateFilter<K extends keyof LostFoundReportFilters>(
     key: K,
@@ -152,8 +190,12 @@ export default function ReportsLnfFilterModal({
     setShowResults(false);
   }
 
+  const activePropertyName = propertyName || (isFoundByReport ? foundByFilters.propertyName : filters.propertyName);
   const activeDateStart = isFoundByReport ? foundByFilters.dateStart : filters.dateStart;
   const activeDateEnd = isFoundByReport ? foundByFilters.dateEnd : filters.dateEnd;
+  const reportDateRangeLabel = isAgingReport
+    ? LOST_FOUND_AGING_RETENTION_LABEL
+    : formatReportDateRangeLabel(datePreset, activeDateStart, activeDateEnd);
   const lnfFilterLines = isFoundByReport
     ? [
         `Found By: ${foundByFilters.foundBy}`,
@@ -210,24 +252,10 @@ export default function ReportsLnfFilterModal({
         </div>
 
         <div className="reports-pm-modal__form">
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Property Name</span>
-            <select
-              className="one-eyrie-field"
-              value={isFoundByReport ? foundByFilters.propertyName : filters.propertyName}
-              onChange={(event) =>
-                isFoundByReport
-                  ? updateFoundByFilter("propertyName", event.target.value)
-                  : updateFilter("propertyName", event.target.value)
-              }
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ReportsPropertyNameField
+            propertyName={activePropertyName}
+            loading={propertyLoading}
+          />
 
           {usesSharedItemFilters ? (
             <>
@@ -243,7 +271,7 @@ export default function ReportsLnfFilterModal({
                     )
                   }
                 >
-                  {LOST_FOUND_STATUS_FILTER_OPTIONS.map((status) => (
+                  {statusFilterOptions.map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>
@@ -324,13 +352,15 @@ export default function ReportsLnfFilterModal({
             </>
           ) : null}
 
-          <ReportsDateRangeField
-            preset={datePreset}
-            dateStart={activeDateStart}
-            dateEnd={activeDateEnd}
-            onChange={updateDateRange}
-            fieldLabelStyle={fieldLabel}
-          />
+          {isAgingReport ? null : (
+            <ReportsDateRangeField
+              preset={datePreset}
+              dateStart={activeDateStart}
+              dateEnd={activeDateEnd}
+              onChange={updateDateRange}
+              fieldLabelStyle={fieldLabel}
+            />
+          )}
         </div>
 
         <div style={ONE_EYRIE_MODAL_FOOTER}>
@@ -356,38 +386,30 @@ export default function ReportsLnfFilterModal({
           <div className="reports-pm-modal__results">
             <ReportsPrintableOutput
               reportName={getLostFoundReportTitle(reportId)}
-              propertyName={isFoundByReport ? foundByFilters.propertyName : filters.propertyName}
-              dateRangeLabel={formatReportDateRangeLabel(
-                datePreset,
-                activeDateStart,
-                activeDateEnd
-              )}
+              propertyName={activePropertyName}
+              dateRangeLabel={reportDateRangeLabel}
               filterLines={lnfFilterLines}
               scheduleContext={{
                 reportModule: "lnf",
                 reportId,
                 reportName: getLostFoundReportTitle(reportId),
-                propertyName: isFoundByReport ? foundByFilters.propertyName : filters.propertyName,
-                dateRangeLabel: formatReportDateRangeLabel(
-                  datePreset,
-                  activeDateStart,
-                  activeDateEnd
-                ),
-                datePreset,
-                dateStart: activeDateStart,
-                dateEnd: activeDateEnd,
+                propertyName: activePropertyName,
+                dateRangeLabel: reportDateRangeLabel,
+                datePreset: isAgingReport ? "custom" : datePreset,
+                dateStart: isAgingReport ? "" : activeDateStart,
+                dateEnd: isAgingReport ? "" : activeDateEnd,
                 filterLines: lnfFilterLines,
                 filterSnapshot: isFoundByReport
                   ? {
                       reportVariant: "found-by",
-                      propertyName: foundByFilters.propertyName,
+                      propertyName: activePropertyName,
                       foundBy: foundByFilters.foundBy,
                       department: foundByFilters.department,
                     }
                   : usesSharedItemFilters
                     ? {
                         reportVariant: reportId,
-                        propertyName: filters.propertyName,
+                        propertyName: activePropertyName,
                         status: filters.status,
                         foundBy: filters.foundBy,
                         ...(isAllItemsReport ? { createdBy: filters.createdBy } : {}),

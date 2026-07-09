@@ -68,7 +68,10 @@ export const PM_TYPE_FILTER_OPTIONS = [
   "Annual",
 ] as const;
 
-export const REPORT_PROPERTY_OPTIONS = ["One Eyrie Hotel"] as const;
+export const FALLBACK_REPORT_PROPERTY_NAME = "";
+
+/** @deprecated Use hotel_property.hotel_name via useReportPropertyName. */
+export const REPORT_PROPERTY_OPTIONS = [FALLBACK_REPORT_PROPERTY_NAME] as const;
 
 export type PmReportFilters = {
   propertyName: string;
@@ -79,7 +82,7 @@ export type PmReportFilters = {
 };
 
 export const DEFAULT_PM_REPORT_FILTERS: PmReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   pmType: "All",
   completedBy: "All",
   dateStart: "",
@@ -111,7 +114,7 @@ export type WorkOrderReportFilters = {
 };
 
 export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   status: "All",
   source: "All",
   areaId: null,
@@ -128,6 +131,12 @@ export const LOST_FOUND_STATUS_FILTER_OPTIONS = [
   "Ready to be shipped",
   "Shipped",
   "Discarded",
+] as const;
+
+export const LOST_FOUND_AGING_STATUS_FILTER_OPTIONS = [
+  "Stored",
+  "Label sent",
+  "Ready to be shipped",
 ] as const;
 
 export const LNF_DEPARTMENT_FILTER_OPTIONS = [
@@ -148,7 +157,7 @@ export type LostFoundReportFilters = {
 };
 
 export const DEFAULT_LOST_FOUND_REPORT_FILTERS: LostFoundReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   status: "All",
   foundBy: "All",
   createdBy: "All",
@@ -165,9 +174,16 @@ export type LostFoundFoundByReportFilters = {
 };
 
 export const DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS: LostFoundFoundByReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   foundBy: "All",
   department: "All",
+  dateStart: "",
+  dateEnd: "",
+};
+
+export const DEFAULT_LOST_FOUND_AGING_REPORT_FILTERS: LostFoundReportFilters = {
+  ...DEFAULT_LOST_FOUND_REPORT_FILTERS,
+  status: "Stored",
   dateStart: "",
   dateEnd: "",
 };
@@ -188,7 +204,7 @@ export type PassOnReportFilters = {
 };
 
 export const DEFAULT_PASS_ON_REPORT_FILTERS: PassOnReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   associate: "All",
   shift: "All",
   dateStart: "",
@@ -212,7 +228,7 @@ export type PassOnUnreadReportFilters = {
 };
 
 export const DEFAULT_PASS_ON_UNREAD_REPORT_FILTERS: PassOnUnreadReportFilters = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   department: "All",
   user: "All",
   dateStart: "",
@@ -391,7 +407,7 @@ export type InspectionReportModalTarget =
   | { variant: "rpm"; reportId: InspectionModuleReportId };
 
 export const DEFAULT_INSPECTION_REPORT_FILTERS = {
-  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   type: "All",
   associate: "All",
   inspector: "All",

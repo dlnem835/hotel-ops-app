@@ -16,7 +16,7 @@ import {
   NEUTRAL_BUTTON,
   neutralHoverHandlers,
 } from "@/app/lib/oneEyrieButtons";
-import { REPORT_PROPERTY_OPTIONS } from "@/app/reports/lib/report-definitions";
+import { useReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import {
   createScheduleId,
   saveReportSchedule,
@@ -54,13 +54,17 @@ export default function ReportsScheduleModal({
 }: ReportsScheduleModalProps) {
   const [form, setForm] = useState<ReportScheduleFormValues | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   useEffect(() => {
     if (open && context) {
-      setForm(buildDefaultScheduleForm(context));
+      setForm({
+        ...buildDefaultScheduleForm(context),
+        property: propertyName || context.propertyName,
+      });
       setSaveMessage(null);
     }
-  }, [open, context]);
+  }, [open, context, propertyName]);
 
   if (!open || !context || !form) return null;
 
@@ -155,17 +159,13 @@ export default function ReportsScheduleModal({
 
           <label className="reports-pm-modal__field">
             <span style={fieldLabel}>Property</span>
-            <select
+            <input
+              type="text"
               className="one-eyrie-field"
-              value={form.property}
-              onChange={(event) => updateForm("property", event.target.value)}
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
+              readOnly
+              value={propertyLoading ? "Loading…" : form.property || "—"}
+              aria-readonly="true"
+            />
           </label>
 
           <label className="reports-pm-modal__field">

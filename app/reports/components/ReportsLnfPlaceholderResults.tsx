@@ -110,8 +110,12 @@ export default function ReportsLnfPlaceholderResults({
     [items, sharedFilters]
   );
   const agingItems = useMemo(
-    () => filterLostFoundAgingReportRows(items, sharedFilters),
-    [items, sharedFilters]
+    () =>
+      filterLostFoundAgingReportRows(items, {
+        status: sharedFilters.status,
+        foundBy: sharedFilters.foundBy,
+      }),
+    [items, sharedFilters.status, sharedFilters.foundBy]
   );
   const selectedAssociateItems = useMemo(
     () =>

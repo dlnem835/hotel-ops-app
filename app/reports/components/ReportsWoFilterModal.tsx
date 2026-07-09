@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { WORK_ORDER_CATEGORIES } from "@/app/maintenance/lib/work-order-categories";
 import {
@@ -20,17 +20,19 @@ import {
 import {
   DEFAULT_WORK_ORDER_REPORT_FILTERS,
   getWorkOrderReportTitle,
-  REPORT_PROPERTY_OPTIONS,
   WORK_ORDER_SOURCE_FILTER_OPTIONS,
   WORK_ORDER_STATUS_FILTER_OPTIONS,
   type WorkOrderReportFilters,
   type WorkOrderReportId,
 } from "@/app/reports/lib/report-definitions";
-import { SAMPLE_WORK_ORDER_LOCATION_OPTIONS } from "@/app/reports/lib/work-order-report-sample-data";
+import { buildWorkOrderLocationOptions } from "@/app/maintenance/lib/work-order-location";
+import type { BuildingArea } from "@/app/settings/lib/buildings-types";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsWoPlaceholderResults from "@/app/reports/components/ReportsWoPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
+import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import ReportsWorkOrderAreaField from "@/app/reports/components/ReportsWorkOrderAreaField";
+import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
@@ -62,13 +64,50 @@ export default function ReportsWoFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const [locationOptions, setLocationOptions] = useState(
+    buildWorkOrderLocationOptions([])
+  );
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
+
+  const syncPropertyName = useCallback((name: string) => {
+    setFilters((prev) => ({ ...prev, propertyName: name }));
+  }, []);
+
+  useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
   useEffect(() => {
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_WORK_ORDER_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
+      return;
     }
+
+    let cancelled = false;
+
+    async function loadLocationOptions() {
+      try {
+        const response = await fetch("/api/buildings-areas");
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Unable to load areas");
+        }
+        if (cancelled) return;
+        setLocationOptions(
+          buildWorkOrderLocationOptions((result.areas ?? []) as BuildingArea[])
+        );
+      } catch {
+        if (!cancelled) {
+          setLocationOptions(buildWorkOrderLocationOptions([]));
+        }
+      }
+    }
+
+    void loadLocationOptions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, reportId]);
 
   if (!open || !reportId) return null;
@@ -156,20 +195,10 @@ export default function ReportsWoFilterModal({
         </div>
 
         <div className="reports-pm-modal__form">
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Property Name</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.propertyName}
-              onChange={(event) => updateFilter("propertyName", event.target.value)}
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ReportsPropertyNameField
+            propertyName={propertyName || filters.propertyName}
+            loading={propertyLoading}
+          />
 
           {isBySourceReport ? (
             <label className="reports-pm-modal__field">
@@ -240,7 +269,7 @@ export default function ReportsWoFilterModal({
               <div className="reports-pm-modal__field">
                 <span style={fieldLabel}>Room / Area</span>
                 <ReportsWorkOrderAreaField
-                  options={SAMPLE_WORK_ORDER_LOCATION_OPTIONS}
+                  options={locationOptions}
                   selectedId={filters.areaId}
                   selectedLabel={filters.areaLabel}
                   onSelectAll={() => {
@@ -320,7 +349,7 @@ export default function ReportsWoFilterModal({
           <div className="reports-pm-modal__results">
             <ReportsPrintableOutput
               reportName={getWorkOrderReportTitle(reportId)}
-              propertyName={filters.propertyName}
+              propertyName={propertyName || filters.propertyName}
               dateRangeLabel={formatReportDateRangeLabel(
                 datePreset,
                 filters.dateStart,
@@ -331,7 +360,7 @@ export default function ReportsWoFilterModal({
                 reportModule: "wo",
                 reportId,
                 reportName: getWorkOrderReportTitle(reportId),
-                propertyName: filters.propertyName,
+                propertyName: propertyName || filters.propertyName,
                 dateRangeLabel: formatReportDateRangeLabel(
                   datePreset,
                   filters.dateStart,
@@ -350,10 +379,7 @@ export default function ReportsWoFilterModal({
                 },
               }}
             >
-              <ReportsWoPlaceholderResults
-                reportId={reportId}
-                filters={reportId === "work-order-completion-time" ? filters : undefined}
-              />
+              <ReportsWoPlaceholderResults reportId={reportId} filters={filters} />
             </ReportsPrintableOutput>
           </div>
         ) : null}

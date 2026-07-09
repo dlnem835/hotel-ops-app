@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -20,7 +20,6 @@ import {
   DEFAULT_INSPECTION_REPORT_FILTERS,
   getRoomInspectionReportTitle,
   getRpmInspectionReportTitle,
-  REPORT_PROPERTY_OPTIONS,
   type InspectionReportModalTarget,
 } from "@/app/reports/lib/report-definitions";
 import {
@@ -33,6 +32,8 @@ import {
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsInspectionPlaceholderResults from "@/app/reports/components/ReportsInspectionPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
+import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
+import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
@@ -64,6 +65,13 @@ export default function ReportsInspectionFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const { propertyName, loading: propertyLoading } = useReportPropertyName();
+
+  const syncPropertyName = useCallback((name: string) => {
+    setFilters((prev) => ({ ...prev, propertyName: name }));
+  }, []);
+
+  useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
   useEffect(() => {
     if (!open) {
@@ -152,20 +160,10 @@ export default function ReportsInspectionFilterModal({
         </div>
 
         <div className="reports-pm-modal__form">
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Property Name</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.propertyName}
-              onChange={(event) => updateFilter("propertyName", event.target.value)}
-            >
-              {REPORT_PROPERTY_OPTIONS.map((property) => (
-                <option key={property} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ReportsPropertyNameField
+            propertyName={propertyName || filters.propertyName}
+            loading={propertyLoading}
+          />
 
           {target.variant === "room" ? (
             <label className="reports-pm-modal__field">
@@ -246,7 +244,7 @@ export default function ReportsInspectionFilterModal({
           <div className="reports-pm-modal__results">
             <ReportsPrintableOutput
               reportName={title}
-              propertyName={filters.propertyName}
+              propertyName={propertyName || filters.propertyName}
               dateRangeLabel={formatReportDateRangeLabel(
                 datePreset,
                 filters.dateStart,
@@ -257,7 +255,7 @@ export default function ReportsInspectionFilterModal({
                 reportModule: "inspection",
                 reportId: target.reportId,
                 reportName: title,
-                propertyName: filters.propertyName,
+                propertyName: propertyName || filters.propertyName,
                 dateRangeLabel: formatReportDateRangeLabel(
                   datePreset,
                   filters.dateStart,
