@@ -38,7 +38,8 @@ export type PassOnReportId =
   | "entries-by-associate"
   | "entries-by-shift"
   | "edited-entries"
-  | "keyword-search";
+  | "keyword-search"
+  | "unread-entries-by-user";
 
 export type ReportRowDefinition = {
   id: string;
@@ -201,6 +202,30 @@ export const DEFAULT_PASS_ON_REPORT_FILTERS: PassOnReportFilters = {
   dateEnd: "",
 };
 
+export const PASS_ON_DEPARTMENT_FILTER_OPTIONS = [
+  "All",
+  "Front Desk",
+  "Housekeeping",
+  "Engineering",
+  "Management",
+] as const;
+
+export type PassOnUnreadReportFilters = {
+  propertyName: string;
+  department: (typeof PASS_ON_DEPARTMENT_FILTER_OPTIONS)[number];
+  user: string;
+  dateStart: string;
+  dateEnd: string;
+};
+
+export const DEFAULT_PASS_ON_UNREAD_REPORT_FILTERS: PassOnUnreadReportFilters = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  department: "All",
+  user: "All",
+  dateStart: "",
+  dateEnd: "",
+};
+
 function report(
   id: string,
   title: string,
@@ -315,6 +340,9 @@ export const PASS_ON_LOG_SECTION: ReportCategorySection = {
     }),
     report("edited-entries", "Edited Entries", { passOnReportId: "edited-entries" }),
     report("keyword-search", "Keyword Search", { passOnReportId: "keyword-search" }),
+    report("unread-entries-by-user", "Unread Entries by User", {
+      passOnReportId: "unread-entries-by-user",
+    }),
   ],
 };
 
