@@ -30,11 +30,13 @@ import {
 import { SAMPLE_LNF_CREATED_BY_ASSOCIATES, SAMPLE_LNF_FOUND_BY_ASSOCIATES } from "@/app/reports/lib/lost-found-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsLnfPlaceholderResults from "@/app/reports/components/ReportsLnfPlaceholderResults";
+import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsLnfFilterModalProps = {
   open: boolean;
@@ -118,6 +120,18 @@ export default function ReportsLnfFilterModal({
 
   const activeDateStart = isFoundByReport ? foundByFilters.dateStart : filters.dateStart;
   const activeDateEnd = isFoundByReport ? foundByFilters.dateEnd : filters.dateEnd;
+  const lnfFilterLines = isFoundByReport
+    ? [
+        `Found By: ${foundByFilters.foundBy}`,
+        `Department: ${foundByFilters.department}`,
+      ]
+    : isAllItemsReport
+      ? [
+          `Status: ${filters.status}`,
+          `Found By: ${filters.foundBy}`,
+          `Created By: ${filters.createdBy}`,
+        ]
+      : [];
 
   return (
     <div
@@ -304,11 +318,56 @@ export default function ReportsLnfFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsLnfPlaceholderResults
-              reportId={reportId}
-              filters={isFoundByReport ? undefined : filters}
-              foundByFilters={isFoundByReport ? foundByFilters : undefined}
-            />
+            <ReportsPrintableOutput
+              reportName={getLostFoundReportTitle(reportId)}
+              propertyName={isFoundByReport ? foundByFilters.propertyName : filters.propertyName}
+              dateRangeLabel={formatReportDateRangeLabel(
+                datePreset,
+                activeDateStart,
+                activeDateEnd
+              )}
+              filterLines={lnfFilterLines}
+              scheduleContext={{
+                reportModule: "lnf",
+                reportId,
+                reportName: getLostFoundReportTitle(reportId),
+                propertyName: isFoundByReport ? foundByFilters.propertyName : filters.propertyName,
+                dateRangeLabel: formatReportDateRangeLabel(
+                  datePreset,
+                  activeDateStart,
+                  activeDateEnd
+                ),
+                datePreset,
+                dateStart: activeDateStart,
+                dateEnd: activeDateEnd,
+                filterLines: lnfFilterLines,
+                filterSnapshot: isFoundByReport
+                  ? {
+                      reportVariant: "found-by",
+                      propertyName: foundByFilters.propertyName,
+                      foundBy: foundByFilters.foundBy,
+                      department: foundByFilters.department,
+                    }
+                  : isAllItemsReport
+                    ? {
+                        reportVariant: "all-items",
+                        propertyName: filters.propertyName,
+                        status: filters.status,
+                        foundBy: filters.foundBy,
+                        createdBy: filters.createdBy,
+                      }
+                    : {
+                        reportVariant: reportId,
+                        propertyName: filters.propertyName,
+                      },
+              }}
+            >
+              <ReportsLnfPlaceholderResults
+                reportId={reportId}
+                filters={isFoundByReport ? undefined : filters}
+                foundByFilters={isFoundByReport ? foundByFilters : undefined}
+              />
+            </ReportsPrintableOutput>
           </div>
         ) : null}
       </div>

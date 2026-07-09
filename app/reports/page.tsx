@@ -8,6 +8,7 @@ import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeader
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import ReportsCategoryCard from "@/app/reports/components/ReportsCategoryCard";
 import ReportsEmptyTabState from "@/app/reports/components/ReportsEmptyTabState";
+import ReportsScheduledReportsList from "@/app/reports/components/ReportsScheduledReportsList";
 import ReportsInspectionFilterModal from "@/app/reports/components/ReportsInspectionFilterModal";
 import ReportsLnfFilterModal from "@/app/reports/components/ReportsLnfFilterModal";
 import ReportsPassOnFilterModal from "@/app/reports/components/ReportsPassOnFilterModal";
@@ -146,12 +147,7 @@ export default function ReportsPage() {
             />
           ) : null}
 
-          {activeTab === "scheduled" ? (
-            <ReportsEmptyTabState
-              title="Scheduled"
-              description="Recently generated report runs will appear here for quick reopen and export."
-            />
-          ) : null}
+          {activeTab === "scheduled" ? <ReportsScheduledReportsList /> : null}
         </div>
       </section>
 

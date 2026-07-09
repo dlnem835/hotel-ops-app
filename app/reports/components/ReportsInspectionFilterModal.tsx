@@ -32,11 +32,13 @@ import {
 } from "@/app/reports/lib/inspection-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsInspectionPlaceholderResults from "@/app/reports/components/ReportsInspectionPlaceholderResults";
+import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsInspectionFilterModalProps = {
   open: boolean;
@@ -77,6 +79,13 @@ export default function ReportsInspectionFilterModal({
     target.variant === "rpm"
       ? getRpmInspectionReportTitle(target.reportId)
       : getRoomInspectionReportTitle(target.reportId);
+  const inspectionFilterLines = [
+    ...(target.variant === "room"
+      ? [`Inspection Type: ${filters.type}`]
+      : []),
+    `Associate: ${filters.associate}`,
+    `Inspector: ${filters.inspector}`,
+  ];
 
   function updateFilter<K extends keyof InspectionReportFilters>(
     key: K,
@@ -235,7 +244,39 @@ export default function ReportsInspectionFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsInspectionPlaceholderResults target={target} />
+            <ReportsPrintableOutput
+              reportName={title}
+              propertyName={filters.propertyName}
+              dateRangeLabel={formatReportDateRangeLabel(
+                datePreset,
+                filters.dateStart,
+                filters.dateEnd
+              )}
+              filterLines={inspectionFilterLines}
+              scheduleContext={{
+                reportModule: "inspection",
+                reportId: target.reportId,
+                reportName: title,
+                propertyName: filters.propertyName,
+                dateRangeLabel: formatReportDateRangeLabel(
+                  datePreset,
+                  filters.dateStart,
+                  filters.dateEnd
+                ),
+                datePreset,
+                dateStart: filters.dateStart,
+                dateEnd: filters.dateEnd,
+                filterLines: inspectionFilterLines,
+                inspectionVariant: target.variant,
+                filterSnapshot: {
+                  type: filters.type,
+                  associate: filters.associate,
+                  inspector: filters.inspector,
+                },
+              }}
+            >
+              <ReportsInspectionPlaceholderResults target={target} />
+            </ReportsPrintableOutput>
           </div>
         ) : null}
       </div>

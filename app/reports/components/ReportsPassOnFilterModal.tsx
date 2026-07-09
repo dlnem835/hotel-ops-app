@@ -30,12 +30,14 @@ import {
 import { PASS_ON_USER_FILTER_OPTIONS } from "@/app/reports/lib/pass-on-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPassOnPlaceholderResults from "@/app/reports/components/ReportsPassOnPlaceholderResults";
+import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import { SAMPLE_INSPECTION_ASSOCIATES } from "@/app/reports/lib/inspection-report-sample-data";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsPassOnFilterModalProps = {
   open: boolean;
@@ -118,6 +120,9 @@ export default function ReportsPassOnFilterModal({
 
   const activeDateStart = isUnreadReport ? unreadFilters.dateStart : filters.dateStart;
   const activeDateEnd = isUnreadReport ? unreadFilters.dateEnd : filters.dateEnd;
+  const passOnFilterLines = isUnreadReport
+    ? [`Department: ${unreadFilters.department}`, `User: ${unreadFilters.user}`]
+    : [`Associate: ${filters.associate}`, `Shift: ${filters.shift}`];
 
   return (
     <div
@@ -251,17 +256,6 @@ export default function ReportsPassOnFilterModal({
                   ))}
                 </select>
               </label>
-
-              <label className="reports-pm-modal__field">
-                <span style={fieldLabel}>Keyword</span>
-                <input
-                  type="search"
-                  className="one-eyrie-field"
-                  value={filters.keyword}
-                  onChange={(event) => updateFilter("keyword", event.target.value)}
-                  placeholder="Search pass-on content…"
-                />
-              </label>
             </>
           )}
 
@@ -295,10 +289,49 @@ export default function ReportsPassOnFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsPassOnPlaceholderResults
-              reportId={reportId}
-              unreadFilters={isUnreadReport ? unreadFilters : undefined}
-            />
+            <ReportsPrintableOutput
+              reportName={getPassOnReportTitle(reportId)}
+              propertyName={isUnreadReport ? unreadFilters.propertyName : filters.propertyName}
+              dateRangeLabel={formatReportDateRangeLabel(
+                datePreset,
+                activeDateStart,
+                activeDateEnd
+              )}
+              filterLines={passOnFilterLines}
+              scheduleContext={{
+                reportModule: "pass-on",
+                reportId,
+                reportName: getPassOnReportTitle(reportId),
+                propertyName: isUnreadReport ? unreadFilters.propertyName : filters.propertyName,
+                dateRangeLabel: formatReportDateRangeLabel(
+                  datePreset,
+                  activeDateStart,
+                  activeDateEnd
+                ),
+                datePreset,
+                dateStart: activeDateStart,
+                dateEnd: activeDateEnd,
+                filterLines: passOnFilterLines,
+                filterSnapshot: isUnreadReport
+                  ? {
+                      reportVariant: "unread-entries-by-user",
+                      propertyName: unreadFilters.propertyName,
+                      department: unreadFilters.department,
+                      user: unreadFilters.user,
+                    }
+                  : {
+                      reportVariant: reportId,
+                      propertyName: filters.propertyName,
+                      associate: filters.associate,
+                      shift: filters.shift,
+                    },
+              }}
+            >
+              <ReportsPassOnPlaceholderResults
+                reportId={reportId}
+                unreadFilters={isUnreadReport ? unreadFilters : undefined}
+              />
+            </ReportsPrintableOutput>
           </div>
         ) : null}
       </div>

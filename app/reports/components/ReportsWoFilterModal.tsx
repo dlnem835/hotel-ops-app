@@ -29,12 +29,14 @@ import {
 import { SAMPLE_WORK_ORDER_LOCATION_OPTIONS } from "@/app/reports/lib/work-order-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsWoPlaceholderResults from "@/app/reports/components/ReportsWoPlaceholderResults";
+import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import ReportsWorkOrderAreaField from "@/app/reports/components/ReportsWorkOrderAreaField";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsWoFilterModalProps = {
   open: boolean;
@@ -74,6 +76,16 @@ export default function ReportsWoFilterModal({
   const isBySourceReport = reportId === "work-orders-by-source";
   const showSourceFilter = reportId === "all-work-orders" || isBySourceReport;
   const showExtendedFilters = !isBySourceReport;
+  const woFilterLines = [
+    `Status: ${filters.status}`,
+    ...(showSourceFilter ? [`Source: ${filters.source}`] : []),
+    ...(showExtendedFilters
+      ? [
+          `Room / Area: ${filters.areaLabel || "All"}`,
+          `Category: ${filters.category}`,
+        ]
+      : []),
+  ];
 
   function updateFilter<K extends keyof WorkOrderReportFilters>(
     key: K,
@@ -306,10 +318,43 @@ export default function ReportsWoFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsWoPlaceholderResults
-              reportId={reportId}
-              filters={reportId === "work-order-completion-time" ? filters : undefined}
-            />
+            <ReportsPrintableOutput
+              reportName={getWorkOrderReportTitle(reportId)}
+              propertyName={filters.propertyName}
+              dateRangeLabel={formatReportDateRangeLabel(
+                datePreset,
+                filters.dateStart,
+                filters.dateEnd
+              )}
+              filterLines={woFilterLines}
+              scheduleContext={{
+                reportModule: "wo",
+                reportId,
+                reportName: getWorkOrderReportTitle(reportId),
+                propertyName: filters.propertyName,
+                dateRangeLabel: formatReportDateRangeLabel(
+                  datePreset,
+                  filters.dateStart,
+                  filters.dateEnd
+                ),
+                datePreset,
+                dateStart: filters.dateStart,
+                dateEnd: filters.dateEnd,
+                filterLines: woFilterLines,
+                filterSnapshot: {
+                  status: filters.status,
+                  source: filters.source,
+                  areaId: filters.areaId,
+                  areaLabel: filters.areaLabel,
+                  category: filters.category,
+                },
+              }}
+            >
+              <ReportsWoPlaceholderResults
+                reportId={reportId}
+                filters={reportId === "work-order-completion-time" ? filters : undefined}
+              />
+            </ReportsPrintableOutput>
           </div>
         ) : null}
       </div>

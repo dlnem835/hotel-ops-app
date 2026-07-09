@@ -130,19 +130,6 @@ export default function ReportsPassOnPlaceholderResults({
     );
   }
 
-  if (reportId === "entries-by-shift") {
-    return (
-      <GroupedResults
-        lead="Sample preview — pass-on entries grouped by shift."
-        groups={[
-          { label: "AM", count: 14 },
-          { label: "PM", count: 16 },
-          { label: "Overnight", count: 9 },
-        ]}
-      />
-    );
-  }
-
   if (reportId === "edited-entries") {
     const edited = SAMPLE_PASS_ON_ROWS.filter((row) => row.edited);
     return (
@@ -154,13 +141,7 @@ export default function ReportsPassOnPlaceholderResults({
     );
   }
 
-  return (
-    <TableResults
-      lead="Sample preview — keyword search matches across pass-on entries."
-      headers={["Associate", "Shift", "Excerpt", "Date"]}
-      rows={SAMPLE_PASS_ON_ROWS.map((row) => [row.associate, row.shift, row.excerpt, row.date])}
-    />
-  );
+  return null;
 }
 
 function GroupedResults({

@@ -36,9 +36,7 @@ export type LostFoundReportId =
 
 export type PassOnReportId =
   | "entries-by-associate"
-  | "entries-by-shift"
   | "edited-entries"
-  | "keyword-search"
   | "unread-entries-by-user";
 
 export type ReportRowDefinition = {
@@ -188,7 +186,6 @@ export type PassOnReportFilters = {
   propertyName: string;
   associate: string;
   shift: (typeof PASS_ON_SHIFT_FILTER_OPTIONS)[number];
-  keyword: string;
   dateStart: string;
   dateEnd: string;
 };
@@ -197,7 +194,6 @@ export const DEFAULT_PASS_ON_REPORT_FILTERS: PassOnReportFilters = {
   propertyName: REPORT_PROPERTY_OPTIONS[0],
   associate: "All",
   shift: "All",
-  keyword: "",
   dateStart: "",
   dateEnd: "",
 };
@@ -335,11 +331,7 @@ export const PASS_ON_LOG_SECTION: ReportCategorySection = {
     report("entries-by-associate", "Entries by Associate", {
       passOnReportId: "entries-by-associate",
     }),
-    report("entries-by-shift", "Entries by Shift", {
-      passOnReportId: "entries-by-shift",
-    }),
     report("edited-entries", "Edited Entries", { passOnReportId: "edited-entries" }),
-    report("keyword-search", "Keyword Search", { passOnReportId: "keyword-search" }),
     report("unread-entries-by-user", "Unread Entries by User", {
       passOnReportId: "unread-entries-by-user",
     }),

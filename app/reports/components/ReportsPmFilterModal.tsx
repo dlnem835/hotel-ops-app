@@ -26,11 +26,13 @@ import {
 } from "@/app/reports/lib/report-definitions";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPmPlaceholderResults from "@/app/reports/components/ReportsPmPlaceholderResults";
+import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 import { PM_COMPLETED_BY_FILTER_OPTIONS } from "@/app/reports/lib/pm-report-sample-data";
 
 type ReportsPmFilterModalProps = {
@@ -213,7 +215,47 @@ export default function ReportsPmFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsPmPlaceholderResults reportId={reportId} />
+            <ReportsPrintableOutput
+              reportName={getPmReportTitle(reportId)}
+              propertyName={filters.propertyName}
+              dateRangeLabel={formatReportDateRangeLabel(
+                datePreset,
+                filters.dateStart,
+                filters.dateEnd
+              )}
+              filterLines={[
+                `PM Type: ${filters.pmType}`,
+                ...(reportId === "completed-pms"
+                  ? [`Completed By: ${filters.completedBy}`]
+                  : []),
+              ]}
+              scheduleContext={{
+                reportModule: "pm",
+                reportId,
+                reportName: getPmReportTitle(reportId),
+                propertyName: filters.propertyName,
+                dateRangeLabel: formatReportDateRangeLabel(
+                  datePreset,
+                  filters.dateStart,
+                  filters.dateEnd
+                ),
+                datePreset,
+                dateStart: filters.dateStart,
+                dateEnd: filters.dateEnd,
+                filterLines: [
+                  `PM Type: ${filters.pmType}`,
+                  ...(reportId === "completed-pms"
+                    ? [`Completed By: ${filters.completedBy}`]
+                    : []),
+                ],
+                filterSnapshot: {
+                  pmType: filters.pmType,
+                  completedBy: filters.completedBy,
+                },
+              }}
+            >
+              <ReportsPmPlaceholderResults reportId={reportId} />
+            </ReportsPrintableOutput>
           </div>
         ) : null}
       </div>
