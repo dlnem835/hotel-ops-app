@@ -1,4 +1,14 @@
-import type { WorkOrderReportId } from "@/app/reports/lib/report-definitions";
+import {
+  DEFAULT_WORK_ORDER_REPORT_FILTERS,
+  type WorkOrderReportFilters,
+  type WorkOrderReportId,
+} from "@/app/reports/lib/report-definitions";
+import {
+  calculateAverageCompletionTimeHours,
+  filterWorkOrdersForAverageCompletionTimeReport,
+  formatAverageCompletionTime,
+} from "@/app/reports/lib/work-order-report-filters";
+import { resolveWorkOrderReportCreatedByLabel } from "@/app/reports/lib/work-order-report-types";
 import {
   SAMPLE_WO_BY_AREA,
   SAMPLE_WO_BY_CATEGORY,
@@ -11,12 +21,13 @@ const SAMPLE_PREVIEW_LEAD =
 
 type ReportsWoPlaceholderResultsProps = {
   reportId: WorkOrderReportId;
+  filters?: WorkOrderReportFilters;
 };
 
 export default function ReportsWoPlaceholderResults({
   reportId,
-}: ReportsWoPlaceholderResultsProps) {
-  if (reportId === "work-orders-by-source") {
+  filters,
+}: ReportsWoPlaceholderResultsProps) {  if (reportId === "work-orders-by-source") {
     return (
       <div className="reports-wo-results">
         <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
@@ -41,39 +52,6 @@ export default function ReportsWoPlaceholderResults({
                   <td>{row.completed}</td>
                   <td>{row.avgCompletionTime}</td>
                   <td>{row.avgDaysOpen} days</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  if (reportId === "days-open") {
-    const openRows = SAMPLE_WORK_ORDER_ROWS.filter((row) => row.status === "Open");
-    return (
-      <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
-        <div className="reports-pm-results__table-wrap">
-          <table className="reports-pm-results__table">
-            <thead>
-              <tr>
-                <th>Work order</th>
-                <th>Room / Area</th>
-                <th>Priority</th>
-                <th>Opened</th>
-                <th>Days open</th>
-              </tr>
-            </thead>
-            <tbody>
-              {openRows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.title}</td>
-                  <td>{row.area}</td>
-                  <td>{row.priority}</td>
-                  <td>{row.createdAt}</td>
-                  <td>{row.daysOpen ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,7 +94,14 @@ export default function ReportsWoPlaceholderResults({
   }
 
   if (reportId === "work-order-completion-time") {
-    const completedRows = SAMPLE_WORK_ORDER_ROWS.filter((row) => row.status === "Completed");
+    const activeFilters = filters ?? DEFAULT_WORK_ORDER_REPORT_FILTERS;
+    const completedRows = filterWorkOrdersForAverageCompletionTimeReport(
+      SAMPLE_WORK_ORDER_ROWS,
+      activeFilters
+    );
+    const averageHours = calculateAverageCompletionTimeHours(completedRows);
+    const averageCompletionTime = formatAverageCompletionTime(averageHours);
+
     return (
       <div className="reports-wo-results">
         <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
@@ -132,24 +117,35 @@ export default function ReportsWoPlaceholderResults({
               </tr>
             </thead>
             <tbody>
-              {completedRows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.title}</td>
-                  <td>{row.createdAt}</td>
-                  <td>{row.completedAt}</td>
-                  <td>
-                    {row.daysOpen} days ({row.hoursOpen} hrs)
-                  </td>
-                  <td>{row.completedBy}</td>
+              {completedRows.length > 0 ? (
+                completedRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.title}</td>
+                    <td>{row.createdAt}</td>
+                    <td>{row.completedAt}</td>
+                    <td>
+                      {row.daysOpen} days ({row.hoursOpen} hrs)
+                    </td>
+                    <td>{row.completedBy}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5}>No completed work orders match the selected filters.</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
+        </div>
+        <div className="reports-wo-summary-grid" style={{ marginTop: "16px" }}>
+          <div className="reports-wo-summary-card reports-wo-summary-card--wide">
+            <span className="reports-wo-summary-card__label">Average Completion Time</span>
+            <span className="reports-wo-summary-card__value">{averageCompletionTime}</span>
+          </div>
         </div>
       </div>
     );
   }
-
   return (
     <div className="reports-wo-results">
       <p className="reports-pm-results__lead">{SAMPLE_PREVIEW_LEAD}</p>
@@ -178,7 +174,11 @@ export default function ReportsWoPlaceholderResults({
                 <td>{row.category}</td>
                 <td>{row.priority}</td>
                 <td>{row.status}</td>
-                <td>{row.createdBy}</td>
+                <td>
+                  {resolveWorkOrderReportCreatedByLabel({
+                    createdByDisplayName: row.createdBy,
+                  })}
+                </td>
                 <td>{row.createdAt}</td>
                 <td>{row.source}</td>
                 <td>{row.completedBy ?? "—"}</td>

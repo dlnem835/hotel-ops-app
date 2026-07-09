@@ -306,7 +306,10 @@ export default function ReportsWoFilterModal({
 
         {showResults ? (
           <div className="reports-pm-modal__results">
-            <ReportsWoPlaceholderResults reportId={reportId} />
+            <ReportsWoPlaceholderResults
+              reportId={reportId}
+              filters={reportId === "work-order-completion-time" ? filters : undefined}
+            />
           </div>
         ) : null}
       </div>

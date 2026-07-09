@@ -26,8 +26,8 @@ import {
 import {
   getInspectionReportLabels,
   ROOM_INSPECTION_TYPE_FILTER_OPTIONS,
-  RPM_TYPE_FILTER_OPTIONS,
   SAMPLE_INSPECTION_ASSOCIATES,
+  SAMPLE_INSPECTION_INSPECTORS,
   type InspectionReportFilters,
 } from "@/app/reports/lib/inspection-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
@@ -73,11 +73,6 @@ export default function ReportsInspectionFilterModal({
 
   if (!open || !target) return null;
 
-  const typeOptions =
-    target.variant === "rpm"
-      ? RPM_TYPE_FILTER_OPTIONS
-      : ROOM_INSPECTION_TYPE_FILTER_OPTIONS;
-  const typeLabel = getInspectionReportLabels(target.variant).typeLabel;
   const title =
     target.variant === "rpm"
       ? getRpmInspectionReportTitle(target.reportId)
@@ -163,23 +158,25 @@ export default function ReportsInspectionFilterModal({
             </select>
           </label>
 
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>{typeLabel}</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.type}
-              onChange={(event) => updateFilter("type", event.target.value)}
-            >
-              {typeOptions.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </label>
+          {target.variant === "room" ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>{getInspectionReportLabels("room").typeLabel}</span>
+              <select
+                className="one-eyrie-field"
+                value={filters.type}
+                onChange={(event) => updateFilter("type", event.target.value)}
+              >
+                {ROOM_INSPECTION_TYPE_FILTER_OPTIONS.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Associate / Inspector</span>
+            <span style={fieldLabel}>Associate</span>
             <select
               className="one-eyrie-field"
               value={filters.associate}
@@ -188,6 +185,21 @@ export default function ReportsInspectionFilterModal({
               {SAMPLE_INSPECTION_ASSOCIATES.map((associate) => (
                 <option key={associate} value={associate}>
                   {associate}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="reports-pm-modal__field">
+            <span style={fieldLabel}>Inspector</span>
+            <select
+              className="one-eyrie-field"
+              value={filters.inspector}
+              onChange={(event) => updateFilter("inspector", event.target.value)}
+            >
+              {SAMPLE_INSPECTION_INSPECTORS.map((inspector) => (
+                <option key={inspector} value={inspector}>
+                  {inspector}
                 </option>
               ))}
             </select>

@@ -1,4 +1,5 @@
 import type { WorkOrderLocationOption } from "@/app/maintenance/lib/work-order-location";
+import type { WorkOrderReportRow } from "@/app/reports/lib/work-order-report-types";
 
 /** Blueprint location options — mirrors Work Orders searchable room/area list. */
 export const SAMPLE_WORK_ORDER_LOCATION_OPTIONS: WorkOrderLocationOption[] = [
@@ -11,22 +12,7 @@ export const SAMPLE_WORK_ORDER_LOCATION_OPTIONS: WorkOrderLocationOption[] = [
   { id: 204, label: "Boiler Room", searchText: "boiler room mechanical" },
 ].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
 
-export type SampleWorkOrderRow = {
-  id: string;
-  title: string;
-  area: string;
-  category: string;
-  priority: string;
-  status: string;
-  createdBy: string;
-  createdAt: string;
-  source: string;
-  completedBy: string | null;
-  completedAt: string | null;
-  comments: string;
-  daysOpen: number | null;
-  hoursOpen: number | null;
-};
+export type SampleWorkOrderRow = WorkOrderReportRow;
 
 export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
   {
@@ -36,11 +22,13 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     category: "HVAC",
     priority: "Urgent",
     status: "Open",
-    createdBy: "Front Desk",
+    createdBy: "Front Desk — John Smith",
     createdAt: "Jun 18, 2026 · 2:14 PM",
+    createdAtIso: "2026-06-18",
     source: "Manual",
     completedBy: null,
     completedAt: null,
+    completedAtIso: null,
     comments: "Guest reports room at 78°F. Maintenance notified.",
     daysOpen: 2,
     hoursOpen: 52,
@@ -53,10 +41,12 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     priority: "Important",
     status: "Completed",
     createdBy: "J. Martinez",
-    createdAt: "Jun 10, 2026 · 9:05 AM",
+    createdAt: "Jul 1, 2026 · 9:05 AM",
+    createdAtIso: "2026-07-01",
     source: "Room Inspection",
     completedBy: "D. Chen",
-    completedAt: "Jun 12, 2026 · 4:30 PM",
+    completedAt: "Jul 3, 2026 · 4:30 PM",
+    completedAtIso: "2026-07-03",
     comments: "Fixture replaced and tested.",
     daysOpen: 2,
     hoursOpen: 55,
@@ -69,10 +59,12 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     priority: "Important",
     status: "Completed",
     createdBy: "D. Chen",
-    createdAt: "Jun 4, 2026 · 7:40 AM",
+    createdAt: "Jul 2, 2026 · 7:40 AM",
+    createdAtIso: "2026-07-02",
     source: "Preventive Maintenance",
     completedBy: "D. Chen",
-    completedAt: "Jun 5, 2026 · 11:15 AM",
+    completedAt: "Jul 3, 2026 · 11:15 AM",
+    completedAtIso: "2026-07-03",
     comments: "Bearing assembly adjusted.",
     daysOpen: 1,
     hoursOpen: 28,
@@ -84,11 +76,13 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     category: "Plumbing",
     priority: "Normal",
     status: "Open",
-    createdBy: "Housekeeping",
+    createdBy: "Maddie",
     createdAt: "Jun 15, 2026 · 10:22 AM",
+    createdAtIso: "2026-06-15",
     source: "Room Inspection",
     completedBy: null,
     completedAt: null,
+    completedAtIso: null,
     comments: "Snake scheduled for tomorrow.",
     daysOpen: 5,
     hoursOpen: 120,
@@ -100,11 +94,13 @@ export const SAMPLE_WORK_ORDER_ROWS: SampleWorkOrderRow[] = [
     category: "Fire & Life Safety",
     priority: "Important",
     status: "Completed",
-    createdBy: "PM Checklist",
-    createdAt: "May 28, 2026 · 1:50 PM",
+    createdBy: "R. Patel",
+    createdAt: "Jul 4, 2026 · 1:50 PM",
+    createdAtIso: "2026-07-04",
     source: "Preventive Maintenance",
     completedBy: "R. Patel",
-    completedAt: "May 29, 2026 · 8:10 AM",
+    completedAt: "Jul 5, 2026 · 8:10 AM",
+    completedAtIso: "2026-07-05",
     comments: "Re-secured to wall anchor.",
     daysOpen: 1,
     hoursOpen: 18,

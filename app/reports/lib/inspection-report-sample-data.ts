@@ -11,6 +11,14 @@ export const SAMPLE_INSPECTION_ASSOCIATES = [
   "Carlos",
 ] as const;
 
+export const SAMPLE_INSPECTION_INSPECTORS = [
+  "All",
+  "Maddie",
+  "Grisell",
+  "Dana",
+  "Marcus",
+] as const;
+
 export const ROOM_INSPECTION_TYPE_FILTER_OPTIONS = [
   "All",
   "VR",
@@ -29,6 +37,7 @@ export type InspectionReportFilters = {
   propertyName: string;
   type: string;
   associate: string;
+  inspector: string;
   dateStart: string;
   dateEnd: string;
 };

@@ -15,7 +15,6 @@ export type PmReportId =
 export type WorkOrderReportId =
   | "all-work-orders"
   | "work-order-completion-time"
-  | "days-open"
   | "work-orders-by-category"
   | "work-orders-by-area"
   | "work-orders-by-source";
@@ -31,7 +30,7 @@ export type InspectionModuleReportId =
 
 export type LostFoundReportId =
   | "all-items"
-  | "closed-items"
+  | "found-by"
   | "shipped-items"
   | "ready-to-discard";
 
@@ -75,6 +74,7 @@ export const REPORT_PROPERTY_OPTIONS = ["One Eyrie Hotel"] as const;
 export type PmReportFilters = {
   propertyName: string;
   pmType: string;
+  completedBy: string;
   dateStart: string;
   dateEnd: string;
 };
@@ -82,6 +82,7 @@ export type PmReportFilters = {
 export const DEFAULT_PM_REPORT_FILTERS: PmReportFilters = {
   propertyName: REPORT_PROPERTY_OPTIONS[0],
   pmType: "All",
+  completedBy: "All",
   dateStart: "",
   dateEnd: "",
 };
@@ -124,19 +125,28 @@ export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
 export const LOST_FOUND_STATUS_FILTER_OPTIONS = [
   "All",
   "Stored",
+  "Label Requested",
   "Label Sent",
   "Ready to Ship",
   "Shipped",
-  "Guest Declined",
+  "Returned",
+  "Discarded",
   "Closed",
+] as const;
+
+export const LNF_DEPARTMENT_FILTER_OPTIONS = [
+  "All",
+  "Front Desk",
+  "Housekeeping",
+  "Maintenance",
+  "Management",
 ] as const;
 
 export type LostFoundReportFilters = {
   propertyName: string;
   status: (typeof LOST_FOUND_STATUS_FILTER_OPTIONS)[number];
-  guestLastName: string;
-  roomNumber: string;
-  itemName: string;
+  foundBy: string;
+  createdBy: string;
   dateStart: string;
   dateEnd: string;
 };
@@ -144,9 +154,24 @@ export type LostFoundReportFilters = {
 export const DEFAULT_LOST_FOUND_REPORT_FILTERS: LostFoundReportFilters = {
   propertyName: REPORT_PROPERTY_OPTIONS[0],
   status: "All",
-  guestLastName: "",
-  roomNumber: "",
-  itemName: "",
+  foundBy: "All",
+  createdBy: "All",
+  dateStart: "",
+  dateEnd: "",
+};
+
+export type LostFoundFoundByReportFilters = {
+  propertyName: string;
+  foundBy: string;
+  department: (typeof LNF_DEPARTMENT_FILTER_OPTIONS)[number];
+  dateStart: string;
+  dateEnd: string;
+};
+
+export const DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS: LostFoundFoundByReportFilters = {
+  propertyName: REPORT_PROPERTY_OPTIONS[0],
+  foundBy: "All",
+  department: "All",
   dateStart: "",
   dateEnd: "",
 };
@@ -219,7 +244,7 @@ export const PREVENTIVE_MAINTENANCE_SECTION: ReportCategorySection = {
     report("completed-pms", "Completed PMs", { pmReportId: "completed-pms" }),
     report("missed-pms", "Missed PMs", { pmReportId: "missed-pms" }),
     report("failed-pm-items", "Failed Items", { pmReportId: "failed-pm-items" }),
-    report("pm-completion-status", "PM Completion Status", { pmReportId: "pm-report" }),
+    report("pm-completion-status", "PM Completions Overview", { pmReportId: "pm-report" }),
   ],
 };
 
@@ -231,7 +256,6 @@ export const WORK_ORDERS_SECTION: ReportCategorySection = {
     report("average-completion-time", "Average Completion Time", {
       woReportId: "work-order-completion-time",
     }),
-    report("days-open", "Days Open", { woReportId: "days-open" }),
     report("top-categories", "Top Categories", { woReportId: "work-orders-by-category" }),
     report("top-areas", "Top Areas", { woReportId: "work-orders-by-area" }),
     report("work-orders-by-source", "Work Orders by Source", {
@@ -272,8 +296,8 @@ export const LOST_AND_FOUND_SECTION: ReportCategorySection = {
   id: "lost-and-found",
   title: "Lost & Found",
   reports: [
-    report("active-items", "Active Items", { lnfReportId: "all-items" }),
-    report("closed-items", "Closed Items", { lnfReportId: "closed-items" }),
+    report("all-items", "All Items", { lnfReportId: "all-items" }),
+    report("found-by", "Found By", { lnfReportId: "found-by" }),
     report("shipping-report", "Shipping Report", { lnfReportId: "shipped-items" }),
     report("aging-report", "Aging Report", { lnfReportId: "ready-to-discard" }),
   ],
@@ -353,6 +377,7 @@ export const DEFAULT_INSPECTION_REPORT_FILTERS = {
   propertyName: REPORT_PROPERTY_OPTIONS[0],
   type: "All",
   associate: "All",
+  inspector: "All",
   dateStart: "",
   dateEnd: "",
 };

@@ -31,6 +31,7 @@ import {
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { PM_COMPLETED_BY_FILTER_OPTIONS } from "@/app/reports/lib/pm-report-sample-data";
 
 type ReportsPmFilterModalProps = {
   open: boolean;
@@ -66,6 +67,8 @@ export default function ReportsPmFilterModal({
   }, [open, reportId]);
 
   if (!open || !reportId) return null;
+
+  const showCompletedByFilter = reportId === "completed-pms";
 
   function updateFilter<K extends keyof PmReportFilters>(key: K, value: PmReportFilters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -162,6 +165,23 @@ export default function ReportsPmFilterModal({
               ))}
             </select>
           </label>
+
+          {showCompletedByFilter ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>Completed By</span>
+              <select
+                className="one-eyrie-field"
+                value={filters.completedBy}
+                onChange={(event) => updateFilter("completedBy", event.target.value)}
+              >
+                {PM_COMPLETED_BY_FILTER_OPTIONS.map((person) => (
+                  <option key={person} value={person}>
+                    {person}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <ReportsDateRangeField
             preset={datePreset}
