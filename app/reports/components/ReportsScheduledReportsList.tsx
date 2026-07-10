@@ -53,10 +53,13 @@ export default function ReportsScheduledReportsList() {
 
   useEffect(() => {
     void refresh();
-    window.addEventListener(REPORT_SCHEDULES_UPDATED_EVENT, () => {
+
+    const handleSchedulesUpdated = () => {
       void refresh();
-    });
-    return () => window.removeEventListener(REPORT_SCHEDULES_UPDATED_EVENT, () => undefined);
+    };
+
+    window.addEventListener(REPORT_SCHEDULES_UPDATED_EVENT, handleSchedulesUpdated);
+    return () => window.removeEventListener(REPORT_SCHEDULES_UPDATED_EVENT, handleSchedulesUpdated);
   }, []);
 
   async function handleDelete(id: string) {

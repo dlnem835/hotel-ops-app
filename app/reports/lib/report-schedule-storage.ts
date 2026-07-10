@@ -31,11 +31,20 @@ function clearLegacySchedules() {
   window.localStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 
+async function fetchSavedReportSchedulesFromApi(): Promise<SavedReportSchedule[]> {
+  const response = await fetch("/api/reports/schedules", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.error || "Unable to load scheduled reports.");
+  }
+  return payload.schedules as SavedReportSchedule[];
+}
+
 async function migrateLegacySchedulesIfNeeded(): Promise<void> {
   const legacy = readLegacySchedules();
   if (legacy.length === 0) return;
 
-  const existing = await listSavedReportSchedules();
+  const existing = await fetchSavedReportSchedulesFromApi();
   if (existing.length > 0) {
     clearLegacySchedules();
     return;
@@ -58,12 +67,7 @@ async function migrateLegacySchedulesIfNeeded(): Promise<void> {
 
 export async function listSavedReportSchedules(): Promise<SavedReportSchedule[]> {
   await migrateLegacySchedulesIfNeeded();
-  const response = await fetch("/api/reports/schedules", { cache: "no-store" });
-  const payload = await response.json();
-  if (!response.ok) {
-    throw new Error(payload.error || "Unable to load scheduled reports.");
-  }
-  return payload.schedules as SavedReportSchedule[];
+  return fetchSavedReportSchedulesFromApi();
 }
 
 export async function saveReportSchedule(input: {
