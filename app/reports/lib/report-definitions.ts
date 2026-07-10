@@ -26,6 +26,7 @@ export type InspectionModuleReportId =
   | "top-failed-items"
   | "rooms-not-done"
   | "rooms-done"
+  | "rooms-by-inspector"
   | "scores-by-room";
 
 export type LostFoundReportId =
@@ -265,6 +266,9 @@ export const ROOM_PREVENTIVE_MAINTENANCE_SECTION: ReportCategorySection = {
     report("rpm-failed-items", "Failed Items", {
       rpmInspectionReportId: "top-failed-items",
     }),
+    report("rpm-rooms-by-inspector", "% Rooms Completed by Inspector", {
+      rpmInspectionReportId: "rooms-by-inspector",
+    }),
     report("rpm-scores-by-room", "Scores by Room", {
       rpmInspectionReportId: "scores-by-room",
     }),
@@ -319,6 +323,9 @@ export const ROOM_INSPECTIONS_SECTION: ReportCategorySection = {
     }),
     report("failed-items", "Failed Items", {
       roomInspectionReportId: "top-failed-items",
+    }),
+    report("rooms-inspected-by-inspector", "% Rooms Inspected by Inspector", {
+      roomInspectionReportId: "rooms-by-inspector",
     }),
     report("scores-by-room", "Scores by Room", {
       roomInspectionReportId: "scores-by-room",

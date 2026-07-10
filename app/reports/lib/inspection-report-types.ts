@@ -89,8 +89,8 @@ export type InspectionAverageTimeSessionRow = {
 };
 
 export type InspectionAverageTimeGroupRow = {
-  personId: string;
-  personName: string;
+  inspectorId: string;
+  inspectorName: string;
   completedCount: number;
   averageTimeLabel: string | null;
   averageTimeMs: number | null;
@@ -101,7 +101,8 @@ export type InspectionRoomsDoneRow = {
   sessionId: number;
   roomNumber: string;
   inspectionType: string;
-  personName: string;
+  inspectorName: string;
+  associateName: string;
   scorePercent: number | null;
   failedItemCount: number;
   completedAt: string;
@@ -115,46 +116,61 @@ export type InspectionRoomsNotDoneRow = {
   roomNumber: string;
   lastDate: string | null;
   lastDateSortIso: string | null;
-  lastType: string | null;
-  lastPersonName: string | null;
+  lastInspectorName: string | null;
   daysSinceLast: number | null;
   statusLabel: string;
 };
 
-export type InspectionFailedSectionDetailRow = {
+export type InspectionFailedOccurrenceDetailRow = {
   sessionId: number;
   roomNumber: string;
-  failedItemLabel: string;
-  personName: string;
-  scorePercent: number | null;
-  completedAt: string;
-  completedAtSortIso: string;
-};
-
-export type InspectionFailedSectionGroupRow = {
-  sectionKey: string;
-  sectionLabel: string;
-  totalFailures: number;
-  items: InspectionFailedSectionDetailRow[];
-};
-
-export type InspectionFailedItemRow = {
-  id: string;
-  sessionId: number;
+  categoryKey: string;
+  itemKey: string;
   itemLabel: string;
   sectionLabel: string;
-  roomNumber: string;
-  personName: string;
+  inspectorName: string;
+  associateName: string;
   scorePercent: number | null;
   completedAt: string;
   completedAtSortIso: string;
   notes: string;
 };
 
+export type InspectionFailedSectionGroupRow = {
+  sectionKey: string;
+  sectionLabel: string;
+  totalFailures: number;
+  items: InspectionFailedOccurrenceDetailRow[];
+};
+
+export type InspectionFailedItemGroupRow = {
+  groupKey: string;
+  itemLabel: string;
+  sectionLabel: string;
+  displayLabel: string;
+  totalFailures: number;
+  items: InspectionFailedOccurrenceDetailRow[];
+};
+
+/** @deprecated Use InspectionFailedOccurrenceDetailRow */
+export type InspectionFailedSectionDetailRow = InspectionFailedOccurrenceDetailRow;
+
+/** @deprecated Flat failed-item rows replaced by InspectionFailedItemGroupRow */
+export type InspectionFailedItemRow = InspectionFailedOccurrenceDetailRow & {
+  id: string;
+};
+
+export type InspectionInspectorShareRow = {
+  inspectorId: string;
+  inspectorName: string;
+  roomCount: number;
+  percent: number;
+};
+
 export type InspectionScoresByRoomSessionRow = {
   sessionId: number;
   inspectionType: string;
-  personName: string;
+  inspectorName: string;
   scorePercent: number | null;
   failedItemCount: number;
   completedAt: string;

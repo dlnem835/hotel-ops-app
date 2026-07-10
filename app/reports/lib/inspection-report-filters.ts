@@ -5,7 +5,10 @@ import {
 import {
   averageDurationMs,
   calculateDaysSince,
+  compareRoomNumbers,
+  filterSessionsByTypeAndDate,
   formatAverageDurationLabel,
+  formatInspectionAssociateName,
   formatInspectionReportDate,
   formatInspectionReportDateTime,
   getActiveGuestRooms,
@@ -16,11 +19,13 @@ import type {
   InspectionAssociateRankingRow,
   InspectionAverageTimeGroupRow,
   InspectionAverageTimeSessionRow,
-  InspectionFailedItemRow,
-  InspectionFailedSectionDetailRow,
+  InspectionFailedItemGroupRow,
+  InspectionFailedOccurrenceDetailRow,
   InspectionFailedSectionGroupRow,
+  InspectionInspectorShareRow,
   InspectionReportFilters,
   InspectionReportSource,
+  InspectionReportSourceFailedItem,
   InspectionReportSourceSession,
   InspectionRoomsDoneRow,
   InspectionRoomsNotDoneRow,
@@ -28,20 +33,45 @@ import type {
   InspectionScoresByRoomSessionRow,
 } from "@/app/reports/lib/inspection-report-types";
 
-function getPersonName(session: InspectionReportSourceSession, variant: InspectionReportVariant) {
-  return variant === "rpm" ? session.associateName : session.inspectorName;
+function getInspectorName(session: InspectionReportSourceSession) {
+  return session.inspectorName;
 }
 
 function getFilteredSessions(source: InspectionReportSource, filters: InspectionReportFilters) {
   return filterSourceSessions(source, filters);
 }
 
+function formatAssociateName(name: string | null | undefined): string {
+  return formatInspectionAssociateName(name);
+}
+
+function buildFailedOccurrenceDetail(
+  item: InspectionReportSourceFailedItem
+): InspectionFailedOccurrenceDetailRow {
+  return {
+    sessionId: item.sessionId,
+    roomNumber: item.areaName,
+    categoryKey: item.categoryKey,
+    itemKey: item.itemKey,
+    itemLabel: item.itemLabel,
+    sectionLabel: item.categoryLabel,
+    inspectorName: item.inspectorName,
+    associateName: formatAssociateName(item.associateName),
+    scorePercent: item.scorePercent,
+    completedAt: formatInspectionReportDateTime(item.completedAt),
+    completedAtSortIso: item.completedAt,
+    notes: item.itemNotes?.trim() || "—",
+  };
+}
+
 function getFilteredFailedItems(source: InspectionReportSource, filters: InspectionReportFilters) {
   const sessionIds = new Set(getFilteredSessions(source, filters).map((session) => session.id));
   return source.failedItems.filter((item) => {
     if (!sessionIds.has(item.sessionId)) return false;
-    if (filters.associate !== "All" && item.associateName !== filters.associate) return false;
     if (filters.inspector !== "All" && item.inspectorName !== filters.inspector) return false;
+    if (filters.associate !== "All" && formatAssociateName(item.associateName) !== filters.associate) {
+      return false;
+    }
     return true;
   });
 }
@@ -118,21 +148,21 @@ export function buildAverageTimeGroups(
   filters: InspectionReportFilters
 ): { groups: InspectionAverageTimeGroupRow[]; overallAverageLabel: string | null } {
   const sessions = getFilteredSessions(source, filters);
-  const byPerson = new Map<string, { name: string; sessions: InspectionReportSourceSession[] }>();
+  const byInspector = new Map<
+    string,
+    { name: string; sessions: InspectionReportSourceSession[] }
+  >();
 
   for (const session of sessions) {
-    const personId =
-      source.variant === "rpm"
-        ? session.associateId || session.inspectorId || `unknown-${session.id}`
-        : session.inspectorId || session.associateId || `unknown-${session.id}`;
-    const personName = getPersonName(session, source.variant);
-    const existing = byPerson.get(personId) || { name: personName, sessions: [] };
+    const inspectorId = session.inspectorId || session.completedBy || `unknown-${session.id}`;
+    const inspectorName = getInspectorName(session);
+    const existing = byInspector.get(inspectorId) || { name: inspectorName, sessions: [] };
     existing.sessions.push(session);
-    byPerson.set(personId, existing);
+    byInspector.set(inspectorId, existing);
   }
 
-  const groups = [...byPerson.entries()]
-    .map(([personId, entry]) => {
+  const groups = [...byInspector.entries()]
+    .map(([inspectorId, entry]) => {
       const averageTimeMs = averageDurationMs(
         entry.sessions.map((session) => session.durationMs)
       );
@@ -152,15 +182,15 @@ export function buildAverageTimeGroups(
         }));
 
       return {
-        personId,
-        personName: entry.name,
+        inspectorId,
+        inspectorName: entry.name,
         completedCount: entry.sessions.length,
         averageTimeLabel: formatAverageDurationLabel(averageTimeMs),
         averageTimeMs,
         sessions: detailSessions,
       };
     })
-    .sort((left, right) => left.personName.localeCompare(right.personName));
+    .sort((left, right) => left.inspectorName.localeCompare(right.inspectorName));
 
   const overallAverageMs = averageDurationMs(
     sessions.map((session) => session.durationMs)
@@ -181,7 +211,8 @@ export function buildRoomsDoneRows(
       sessionId: session.id,
       roomNumber: session.areaName,
       inspectionType: getInspectionTypeLabel(session),
-      personName: getPersonName(session, source.variant),
+      inspectorName: getInspectorName(session),
+      associateName: formatAssociateName(session.associateName),
       scorePercent: session.scorePercent,
       failedItemCount: session.failedItemCount,
       completedAt: formatInspectionReportDateTime(session.completedAt),
@@ -198,7 +229,7 @@ export function buildRoomsNotDoneRows(
 ): InspectionRoomsNotDoneRow[] {
   const activeRooms = getActiveGuestRooms(source.guestRooms);
   const completedInRange = new Set(
-    getFilteredSessions(source, filters).map((session) => session.areaId)
+    filterSessionsByTypeAndDate(source, filters).map((session) => session.areaId)
   );
 
   const latestByArea = new Map<number, InspectionReportSourceSession>();
@@ -227,13 +258,12 @@ export function buildRoomsNotDoneRows(
         roomNumber: room.name,
         lastDate: latest ? formatInspectionReportDate(latest.completedAt) : null,
         lastDateSortIso: latest?.completedAt ?? null,
-        lastType: latest ? getInspectionTypeLabel(latest) : null,
-        lastPersonName: latest ? getPersonName(latest, source.variant) : null,
+        lastInspectorName: latest ? getInspectorName(latest) : null,
         daysSinceLast: latest ? calculateDaysSince(latest.completedAt) : null,
         statusLabel: latest ? notInRangeLabel : neverLabel,
       };
     })
-    .sort((left, right) => left.roomNumber.localeCompare(right.roomNumber, undefined, { numeric: true }));
+    .sort((left, right) => compareRoomNumbers(left.roomNumber, right.roomNumber));
 }
 
 export function buildFailedSectionGroups(
@@ -251,16 +281,7 @@ export function buildFailedSectionGroups(
       items: [],
     };
 
-    const detail: InspectionFailedSectionDetailRow = {
-      sessionId: item.sessionId,
-      roomNumber: item.areaName,
-      failedItemLabel: item.itemLabel,
-      personName:
-        source.variant === "rpm" ? item.associateName : item.inspectorName,
-      scorePercent: item.scorePercent,
-      completedAt: formatInspectionReportDateTime(item.completedAt),
-      completedAtSortIso: item.completedAt,
-    };
+    const detail = buildFailedOccurrenceDetail(item);
 
     existing.totalFailures += 1;
     existing.items.push(detail);
@@ -282,24 +303,75 @@ export function buildFailedSectionGroups(
     });
 }
 
-export function buildFailedItemRows(
+export function buildFailedItemGroups(
   source: InspectionReportSource,
   filters: InspectionReportFilters
-): InspectionFailedItemRow[] {
-  return getFilteredFailedItems(source, filters)
-    .map((item) => ({
-      id: `${item.sessionId}::${item.itemKey}`,
-      sessionId: item.sessionId,
+): InspectionFailedItemGroupRow[] {
+  const failedItems = getFilteredFailedItems(source, filters);
+  const grouped = new Map<string, InspectionFailedItemGroupRow>();
+
+  for (const item of failedItems) {
+    const groupKey = `${item.categoryKey}::${item.itemKey}`;
+    const existing = grouped.get(groupKey) || {
+      groupKey,
       itemLabel: item.itemLabel,
       sectionLabel: item.categoryLabel,
-      roomNumber: item.areaName,
-      personName: source.variant === "rpm" ? item.associateName : item.inspectorName,
-      scorePercent: item.scorePercent,
-      completedAt: formatInspectionReportDateTime(item.completedAt),
-      completedAtSortIso: item.completedAt,
-      notes: item.itemNotes?.trim() || "—",
+      displayLabel: `${item.categoryLabel}: ${item.itemLabel}`,
+      totalFailures: 0,
+      items: [],
+    };
+
+    existing.totalFailures += 1;
+    existing.items.push(buildFailedOccurrenceDetail(item));
+    grouped.set(groupKey, existing);
+  }
+
+  return [...grouped.values()]
+    .map((group) => ({
+      ...group,
+      items: group.items.sort((left, right) =>
+        right.completedAtSortIso.localeCompare(left.completedAtSortIso)
+      ),
     }))
-    .sort((left, right) => right.completedAtSortIso.localeCompare(left.completedAtSortIso));
+    .sort((left, right) => {
+      if (right.totalFailures !== left.totalFailures) {
+        return right.totalFailures - left.totalFailures;
+      }
+      return left.displayLabel.localeCompare(right.displayLabel);
+    });
+}
+
+export function buildInspectorRoomShareRows(
+  source: InspectionReportSource,
+  filters: InspectionReportFilters
+): { rows: InspectionInspectorShareRow[]; totalCompleted: number } {
+  const sessions = filterSessionsByTypeAndDate(source, filters);
+  const totalCompleted = sessions.length;
+  const byInspector = new Map<string, { name: string; count: number }>();
+
+  for (const session of sessions) {
+    const inspectorId = session.inspectorId || session.completedBy || `unknown-${session.id}`;
+    const inspectorName = getInspectorName(session);
+    const existing = byInspector.get(inspectorId) || { name: inspectorName, count: 0 };
+    existing.count += 1;
+    byInspector.set(inspectorId, existing);
+  }
+
+  const rows = [...byInspector.entries()]
+    .map(([inspectorId, entry]) => ({
+      inspectorId,
+      inspectorName: entry.name,
+      roomCount: entry.count,
+      percent:
+        totalCompleted === 0 ? 0 : Math.round((entry.count / totalCompleted) * 1000) / 10,
+    }))
+    .sort((left, right) => {
+      if (right.percent !== left.percent) return right.percent - left.percent;
+      if (right.roomCount !== left.roomCount) return right.roomCount - left.roomCount;
+      return left.inspectorName.localeCompare(right.inspectorName);
+    });
+
+  return { rows, totalCompleted };
 }
 
 export function buildScoresByRoomGroups(
@@ -327,7 +399,7 @@ export function buildScoresByRoomGroups(
       const detailSessions: InspectionScoresByRoomSessionRow[] = sorted.map((session) => ({
         sessionId: session.id,
         inspectionType: getInspectionTypeLabel(session),
-        personName: getPersonName(session, source.variant),
+        inspectorName: getInspectorName(session),
         scorePercent: session.scorePercent,
         failedItemCount: session.failedItemCount,
         completedAt: formatInspectionReportDateTime(session.completedAt),
@@ -352,7 +424,5 @@ export function buildScoresByRoomGroups(
         sessions: detailSessions,
       };
     })
-    .sort((left, right) =>
-      left.roomNumber.localeCompare(right.roomNumber, undefined, { numeric: true })
-    );
+    .sort((left, right) => compareRoomNumbers(left.roomNumber, right.roomNumber));
 }

@@ -12,6 +12,7 @@ type InspectionCategorySectionProps = {
   totalCount: number;
   expanded: boolean;
   onToggle: () => void;
+  alwaysExpanded?: boolean;
   children: ReactNode;
 };
 
@@ -21,11 +22,13 @@ export default function InspectionCategorySection({
   totalCount,
   expanded,
   onToggle,
+  alwaysExpanded = false,
   children,
 }: InspectionCategorySectionProps) {
   const isMobile = useIsMobileInspectionLayout();
+  const showExpanded = alwaysExpanded || expanded;
 
-  if (!isMobile) {
+  if (!isMobile || alwaysExpanded) {
     return (
       <div
         style={{

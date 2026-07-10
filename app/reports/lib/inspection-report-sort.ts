@@ -1,11 +1,31 @@
 import type {
   InspectionAssociateRankingRow,
-  InspectionFailedItemRow,
+  InspectionFailedOccurrenceDetailRow,
+  InspectionInspectorShareRow,
   InspectionRoomsDoneRow,
   InspectionRoomsNotDoneRow,
 } from "@/app/reports/lib/inspection-report-types";
+import { compareRoomNumbers } from "@/app/reports/lib/inspection-report-filter-utils";
 
 export type InspectionReportSortDirection = "asc" | "desc";
+
+export type FailedAreasDetailSortColumn =
+  | "itemLabel"
+  | "roomNumber"
+  | "inspectorName"
+  | "associateName"
+  | "scorePercent"
+  | "completedAt"
+  | "notes";
+
+export type FailedItemsDetailSortColumn =
+  | "sectionLabel"
+  | "roomNumber"
+  | "inspectorName"
+  | "associateName"
+  | "scorePercent"
+  | "completedAt"
+  | "notes";
 
 export type AssociateRankingSortColumn =
   | "rank"
@@ -19,7 +39,8 @@ export type AssociateRankingSortColumn =
 export type RoomsDoneSortColumn =
   | "roomNumber"
   | "inspectionType"
-  | "personName"
+  | "inspectorName"
+  | "associateName"
   | "scorePercent"
   | "failedItemCount"
   | "completedAt"
@@ -28,19 +49,11 @@ export type RoomsDoneSortColumn =
 export type RoomsNotDoneSortColumn =
   | "roomNumber"
   | "lastDate"
-  | "lastType"
-  | "lastPersonName"
+  | "lastInspectorName"
   | "daysSinceLast"
   | "statusLabel";
 
-export type FailedItemsSortColumn =
-  | "itemLabel"
-  | "sectionLabel"
-  | "roomNumber"
-  | "personName"
-  | "scorePercent"
-  | "completedAt"
-  | "notes";
+export type InspectorShareSortColumn = "inspectorName" | "roomCount" | "percent";
 
 function compareStrings(left: string, right: string): number {
   return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
@@ -104,13 +117,16 @@ export function sortRoomsDoneRows(
     let comparison = 0;
     switch (column) {
       case "roomNumber":
-        comparison = compareStrings(left.roomNumber, right.roomNumber);
+        comparison = compareRoomNumbers(left.roomNumber, right.roomNumber);
         break;
       case "inspectionType":
         comparison = compareStrings(left.inspectionType, right.inspectionType);
         break;
-      case "personName":
-        comparison = compareStrings(left.personName, right.personName);
+      case "inspectorName":
+        comparison = compareStrings(left.inspectorName, right.inspectorName);
+        break;
+      case "associateName":
+        comparison = compareStrings(left.associateName, right.associateName);
         break;
       case "scorePercent":
         comparison = compareNullableNumbers(left.scorePercent, right.scorePercent);
@@ -139,16 +155,13 @@ export function sortRoomsNotDoneRows(
     let comparison = 0;
     switch (column) {
       case "roomNumber":
-        comparison = compareStrings(left.roomNumber, right.roomNumber);
+        comparison = compareRoomNumbers(left.roomNumber, right.roomNumber);
         break;
       case "lastDate":
         comparison = compareIso(left.lastDateSortIso, right.lastDateSortIso);
         break;
-      case "lastType":
-        comparison = compareStrings(left.lastType || "", right.lastType || "");
-        break;
-      case "lastPersonName":
-        comparison = compareStrings(left.lastPersonName || "", right.lastPersonName || "");
+      case "lastInspectorName":
+        comparison = compareStrings(left.lastInspectorName || "", right.lastInspectorName || "");
         break;
       case "daysSinceLast":
         comparison = compareNullableNumbers(left.daysSinceLast, right.daysSinceLast);
@@ -162,11 +175,11 @@ export function sortRoomsNotDoneRows(
   return sorted;
 }
 
-export function sortFailedItemRows(
-  rows: InspectionFailedItemRow[],
-  column: FailedItemsSortColumn,
+function sortFailedOccurrenceRows<T extends FailedAreasDetailSortColumn | FailedItemsDetailSortColumn>(
+  rows: InspectionFailedOccurrenceDetailRow[],
+  column: T,
   direction: InspectionReportSortDirection
-): InspectionFailedItemRow[] {
+): InspectionFailedOccurrenceDetailRow[] {
   const sorted = [...rows].sort((left, right) => {
     let comparison = 0;
     switch (column) {
@@ -177,10 +190,13 @@ export function sortFailedItemRows(
         comparison = compareStrings(left.sectionLabel, right.sectionLabel);
         break;
       case "roomNumber":
-        comparison = compareStrings(left.roomNumber, right.roomNumber);
+        comparison = compareRoomNumbers(left.roomNumber, right.roomNumber);
         break;
-      case "personName":
-        comparison = compareStrings(left.personName, right.personName);
+      case "inspectorName":
+        comparison = compareStrings(left.inspectorName, right.inspectorName);
+        break;
+      case "associateName":
+        comparison = compareStrings(left.associateName, right.associateName);
         break;
       case "scorePercent":
         comparison = compareNullableNumbers(left.scorePercent, right.scorePercent);
@@ -190,6 +206,45 @@ export function sortFailedItemRows(
         break;
       case "notes":
         comparison = compareStrings(left.notes, right.notes);
+        break;
+    }
+    return direction === "asc" ? comparison : -comparison;
+  });
+  return sorted;
+}
+
+export function sortFailedAreasDetailRows(
+  rows: InspectionFailedOccurrenceDetailRow[],
+  column: FailedAreasDetailSortColumn,
+  direction: InspectionReportSortDirection
+): InspectionFailedOccurrenceDetailRow[] {
+  return sortFailedOccurrenceRows(rows, column, direction);
+}
+
+export function sortFailedItemsDetailRows(
+  rows: InspectionFailedOccurrenceDetailRow[],
+  column: FailedItemsDetailSortColumn,
+  direction: InspectionReportSortDirection
+): InspectionFailedOccurrenceDetailRow[] {
+  return sortFailedOccurrenceRows(rows, column, direction);
+}
+
+export function sortInspectorShareRows(
+  rows: InspectionInspectorShareRow[],
+  column: InspectorShareSortColumn,
+  direction: InspectionReportSortDirection
+): InspectionInspectorShareRow[] {
+  const sorted = [...rows].sort((left, right) => {
+    let comparison = 0;
+    switch (column) {
+      case "inspectorName":
+        comparison = compareStrings(left.inspectorName, right.inspectorName);
+        break;
+      case "roomCount":
+        comparison = left.roomCount - right.roomCount;
+        break;
+      case "percent":
+        comparison = left.percent - right.percent;
         break;
     }
     return direction === "asc" ? comparison : -comparison;
@@ -213,7 +268,8 @@ export const ASSOCIATE_RANKING_SORT_COLUMNS: Array<{
 export const ROOMS_DONE_SORT_COLUMNS: Array<{ key: RoomsDoneSortColumn; label: string }> = [
   { key: "roomNumber", label: "Room" },
   { key: "inspectionType", label: "Type" },
-  { key: "personName", label: "Person" },
+  { key: "inspectorName", label: "Inspector" },
+  { key: "associateName", label: "Associate" },
   { key: "scorePercent", label: "Score" },
   { key: "failedItemCount", label: "Failed items" },
   { key: "completedAt", label: "Completed" },
@@ -226,19 +282,40 @@ export const ROOMS_NOT_DONE_SORT_COLUMNS: Array<{
 }> = [
   { key: "roomNumber", label: "Room" },
   { key: "lastDate", label: "Last date" },
-  { key: "lastType", label: "Last type" },
-  { key: "lastPersonName", label: "Last person" },
+  { key: "lastInspectorName", label: "Last inspector" },
   { key: "daysSinceLast", label: "Days since" },
   { key: "statusLabel", label: "Status" },
 ];
 
-export const FAILED_ITEMS_SORT_COLUMNS: Array<{ key: FailedItemsSortColumn; label: string }> =
+export const FAILED_AREAS_DETAIL_SORT_COLUMNS: Array<{
+  key: FailedAreasDetailSortColumn;
+  label: string;
+}> = [
+  { key: "itemLabel", label: "Failed item" },
+  { key: "roomNumber", label: "Room" },
+  { key: "inspectorName", label: "Inspector" },
+  { key: "associateName", label: "Associate" },
+  { key: "scorePercent", label: "Score" },
+  { key: "completedAt", label: "Completed" },
+  { key: "notes", label: "Comments" },
+];
+
+export const FAILED_ITEMS_DETAIL_SORT_COLUMNS: Array<{
+  key: FailedItemsDetailSortColumn;
+  label: string;
+}> = [
+  { key: "sectionLabel", label: "Failed area" },
+  { key: "roomNumber", label: "Room" },
+  { key: "inspectorName", label: "Inspector" },
+  { key: "associateName", label: "Associate" },
+  { key: "scorePercent", label: "Score" },
+  { key: "completedAt", label: "Completed" },
+  { key: "notes", label: "Comments" },
+];
+
+export const INSPECTOR_SHARE_SORT_COLUMNS: Array<{ key: InspectorShareSortColumn; label: string }> =
   [
-    { key: "itemLabel", label: "Failed item" },
-    { key: "sectionLabel", label: "Section" },
-    { key: "roomNumber", label: "Room" },
-    { key: "personName", label: "Person" },
-    { key: "scorePercent", label: "Score" },
-    { key: "completedAt", label: "Completed" },
-    { key: "notes", label: "Comments" },
+    { key: "inspectorName", label: "Inspector" },
+    { key: "roomCount", label: "Rooms" },
+    { key: "percent", label: "% of total" },
   ];

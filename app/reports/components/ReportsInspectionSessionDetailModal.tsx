@@ -1,29 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import OutcomeBadge from "@/app/inspections/components/OutcomeBadge";
-import { formatInspectionProgramLabel } from "@/app/reports/lib/inspection-report-filter-utils";
+import CompletedInspectionReview from "@/app/inspections/components/CompletedInspectionReview";
+import { formatInspectionDuration } from "@/app/inspections/lib/inspection-duration";
 import type { InspectionProgram } from "@/app/inspections/lib/inspection-types";
-import { formatInspectionScorePercent } from "@/app/inspections/lib/scoring";
+import { formatInspectionProgramLabel } from "@/app/reports/lib/inspection-report-filter-utils";
+import { PropertyTemplateContent } from "@/app/inspections/standards/types";
+import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import {
-  ONE_EYRIE_MODAL_BOX,
-  ONE_EYRIE_MODAL_CLOSE_BUTTON,
-  ONE_EYRIE_MODAL_HEADER,
-  ONE_EYRIE_MODAL_OVERLAY,
-} from "@/app/lib/one-eyrie-modal-styles";
-import {
-  resolveMemberDisplayLabel,
-  useMemberDisplayNameResolver,
-} from "@/app/lib/use-member-display-name";
+import "@/app/inspections/inspections-responsive.css";
+
+type Outcome = "pass" | "fail" | "na";
 
 type SessionResponse = {
   session: {
     id: number;
     area_id: number;
     inspection_program: InspectionProgram;
+    status: string;
     completed_at: string | null;
     started_at: string;
     completed_by: string | null;
@@ -39,11 +34,9 @@ type SessionResponse = {
   responses: Array<{
     category_key: string;
     item_key: string;
-    label_snapshot: { en?: string; es?: string };
-    outcome: "pass" | "fail" | "na";
+    outcome: Outcome;
     item_notes: string | null;
     photo_url: string | null;
-    sort_order: number;
   }>;
 };
 
@@ -58,14 +51,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-function templateNameFromSnapshot(snapshot: Record<string, unknown> | null | undefined): string {
-  if (!snapshot || typeof snapshot !== "object") return "Inspection";
-  const name = (snapshot as { name?: string }).name;
-  return name?.trim() || "Inspection";
+function itemKey(categoryKey: string, itemKeyValue: string) {
+  return `${categoryKey}::${itemKeyValue}`;
 }
 
-function itemLabel(labelSnapshot: { en?: string; es?: string } | undefined): string {
-  return labelSnapshot?.en?.trim() || labelSnapshot?.es?.trim() || "Item";
+function normalizeHighlightItemKey(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  if (value.includes("::")) return value;
+  return null;
 }
 
 export default function ReportsInspectionSessionDetailModal({
@@ -73,11 +66,52 @@ export default function ReportsInspectionSessionDetailModal({
   highlightItemKey,
   onClose,
 }: ReportsInspectionSessionDetailModalProps) {
-  const memberResolver = useMemberDisplayNameResolver();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [detail, setDetail] = useState<SessionResponse | null>(null);
   const [roomName, setRoomName] = useState("—");
+  const [templateName, setTemplateName] = useState("Inspection");
+  const [content, setContent] = useState<PropertyTemplateContent | null>(null);
+  const [program, setProgram] = useState("");
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [inspectorName, setInspectorName] = useState<string | null>(null);
+  const [associateName, setAssociateName] = useState<string | null>(null);
+  const [scorePercent, setScorePercent] = useState<number | null>(null);
+  const [earnedPoints, setEarnedPoints] = useState(0);
+  const [possiblePoints, setPossiblePoints] = useState(0);
+  const [sessionNotes, setSessionNotes] = useState<string | null>(null);
+  const [responses, setResponses] = useState<Record<string, Outcome | undefined>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [expandedCategoryKey, setExpandedCategoryKey] = useState<string | null>(null);
+
+  const resolvedHighlightItemKey = normalizeHighlightItemKey(highlightItemKey);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleClose();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [handleClose]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +130,70 @@ export default function ReportsInspectionSessionDetailModal({
         const payload = result as SessionResponse;
         if (cancelled) return;
 
-        setDetail(payload);
+        const snapshot = payload.session.template_snapshot as {
+          name?: string;
+          content?: PropertyTemplateContent;
+        };
+
+        setTemplateName(snapshot.name?.trim() || "Inspection");
+        setContent(snapshot.content || null);
+        setProgram(formatInspectionProgramLabel(payload.session.inspection_program));
+        setCompletedAt(payload.session.completed_at);
+        setStartedAt(payload.session.started_at);
+        setScorePercent(
+          payload.session.score_percent === null
+            ? null
+            : Number(payload.session.score_percent)
+        );
+        setEarnedPoints(Number(payload.session.earned_points) || 0);
+        setPossiblePoints(Number(payload.session.possible_points) || 0);
+        setSessionNotes(payload.session.session_notes?.trim() || null);
+
+        const memberIds = [payload.session.inspector_id, payload.session.associate_id].filter(
+          Boolean
+        ) as string[];
+
+        if (memberIds.length > 0) {
+          const { data: members } = await supabase
+            .from("team_members")
+            .select("id, first_name, last_name, username")
+            .in("id", memberIds);
+
+          const nameById = buildMemberDisplayNameResolver(members || []);
+          setInspectorName(
+            payload.session.inspector_id
+              ? nameById.displayForMemberId(payload.session.inspector_id) ||
+                  payload.session.completed_by
+              : payload.session.completed_by
+          );
+          setAssociateName(
+            payload.session.associate_id
+              ? nameById.displayForMemberId(payload.session.associate_id)
+              : null
+          );
+        } else {
+          setInspectorName(payload.session.completed_by);
+          setAssociateName(null);
+        }
+
+        const initialResponses: Record<string, Outcome | undefined> = {};
+        const initialNotes: Record<string, string> = {};
+        const initialPhotos: Record<string, string> = {};
+
+        for (const row of payload.responses || []) {
+          const key = itemKey(row.category_key, row.item_key);
+          initialResponses[key] = row.outcome;
+          if (row.item_notes) initialNotes[key] = row.item_notes;
+          if (row.photo_url) initialPhotos[key] = row.photo_url;
+        }
+
+        setResponses(initialResponses);
+        setNotes(initialNotes);
+        setPhotos(initialPhotos);
+
+        const highlightCategoryKey = resolvedHighlightItemKey?.split("::")[0] ?? null;
+        const firstCategoryKey = snapshot.content?.categories[0]?.key ?? null;
+        setExpandedCategoryKey(highlightCategoryKey || firstCategoryKey);
 
         const { data: area } = await supabase
           .from("buildings_and_areas")
@@ -112,7 +209,7 @@ export default function ReportsInspectionSessionDetailModal({
           setError(
             loadError instanceof Error ? loadError.message : "Unable to load inspection session."
           );
-          setDetail(null);
+          setContent(null);
         }
       } finally {
         if (!cancelled) {
@@ -126,184 +223,120 @@ export default function ReportsInspectionSessionDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, resolvedHighlightItemKey]);
 
-  const responsesByKey = useMemo(() => {
-    const map = new Map<string, SessionResponse["responses"][number]>();
-    for (const response of detail?.responses ?? []) {
-      map.set(`${response.category_key}::${response.item_key}`, response);
-    }
-    return map;
-  }, [detail]);
+  const durationLabel = useMemo(
+    () => formatInspectionDuration(startedAt, completedAt),
+    [startedAt, completedAt]
+  );
 
-  const categories = useMemo(() => {
-    const snapshot = detail?.session.template_snapshot;
-    if (!snapshot || typeof snapshot !== "object") return [];
-    const rawCategories = (snapshot as { categories?: Array<Record<string, unknown>> }).categories;
-    return rawCategories ?? [];
-  }, [detail]);
-
-  const inspectorName = detail?.session.inspector_id
-    ? resolveMemberDisplayLabel(memberResolver, detail.session.inspector_id)
-    : detail?.session.completed_by;
-  const associateName = detail?.session.associate_id
-    ? resolveMemberDisplayLabel(memberResolver, detail.session.associate_id)
-    : null;
+  function toggleCategory(categoryKey: string) {
+    setExpandedCategoryKey((current) => (current === categoryKey ? null : categoryKey));
+  }
 
   return (
     <div
-      style={{ ...ONE_EYRIE_MODAL_OVERLAY, zIndex: 1200 }}
       role="presentation"
-      onClick={onClose}
+      onClick={handleClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1200,
+        background: "rgba(0, 0, 0, 0.72)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "stretch",
+        padding: "16px",
+        boxSizing: "border-box",
+      }}
     >
       <div
-        style={{
-          ...ONE_EYRIE_MODAL_BOX,
-          width: "min(920px, 96vw)",
-          maxHeight: "92vh",
-          overflow: "auto",
-        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="reports-inspection-session-title"
         onClick={(event) => event.stopPropagation()}
+        style={{
+          width: "min(1080px, 100%)",
+          height: "100%",
+          maxHeight: "calc(100vh - 32px)",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: "14px",
+          overflow: "hidden",
+          border: `1px solid ${ONE_EYRIE.border}`,
+          background: ONE_EYRIE.black,
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.45)",
+        }}
       >
-        <div style={ONE_EYRIE_MODAL_HEADER}>
-          <div>
-            <h2
-              id="reports-inspection-session-title"
-              style={{ margin: 0, color: ONE_EYRIE.gold, fontSize: "20px", fontWeight: 800 }}
-            >
-              {templateNameFromSnapshot(detail?.session.template_snapshot ?? null)}
-            </h2>
-            <p style={{ margin: "6px 0 0", color: ONE_EYRIE.textSubtle, fontSize: "13px" }}>
-              {roomName} · Completed inspection (read-only)
-            </p>
+        {loading ? (
+          <div style={{ padding: "32px", color: ONE_EYRIE.textMuted, overflowY: "auto" }}>
+            Loading inspection…
           </div>
-          <button
-            type="button"
-            style={ONE_EYRIE_MODAL_CLOSE_BUTTON}
-            onClick={onClose}
-            aria-label="Close inspection session"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
-        <div style={{ padding: "18px 24px 24px" }}>
-          {loading ? (
-            <p style={{ margin: 0, color: ONE_EYRIE.textMuted }}>Loading inspection session…</p>
-          ) : error ? (
+        ) : error ? (
+          <div style={{ padding: "32px", overflowY: "auto" }}>
             <p className="reports-all-work-orders__error" role="alert">
               {error}
             </p>
-          ) : detail ? (
-            <>
-              <div
-                style={{
-                  display: "grid",
-                  gap: "8px",
-                  marginBottom: "16px",
-                  color: ONE_EYRIE.text,
-                  fontSize: "0.875rem",
-                }}
-              >
-                <div>
-                  Type:{" "}
-                  {formatInspectionProgramLabel(detail.session.inspection_program)}
-                </div>
-                <div>
-                  Score: {formatInspectionScorePercent(detail.session.score_percent)}
-                </div>
-                <div>Inspector: {inspectorName || "—"}</div>
-                <div>Associate: {associateName || "—"}</div>
-                <div>
-                  Completed:{" "}
-                  {detail.session.completed_at
-                    ? new Date(detail.session.completed_at).toLocaleString()
-                    : "—"}
-                </div>
-                <div>Failed items: {detail.session.failed_item_count}</div>
-              </div>
-
-              {categories.map((category) => {
-                const categoryKey = String(category.key || "");
-                const categoryLabel = String(category.label || categoryKey);
-                const items = (category.items as Array<Record<string, unknown>> | undefined) ?? [];
-
-                return (
-                  <div key={categoryKey} style={{ marginBottom: "16px" }}>
-                    <h3
-                      style={{
-                        margin: "0 0 8px",
-                        color: ONE_EYRIE.gold,
-                        fontSize: "0.875rem",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {categoryLabel}
-                    </h3>
-                    {items.map((item) => {
-                      const itemKey = String(item.key || "");
-                      const response = responsesByKey.get(`${categoryKey}::${itemKey}`);
-                      const isHighlighted = highlightItemKey === `${categoryKey}::${itemKey}`;
-
-                      return (
-                        <div
-                          key={itemKey}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "12px",
-                            padding: "10px 12px",
-                            marginBottom: "6px",
-                            borderRadius: "8px",
-                            background: ONE_EYRIE.row,
-                            border: isHighlighted
-                              ? `2px solid ${ONE_EYRIE.gold}`
-                              : `1px solid ${ONE_EYRIE.borderDivider}`,
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 700, color: ONE_EYRIE.text }}>
-                              {itemLabel(
-                                item.label as { en?: string; es?: string } | undefined
-                              ) || itemLabel(response?.label_snapshot)}
-                            </div>
-                            {response?.item_notes ? (
-                              <div style={{ marginTop: "4px", color: ONE_EYRIE.textSubtle }}>
-                                {response.item_notes}
-                              </div>
-                            ) : null}
-                          </div>
-                          {response ? <OutcomeBadge outcome={response.outcome} /> : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-
-              {detail.session.session_notes?.trim() ? (
-                <div style={{ marginTop: "12px" }}>
-                  <div
-                    style={{
-                      color: ONE_EYRIE.textSubtle,
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Session notes
-                  </div>
-                  <p style={{ margin: 0, color: ONE_EYRIE.text, whiteSpace: "pre-wrap" }}>
-                    {detail.session.session_notes}
-                  </p>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+            <button
+              type="button"
+              className="reports-pm-results__source-link"
+              onClick={handleClose}
+              style={{ marginTop: "12px" }}
+            >
+              Back to Report
+            </button>
+          </div>
+        ) : content ? (
+          <section
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <CompletedInspectionReview
+              roomName={roomName}
+              templateName={templateName}
+              program={program}
+              completedAt={completedAt}
+              startedAt={startedAt}
+              durationLabel={durationLabel}
+              inspectorName={inspectorName}
+              associateName={associateName}
+              scorePercent={scorePercent}
+              earnedPoints={earnedPoints}
+              possiblePoints={possiblePoints}
+              sessionNotes={sessionNotes}
+              content={content}
+              responses={responses}
+              notes={notes}
+              photos={photos}
+              isMobileLayout={false}
+              expandedCategoryKey={expandedCategoryKey}
+              onToggleCategory={toggleCategory}
+              onBack={handleClose}
+              backLabel="Back to Report"
+              headerBadgeLabel="Read Only"
+              highlightItemKey={resolvedHighlightItemKey}
+              embeddedScrollLayout
+              expandAllCategories
+            />
+          </section>
+        ) : (
+          <div style={{ padding: "32px", color: ONE_EYRIE.textMuted, overflowY: "auto" }}>
+            Unable to display this completed inspection.
+            <button
+              type="button"
+              className="reports-pm-results__source-link"
+              onClick={handleClose}
+              style={{ display: "block", marginTop: "12px" }}
+            >
+              Back to Report
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

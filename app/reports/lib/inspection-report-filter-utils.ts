@@ -114,6 +114,37 @@ export function sessionMatchesVariantProgram(
   return ROOM_INSPECTION_PROGRAMS.includes(program);
 }
 
+export function formatInspectionAssociateName(name: string | null | undefined): string {
+  if (!name || name === "—") return "—";
+  return name;
+}
+
+export function compareRoomNumbers(left: string, right: string): number {
+  const leftTokens = left.match(/\d+|\D+/g) ?? [left];
+  const rightTokens = right.match(/\d+|\D+/g) ?? [right];
+  const tokenCount = Math.max(leftTokens.length, rightTokens.length);
+
+  for (let index = 0; index < tokenCount; index += 1) {
+    const leftToken = leftTokens[index] ?? "";
+    const rightToken = rightTokens[index] ?? "";
+    const leftNumber = /^\d+$/.test(leftToken) ? Number(leftToken) : null;
+    const rightNumber = /^\d+$/.test(rightToken) ? Number(rightToken) : null;
+
+    if (leftNumber !== null && rightNumber !== null) {
+      if (leftNumber !== rightNumber) return leftNumber - rightNumber;
+      continue;
+    }
+
+    const comparison = leftToken.localeCompare(rightToken, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+    if (comparison !== 0) return comparison;
+  }
+
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
+}
+
 export function matchesInspectionReportFilters(
   session: {
     inspectionProgram: InspectionProgram;
@@ -122,19 +153,47 @@ export function matchesInspectionReportFilters(
     completedAt: string;
   },
   filters: InspectionReportFilters,
-  variant: InspectionReportVariant
+  variant: InspectionReportVariant,
+  options?: { applyAssociateFilter?: boolean; applyInspectorFilter?: boolean }
 ): boolean {
   if (!sessionMatchesVariantProgram(session.inspectionProgram, variant, filters.type)) {
     return false;
   }
   if (!matchesInspectionDateRange(session.completedAt, filters)) return false;
-  if (filters.associate !== "All" && session.associateName !== filters.associate) {
+  if (
+    options?.applyAssociateFilter !== false &&
+    filters.associate !== "All" &&
+    formatInspectionAssociateName(session.associateName) !== filters.associate
+  ) {
     return false;
   }
-  if (filters.inspector !== "All" && session.inspectorName !== filters.inspector) {
+  if (
+    options?.applyInspectorFilter !== false &&
+    filters.inspector !== "All" &&
+    session.inspectorName !== filters.inspector
+  ) {
     return false;
   }
   return true;
+}
+
+export function filterSessionsByTypeAndDate<
+  T extends {
+    inspectionProgram: InspectionProgram;
+    completedAt: string;
+  },
+>(
+  source: {
+    variant: InspectionReportVariant;
+    sessions: T[];
+  },
+  filters: Pick<InspectionReportFilters, "type" | "dateStart" | "dateEnd">
+): T[] {
+  return source.sessions.filter(
+    (session) =>
+      sessionMatchesVariantProgram(session.inspectionProgram, source.variant, filters.type) &&
+      matchesInspectionDateRange(session.completedAt, filters)
+  );
 }
 
 export function getActiveGuestRooms(

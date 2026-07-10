@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowLeft, Calendar, Printer, User, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Calendar, Clock, Printer, Timer, User, Users } from "lucide-react";
 import FailedItemDetails from "./FailedItemDetails";
 import OutcomeBadge from "./OutcomeBadge";
 import InspectionCategorySection from "./InspectionCategorySection";
@@ -32,6 +32,14 @@ type CompletedInspectionReviewProps = {
   onToggleCategory: (key: string) => void;
   onBack: () => void;
   backLabel?: string;
+  headerBadgeLabel?: string;
+  startedAt?: string | null;
+  durationLabel?: string | null;
+  highlightItemKey?: string | null;
+  /** Full-height scroll layout for embedded report viewer modals. */
+  embeddedScrollLayout?: boolean;
+  /** Show every checklist section expanded (report viewer). */
+  expandAllCategories?: boolean;
 };
 
 function itemKey(categoryKey: string, itemKeyValue: string) {
@@ -77,8 +85,66 @@ export default function CompletedInspectionReview({
   onToggleCategory,
   onBack,
   backLabel = "Back to dashboard",
+  headerBadgeLabel = "Completed Inspection Review",
+  startedAt = null,
+  durationLabel = null,
+  highlightItemKey = null,
+  embeddedScrollLayout = false,
+  expandAllCategories = false,
 }: CompletedInspectionReviewProps) {
   const [failuresOnly, setFailuresOnly] = useState(false);
+  const [showItemHighlight, setShowItemHighlight] = useState(Boolean(highlightItemKey));
+  const bodyScrollRef = useRef<HTMLDivElement | null>(null);
+  const highlightedItemRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledToHighlightRef = useRef(false);
+
+  useEffect(() => {
+    if (!highlightItemKey) {
+      setShowItemHighlight(false);
+      hasScrolledToHighlightRef.current = false;
+      return;
+    }
+
+    setShowItemHighlight(true);
+    hasScrolledToHighlightRef.current = false;
+
+    const fadeTimer = window.setTimeout(() => {
+      setShowItemHighlight(false);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+    };
+  }, [highlightItemKey]);
+
+  useEffect(() => {
+    if (!highlightItemKey || hasScrolledToHighlightRef.current) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      const container = bodyScrollRef.current;
+      const target = highlightedItemRef.current;
+      if (!container || !target) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const offset =
+        targetRect.top -
+        containerRect.top +
+        container.scrollTop -
+        container.clientHeight / 2 +
+        targetRect.height / 2;
+
+      container.scrollTo({
+        top: Math.max(0, offset),
+        behavior: "smooth",
+      });
+      hasScrolledToHighlightRef.current = true;
+    }, 150);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+    };
+  }, [highlightItemKey, content, expandAllCategories, failuresOnly]);
 
   const counts = useMemo(() => {
     let pass = 0;
@@ -134,11 +200,28 @@ export default function CompletedInspectionReview({
   }
 
   return (
-    <div className="inspection-review-print-root">
+    <div
+      className="inspection-review-print-root"
+      style={
+        embeddedScrollLayout
+          ? {
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              minHeight: 0,
+              overflow: "hidden",
+            }
+          : undefined
+      }
+    >
       <div
         style={{
           background: ONE_EYRIE.surface,
           borderBottom: `1px solid ${ONE_EYRIE.border}`,
+          flexShrink: embeddedScrollLayout ? 0 : undefined,
+          position: embeddedScrollLayout ? "sticky" : undefined,
+          top: embeddedScrollLayout ? 0 : undefined,
+          zIndex: embeddedScrollLayout ? 2 : undefined,
         }}
       >
         <div
@@ -223,7 +306,7 @@ export default function CompletedInspectionReview({
               textTransform: "uppercase",
             }}
           >
-            Completed Inspection Review
+            {headerBadgeLabel}
           </div>
 
           <h1
@@ -250,8 +333,14 @@ export default function CompletedInspectionReview({
       </div>
 
       <div
+        ref={bodyScrollRef}
         className="inspection-review-body inspection-mobile-session-body"
-        style={{ flex: 1, overflowY: "auto", padding: "28px 32px 40px" }}
+        style={{
+          flex: embeddedScrollLayout ? 1 : undefined,
+          minHeight: embeddedScrollLayout ? 0 : undefined,
+          overflowY: "auto",
+          padding: "28px 32px 40px",
+        }}
       >
         <div
           style={{
@@ -336,10 +425,22 @@ export default function CompletedInspectionReview({
             lineHeight: 1.5,
           }}
         >
+          {startedAt ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <Clock size={14} color={ONE_EYRIE.gold} />
+              Started: {formatReviewDate(startedAt)}
+            </span>
+          ) : null}
           <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
             <Calendar size={14} color={ONE_EYRIE.gold} />
-            {formatReviewDate(completedAt)}
+            {startedAt ? `Completed: ${formatReviewDate(completedAt)}` : formatReviewDate(completedAt)}
           </span>
+          {durationLabel ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <Timer size={14} color={ONE_EYRIE.gold} />
+              Duration: {durationLabel}
+            </span>
+          ) : null}
           {inspectorName && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <User size={14} color={ONE_EYRIE.gold} />
@@ -493,7 +594,8 @@ export default function CompletedInspectionReview({
               title={category.name.en}
               answeredCount={countAnsweredInCategory(category.key)}
               totalCount={category.items.length}
-              expanded={expandedCategoryKey === category.key}
+              expanded={expandAllCategories || expandedCategoryKey === category.key}
+              alwaysExpanded={expandAllCategories}
               onToggle={() => onToggleCategory(category.key)}
             >
               {visibleItems.map((item, index) => {
@@ -501,8 +603,15 @@ export default function CompletedInspectionReview({
                 const outcome = responses[key];
                 if (!outcome) return null;
 
+                const isHighlighted = showItemHighlight && highlightItemKey === key;
+                const isScrollTarget = highlightItemKey === key;
+
                 return (
-                  <div key={item.key} style={{ marginBottom: "8px" }}>
+                  <div
+                    key={item.key}
+                    ref={isScrollTarget ? highlightedItemRef : undefined}
+                    style={{ marginBottom: "8px" }}
+                  >
                     <div
                       className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
                       style={{
@@ -511,8 +620,14 @@ export default function CompletedInspectionReview({
                         background:
                           index % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
                         border: `1px solid ${
-                          outcome === "fail" ? FLAT_RED.border : ONE_EYRIE.borderDivider
+                          isHighlighted
+                            ? ONE_EYRIE.gold
+                            : outcome === "fail"
+                              ? FLAT_RED.border
+                              : ONE_EYRIE.borderDivider
                         }`,
+                        boxShadow: isHighlighted ? `0 0 0 2px ${ONE_EYRIE.gold}` : undefined,
+                        transition: "border-color 0.4s ease, box-shadow 0.4s ease",
                       }}
                     >
                       <div

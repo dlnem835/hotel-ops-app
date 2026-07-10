@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
+import ReportsInspectionFailedDetailTable from "@/app/reports/components/ReportsInspectionFailedDetailTable";
 import ReportsInspectionSessionDetailModal from "@/app/reports/components/ReportsInspectionSessionDetailModal";
 import type { InspectionReportModalTarget } from "@/app/reports/lib/report-definitions";
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import {
   buildAssociateRankingRows,
   buildAverageTimeGroups,
-  buildFailedItemRows,
+  buildFailedItemGroups,
   buildFailedSectionGroups,
+  buildInspectorRoomShareRows,
   buildRoomsDoneRows,
   buildRoomsNotDoneRows,
   buildScoresByRoomGroups,
@@ -18,15 +20,19 @@ import { getInspectionReportLabels } from "@/app/reports/lib/inspection-report-s
 import type { InspectionReportFilters } from "@/app/reports/lib/inspection-report-types";
 import {
   ASSOCIATE_RANKING_SORT_COLUMNS,
-  FAILED_ITEMS_SORT_COLUMNS,
+  INSPECTOR_SHARE_SORT_COLUMNS,
   ROOMS_DONE_SORT_COLUMNS,
   ROOMS_NOT_DONE_SORT_COLUMNS,
   sortAssociateRankingRows,
-  sortFailedItemRows,
+  sortFailedAreasDetailRows,
+  sortFailedItemsDetailRows,
+  sortInspectorShareRows,
   sortRoomsDoneRows,
   sortRoomsNotDoneRows,
   type AssociateRankingSortColumn,
-  type FailedItemsSortColumn,
+  type FailedAreasDetailSortColumn,
+  type FailedItemsDetailSortColumn,
+  type InspectorShareSortColumn,
   type InspectionReportSortDirection,
   type RoomsDoneSortColumn,
   type RoomsNotDoneSortColumn,
@@ -114,7 +120,7 @@ export default function ReportsInspectionResults({
   const [openError, setOpenError] = useState<string | null>(null);
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [expandedRoomKey, setExpandedRoomKey] = useState<number | null>(null);
-  const [expandedPersonKey, setExpandedPersonKey] = useState<string | null>(null);
+  const [expandedInspectorKey, setExpandedInspectorKey] = useState<string | null>(null);
 
   const [rankingSortColumn, setRankingSortColumn] =
     useState<AssociateRankingSortColumn>("completedCount");
@@ -128,9 +134,17 @@ export default function ReportsInspectionResults({
     useState<RoomsNotDoneSortColumn>("roomNumber");
   const [roomsNotDoneSortDirection, setRoomsNotDoneSortDirection] =
     useState<InspectionReportSortDirection>("asc");
-  const [failedItemsSortColumn, setFailedItemsSortColumn] =
-    useState<FailedItemsSortColumn>("completedAt");
-  const [failedItemsSortDirection, setFailedItemsSortDirection] =
+  const [failedAreasDetailSortColumn, setFailedAreasDetailSortColumn] =
+    useState<FailedAreasDetailSortColumn>("completedAt");
+  const [failedAreasDetailSortDirection, setFailedAreasDetailSortDirection] =
+    useState<InspectionReportSortDirection>("desc");
+  const [failedItemsDetailSortColumn, setFailedItemsDetailSortColumn] =
+    useState<FailedItemsDetailSortColumn>("completedAt");
+  const [failedItemsDetailSortDirection, setFailedItemsDetailSortDirection] =
+    useState<InspectionReportSortDirection>("desc");
+  const [inspectorShareSortColumn, setInspectorShareSortColumn] =
+    useState<InspectorShareSortColumn>("percent");
+  const [inspectorShareSortDirection, setInspectorShareSortDirection] =
     useState<InspectionReportSortDirection>("desc");
 
   useEffect(() => {
@@ -187,8 +201,12 @@ export default function ReportsInspectionResults({
     () => (source ? buildFailedSectionGroups(source, filters) : []),
     [source, filters]
   );
-  const failedItemRows = useMemo(
-    () => (source ? buildFailedItemRows(source, filters) : []),
+  const failedItemGroups = useMemo(
+    () => (source ? buildFailedItemGroups(source, filters) : []),
+    [source, filters]
+  );
+  const inspectorShare = useMemo(
+    () => (source ? buildInspectorRoomShareRows(source, filters) : { rows: [], totalCompleted: 0 }),
     [source, filters]
   );
   const scoresByRoomGroups = useMemo(
@@ -209,28 +227,66 @@ export default function ReportsInspectionResults({
       sortRoomsNotDoneRows(roomsNotDoneRows, roomsNotDoneSortColumn, roomsNotDoneSortDirection),
     [roomsNotDoneRows, roomsNotDoneSortColumn, roomsNotDoneSortDirection]
   );
-  const sortedFailedItemRows = useMemo(
-    () => sortFailedItemRows(failedItemRows, failedItemsSortColumn, failedItemsSortDirection),
-    [failedItemRows, failedItemsSortColumn, failedItemsSortDirection]
+  function sortFailedSectionGroupItems(groupKey: string) {
+    const group = failedSectionGroups.find((entry) => entry.sectionKey === groupKey);
+    if (!group) return [];
+    return sortFailedAreasDetailRows(
+      group.items,
+      failedAreasDetailSortColumn,
+      failedAreasDetailSortDirection
+    );
+  }
+
+  function sortFailedItemGroupItems(groupKey: string) {
+    const group = failedItemGroups.find((entry) => entry.groupKey === groupKey);
+    if (!group) return [];
+    return sortFailedItemsDetailRows(
+      group.items,
+      failedItemsDetailSortColumn,
+      failedItemsDetailSortDirection
+    );
+  }
+  const sortedInspectorShareRows = useMemo(
+    () =>
+      sortInspectorShareRows(
+        inspectorShare.rows,
+        inspectorShareSortColumn,
+        inspectorShareSortDirection
+      ),
+    [inspectorShare.rows, inspectorShareSortColumn, inspectorShareSortDirection]
   );
 
-  const personColumnLabel = variant === "rpm" ? "Associate" : "Inspector";
   const roomsDoneColumns = useMemo(
     () =>
-      ROOMS_DONE_SORT_COLUMNS.map((column) =>
-        column.key === "personName" ? { ...column, label: personColumnLabel } : column
+      ROOMS_DONE_SORT_COLUMNS.filter(
+        (column) => variant === "room" || column.key !== "inspectionType"
       ),
-    [personColumnLabel]
+    [variant]
   );
-  const failedItemsColumns = useMemo(
+  const inspectorShareColumns = useMemo(
     () =>
-      FAILED_ITEMS_SORT_COLUMNS.map((column) =>
-        column.key === "personName" ? { ...column, label: personColumnLabel } : column
-      ),
-    [personColumnLabel]
+      INSPECTOR_SHARE_SORT_COLUMNS.map((column) => {
+        if (column.key === "roomCount") {
+          return {
+            ...column,
+            label: variant === "rpm" ? "Rooms Completed" : "Rooms Inspected",
+          };
+        }
+        if (column.key === "percent") {
+          return {
+            ...column,
+            label:
+              variant === "rpm"
+                ? "% of Total Rooms Completed"
+                : "% of Total Rooms Inspected",
+          };
+        }
+        return column;
+      }),
+    [variant]
   );
 
-  const openSession = useCallback(async (sessionId: number, itemKey?: string | null) => {
+  const openSession = useCallback(async (sessionId: number, itemHighlightKey?: string | null) => {
     if (openingSessionId) return;
     scrollContainerRef.current = getScrollContainer(rootRef.current);
     savedScrollTopRef.current = scrollContainerRef.current?.scrollTop ?? 0;
@@ -241,7 +297,7 @@ export default function ReportsInspectionResults({
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to open inspection session.");
       setSelectedSessionId(sessionId);
-      setHighlightItemKey(itemKey ?? null);
+      setHighlightItemKey(itemHighlightKey ?? null);
     } catch (openErr) {
       setOpenError(openErr instanceof Error ? openErr.message : "Unable to open inspection session.");
     } finally {
@@ -276,13 +332,31 @@ export default function ReportsInspectionResults({
     setRoomsNotDoneSortDirection("asc");
   }
 
-  function toggleFailedItemsSort(column: FailedItemsSortColumn) {
-    if (failedItemsSortColumn === column) {
-      setFailedItemsSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+  function toggleFailedAreasDetailSort(column: FailedAreasDetailSortColumn) {
+    if (failedAreasDetailSortColumn === column) {
+      setFailedAreasDetailSortDirection((current) => (current === "asc" ? "desc" : "asc"));
       return;
     }
-    setFailedItemsSortColumn(column);
-    setFailedItemsSortDirection("asc");
+    setFailedAreasDetailSortColumn(column);
+    setFailedAreasDetailSortDirection("asc");
+  }
+
+  function toggleFailedItemsDetailSort(column: FailedItemsDetailSortColumn) {
+    if (failedItemsDetailSortColumn === column) {
+      setFailedItemsDetailSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setFailedItemsDetailSortColumn(column);
+    setFailedItemsDetailSortDirection("asc");
+  }
+
+  function toggleInspectorShareSort(column: InspectorShareSortColumn) {
+    if (inspectorShareSortColumn === column) {
+      setInspectorShareSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setInspectorShareSortColumn(column);
+    setInspectorShareSortDirection(column === "percent" ? "desc" : "asc");
   }
 
   if (loading) {
@@ -379,23 +453,23 @@ export default function ReportsInspectionResults({
       <>
         <div ref={rootRef} className="reports-wo-results">
           <p className="reports-pm-results__lead">
-            Average {timeLabel} time from completed_at minus started_at.
+            Average {timeLabel} time grouped by inspector from completed_at minus started_at.
           </p>
           {openError ? <p className="reports-all-work-orders__error" role="alert">{openError}</p> : null}
           {groups.length > 0 ? (
             <div className="reports-wo-top-categories__list">
               {groups.map((group) => {
-                const isExpanded = expandedPersonKey === group.personId;
+                const isExpanded = expandedInspectorKey === group.inspectorId;
                 return (
                   <div
-                    key={group.personId}
+                    key={group.inspectorId}
                     className={`reports-wo-top-categories__group${isExpanded ? " reports-wo-top-categories__group--expanded" : ""}`}
                   >
                     <button
                       type="button"
                       className="reports-wo-top-categories__row"
                       onClick={() =>
-                        setExpandedPersonKey(isExpanded ? null : group.personId)
+                        setExpandedInspectorKey(isExpanded ? null : group.inspectorId)
                       }
                       aria-expanded={isExpanded}
                     >
@@ -404,7 +478,7 @@ export default function ReportsInspectionResults({
                       ) : (
                         <ChevronRight size={16} className="reports-wo-top-categories__chevron" />
                       )}
-                      <span className="reports-wo-top-categories__label">{group.personName}</span>
+                      <span className="reports-wo-top-categories__label">{group.inspectorName}</span>
                       <span className="reports-wo-top-categories__count">
                         {group.completedCount} completed · Avg {group.averageTimeLabel ?? "—"}
                       </span>
@@ -416,7 +490,6 @@ export default function ReportsInspectionResults({
                             <thead>
                               <tr>
                                 <th>Room</th>
-                                <th>Type</th>
                                 <th>Started</th>
                                 <th>Completed</th>
                                 <th>Duration</th>
@@ -436,7 +509,6 @@ export default function ReportsInspectionResults({
                                       {session.roomNumber}
                                     </button>
                                   </td>
-                                  <td>{session.inspectionType}</td>
                                   <td>{session.startedAt}</td>
                                   <td>{session.completedAt}</td>
                                   <td>{session.durationLabel ?? "—"}</td>
@@ -500,8 +572,9 @@ export default function ReportsInspectionResults({
                           {row.roomNumber}
                         </button>
                       </td>
-                      <td>{row.inspectionType}</td>
-                      <td>{row.personName}</td>
+                      {variant === "room" ? <td>{row.inspectionType}</td> : null}
+                      <td>{row.inspectorName}</td>
+                      <td>{row.associateName}</td>
                       <td>{formatScore(row.scorePercent)}</td>
                       <td>{row.failedItemCount}</td>
                       <td>{row.completedAt}</td>
@@ -510,7 +583,7 @@ export default function ReportsInspectionResults({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7}>No records match the selected filters.</td>
+                    <td colSpan={variant === "room" ? 8 : 7}>No records match the selected filters.</td>
                   </tr>
                 )}
               </tbody>
@@ -523,11 +596,12 @@ export default function ReportsInspectionResults({
   }
 
   if (reportId === "rooms-not-done") {
-    const lastLabel = variant === "rpm" ? "Last RPM" : "Last inspection";
-    const lastPersonLabel = variant === "rpm" ? "Last associate" : "Last inspector";
+    const lastLabel = variant === "rpm" ? "Last RPM date" : "Last inspection date";
+    const daysLabel =
+      variant === "rpm" ? "Days since last RPM" : "Days since last inspection";
     const notDoneColumns = ROOMS_NOT_DONE_SORT_COLUMNS.map((column) => {
       if (column.key === "lastDate") return { ...column, label: lastLabel };
-      if (column.key === "lastPersonName") return { ...column, label: lastPersonLabel };
+      if (column.key === "daysSinceLast") return { ...column, label: daysLabel };
       return column;
     });
     return (
@@ -554,15 +628,14 @@ export default function ReportsInspectionResults({
                   <tr key={row.areaId}>
                     <td>{row.roomNumber}</td>
                     <td>{row.lastDate ?? "—"}</td>
-                    <td>{row.lastType ?? "—"}</td>
-                    <td>{row.lastPersonName ?? "—"}</td>
+                    <td>{row.lastInspectorName ?? "—"}</td>
                     <td>{row.daysSinceLast ?? "—"}</td>
                     <td>{row.statusLabel}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6}>No records match the selected filters.</td>
+                  <td colSpan={5}>No records match the selected filters.</td>
                 </tr>
               )}
             </tbody>
@@ -576,7 +649,7 @@ export default function ReportsInspectionResults({
     return (
       <>
         <div ref={rootRef} className="reports-wo-results">
-          <p className="reports-pm-results__lead">Failed items grouped by section/area.</p>
+          <p className="reports-pm-results__lead">Failed responses grouped by section.</p>
           {openError ? <p className="reports-all-work-orders__error" role="alert">{openError}</p> : null}
           {failedSectionGroups.length > 0 ? (
             <div className="reports-wo-top-categories__list">
@@ -607,39 +680,17 @@ export default function ReportsInspectionResults({
                     </button>
                     {isExpanded ? (
                       <div className="reports-wo-top-categories__details">
-                        <div className="reports-pm-results__table-wrap">
-                          <table className="reports-pm-results__table reports-wo-top-categories__table">
-                            <thead>
-                              <tr>
-                                <th>Room</th>
-                                <th>Failed item</th>
-                                <th>{personColumnLabel}</th>
-                                <th>Score</th>
-                                <th>Completed</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {group.items.map((item) => (
-                                <tr key={`${item.sessionId}-${item.failedItemLabel}`}>
-                                  <td>
-                                    <button
-                                      type="button"
-                                      className="reports-pm-results__source-link"
-                                      onClick={() => void openSession(item.sessionId)}
-                                      disabled={Boolean(openingSessionId)}
-                                    >
-                                      {item.roomNumber}
-                                    </button>
-                                  </td>
-                                  <td>{item.failedItemLabel}</td>
-                                  <td>{item.personName}</td>
-                                  <td>{formatScore(item.scorePercent)}</td>
-                                  <td>{item.completedAt}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                        <ReportsInspectionFailedDetailTable
+                          variant="areas"
+                          rows={sortFailedSectionGroupItems(group.sectionKey)}
+                          sortColumn={failedAreasDetailSortColumn}
+                          sortDirection={failedAreasDetailSortDirection}
+                          onSort={toggleFailedAreasDetailSort}
+                          openingSessionId={openingSessionId}
+                          onOpenSession={(sessionId, highlightKey) =>
+                            void openSession(sessionId, highlightKey)
+                          }
+                        />
                       </div>
                     ) : null}
                   </div>
@@ -659,56 +710,113 @@ export default function ReportsInspectionResults({
     return (
       <>
         <div ref={rootRef} className="reports-wo-results">
-          <p className="reports-pm-results__lead">Failed checklist items from completed sessions.</p>
+          <p className="reports-pm-results__lead">
+            Failed checklist items grouped by question for the selected filters.
+          </p>
           {openError ? <p className="reports-all-work-orders__error" role="alert">{openError}</p> : null}
-          <div className="reports-pm-results__table-wrap">
-            <table className="reports-pm-results__table">
-              <thead>
-                <tr>
-                  {failedItemsColumns.map((column) => (
-                    <SortableHeader
-                      key={column.key}
-                      column={column}
-                      sortColumn={failedItemsSortColumn}
-                      sortDirection={failedItemsSortDirection}
-                      onSort={toggleFailedItemsSort}
-                    />
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedFailedItemRows.length > 0 ? (
-                  sortedFailedItemRows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.itemLabel}</td>
-                      <td>{row.sectionLabel}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="reports-pm-results__source-link"
-                          onClick={() => void openSession(row.sessionId, row.id.split("::")[1] ?? null)}
-                          disabled={Boolean(openingSessionId)}
-                        >
-                          {row.roomNumber}
-                        </button>
-                      </td>
-                      <td>{row.personName}</td>
-                      <td>{formatScore(row.scorePercent)}</td>
-                      <td>{row.completedAt}</td>
-                      <td>{row.notes}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7}>No records match the selected filters.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {failedItemGroups.length > 0 ? (
+            <div className="reports-wo-top-categories__list">
+              {failedItemGroups.map((group) => {
+                const isExpanded = expandedGroupKey === group.groupKey;
+                return (
+                  <div
+                    key={group.groupKey}
+                    className={`reports-wo-top-categories__group${isExpanded ? " reports-wo-top-categories__group--expanded" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="reports-wo-top-categories__row"
+                      onClick={() =>
+                        setExpandedGroupKey(isExpanded ? null : group.groupKey)
+                      }
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown size={16} className="reports-wo-top-categories__chevron" />
+                      ) : (
+                        <ChevronRight size={16} className="reports-wo-top-categories__chevron" />
+                      )}
+                      <span className="reports-wo-top-categories__label">{group.displayLabel}</span>
+                      <span className="reports-wo-top-categories__count">
+                        {group.totalFailures}
+                      </span>
+                    </button>
+                    {isExpanded ? (
+                      <div className="reports-wo-top-categories__details">
+                        <ReportsInspectionFailedDetailTable
+                          variant="items"
+                          rows={sortFailedItemGroupItems(group.groupKey)}
+                          sortColumn={failedItemsDetailSortColumn}
+                          sortDirection={failedItemsDetailSortDirection}
+                          onSort={toggleFailedItemsDetailSort}
+                          openingSessionId={openingSessionId}
+                          onOpenSession={(sessionId, highlightKey) =>
+                            void openSession(sessionId, highlightKey)
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="reports-pm-results__lead">No records match the selected filters.</p>
+          )}
         </div>
         {modal}
       </>
+    );
+  }
+
+  if (reportId === "rooms-by-inspector") {
+    const totalLabel =
+      variant === "rpm" ? "Total Rooms Completed" : "Total Rooms Inspected";
+    return (
+      <div ref={rootRef} className="reports-wo-results">
+        <p className="reports-pm-results__lead">
+          {variant === "rpm"
+            ? "RPM completion coverage by inspector for the selected period."
+            : "Inspection coverage by inspector for the selected period."}
+        </p>
+        <p className="reports-pm-results__lead">
+          <strong>
+            {totalLabel}: {inspectorShare.totalCompleted}
+          </strong>
+        </p>
+        <div className="reports-pm-results__table-wrap">
+          <table className="reports-pm-results__table">
+            <thead>
+              <tr>
+                {inspectorShareColumns.map((column) => (
+                  <SortableHeader
+                    key={column.key}
+                    column={column}
+                    sortColumn={inspectorShareSortColumn}
+                    sortDirection={inspectorShareSortDirection}
+                    onSort={toggleInspectorShareSort}
+                  />
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedInspectorShareRows.length > 0 ? (
+                sortedInspectorShareRows.map((row) => (
+                  <tr key={row.inspectorId}>
+                    <td>{row.inspectorName}</td>
+                    <td>{row.roomCount}</td>
+                    <td>{row.percent}%</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3}>No records match the selected filters.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 
@@ -753,7 +861,7 @@ export default function ReportsInspectionResults({
                           <thead>
                             <tr>
                               <th>Type</th>
-                              <th>{personColumnLabel}</th>
+                              <th>Inspector</th>
                               <th>Score</th>
                               <th>Failed items</th>
                               <th>Completed</th>
@@ -765,7 +873,7 @@ export default function ReportsInspectionResults({
                             {group.sessions.map((session) => (
                               <tr key={session.sessionId}>
                                 <td>{session.inspectionType}</td>
-                                <td>{session.personName}</td>
+                                <td>{session.inspectorName}</td>
                                 <td>{formatScore(session.scorePercent)}</td>
                                 <td>{session.failedItemCount}</td>
                                 <td>{session.completedAt}</td>

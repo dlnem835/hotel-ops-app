@@ -22,6 +22,7 @@ import {
   getRpmInspectionReportTitle,
   type InspectionReportModalTarget,
 } from "@/app/reports/lib/report-definitions";
+import { getInspectionReportFilterFields } from "@/app/reports/lib/inspection-report-filter-config";
 import {
   getInspectionReportLabels,
   ROOM_INSPECTION_TYPE_FILTER_OPTIONS,
@@ -118,12 +119,13 @@ export default function ReportsInspectionFilterModal({
     target.variant === "rpm"
       ? getRpmInspectionReportTitle(target.reportId)
       : getRoomInspectionReportTitle(target.reportId);
+  const filterFields = getInspectionReportFilterFields(target.reportId);
   const inspectionFilterLines = [
     ...(target.variant === "room"
       ? [`Inspection Type: ${filters.type}`]
       : []),
-    `Associate: ${filters.associate}`,
-    `Inspector: ${filters.inspector}`,
+    ...(filterFields.showInspector ? [`Inspector: ${filters.inspector}`] : []),
+    ...(filterFields.showAssociate ? [`Associate: ${filters.associate}`] : []),
   ];
 
   function updateFilter<K extends keyof InspectionReportFilters>(
@@ -213,35 +215,39 @@ export default function ReportsInspectionFilterModal({
             </label>
           ) : null}
 
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Associate</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.associate}
-              onChange={(event) => updateFilter("associate", event.target.value)}
-            >
-              {associateOptions.map((associate) => (
-                <option key={associate} value={associate}>
-                  {associate}
-                </option>
-              ))}
-            </select>
-          </label>
+          {filterFields.showInspector ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>Inspector</span>
+              <select
+                className="one-eyrie-field"
+                value={filters.inspector}
+                onChange={(event) => updateFilter("inspector", event.target.value)}
+              >
+                {inspectorOptions.map((inspector) => (
+                  <option key={inspector} value={inspector}>
+                    {inspector}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
-          <label className="reports-pm-modal__field">
-            <span style={fieldLabel}>Inspector</span>
-            <select
-              className="one-eyrie-field"
-              value={filters.inspector}
-              onChange={(event) => updateFilter("inspector", event.target.value)}
-            >
-              {inspectorOptions.map((inspector) => (
-                <option key={inspector} value={inspector}>
-                  {inspector}
-                </option>
-              ))}
-            </select>
-          </label>
+          {filterFields.showAssociate ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>Associate</span>
+              <select
+                className="one-eyrie-field"
+                value={filters.associate}
+                onChange={(event) => updateFilter("associate", event.target.value)}
+              >
+                {associateOptions.map((associate) => (
+                  <option key={associate} value={associate}>
+                    {associate}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <ReportsDateRangeField
             preset={datePreset}
