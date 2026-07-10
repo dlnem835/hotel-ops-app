@@ -18,7 +18,6 @@ import {
 } from "@/app/lib/oneEyrieButtons";
 import { useReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import {
-  createScheduleId,
   saveReportSchedule,
 } from "@/app/reports/lib/report-schedule-storage";
 import {
@@ -30,6 +29,7 @@ import {
   type ReportScheduleFormValues,
   type ReportScheduleFrequency,
 } from "@/app/reports/lib/report-schedule-types";
+import { resolveClientTimezone } from "@/app/reports/lib/report-schedule-next-run";
 
 type ReportsScheduleModalProps = {
   open: boolean;
@@ -54,6 +54,7 @@ export default function ReportsScheduleModal({
 }: ReportsScheduleModalProps) {
   const [form, setForm] = useState<ReportScheduleFormValues | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   useEffect(() => {
@@ -89,19 +90,27 @@ export default function ReportsScheduleModal({
     setSaveMessage(null);
   }
 
-  function handleSave() {
-    if (!form || !context) return;
+  async function handleSave() {
+    if (!form || !context || saving) return;
 
-    const now = new Date().toISOString();
-    saveReportSchedule({
-      id: createScheduleId(),
-      createdAt: now,
-      updatedAt: now,
-      schedule: form,
-      context,
-    });
-    setSaveMessage("Schedule saved. Email delivery will be enabled in a future update.");
-    onSaved?.();
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      await saveReportSchedule({
+        schedule: form,
+        context,
+        timezone: resolveClientTimezone(),
+      });
+      setSaveMessage("Schedule saved. The next delivery will run automatically.");
+      onSaved?.();
+    } catch (saveError) {
+      setSaveMessage(
+        saveError instanceof Error ? saveError.message : "Unable to save schedule."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -328,9 +337,10 @@ export default function ReportsScheduleModal({
             type="button"
             style={GOLD_FILLED_BUTTON}
             {...goldFilledHoverHandlers}
-            onClick={handleSave}
+            disabled={saving}
+            onClick={() => void handleSave()}
           >
-            Save Schedule
+            {saving ? "Saving…" : "Save Schedule"}
           </button>
         </div>
       </div>

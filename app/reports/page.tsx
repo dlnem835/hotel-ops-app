@@ -9,6 +9,7 @@ import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/
 import ReportsCategoryCard from "@/app/reports/components/ReportsCategoryCard";
 import ReportsEmptyTabState from "@/app/reports/components/ReportsEmptyTabState";
 import ReportsScheduledReportsList from "@/app/reports/components/ReportsScheduledReportsList";
+import ReportsFavoritesTab from "@/app/reports/components/ReportsFavoritesTab";
 import ReportsInspectionFilterModal from "@/app/reports/components/ReportsInspectionFilterModal";
 import ReportsLnfFilterModal from "@/app/reports/components/ReportsLnfFilterModal";
 import ReportsPassOnFilterModal from "@/app/reports/components/ReportsPassOnFilterModal";
@@ -16,6 +17,7 @@ import ReportsPmFilterModal from "@/app/reports/components/ReportsPmFilterModal"
 import ReportsSearchBar from "@/app/reports/components/ReportsSearchBar";
 import ReportsTabs from "@/app/reports/components/ReportsTabs";
 import ReportsWoFilterModal from "@/app/reports/components/ReportsWoFilterModal";
+import { ReportFavoritesProvider } from "@/app/reports/hooks/useReportFavorites";
 import { filterReportsForSearch } from "@/app/reports/lib/reports-search";
 import {
   ALL_REPORT_SECTIONS,
@@ -112,42 +114,44 @@ export default function ReportsPage() {
         />
 
         <div className="one-eyrie-reports-page">
-          <ReportsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <ReportFavoritesProvider>
+            <ReportsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-          <ReportsSearchBar value={searchQuery} onChange={setSearchQuery} />
+            <ReportsSearchBar value={searchQuery} onChange={setSearchQuery} />
 
-          {activeTab === "all" ? (
-            <>
-              <div className="reports-category-grid">
-                {ALL_REPORT_SECTIONS.map((section) => (
-                  <ReportsCategoryCard
-                    key={section.id}
-                    section={section}
-                    searchQuery={searchQuery}
-                    onReportSelect={handleReportSelect}
+            {activeTab === "all" ? (
+              <>
+                <div className="reports-category-grid">
+                  {ALL_REPORT_SECTIONS.map((section) => (
+                    <ReportsCategoryCard
+                      key={section.id}
+                      section={section}
+                      searchQuery={searchQuery}
+                      onReportSelect={handleReportSelect}
+                    />
+                  ))}
+                </div>
+                {searchQuery.trim() &&
+                !ALL_REPORT_SECTIONS.some(
+                  (section) => filterReportsForSearch(section, searchQuery).length > 0
+                ) ? (
+                  <ReportsEmptyTabState
+                    title="No matching reports"
+                    description={`No reports match "${searchQuery.trim()}". Try a different search term.`}
                   />
-                ))}
-              </div>
-              {searchQuery.trim() &&
-              !ALL_REPORT_SECTIONS.some(
-                (section) => filterReportsForSearch(section, searchQuery).length > 0
-              ) ? (
-                <ReportsEmptyTabState
-                  title="No matching reports"
-                  description={`No reports match "${searchQuery.trim()}". Try a different search term.`}
-                />
-              ) : null}
-            </>
-          ) : null}
+                ) : null}
+              </>
+            ) : null}
 
-          {activeTab === "favorites" ? (
-            <ReportsEmptyTabState
-              title="Favorites"
-              description="Saved report configurations will appear here. Pin filters and layouts from any report once reporting is live."
-            />
-          ) : null}
+            {activeTab === "favorites" ? (
+              <ReportsFavoritesTab
+                searchQuery={searchQuery}
+                onReportSelect={handleReportSelect}
+              />
+            ) : null}
 
-          {activeTab === "scheduled" ? <ReportsScheduledReportsList /> : null}
+            {activeTab === "scheduled" ? <ReportsScheduledReportsList /> : null}
+          </ReportFavoritesProvider>
         </div>
       </section>
 

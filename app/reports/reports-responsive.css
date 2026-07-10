@@ -170,9 +170,45 @@
   margin: 0;
 }
 
+.reports-category-card__row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.reports-category-card__favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.reports-category-card__favorite-btn:hover,
+.reports-category-card__favorite-btn:focus-visible {
+  color: #c8a96a;
+  background: rgba(200, 169, 106, 0.08);
+  outline: none;
+}
+
+.reports-category-card__favorite-btn--active {
+  color: #c8a96a;
+}
+
+.reports-category-card__favorite-icon {
+  display: block;
+}
+
 .reports-category-card__link {
   display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 7px 14px;
   border: none;
   background: transparent;
@@ -1271,6 +1307,14 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.reports-scheduled-list__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 120px;
 }
 
 @media print {

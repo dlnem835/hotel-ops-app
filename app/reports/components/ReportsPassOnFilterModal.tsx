@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -20,19 +20,18 @@ import {
   DEFAULT_PASS_ON_REPORT_FILTERS,
   DEFAULT_PASS_ON_UNREAD_REPORT_FILTERS,
   getPassOnReportTitle,
-  PASS_ON_DEPARTMENT_FILTER_OPTIONS,
+  PASS_ON_PRIORITY_FILTER_OPTIONS,
   PASS_ON_SHIFT_FILTER_OPTIONS,
   type PassOnReportFilters,
   type PassOnReportId,
   type PassOnUnreadReportFilters,
 } from "@/app/reports/lib/report-definitions";
-import { PASS_ON_USER_FILTER_OPTIONS } from "@/app/reports/lib/pass-on-report-sample-data";
+import { fetchPassOnReportSource } from "@/app/reports/lib/pass-on-report-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
-import ReportsPassOnPlaceholderResults from "@/app/reports/components/ReportsPassOnPlaceholderResults";
+import ReportsPassOnResults from "@/app/reports/components/ReportsPassOnResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
-import { SAMPLE_INSPECTION_ASSOCIATES } from "@/app/reports/lib/inspection-report-sample-data";
 import {
   applyDefaultReportDateRange,
   DEFAULT_REPORT_DATE_PRESET,
@@ -67,6 +66,10 @@ export default function ReportsPassOnFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
+  const [createdByOptions, setCreatedByOptions] = useState<string[]>(["All"]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>(["All"]);
+  const [userOptions, setUserOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   const syncPropertyName = useCallback((name: string) => {
@@ -85,9 +88,39 @@ export default function ReportsPassOnFilterModal({
     }
   }, [open, reportId]);
 
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    async function loadFilterOptions() {
+      setFilterOptionsLoading(true);
+      try {
+        const source = await fetchPassOnReportSource();
+        if (cancelled) return;
+        setCreatedByOptions(source.filterOptions.createdByOptions);
+        setDepartmentOptions(source.filterOptions.departmentOptions);
+        setUserOptions(["All", ...source.filterOptions.userOptions.map((user) => user.displayName)]);
+      } catch {
+        if (!cancelled) {
+          setCreatedByOptions(["All"]);
+          setDepartmentOptions(["All"]);
+          setUserOptions(["All"]);
+        }
+      } finally {
+        if (!cancelled) setFilterOptionsLoading(false);
+      }
+    }
+
+    void loadFilterOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, reportId]);
+
   if (!open || !reportId) return null;
 
   const isUnreadReport = reportId === "unread-entries-by-user";
+  const isKeywordReport = reportId === "keyword-search";
   const activePropertyName =
     propertyName || (isUnreadReport ? unreadFilters.propertyName : filters.propertyName);
 
@@ -131,9 +164,36 @@ export default function ReportsPassOnFilterModal({
 
   const activeDateStart = isUnreadReport ? unreadFilters.dateStart : filters.dateStart;
   const activeDateEnd = isUnreadReport ? unreadFilters.dateEnd : filters.dateEnd;
-  const passOnFilterLines = isUnreadReport
-    ? [`Department: ${unreadFilters.department}`, `User: ${unreadFilters.user}`]
-    : [`Associate: ${filters.associate}`, `Shift: ${filters.shift}`];
+
+  const passOnFilterLines = useMemo(() => {
+    if (isUnreadReport) {
+      return [
+        `Department: ${unreadFilters.department}`,
+        `User: ${unreadFilters.user}`,
+        `Shift: ${unreadFilters.shift}`,
+      ];
+    }
+
+    const lines = [
+      `Created By: ${filters.associate}`,
+      `Shift: ${filters.shift}`,
+      `Priority: ${filters.priority}`,
+    ];
+    if (isKeywordReport && filters.keyword.trim()) {
+      lines.push(`Keyword: ${filters.keyword.trim()}`);
+    }
+    return lines;
+  }, [filters, isKeywordReport, isUnreadReport, unreadFilters]);
+
+  const canRunKeywordReport = !isKeywordReport || filters.keyword.trim().length > 0;
+
+  function handleRunReport() {
+    if (isKeywordReport && !filters.keyword.trim()) {
+      setShowResults(true);
+      return;
+    }
+    setShowResults(true);
+  }
 
   return (
     <div
@@ -190,14 +250,10 @@ export default function ReportsPassOnFilterModal({
                 <select
                   className="one-eyrie-field"
                   value={unreadFilters.department}
-                  onChange={(event) =>
-                    updateUnreadFilter(
-                      "department",
-                      event.target.value as PassOnUnreadReportFilters["department"]
-                    )
-                  }
+                  disabled={filterOptionsLoading}
+                  onChange={(event) => updateUnreadFilter("department", event.target.value)}
                 >
-                  {PASS_ON_DEPARTMENT_FILTER_OPTIONS.map((department) => (
+                  {departmentOptions.map((department) => (
                     <option key={department} value={department}>
                       {department}
                     </option>
@@ -210,11 +266,32 @@ export default function ReportsPassOnFilterModal({
                 <select
                   className="one-eyrie-field"
                   value={unreadFilters.user}
+                  disabled={filterOptionsLoading}
                   onChange={(event) => updateUnreadFilter("user", event.target.value)}
                 >
-                  {PASS_ON_USER_FILTER_OPTIONS.map((user) => (
+                  {userOptions.map((user) => (
                     <option key={user} value={user}>
                       {user}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="reports-pm-modal__field">
+                <span style={fieldLabel}>Shift</span>
+                <select
+                  className="one-eyrie-field"
+                  value={unreadFilters.shift}
+                  onChange={(event) =>
+                    updateUnreadFilter(
+                      "shift",
+                      event.target.value as PassOnUnreadReportFilters["shift"]
+                    )
+                  }
+                >
+                  {PASS_ON_SHIFT_FILTER_OPTIONS.map((shift) => (
+                    <option key={shift} value={shift}>
+                      {shift}
                     </option>
                   ))}
                 </select>
@@ -222,14 +299,28 @@ export default function ReportsPassOnFilterModal({
             </>
           ) : (
             <>
+              {isKeywordReport ? (
+                <label className="reports-pm-modal__field">
+                  <span style={fieldLabel}>Keyword / Search Phrase</span>
+                  <input
+                    className="one-eyrie-field"
+                    type="text"
+                    value={filters.keyword}
+                    onChange={(event) => updateFilter("keyword", event.target.value)}
+                    placeholder="Search subject and entry body"
+                  />
+                </label>
+              ) : null}
+
               <label className="reports-pm-modal__field">
-                <span style={fieldLabel}>Associate</span>
+                <span style={fieldLabel}>Created By</span>
                 <select
                   className="one-eyrie-field"
                   value={filters.associate}
+                  disabled={filterOptionsLoading}
                   onChange={(event) => updateFilter("associate", event.target.value)}
                 >
-                  {SAMPLE_INSPECTION_ASSOCIATES.map((associate) => (
+                  {createdByOptions.map((associate) => (
                     <option key={associate} value={associate}>
                       {associate}
                     </option>
@@ -249,6 +340,26 @@ export default function ReportsPassOnFilterModal({
                   {PASS_ON_SHIFT_FILTER_OPTIONS.map((shift) => (
                     <option key={shift} value={shift}>
                       {shift}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="reports-pm-modal__field">
+                <span style={fieldLabel}>Priority</span>
+                <select
+                  className="one-eyrie-field"
+                  value={filters.priority}
+                  onChange={(event) =>
+                    updateFilter(
+                      "priority",
+                      event.target.value as PassOnReportFilters["priority"]
+                    )
+                  }
+                >
+                  {PASS_ON_PRIORITY_FILTER_OPTIONS.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
                     </option>
                   ))}
                 </select>
@@ -278,7 +389,7 @@ export default function ReportsPassOnFilterModal({
             type="button"
             style={GOLD_FILLED_BUTTON}
             {...goldFilledHoverHandlers}
-            onClick={() => setShowResults(true)}
+            onClick={handleRunReport}
           >
             Run Report
           </button>
@@ -315,19 +426,29 @@ export default function ReportsPassOnFilterModal({
                       propertyName: activePropertyName,
                       department: unreadFilters.department,
                       user: unreadFilters.user,
+                      shift: unreadFilters.shift,
                     }
                   : {
                       reportVariant: reportId,
                       propertyName: activePropertyName,
                       associate: filters.associate,
                       shift: filters.shift,
+                      priority: filters.priority,
+                      keyword: filters.keyword,
                     },
               }}
             >
-              <ReportsPassOnPlaceholderResults
-                reportId={reportId}
-                unreadFilters={isUnreadReport ? unreadFilters : undefined}
-              />
+              {isKeywordReport && !canRunKeywordReport ? (
+                <p className="reports-pm-results__lead">
+                  Enter a keyword or phrase to search Pass-On entries.
+                </p>
+              ) : (
+                <ReportsPassOnResults
+                  reportId={reportId}
+                  filters={filters}
+                  unreadFilters={isUnreadReport ? unreadFilters : undefined}
+                />
+              )}
             </ReportsPrintableOutput>
           </div>
         ) : null}

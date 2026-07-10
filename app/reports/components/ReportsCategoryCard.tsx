@@ -5,6 +5,7 @@ import type {
   ReportRowDefinition,
 } from "@/app/reports/lib/report-definitions";
 import { filterReportsForSearch } from "@/app/reports/lib/reports-search";
+import ReportFavoriteButton from "@/app/reports/components/ReportFavoriteButton";
 
 type ReportsCategoryCardProps = {
   section: ReportCategorySection;
@@ -48,7 +49,8 @@ export default function ReportsCategoryCard({
           const interactive = isInteractiveReport(report) && onReportSelect;
 
           return (
-            <li key={report.id}>
+            <li key={report.id} className="reports-category-card__row">
+              <ReportFavoriteButton reportId={report.id} reportTitle={report.title} />
               {interactive ? (
                 <button
                   type="button"

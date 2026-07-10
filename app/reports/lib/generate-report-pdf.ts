@@ -13,6 +13,17 @@ export type GenerateReportPdfOptions = {
 };
 
 export function generateReportPdf(options: GenerateReportPdfOptions): void {
+  const doc = buildReportPdfDocument(options);
+  doc.save(buildReportPdfFilename(options.reportName));
+}
+
+export function buildReportPdfBuffer(options: GenerateReportPdfOptions): Buffer {
+  const doc = buildReportPdfDocument(options);
+  const arrayBuffer = doc.output("arraybuffer") as ArrayBuffer;
+  return Buffer.from(arrayBuffer);
+}
+
+function buildReportPdfDocument(options: GenerateReportPdfOptions): jsPDF {
   const widestTable = options.tables.reduce(
     (max, table) => Math.max(max, table.headers.length),
     0
@@ -52,8 +63,7 @@ export function generateReportPdf(options: GenerateReportPdfOptions): void {
   if (options.tables.length === 0) {
     doc.setFontSize(11);
     doc.text("No tabular results were available to export.", 40, cursorY);
-    doc.save(buildReportPdfFilename(options.reportName));
-    return;
+    return doc;
   }
 
   options.tables.forEach((table, index) => {
@@ -99,5 +109,5 @@ export function generateReportPdf(options: GenerateReportPdfOptions): void {
     cursorY += 18;
   });
 
-  doc.save(buildReportPdfFilename(options.reportName));
+  return doc;
 }

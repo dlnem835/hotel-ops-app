@@ -53,6 +53,11 @@ export type SavedReportSchedule = {
   updatedAt: string;
   schedule: ReportScheduleFormValues;
   context: ReportScheduleContext;
+  timezone?: string;
+  nextRunAt?: string;
+  lastRunAt?: string | null;
+  lastStatus?: string | null;
+  lastError?: string | null;
 };
 
 export function frequencyToIntervalUnit(

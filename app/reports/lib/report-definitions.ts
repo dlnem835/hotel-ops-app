@@ -37,7 +37,9 @@ export type LostFoundReportId =
 
 export type PassOnReportId =
   | "entries-by-associate"
+  | "entries-by-shift"
   | "edited-entries"
+  | "keyword-search"
   | "unread-entries-by-user";
 
 export type ReportRowDefinition = {
@@ -191,15 +193,25 @@ export const DEFAULT_LOST_FOUND_AGING_REPORT_FILTERS: LostFoundReportFilters = {
 
 export const PASS_ON_SHIFT_FILTER_OPTIONS = [
   "All",
-  "AM",
-  "PM",
-  "Overnight",
+  "AM Shift",
+  "PM Shift",
+  "Night Audit",
+] as const;
+
+export const PASS_ON_PRIORITY_FILTER_OPTIONS = [
+  "All",
+  "Normal",
+  "Important",
+  "Urgent",
 ] as const;
 
 export type PassOnReportFilters = {
   propertyName: string;
   associate: string;
   shift: (typeof PASS_ON_SHIFT_FILTER_OPTIONS)[number];
+  priority: (typeof PASS_ON_PRIORITY_FILTER_OPTIONS)[number];
+  keyword: string;
+  editedBy: string;
   dateStart: string;
   dateEnd: string;
 };
@@ -208,6 +220,9 @@ export const DEFAULT_PASS_ON_REPORT_FILTERS: PassOnReportFilters = {
   propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   associate: "All",
   shift: "All",
+  priority: "All",
+  keyword: "",
+  editedBy: "All",
   dateStart: "",
   dateEnd: "",
 };
@@ -222,8 +237,9 @@ export const PASS_ON_DEPARTMENT_FILTER_OPTIONS = [
 
 export type PassOnUnreadReportFilters = {
   propertyName: string;
-  department: (typeof PASS_ON_DEPARTMENT_FILTER_OPTIONS)[number];
+  department: string;
   user: string;
+  shift: (typeof PASS_ON_SHIFT_FILTER_OPTIONS)[number];
   dateStart: string;
   dateEnd: string;
 };
@@ -232,6 +248,7 @@ export const DEFAULT_PASS_ON_UNREAD_REPORT_FILTERS: PassOnUnreadReportFilters = 
   propertyName: FALLBACK_REPORT_PROPERTY_NAME,
   department: "All",
   user: "All",
+  shift: "All",
   dateStart: "",
   dateEnd: "",
 };
@@ -351,7 +368,11 @@ export const PASS_ON_LOG_SECTION: ReportCategorySection = {
     report("entries-by-associate", "Entries by Associate", {
       passOnReportId: "entries-by-associate",
     }),
+    report("entries-by-shift", "Entries by Shift", {
+      passOnReportId: "entries-by-shift",
+    }),
     report("edited-entries", "Edited Entries", { passOnReportId: "edited-entries" }),
+    report("keyword-search", "Keyword Search", { passOnReportId: "keyword-search" }),
     report("unread-entries-by-user", "Unread Entries by User", {
       passOnReportId: "unread-entries-by-user",
     }),
@@ -367,6 +388,15 @@ export const ALL_REPORT_SECTIONS: ReportCategorySection[] = [
   LOST_AND_FOUND_SECTION,
   PASS_ON_LOG_SECTION,
 ];
+
+export function getFavoriteReportSections(
+  favoriteIds: ReadonlySet<string>
+): ReportCategorySection[] {
+  return ALL_REPORT_SECTIONS.map((section) => ({
+    ...section,
+    reports: section.reports.filter((report) => favoriteIds.has(report.id)),
+  })).filter((section) => section.reports.length > 0);
+}
 
 function findReportTitle(
   predicate: (report: ReportRowDefinition) => boolean,
