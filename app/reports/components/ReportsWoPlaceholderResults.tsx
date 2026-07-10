@@ -8,15 +8,15 @@ import {
 } from "@/app/reports/lib/report-definitions";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
 import {
-  buildWorkOrdersByAreaRows,
-  buildWorkOrdersByCategoryRows,
   buildWorkOrdersBySourceRows,
   calculateAverageCompletionTimeHours,
   filterWorkOrdersForAverageCompletionTimeReport,
   filterWorkOrdersForReport,
   formatAverageCompletionTime,
 } from "@/app/reports/lib/work-order-report-filters";
-import { resolveWorkOrderReportCreatedByLabel } from "@/app/reports/lib/work-order-report-types";
+import ReportsAllWorkOrdersResults from "@/app/reports/components/ReportsAllWorkOrdersResults";
+import ReportsTopAreasResults from "@/app/reports/components/ReportsTopAreasResults";
+import ReportsTopCategoriesResults from "@/app/reports/components/ReportsTopCategoriesResults";
 import type { WorkOrderReportRow } from "@/app/reports/lib/work-order-report-types";
 
 type ReportsWoPlaceholderResultsProps = {
@@ -72,14 +72,6 @@ export default function ReportsWoPlaceholderResults({
   );
   const bySourceRows = useMemo(
     () => buildWorkOrdersBySourceRows(filteredItems),
-    [filteredItems]
-  );
-  const byCategoryRows = useMemo(
-    () => buildWorkOrdersByCategoryRows(filteredItems),
-    [filteredItems]
-  );
-  const byAreaRows = useMemo(
-    () => buildWorkOrdersByAreaRows(filteredItems),
     [filteredItems]
   );
   const completedRows = useMemo(
@@ -143,47 +135,11 @@ export default function ReportsWoPlaceholderResults({
   }
 
   if (reportId === "work-orders-by-category") {
-    return (
-      <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">
-          Top work order categories matching the selected filters.
-        </p>
-        <div className="reports-wo-group-list">
-          {byCategoryRows.length > 0 ? (
-            byCategoryRows.map((row) => (
-              <div key={row.label} className="reports-wo-group-row">
-                <span className="reports-wo-group-row__label">{row.label}</span>
-                <span className="reports-wo-group-row__count">{row.count}</span>
-              </div>
-            ))
-          ) : (
-            <p className="reports-pm-results__lead">No work orders match the selected filters.</p>
-          )}
-        </div>
-      </div>
-    );
+    return <ReportsTopCategoriesResults rows={filteredItems} />;
   }
 
   if (reportId === "work-orders-by-area") {
-    return (
-      <div className="reports-wo-results">
-        <p className="reports-pm-results__lead">
-          Top work order areas matching the selected filters.
-        </p>
-        <div className="reports-wo-group-list">
-          {byAreaRows.length > 0 ? (
-            byAreaRows.map((row) => (
-              <div key={row.label} className="reports-wo-group-row">
-                <span className="reports-wo-group-row__label">{row.label}</span>
-                <span className="reports-wo-group-row__count">{row.count}</span>
-              </div>
-            ))
-          ) : (
-            <p className="reports-pm-results__lead">No work orders match the selected filters.</p>
-          )}
-        </div>
-      </div>
-    );
+    return <ReportsTopAreasResults rows={filteredItems} />;
   }
 
   if (reportId === "work-order-completion-time") {
@@ -234,59 +190,11 @@ export default function ReportsWoPlaceholderResults({
     );
   }
 
-  return (
-    <div className="reports-wo-results">
-      <p className="reports-pm-results__lead">
-        All work orders matching the selected filters.
-      </p>
-      <div className="reports-pm-results__table-wrap reports-wo-results__table-wrap--wide">
-        <table className="reports-pm-results__table reports-wo-results__table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Room / Area</th>
-              <th>Category</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Created by</th>
-              <th>Created</th>
-              <th>Source</th>
-              <th>Completed by</th>
-              <th>Completed</th>
-              <th>Comments</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.length > 0 ? (
-              filteredItems.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.title}</td>
-                  <td>{row.area}</td>
-                  <td>{row.category}</td>
-                  <td>{row.priority}</td>
-                  <td>{row.status}</td>
-                  <td>
-                    {resolveWorkOrderReportCreatedByLabel({
-                      createdByDisplayName: row.createdBy,
-                    })}
-                  </td>
-                  <td>{row.createdAt}</td>
-                  <td>{row.source}</td>
-                  <td>{row.completedBy ?? "—"}</td>
-                  <td>{row.completedAt ?? "—"}</td>
-                  <td>{row.comments}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={11}>No work orders match the selected filters.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  if (reportId === "all-work-orders") {
+    return <ReportsAllWorkOrdersResults rows={filteredItems} />;
+  }
+
+  return null;
 }
 
 function ReportStateMessage({ message }: { message: string }) {

@@ -1,3 +1,6 @@
+import { extractTopAreasReportPdfTables } from "@/app/reports/lib/top-areas-report-export";
+import { extractTopCategoriesReportPdfTables } from "@/app/reports/lib/top-categories-report-export";
+
 export type ReportPdfTable = {
   title?: string;
   headers: string[];
@@ -9,6 +12,16 @@ function cleanCellText(value: string | null | undefined): string {
 }
 
 export function extractReportPdfTables(root: HTMLElement): ReportPdfTable[] {
+  const topAreasRoot = root.querySelector(".reports-wo-top-areas");
+  if (topAreasRoot instanceof HTMLElement) {
+    return extractTopAreasReportPdfTables(topAreasRoot);
+  }
+
+  const topCategoriesRoot = root.querySelector(".reports-wo-top-categories");
+  if (topCategoriesRoot instanceof HTMLElement) {
+    return extractTopCategoriesReportPdfTables(topCategoriesRoot);
+  }
+
   const tables: ReportPdfTable[] = [];
 
   root.querySelectorAll("table").forEach((table, index) => {

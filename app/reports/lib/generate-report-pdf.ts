@@ -69,6 +69,11 @@ export function generateReportPdf(options: GenerateReportPdfOptions): void {
       cursorY += 14;
     }
 
+    if (table.headers.length === 0 || table.rows.length === 0) {
+      cursorY += 4;
+      return;
+    }
+
     autoTable(doc, {
       startY: cursorY,
       head: [table.headers],
