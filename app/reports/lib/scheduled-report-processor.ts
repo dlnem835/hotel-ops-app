@@ -92,7 +92,7 @@ export async function processScheduledReportRow(
 
   let payload;
   try {
-    payload = await generateScheduledReportPayload(context, runAt);
+    payload = await generateScheduledReportPayload(context, runAt, supabase);
   } catch (error) {
     const message = logAndMapDeliveryError(row.id, error, "report");
     await recordScheduleRunSafely(supabase, row, {

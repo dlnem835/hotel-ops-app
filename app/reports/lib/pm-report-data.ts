@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   fetchMemberDisplayNameResolver,
   formatMemberDisplayName,
@@ -104,8 +105,9 @@ function resolveAreaLabel(
   return assignment.asset_label?.trim() || "—";
 }
 
-export async function fetchPmReportSource(): Promise<PmReportSource> {
-  const supabase = createReportsSupabaseClient();
+export async function fetchPmReportSource(
+  supabase: SupabaseClient = createReportsSupabaseClient()
+): Promise<PmReportSource> {
 
   const [templatesResult, areasResult, occurrencesResult, membersResult, memberResolver] =
     await Promise.all([

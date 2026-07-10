@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   fetchMemberDisplayNameResolver,
   formatMemberDisplayName,
@@ -128,32 +129,33 @@ function buildFilterOptions(
 }
 
 export async function fetchInspectionReportSource(
-  variant: InspectionReportVariant
+  variant: InspectionReportVariant,
+  supabase: SupabaseClient = createReportsSupabaseClient()
 ): Promise<InspectionReportSource> {
-  const supabase = createReportsSupabaseClient();
+  const client = supabase;
 
   const [sessionsResult, failedResponsesResult, areasResult, membersResult, memberResolver] =
     await Promise.all([
-      supabase
+      client
         .from("inspection_sessions")
         .select(
           "id, area_id, inspection_program, inspector_id, associate_id, started_at, completed_at, completed_by, score_percent, earned_points, possible_points, failed_item_count, template_snapshot, status"
         )
         .eq("status", "completed")
         .not("completed_at", "is", null),
-      supabase
+      client
         .from("inspection_item_responses")
         .select("id, inspection_id, category_key, item_key, label_snapshot, item_notes, outcome")
         .eq("outcome", "fail"),
-      supabase
+      client
         .from("buildings_and_areas")
         .select("id, name, status, inspection_enabled")
         .eq("area_type", "Guest Room")
         .order("name"),
-      supabase
+      client
         .from("team_members")
         .select("id, auth_user_id, username, first_name, last_name"),
-      fetchMemberDisplayNameResolver(supabase),
+      fetchMemberDisplayNameResolver(client),
     ]);
 
   if (sessionsResult.error) throw new Error(sessionsResult.error.message);

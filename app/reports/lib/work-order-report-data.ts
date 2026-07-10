@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WorkOrderRow } from "@/app/maintenance/lib/work-order-db";
 import {
   fetchMemberDisplayNameResolver,
@@ -84,8 +85,9 @@ export function mapWorkOrderRowToReportItem(
   };
 }
 
-export async function fetchWorkOrderReportSource(): Promise<WorkOrderReportRow[]> {
-  const supabase = createReportsSupabaseClient();
+export async function fetchWorkOrderReportSource(
+  supabase: SupabaseClient = createReportsSupabaseClient()
+): Promise<WorkOrderReportRow[]> {
   const [ordersResult, memberResolver] = await Promise.all([
     supabase.from("work_orders").select("*").order("created_at", { ascending: false }),
     fetchMemberDisplayNameResolver(supabase),

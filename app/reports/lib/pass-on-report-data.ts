@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { createReportsSupabaseClient } from "@/app/reports/lib/lost-found-report-data";
 import {
@@ -86,8 +87,9 @@ function mapEntryRow(
   };
 }
 
-export async function fetchPassOnReportSource(): Promise<PassOnReportSource> {
-  const supabase = createReportsSupabaseClient();
+export async function fetchPassOnReportSource(
+  supabase: SupabaseClient = createReportsSupabaseClient()
+): Promise<PassOnReportSource> {
 
   const [entriesResult, membersResult] = await Promise.all([
     supabase

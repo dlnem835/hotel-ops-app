@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReportPdfTable } from "@/app/reports/lib/extract-report-print-content";
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import {
@@ -48,6 +49,12 @@ import {
   formatReportGeneratedAt,
 } from "@/app/reports/lib/report-output-utils";
 import type { ReportScheduleContext } from "@/app/reports/lib/report-schedule-types";
+import {
+  buildEmptyReportPdfTables,
+  buildInspectionFailedItemPdfTables,
+  buildInspectionFailedSectionPdfTables,
+  countReportPdfRows,
+} from "@/app/reports/lib/report-pdf-table-builders";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
 import {
   buildWorkOrdersByAreaRows,
@@ -106,13 +113,32 @@ export function resolveScheduledReportDateRange(
   };
 }
 
+function finalizeReportPdfTables(tables: ReportPdfTable[]): ReportPdfTable[] {
+  return countReportPdfRows(tables) > 0 ? tables : buildEmptyReportPdfTables();
+}
+
+function normalizeScheduledReportId(context: ReportScheduleContext): string {
+  if (context.reportModule !== "inspection") {
+    return context.reportId;
+  }
+
+  const aliases: Record<string, string> = {
+    "failed-items": "top-failed-items",
+    "failed-sections": "top-failed-sections",
+    "rooms-completed": "rooms-done",
+    "rooms-not-completed": "rooms-not-done",
+  };
+
+  return aliases[context.reportId] ?? context.reportId;
+}
+
 export async function generateScheduledReportPayload(
   context: ReportScheduleContext,
-  runAt = new Date()
+  runAt = new Date(),
+  supabase?: SupabaseClient
 ): Promise<ScheduledReportPayload> {
   const dateRange = resolveScheduledReportDateRange(context, runAt);
-  const snapshot = context.filterSnapshot as Record<string, unknown>;
-  const tables = await buildScheduledReportTables(context, dateRange, runAt);
+  const tables = await buildScheduledReportTables(context, dateRange, runAt, supabase);
 
   return {
     reportName: context.reportName,
@@ -127,27 +153,29 @@ export async function generateScheduledReportPayload(
 async function buildScheduledReportTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  runAt: Date
+  runAt: Date,
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   switch (context.reportModule) {
     case "pm":
-      return buildPmTables(context, dateRange);
+      return buildPmTables(context, dateRange, supabase);
     case "wo":
-      return buildWorkOrderTables(context, dateRange);
+      return buildWorkOrderTables(context, dateRange, supabase);
     case "inspection":
-      return buildInspectionTables(context, dateRange);
+      return buildInspectionTables(context, dateRange, supabase);
     case "lnf":
-      return buildLostFoundTables(context, dateRange);
+      return buildLostFoundTables(context, dateRange, supabase);
     case "pass-on":
-      return buildPassOnTables(context, dateRange, runAt);
+      return buildPassOnTables(context, dateRange, runAt, supabase);
     default:
-      return [];
+      return buildEmptyReportPdfTables();
   }
 }
 
 function buildPmTables(
   context: ReportScheduleContext,
-  dateRange: { dateStart: string; dateEnd: string }
+  dateRange: { dateStart: string; dateEnd: string },
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const filters: PmReportFilters = {
@@ -158,11 +186,11 @@ function buildPmTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchPmReportSource().then((source) => {
+  return fetchPmReportSource(supabase).then((source) => {
     switch (context.reportId) {
       case "completed-pms": {
         const rows = buildCompletedPmReportRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["PM Name", "Area", "Type", "Due", "Completed", "Completed By", "Status"],
             rows.map((row) => [
@@ -175,11 +203,11 @@ function buildPmTables(
               row.completionStatusLabel,
             ])
           ),
-        ];
+        ]);
       }
       case "missed-pms": {
         const rows = buildMissedPmReportRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["PM Name", "Area", "Type", "Due", "Days Missed", "Status"],
             rows.map((row) => [
@@ -191,11 +219,11 @@ function buildPmTables(
               row.statusLabel,
             ])
           ),
-        ];
+        ]);
       }
       case "failed-pm-items": {
         const rows = buildFailedPmItemReportRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["PM Name", "Item", "Area", "Completed By", "Completed", "Notes"],
             rows.map((row) => [
@@ -207,7 +235,7 @@ function buildPmTables(
               row.notes,
             ])
           ),
-        ];
+        ]);
       }
       case "pm-report": {
         const overview = buildPmCompletionOverviewReport(source, filters);
@@ -222,23 +250,24 @@ function buildPmTables(
             `${item.completionPercent}%`,
           ])
         );
-        return [
+        return finalizeReportPdfTables([
           table(
             ["PM Name", "Area", "Frequency", "Expected", "Completed", "Missed", "Completion %"],
             rows,
             "PM Completions Overview"
           ),
-        ];
+        ]);
       }
       default:
-        return [];
+        return buildEmptyReportPdfTables();
     }
   });
 }
 
 function buildWorkOrderTables(
   context: ReportScheduleContext,
-  dateRange: { dateStart: string; dateEnd: string }
+  dateRange: { dateStart: string; dateEnd: string },
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const filters: WorkOrderReportFilters = {
@@ -252,11 +281,11 @@ function buildWorkOrderTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchWorkOrderReportSource().then((rows) => {
+  return fetchWorkOrderReportSource(supabase).then((rows) => {
     switch (context.reportId) {
       case "all-work-orders": {
         const filtered = filterWorkOrdersForReport(rows, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Title", "Area", "Category", "Status", "Created By", "Created", "Source"],
             filtered.map((row) => [
@@ -269,13 +298,13 @@ function buildWorkOrderTables(
               row.source,
             ])
           ),
-        ];
+        ]);
       }
       case "work-order-completion-time": {
         const completedRows = filterWorkOrdersForAverageCompletionTimeReport(rows, filters);
         const completed = completedRows.filter((row) => row.completedAt);
         const avgHours = calculateAverageCompletionTimeHours(completed);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Metric", "Value"],
             [
@@ -284,28 +313,28 @@ function buildWorkOrderTables(
             ],
             "Average Completion Time"
           ),
-        ];
+        ]);
       }
       case "work-orders-by-category": {
         const categoryRows = buildWorkOrdersByCategoryRows(
           filterWorkOrdersForReport(rows, filters)
         );
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Category", "Count"],
             categoryRows.map((row) => [row.label, String(row.count)])
           ),
-        ];
+        ]);
       }
       case "work-orders-by-area": {
         const areaRows = buildWorkOrdersByAreaRows(filterWorkOrdersForReport(rows, filters));
-        return [
+        return finalizeReportPdfTables([
           table(["Area", "Count"], areaRows.map((row) => [row.label, String(row.count)])),
-        ];
+        ]);
       }
       case "work-orders-by-source": {
         const sourceRows = buildWorkOrdersBySourceRows(filterWorkOrdersForReport(rows, filters));
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Source", "Total", "Open", "Completed", "Avg Completion", "Avg Days Open"],
             sourceRows.map((row) => [
@@ -317,20 +346,22 @@ function buildWorkOrderTables(
               String(row.avgDaysOpen),
             ])
           ),
-        ];
+        ]);
       }
       default:
-        return [];
+        return buildEmptyReportPdfTables();
     }
   });
 }
 
 function buildInspectionTables(
   context: ReportScheduleContext,
-  dateRange: { dateStart: string; dateEnd: string }
+  dateRange: { dateStart: string; dateEnd: string },
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   const variant = context.inspectionVariant === "rpm" ? "rpm" : "room";
   const snapshot = context.filterSnapshot as Record<string, unknown>;
+  const reportId = normalizeScheduledReportId(context);
   const filters: InspectionReportFilters = {
     propertyName: context.propertyName,
     type: snapshotString(snapshot, "type"),
@@ -340,11 +371,11 @@ function buildInspectionTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchInspectionReportSource(variant).then((source) => {
-    switch (context.reportId) {
+  return fetchInspectionReportSource(variant, supabase).then((source) => {
+    switch (reportId) {
       case "associate-ranking": {
         const rows = buildAssociateRankingRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Associate", "Completed", "Avg Score", "Failed Items"],
             rows.map((row) => [
@@ -354,11 +385,11 @@ function buildInspectionTables(
               String(row.failedItemCount),
             ])
           ),
-        ];
+        ]);
       }
       case "average-time": {
         const { groups } = buildAverageTimeGroups(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Inspector", "Sessions", "Average Time"],
             groups.map((group) => [
@@ -367,12 +398,12 @@ function buildInspectionTables(
               group.averageTimeLabel || "—",
             ])
           ),
-        ];
+        ]);
       }
       case "rooms-done":
       case "rooms-completed": {
         const rows = buildRoomsDoneRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Room", "Completed", "Inspector", "Score", "Type"],
             rows.map((row) => [
@@ -383,12 +414,12 @@ function buildInspectionTables(
               row.inspectionType ?? "—",
             ])
           ),
-        ];
+        ]);
       }
       case "rooms-not-done":
       case "rooms-not-completed": {
         const rows = buildRoomsNotDoneRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Room", "Last Date", "Last Inspector", "Days Since", "Status"],
             rows.map((row) => [
@@ -399,36 +430,17 @@ function buildInspectionTables(
               row.statusLabel,
             ])
           ),
-        ];
+        ]);
       }
       case "top-failed-sections": {
-        const groups = buildFailedSectionGroups(source, filters);
-        const rows = groups.flatMap((group) =>
-          group.items.map((item) => [
-            group.sectionLabel,
-            item.roomNumber,
-            item.itemLabel,
-            item.completedAt,
-            item.inspectorName ?? "—",
-          ])
-        );
-        return [table(["Section", "Room", "Item", "Completed", "Inspector"], rows)];
+        return buildInspectionFailedSectionPdfTables(buildFailedSectionGroups(source, filters));
       }
       case "top-failed-items": {
-        const groups = buildFailedItemGroups(source, filters);
-        const rows = groups.flatMap((group) =>
-          group.items.map((item) => [
-            group.displayLabel,
-            item.roomNumber,
-            item.completedAt,
-            item.inspectorName ?? "—",
-          ])
-        );
-        return [table(["Failed Item", "Room", "Completed", "Inspector"], rows)];
+        return buildInspectionFailedItemPdfTables(buildFailedItemGroups(source, filters));
       }
       case "rooms-by-inspector": {
         const { rows, totalCompleted } = buildInspectorRoomShareRows(source, filters);
-        return [
+        return finalizeReportPdfTables([
           table(
             ["Inspector", "Rooms", "% of Total"],
             rows.map((row) => [
@@ -437,7 +449,7 @@ function buildInspectionTables(
               totalCompleted > 0 ? `${row.percent}%` : "—",
             ])
           ),
-        ];
+        ]);
       }
       case "scores-by-room": {
         const groups = buildScoresByRoomGroups(source, filters);
@@ -449,21 +461,24 @@ function buildInspectionTables(
             session.scorePercent == null ? "—" : `${session.scorePercent}%`,
           ])
         );
-        return [table(["Room", "Completed", "Inspector", "Score"], rows)];
+        return finalizeReportPdfTables([
+          table(["Room", "Completed", "Inspector", "Score"], rows),
+        ]);
       }
       default:
-        return [];
+        return buildEmptyReportPdfTables();
     }
   });
 }
 
 function buildLostFoundTables(
   context: ReportScheduleContext,
-  dateRange: { dateStart: string; dateEnd: string }
+  dateRange: { dateStart: string; dateEnd: string },
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
 
-  return fetchLostFoundReportSource().then((source) => {
+  return fetchLostFoundReportSource(supabase).then((source) => {
     if (context.reportId === "found-by") {
       const filters: LostFoundFoundByReportFilters = {
         propertyName: context.propertyName,
@@ -474,7 +489,7 @@ function buildLostFoundTables(
       };
       const foundByRows = buildLostFoundFoundByRows(source.items, source.teamMembers);
       const rows = filterLostFoundFoundByReportRows(foundByRows, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Associate", "Department", "Items Found", "Last Item Found"],
           rows.map((row) => [
@@ -484,7 +499,7 @@ function buildLostFoundTables(
             row.lastItemFoundDate,
           ])
         ),
-      ];
+      ]);
     }
 
     const filters: LostFoundReportFilters = {
@@ -498,7 +513,7 @@ function buildLostFoundTables(
 
     if (context.reportId === "ready-to-discard") {
       const rows = filterLostFoundAgingReportRows(source.items, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Item", "Room", "Status", "Found By", "Created"],
           rows.map((row) => [
@@ -509,12 +524,12 @@ function buildLostFoundTables(
             row.createdAt,
           ])
         ),
-      ];
+      ]);
     }
 
     if (context.reportId === "shipped-items") {
       const rows = filterLostFoundShippingReportRows(source.items, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Item", "Room", "Guest", "Status", "Label Sent"],
           rows.map((row) => [
@@ -525,11 +540,11 @@ function buildLostFoundTables(
             row.labelSentAt ?? "—",
           ])
         ),
-      ];
+      ]);
     }
 
     const rows = filterLostFoundAllItemsReportRows(source.items, filters);
-    return [
+    return finalizeReportPdfTables([
       table(
         ["Item", "Room", "Status", "Found By", "Created By", "Created"],
         rows.map((row) => [
@@ -541,19 +556,20 @@ function buildLostFoundTables(
           row.createdAt,
         ])
       ),
-    ];
+    ]);
   });
 }
 
 function buildPassOnTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  runAt: Date
+  runAt: Date,
+  supabase?: SupabaseClient
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const reportVariant = snapshotString(snapshot, "reportVariant", context.reportId);
 
-  return fetchPassOnReportSource().then((source) => {
+  return fetchPassOnReportSource(supabase).then((source) => {
     if (reportVariant === "unread-entries-by-user") {
       const filters: PassOnUnreadReportFilters = {
         propertyName: context.propertyName,
@@ -564,7 +580,7 @@ function buildPassOnTables(
         dateEnd: dateRange.dateEnd,
       };
       const rows = buildUnreadByUserRows(source, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["User", "Department", "Available", "Read", "Unread", "Read %", "Last Read"],
           rows.map((row) => [
@@ -577,7 +593,7 @@ function buildPassOnTables(
             row.lastEntryReadAtDisplay,
           ])
         ),
-      ];
+      ]);
     }
 
     const filters: PassOnReportFilters = {
@@ -603,12 +619,12 @@ function buildPassOnTables(
           String(entry.readCount),
         ])
       );
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Associate", "Subject", "Shift", "Priority", "Created", "Read Count"],
           rows
         ),
-      ];
+      ]);
     }
 
     if (context.reportId === "entries-by-shift") {
@@ -622,12 +638,14 @@ function buildPassOnTables(
           entry.createdAtDisplay,
         ])
       );
-      return [table(["Shift", "Subject", "Created By", "Priority", "Created"], rows)];
+      return finalizeReportPdfTables([
+        table(["Shift", "Subject", "Created By", "Priority", "Created"], rows),
+      ]);
     }
 
     if (context.reportId === "edited-entries") {
       const rows = buildEditedEntryRows(source, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Subject", "Shift", "Priority", "Created By", "Created", "Edited", "Preview"],
           rows.map((row) => [
@@ -640,7 +658,7 @@ function buildPassOnTables(
             row.preview,
           ])
         ),
-      ];
+      ]);
     }
 
     if (context.reportId === "keyword-search") {
@@ -649,7 +667,7 @@ function buildPassOnTables(
         return [table(["Message"], [["Enter a keyword or phrase to search Pass-On entries."]])];
       }
       const rows = buildKeywordSearchRows(source, filters);
-      return [
+      return finalizeReportPdfTables([
         table(
           ["Subject", "Shift", "Priority", "Created By", "Created", "Snippet"],
           rows.map((row) => [
@@ -661,10 +679,10 @@ function buildPassOnTables(
             `${row.snippet.before}${row.snippet.match}${row.snippet.after}`,
           ])
         ),
-      ];
+      ]);
     }
 
     void runAt;
-    return [];
+    return buildEmptyReportPdfTables();
   });
 }

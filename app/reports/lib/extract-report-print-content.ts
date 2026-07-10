@@ -17,7 +17,9 @@ export function extractReportPdfTables(root: HTMLElement): ReportPdfTable[] {
     return extractTopAreasReportPdfTables(topAreasRoot);
   }
 
-  const topCategoriesRoot = root.querySelector(".reports-wo-top-categories");
+  const topCategoriesRoot =
+    root.querySelector(".reports-wo-top-categories") ??
+    (root.querySelector(".reports-wo-top-categories__list") ? root : null);
   if (topCategoriesRoot instanceof HTMLElement) {
     return extractTopCategoriesReportPdfTables(topCategoriesRoot);
   }
