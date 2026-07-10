@@ -25,12 +25,10 @@ import {
 import {
   getInspectionReportLabels,
   ROOM_INSPECTION_TYPE_FILTER_OPTIONS,
-  SAMPLE_INSPECTION_ASSOCIATES,
-  SAMPLE_INSPECTION_INSPECTORS,
   type InspectionReportFilters,
 } from "@/app/reports/lib/inspection-report-sample-data";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
-import ReportsInspectionPlaceholderResults from "@/app/reports/components/ReportsInspectionPlaceholderResults";
+import ReportsInspectionResults from "@/app/reports/components/ReportsInspectionResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
@@ -39,6 +37,7 @@ import {
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsInspectionFilterModalProps = {
@@ -65,6 +64,8 @@ export default function ReportsInspectionFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const [associateOptions, setAssociateOptions] = useState<string[]>(["All"]);
+  const [inspectorOptions, setInspectorOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   const syncPropertyName = useCallback((name: string) => {
@@ -78,7 +79,37 @@ export default function ReportsInspectionFilterModal({
       setFilters(applyDefaultReportDateRange(DEFAULT_INSPECTION_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
+      setAssociateOptions(["All"]);
+      setInspectorOptions(["All"]);
     }
+  }, [open, target]);
+
+  useEffect(() => {
+    if (!open || !target) return;
+
+    let cancelled = false;
+    const variant = target.variant;
+
+    async function loadFilterOptions() {
+      try {
+        const source = await fetchInspectionReportSource(variant);
+        if (!cancelled) {
+          setAssociateOptions(source.associateOptions);
+          setInspectorOptions(source.inspectorOptions);
+        }
+      } catch {
+        if (!cancelled) {
+          setAssociateOptions(["All"]);
+          setInspectorOptions(["All"]);
+        }
+      }
+    }
+
+    void loadFilterOptions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, target]);
 
   if (!open || !target) return null;
@@ -189,7 +220,7 @@ export default function ReportsInspectionFilterModal({
               value={filters.associate}
               onChange={(event) => updateFilter("associate", event.target.value)}
             >
-              {SAMPLE_INSPECTION_ASSOCIATES.map((associate) => (
+              {associateOptions.map((associate) => (
                 <option key={associate} value={associate}>
                   {associate}
                 </option>
@@ -204,7 +235,7 @@ export default function ReportsInspectionFilterModal({
               value={filters.inspector}
               onChange={(event) => updateFilter("inspector", event.target.value)}
             >
-              {SAMPLE_INSPECTION_INSPECTORS.map((inspector) => (
+              {inspectorOptions.map((inspector) => (
                 <option key={inspector} value={inspector}>
                   {inspector}
                 </option>
@@ -273,7 +304,7 @@ export default function ReportsInspectionFilterModal({
                 },
               }}
             >
-              <ReportsInspectionPlaceholderResults target={target} />
+              <ReportsInspectionResults target={target} filters={filters} />
             </ReportsPrintableOutput>
           </div>
         ) : null}

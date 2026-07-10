@@ -24,7 +24,7 @@ import {
   type PmReportId,
 } from "@/app/reports/lib/report-definitions";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
-import ReportsPmPlaceholderResults from "@/app/reports/components/ReportsPmPlaceholderResults";
+import ReportsPmResults from "@/app/reports/components/ReportsPmResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
@@ -33,8 +33,8 @@ import {
   DEFAULT_REPORT_DATE_PRESET,
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
+import { fetchPmReportSource } from "@/app/reports/lib/pm-report-data";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
-import { PM_COMPLETED_BY_FILTER_OPTIONS } from "@/app/reports/lib/pm-report-sample-data";
 
 type ReportsPmFilterModalProps = {
   open: boolean;
@@ -60,6 +60,7 @@ export default function ReportsPmFilterModal({
   );
   const [datePreset, setDatePreset] = useState<ReportDatePreset>(DEFAULT_REPORT_DATE_PRESET);
   const [showResults, setShowResults] = useState(false);
+  const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   const syncPropertyName = useCallback((name: string) => {
@@ -73,7 +74,33 @@ export default function ReportsPmFilterModal({
       setFilters(applyDefaultReportDateRange(DEFAULT_PM_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
+      setCompletedByOptions(["All"]);
     }
+  }, [open, reportId]);
+
+  useEffect(() => {
+    if (!open || reportId !== "completed-pms") return;
+
+    let cancelled = false;
+
+    async function loadCompletedByOptions() {
+      try {
+        const source = await fetchPmReportSource();
+        if (!cancelled) {
+          setCompletedByOptions(source.completedByOptions);
+        }
+      } catch {
+        if (!cancelled) {
+          setCompletedByOptions(["All"]);
+        }
+      }
+    }
+
+    void loadCompletedByOptions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, reportId]);
 
   if (!open || !reportId) return null;
@@ -174,7 +201,7 @@ export default function ReportsPmFilterModal({
                 value={filters.completedBy}
                 onChange={(event) => updateFilter("completedBy", event.target.value)}
               >
-                {PM_COMPLETED_BY_FILTER_OPTIONS.map((person) => (
+                {completedByOptions.map((person) => (
                   <option key={person} value={person}>
                     {person}
                   </option>
@@ -252,7 +279,7 @@ export default function ReportsPmFilterModal({
                 },
               }}
             >
-              <ReportsPmPlaceholderResults reportId={reportId} />
+              <ReportsPmResults reportId={reportId} filters={filters} />
             </ReportsPrintableOutput>
           </div>
         ) : null}

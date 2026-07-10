@@ -2,6 +2,8 @@ import { formatInspectionDuration } from "@/app/inspections/lib/inspection-durat
 
 export type InspectionReportVariant = "room" | "rpm";
 
+export type { InspectionReportFilters } from "@/app/reports/lib/inspection-report-types";
+
 export const SAMPLE_INSPECTION_ASSOCIATES = [
   "All",
   "Jasmine",
@@ -30,17 +32,6 @@ export const ROOM_INSPECTION_TYPE_FILTER_OPTIONS = [
   "Safety",
   "Custom",
 ] as const;
-
-export const RPM_TYPE_FILTER_OPTIONS = ["All", "RPM", "Guest Room RPM", "Custom"] as const;
-
-export type InspectionReportFilters = {
-  propertyName: string;
-  type: string;
-  associate: string;
-  inspector: string;
-  dateStart: string;
-  dateEnd: string;
-};
 
 export const SAMPLE_ASSOCIATE_RANKING = [
   {

@@ -227,6 +227,58 @@ function buildReportPrintStyles(orientation: "portrait" | "landscape"): string {
       color: #b91c1c;
     }
 
+    .reports-pm-results__period--before-next-due {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .reports-pm-results__period--grace {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .reports-pm-results__period--late {
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    .reports-pm-results__period--upcoming {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .reports-pm-results__period--grace-window {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .reports-pm-results__progress-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8pt;
+      margin-bottom: 6pt;
+      font-size: 8pt;
+      color: #4b5563;
+    }
+
+    .reports-pm-results__overview-summary {
+      margin-top: 12pt;
+      padding: 8pt;
+      border: 1px solid #d1d5db;
+      border-radius: 4pt;
+    }
+
+    .reports-pm-results__summary-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 9pt;
+    }
+
+    .reports-pm-results__summary-list li {
+      margin-bottom: 4pt;
+    }
+
     .reports-pm-results__table-wrap,
     .reports-wo-group-list {
       break-inside: auto;

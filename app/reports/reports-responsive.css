@@ -527,6 +527,69 @@
   color: #c9a8a8;
 }
 
+.reports-pm-results__period--before-next-due {
+  background: rgba(72, 98, 72, 0.35);
+  border-color: #5a7a5a;
+  color: #c8e0c8;
+}
+
+.reports-pm-results__period--grace {
+  background: rgba(72, 98, 72, 0.35);
+  border-color: #5a7a5a;
+  color: #c8e0c8;
+}
+
+.reports-pm-results__period--late {
+  background: rgba(160, 120, 48, 0.22);
+  border-color: rgba(200, 169, 106, 0.45);
+  color: #e0c47b;
+}
+
+.reports-pm-results__period--upcoming {
+  background: rgba(55, 65, 81, 0.35);
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+.reports-pm-results__period--grace-window {
+  background: rgba(72, 98, 120, 0.28);
+  border-color: #5a7a9a;
+  color: #a8c8e0;
+}
+
+.reports-pm-results__progress-area {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.reports-pm-results__progress-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 10px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.reports-pm-results__overview-summary {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid #3a352e;
+  border-radius: 10px;
+  background: #1a1815;
+}
+
+.reports-pm-results__summary-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #e5e7eb;
+  font-size: 0.8125rem;
+}
+
 @media (max-width: 720px) {
   .reports-category-grid {
     grid-template-columns: 1fr;
