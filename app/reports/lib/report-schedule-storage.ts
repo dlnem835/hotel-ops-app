@@ -96,19 +96,20 @@ export async function deleteReportSchedule(id: string): Promise<void> {
 export async function sendScheduledReportTest(id: string): Promise<{
   ok: boolean;
   resendMessageId?: string | null;
+  testSentAt?: string | null;
   error?: string | null;
 }> {
   const response = await fetch(`/api/reports/schedules/${id}/send-test`, {
     method: "POST",
   });
   const payload = await response.json();
-  if (!response.ok) {
-    return { ok: false, error: payload.error || "Send test failed." };
+  if (!response.ok || !payload.ok) {
+    return { ok: false, error: payload.error || "Resend failed." };
   }
-  notifySchedulesUpdated();
   return {
     ok: true,
     resendMessageId: payload.result?.resendMessageId ?? null,
+    testSentAt: payload.result?.testSentAt ?? null,
     error: null,
   };
 }

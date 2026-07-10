@@ -10,6 +10,13 @@ import {
 import { formatScheduleSummary } from "@/app/reports/lib/report-schedule-types";
 import type { SavedReportSchedule } from "@/app/reports/lib/report-schedule-types";
 
+type ScheduledReportTestFeedback = {
+  status: "success" | "error";
+  resendMessageId?: string | null;
+  testSentAt?: string | null;
+  error?: string | null;
+};
+
 function formatScheduleTimestamp(iso: string | null | undefined): string {
   if (!iso) return "—";
   const date = new Date(iso);
@@ -28,7 +35,7 @@ export default function ReportsScheduledReportsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [testFeedback, setTestFeedback] = useState<Record<string, ScheduledReportTestFeedback>>({});
 
   async function refresh() {
     setLoading(true);
@@ -55,32 +62,61 @@ export default function ReportsScheduledReportsList() {
   async function handleDelete(id: string) {
     try {
       await deleteReportSchedule(id);
-      setActionMessage("Schedule removed.");
+      setTestFeedback((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
       await refresh();
     } catch (deleteError) {
-      setActionMessage(
-        deleteError instanceof Error ? deleteError.message : "Unable to remove schedule."
-      );
+      setTestFeedback((current) => ({
+        ...current,
+        [id]: {
+          status: "error",
+          error:
+            deleteError instanceof Error ? deleteError.message : "Unable to remove schedule.",
+        },
+      }));
     }
   }
 
   async function handleSendTest(id: string) {
     setTestingId(id);
-    setActionMessage(null);
+    setTestFeedback((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+
     try {
       const result = await sendScheduledReportTest(id);
       if (!result.ok) {
-        setActionMessage(result.error || "Send test failed.");
-      } else {
-        setActionMessage(
-          result.resendMessageId
-            ? `Test email sent. Resend message ID: ${result.resendMessageId}`
-            : "Test email sent."
-        );
+        setTestFeedback((current) => ({
+          ...current,
+          [id]: {
+            status: "error",
+            error: result.error || "Resend failed",
+          },
+        }));
+        return;
       }
-      await refresh();
+
+      setTestFeedback((current) => ({
+        ...current,
+        [id]: {
+          status: "success",
+          resendMessageId: result.resendMessageId,
+          testSentAt: result.testSentAt,
+        },
+      }));
     } catch (testError) {
-      setActionMessage(testError instanceof Error ? testError.message : "Send test failed.");
+      setTestFeedback((current) => ({
+        ...current,
+        [id]: {
+          status: "error",
+          error: testError instanceof Error ? testError.message : "Resend failed",
+        },
+      }));
     } finally {
       setTestingId(null);
     }
@@ -114,13 +150,9 @@ export default function ReportsScheduledReportsList() {
     <div className="reports-scheduled-list">
       <p className="reports-pm-results__lead">
         Saved schedules run automatically on the server and email the attached PDF to each
-        recipient.
+        recipient. Use Send Test Now to run the same delivery pipeline immediately without
+        changing the next scheduled send.
       </p>
-      {actionMessage ? (
-        <p className="reports-schedule-modal__save-message" role="status">
-          {actionMessage}
-        </p>
-      ) : null}
       <div className="reports-pm-results__table-wrap">
         <table className="reports-pm-results__table">
           <thead>
@@ -137,45 +169,64 @@ export default function ReportsScheduledReportsList() {
             </tr>
           </thead>
           <tbody>
-            {schedules.map((item) => (
-              <tr key={item.id}>
-                <td>{item.schedule.reportName}</td>
-                <td>{item.schedule.property}</td>
-                <td>{formatScheduleSummary(item.schedule)}</td>
-                <td>{item.schedule.recipients || "—"}</td>
-                <td>
-                  {!item.schedule.active
-                    ? "Paused"
-                    : item.lastStatus
-                      ? item.lastStatus === "sent"
-                        ? "Sent"
-                        : "Failed"
-                      : "Active"}
-                </td>
-                <td>{formatScheduleTimestamp(item.lastRunAt)}</td>
-                <td>{formatScheduleTimestamp(item.nextRunAt)}</td>
-                <td>{item.lastError || "—"}</td>
-                <td>
-                  <div className="reports-scheduled-list__actions">
-                    <button
-                      type="button"
-                      className="reports-pm-results__source-link"
-                      disabled={testingId === item.id}
-                      onClick={() => void handleSendTest(item.id)}
-                    >
-                      {testingId === item.id ? "Sending…" : "Send Test Now"}
-                    </button>
-                    <button
-                      type="button"
-                      className="reports-pm-results__source-link"
-                      onClick={() => void handleDelete(item.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {schedules.map((item) => {
+              const feedback = testFeedback[item.id];
+
+              return (
+                <tr key={item.id}>
+                  <td>{item.schedule.reportName}</td>
+                  <td>{item.schedule.property}</td>
+                  <td>{formatScheduleSummary(item.schedule)}</td>
+                  <td>{item.schedule.recipients || "—"}</td>
+                  <td>
+                    {!item.schedule.active
+                      ? "Paused"
+                      : item.lastStatus
+                        ? item.lastStatus === "sent"
+                          ? "Sent"
+                          : "Failed"
+                        : "Active"}
+                  </td>
+                  <td>{formatScheduleTimestamp(item.lastRunAt)}</td>
+                  <td>{formatScheduleTimestamp(item.nextRunAt)}</td>
+                  <td>{item.lastError || "—"}</td>
+                  <td>
+                    <div className="reports-scheduled-list__actions">
+                      <button
+                        type="button"
+                        className="reports-pm-results__source-link"
+                        disabled={testingId === item.id}
+                        onClick={() => void handleSendTest(item.id)}
+                      >
+                        {testingId === item.id ? "Sending…" : "Send Test Now"}
+                      </button>
+                      <button
+                        type="button"
+                        className="reports-pm-results__source-link"
+                        onClick={() => void handleDelete(item.id)}
+                      >
+                        Remove
+                      </button>
+                      {feedback?.status === "success" ? (
+                        <div className="reports-scheduled-list__test-feedback reports-scheduled-list__test-feedback--success">
+                          <p>Test sent successfully</p>
+                          <p>Resend message ID: {feedback.resendMessageId || "—"}</p>
+                          <p>{formatScheduleTimestamp(feedback.testSentAt)}</p>
+                        </div>
+                      ) : null}
+                      {feedback?.status === "error" ? (
+                        <p
+                          className="reports-scheduled-list__test-feedback reports-scheduled-list__test-feedback--error"
+                          role="alert"
+                        >
+                          {feedback.error}
+                        </p>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

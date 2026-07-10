@@ -1317,6 +1317,28 @@
   min-width: 120px;
 }
 
+.reports-scheduled-list__test-feedback {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.reports-scheduled-list__test-feedback p {
+  margin: 0;
+}
+
+.reports-scheduled-list__test-feedback p + p {
+  margin-top: 4px;
+}
+
+.reports-scheduled-list__test-feedback--success {
+  color: #b8d4c4;
+}
+
+.reports-scheduled-list__test-feedback--error {
+  color: #c9a8a8;
+}
+
 @media print {
   /* Fallback only — report Print uses an isolated iframe document. */
   body {

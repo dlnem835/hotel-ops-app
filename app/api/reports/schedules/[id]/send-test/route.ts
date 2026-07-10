@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
-import { processScheduledReportRow } from "@/app/reports/lib/scheduled-report-processor";
+import {
+  getScheduledReportSafeError,
+  processScheduledReportRow,
+  SCHEDULED_REPORT_SAFE_ERRORS,
+} from "@/app/reports/lib/scheduled-report-processor";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -17,7 +21,10 @@ export async function POST(_request: Request, context: RouteContext) {
       .single();
 
     if (error || !dbRow) {
-      return NextResponse.json({ error: "Schedule not found." }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: SCHEDULED_REPORT_SAFE_ERRORS.databaseQueryFailed },
+        { status: 404 }
+      );
     }
 
     const result = await processScheduledReportRow(supabase, dbRow, {
@@ -27,14 +34,28 @@ export async function POST(_request: Request, context: RouteContext) {
 
     if (result.status === "failed") {
       return NextResponse.json(
-        { ok: false, error: result.error, result },
+        {
+          ok: false,
+          error: result.error,
+          result,
+        },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ ok: true, result });
+    return NextResponse.json({
+      ok: true,
+      result: {
+        scheduleId: result.scheduleId,
+        status: result.status,
+        resendMessageId: result.resendMessageId,
+        testSentAt: result.testSentAt,
+      },
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Send test failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: getScheduledReportSafeError(error) },
+      { status: 500 }
+    );
   }
 }
