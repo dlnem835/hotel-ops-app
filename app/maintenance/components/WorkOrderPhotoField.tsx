@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
-import { useInspectionBreakpoint } from "@/app/inspections/lib/use-inspection-breakpoint";
 
 type WorkOrderPhotoFieldProps = {
   photoUrl: string | null;
@@ -15,6 +14,9 @@ type WorkOrderPhotoFieldProps = {
   onPhotoRemove: () => void;
 };
 
+const PHOTO_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif";
+
 export default function WorkOrderPhotoField({
   photoUrl,
   uploading = false,
@@ -24,10 +26,8 @@ export default function WorkOrderPhotoField({
   onPhotoRemove,
 }: WorkOrderPhotoFieldProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const breakpoint = useInspectionBreakpoint();
-  const preferCamera = breakpoint === "mobile" || breakpoint === "tablet";
   const displayUrl = photoUrl || previewUrl;
   const isBusy = uploading || disabled;
 
@@ -59,13 +59,14 @@ export default function WorkOrderPhotoField({
     onPhotoRemove();
   }
 
-  function openPhotoPicker() {
+  function openLibraryPicker() {
     if (isBusy) return;
-    if (preferCamera) {
-      cameraInputRef.current?.click();
-      return;
-    }
-    fileInputRef.current?.click();
+    libraryInputRef.current?.click();
+  }
+
+  function openCameraPicker() {
+    if (isBusy) return;
+    cameraInputRef.current?.click();
   }
 
   const labelStyle: React.CSSProperties = compact
@@ -84,9 +85,33 @@ export default function WorkOrderPhotoField({
         marginBottom: "6px",
       };
 
+  const actionButtonStyle: React.CSSProperties = {
+    ...SETTINGS_BUTTON_BASE,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: compact ? "6px" : "8px",
+    height: compact ? "32px" : "40px",
+    padding: compact ? "0 10px" : "0 14px",
+    borderRadius: "8px",
+    border: `1px solid ${ONE_EYRIE.gold}`,
+    background: "transparent",
+    color: ONE_EYRIE.gold,
+    fontWeight: 700,
+    fontSize: compact ? "12px" : "13px",
+    opacity: isBusy ? 0.6 : 1,
+    cursor: isBusy ? "not-allowed" : "pointer",
+  };
+
+  const iconButtonStyle: React.CSSProperties = {
+    ...actionButtonStyle,
+    width: compact ? "32px" : "40px",
+    padding: 0,
+    justifyContent: "center",
+  };
+
   return (
     <div className={compact ? "work-order-photo-field work-order-photo-field--compact" : undefined}>
-      <div style={labelStyle}>Photo (optional)</div>
+      <div style={labelStyle}>Photo</div>
 
       <div
         className={compact ? "work-order-photo-field__row" : undefined}
@@ -101,41 +126,40 @@ export default function WorkOrderPhotoField({
               }
         }
       >
-        <button
-          type="button"
-          className={compact ? "work-order-photo-field__btn" : undefined}
-          onClick={openPhotoPicker}
-          disabled={isBusy}
-          style={{
-            ...SETTINGS_BUTTON_BASE,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: compact ? undefined : "8px",
-            height: compact ? undefined : "40px",
-            padding: compact ? undefined : "0 14px",
-            borderRadius: "8px",
-            border: `1px solid ${ONE_EYRIE.gold}`,
-            background: "transparent",
-            color: ONE_EYRIE.gold,
-            fontWeight: 700,
-            fontSize: compact ? undefined : "13px",
-            opacity: isBusy ? 0.6 : 1,
-            cursor: isBusy ? "not-allowed" : "pointer",
-          }}
+        <div
+          className="work-order-photo-field__actions"
+          style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
         >
-          {uploading ? (
-            <Loader2 size={compact ? 14 : 16} className="inspection-failed-spin" />
-          ) : (
+          <button
+            type="button"
+            className={compact ? "work-order-photo-field__btn" : undefined}
+            onClick={openLibraryPicker}
+            disabled={isBusy}
+            title="Upload from library"
+            aria-label="Upload photo from library"
+            style={compact ? iconButtonStyle : actionButtonStyle}
+          >
+            {uploading ? (
+              <Loader2 size={compact ? 14 : 16} className="inspection-failed-spin" />
+            ) : (
+              <ImagePlus size={compact ? 14 : 16} />
+            )}
+            {compact ? null : "Upload from library"}
+          </button>
+
+          <button
+            type="button"
+            className={compact ? "work-order-photo-field__btn" : undefined}
+            onClick={openCameraPicker}
+            disabled={isBusy}
+            title="Take photo"
+            aria-label="Take photo"
+            style={compact ? iconButtonStyle : actionButtonStyle}
+          >
             <Camera size={compact ? 14 : 16} />
-          )}
-          {compact
-            ? preferCamera
-              ? "Add photo"
-              : "Upload"
-            : preferCamera
-              ? "Take or upload photo"
-              : "Upload photo"}
-        </button>
+            {compact ? null : "Take photo"}
+          </button>
+        </div>
 
         {displayUrl ? (
           <div style={{ position: "relative", display: "inline-block" }}>
@@ -214,9 +238,9 @@ export default function WorkOrderPhotoField({
         aria-hidden
       />
       <input
-        ref={fileInputRef}
+        ref={libraryInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        accept={PHOTO_ACCEPT}
         onChange={handleFileChange}
         style={{ display: "none" }}
         aria-hidden

@@ -154,6 +154,12 @@
   flex-wrap: wrap;
 }
 
+.work-order-modal__photo-field .work-order-photo-field__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .work-order-modal__photo-field .work-order-photo-field__btn {
   height: 32px;
   padding: 0 10px;

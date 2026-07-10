@@ -274,7 +274,7 @@ export default function WorkOrderModal({
             </div>
 
             <label className="work-order-modal__field work-order-modal__field--full">
-              <span className="work-order-modal__label">Custom Location</span>
+              <span className="work-order-modal__label">Custom Location (optional)</span>
               <input
                 className="work-order-modal__input"
                 value={customLocation}
