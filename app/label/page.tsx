@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Suspense } from "react";
-import { ONE_EYRIE_BRAND } from "@/app/lib/one-eyrie-brand";
+import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
 export function LabelUploadPageContent() {
@@ -75,19 +74,7 @@ export function LabelUploadPageContent() {
             borderBottom: `3px solid ${ONE_EYRIE.gold}`,
           }}
         >
-          <Image
-            src={ONE_EYRIE_BRAND.placeholderIcon}
-            alt={ONE_EYRIE_BRAND.alt}
-            width={168}
-            height={168}
-            priority
-            style={{
-              display: "block",
-              margin: "0 auto",
-              height: "auto",
-              width: "72px",
-            }}
-          />
+          <OneEyrieWordmark className="one-eyrie-wordmark--login" />
           <p
             style={{
               margin: "14px 0 0",

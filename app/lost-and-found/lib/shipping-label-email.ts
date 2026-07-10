@@ -62,9 +62,9 @@ export function buildShippingLabelEmailHtml({
 <div style="background:${ONE_EYRIE.black};padding:28px;font-family:Arial,sans-serif;color:${ONE_EYRIE.text};">
   <div style="max-width:560px;margin:0 auto;background:${ONE_EYRIE.surface};border-radius:18px;overflow:hidden;border:1px solid ${ONE_EYRIE.gold};box-shadow:0 20px 50px rgba(0,0,0,0.45);">
     <div style="background:${ONE_EYRIE.surfacePanel};text-align:center;padding:28px 22px 24px;border-bottom:3px solid ${ONE_EYRIE.gold};">
-      <div style="color:${ONE_EYRIE.gold};font-size:13px;font-weight:700;letter-spacing:0.28em;line-height:1.25;text-transform:uppercase;">
-        <div>ONE</div>
-        <div style="margin-top:2px;">EYRIE</div>
+      <div style="font-size:13px;font-weight:700;letter-spacing:0.28em;line-height:1.25;text-transform:uppercase;">
+        <div style="color:${ONE_EYRIE.text};">ONE</div>
+        <div style="color:${ONE_EYRIE.gold};margin-top:2px;">EYRIE</div>
       </div>
       <div style="color:${ONE_EYRIE.textSubtle};font-size:12px;margin-top:14px;letter-spacing:0.08em;text-transform:uppercase;">Lost &amp; Found Shipping Request</div>
     </div>
