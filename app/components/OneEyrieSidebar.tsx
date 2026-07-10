@@ -4,6 +4,7 @@ import Link from "next/link";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import OneEyrieUserProfileMenu from "@/app/components/OneEyrieUserProfileMenu";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
+import { DESKTOP_NAV_ICONS } from "@/app/lib/one-eyrie-desktop-nav-icons";
 import type { OneEyrieNavLabel } from "@/app/lib/role-permissions";
 
 type OneEyrieSidebarProps = {
@@ -23,6 +24,7 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
       <nav className="one-eyrie-sidebar__nav" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = item.label === active;
+          const NavIcon = DESKTOP_NAV_ICONS[item.label as OneEyrieNavLabel];
           return (
             <Link
               key={item.label}
@@ -33,7 +35,14 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
                   : "one-eyrie-nav-item"
               }
             >
-              {item.label}
+              <span className="one-eyrie-nav-item__inner">
+                <NavIcon
+                  className="one-eyrie-nav-item__icon"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+                <span className="one-eyrie-nav-item__label">{item.label}</span>
+              </span>
             </Link>
           );
         })}
