@@ -1,0 +1,39 @@
+{
+  "capturedAt": "2026-07-11T04:15:55.318Z",
+  "projectUrl": "https://iodvqycsyequfdhjqchf.supabase.co",
+  "tables": {
+    "team_members": {
+      "count": 22
+    },
+    "pass_on_log": {
+      "count": 33
+    },
+    "pass_on_log_replies": {
+      "count": 14
+    },
+    "pass_on_log_views": {
+      "count": 206
+    },
+    "lost_items": {
+      "count": 2
+    },
+    "hotel_property": {
+      "count": 1
+    },
+    "buildings_and_areas": {
+      "count": 151
+    },
+    "work_orders": {
+      "count": 17
+    },
+    "pm_occurrences": {
+      "count": 5
+    },
+    "inspection_sessions": {
+      "count": 92
+    },
+    "scheduled_report_schedules": {
+      "count": 0
+    }
+  }
+}
