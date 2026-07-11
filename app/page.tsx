@@ -13,6 +13,7 @@ import PassOnLogSection from "./dashboard/components/PassOnLogSection";
 import OpenWorkOrdersSection from "./dashboard/components/OpenWorkOrdersSection";
 import LostFoundSummaryCard from "./dashboard/components/LostFoundSummaryCard";
 import "./dashboard/dashboard-responsive.css";
+import "./dashboard/dashboard-light-theme.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   }, [loadDashboard]);
 
   return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-dashboard-route`}>
       <OneEyrieSidebar active="Dashboard" />
 
       <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
@@ -80,7 +81,7 @@ export default function DashboardPage() {
         )}
 
         {loading || !dashboard ? (
-          <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
+          <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }} className="dashboard-dashboard-loading">
             Loading operational dashboard...
           </div>
         ) : (

@@ -20,7 +20,7 @@ function PastDueLink({
   return (
     <Link
       href={href}
-      className="dashboard-clickable-card"
+      className="dashboard-clickable-card dashboard-past-due-link"
       style={{
         display: "inline-flex",
         alignItems: "baseline",
@@ -82,7 +82,7 @@ export default function PastDueSummaryBar({ pastDue }: PastDueSummaryBarProps) {
           Nothing overdue right now
         </span>
       ) : (
-        <>
+        <div className="dashboard-past-due-links" style={{ display: "contents" }}>
           <PastDueLink label="PMs" count={pastDue.pms} href={pastDue.hrefs.pms} />
           <PastDueLink
             label="VR Inspections"
@@ -94,7 +94,7 @@ export default function PastDueSummaryBar({ pastDue }: PastDueSummaryBarProps) {
             count={pastDue.rpmInspections}
             href={pastDue.hrefs.rpmInspections}
           />
-        </>
+        </div>
       )}
     </section>
   );
