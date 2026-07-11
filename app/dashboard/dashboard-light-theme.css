@@ -7,11 +7,17 @@
 /* ── Light-mode design tokens (dashboard only) ── */
 
 html[data-theme="light"] main.one-eyrie-dashboard-route {
-  background: #f7f5f1 !important;
+  background: #ffffff !important;
   color: #2c2a26 !important;
 }
 
+html[data-theme="light"] main.one-eyrie-dashboard-route .one-eyrie-sidebar {
+  background: var(--dash-lm-sidebar-bg, #f7f5f1) !important;
+  border-right-color: var(--oe-border-subtle, #ece7de) !important;
+}
+
 html[data-theme="light"] .one-eyrie-dashboard-page {
+  --dash-lm-sidebar-bg: #f7f5f1;
   --dash-lm-surface: #ffffff;
   --dash-lm-action: #f8f9fa;
   --dash-lm-action-hover: #f1f3f5;
@@ -421,7 +427,12 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-list-card:focus-vi
   }
 
   html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-row-card {
+    background: var(--dash-lm-sidebar-bg) !important;
     box-shadow: 0 1px 4px var(--dash-lm-shadow) !important;
+  }
+
+  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-row-card:hover {
+    background: #f1eee8 !important;
   }
 
   html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section {
