@@ -1,7 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 031: Enforce NOT NULL tenant columns after backfill verification
--- Run scripts/tenant/verify-row-counts.mjs --all before and after this migration.
-
+-- Applied to Supabase (Checkpoint 2). Post-apply smoke: scripts/tenant/smoke-post-031-032.mjs
 BEGIN;
 
 -- Verify no null tenant columns remain (raises error if backfill incomplete)

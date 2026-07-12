@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 032: Tenant stamp triggers for child tables on INSERT/UPDATE
+-- Applied to Supabase (Checkpoint 2). Post-apply smoke: scripts/tenant/smoke-post-031-032.mjs
 
 BEGIN;
 
