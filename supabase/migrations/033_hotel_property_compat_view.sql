@@ -1,6 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 033: Temporary hotel_property compatibility view (removed in Checkpoint 8)
-
+-- Applied to Supabase (Checkpoint 2).
 BEGIN;
 
 CREATE OR REPLACE VIEW hotel_property_compat AS

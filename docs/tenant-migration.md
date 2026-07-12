@@ -13,7 +13,7 @@ Checkpoint 1 is **complete** (commit `checkpoint-1-multi-tenant-preparation`).
 | Live baseline (sample-row inventory) | `supabase/migrations/history/000_live_baseline_pass_on_lost_items_team_members.sql` | Done |
 | Constraint/RLS supplement | `supabase/migrations/history/000_live_baseline_supplement_constraints.sql` | Done |
 | Exact pg_dump DDL | Same path via `export-live-ddl.mjs` | **Blocked** — needs `SUPABASE_DB_URL` |
-| Review migrations 026–033 | `supabase/migrations/026_*.sql` … `033_*.sql` | Done — 026–032 **applied**; 033 pending |
+| Review migrations 026–033 | `supabase/migrations/026_*.sql` … `033_*.sql` | Done — **all applied** (Checkpoint 2 schema complete) |
 | Pre-migration row counts | `scripts/tenant/snapshots/row-counts-checkpoint1-before.json` | Done |
 | Row-count script | `scripts/tenant/verify-row-counts.mjs` | Done |
 | Null-tenant verification | `scripts/tenant/verify-null-tenant-columns.sql` | Done |
@@ -54,7 +54,9 @@ Applied manually in Supabase SQL Editor. App smoke-tested after each step.
 | 030 | `030_tenant_team_members_and_constraints.sql` | **Applied** — verified |
 | 031 | `031_tenant_columns_not_null.sql` | **Applied** — smoke-tested |
 | 032 | `032_tenant_stamp_triggers.sql` | **Applied** — smoke-tested |
-| 033 | `033_hotel_property_compat_view.sql` | Pending approval |
+| 033 | `033_hotel_property_compat_view.sql` | **Applied** — Checkpoint 2 complete |
+
+**Checkpoint 2 schema migrations (026–033) are complete.** Application tenant wiring continues in Checkpoints 3–8.
 
 ## Migration apply order (Checkpoint 2)
 
