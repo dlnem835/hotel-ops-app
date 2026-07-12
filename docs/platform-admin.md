@@ -13,7 +13,7 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | E | Organization/property creation | **Complete** |
 | Pre-F | Organization lifecycle (suspend/reactivate/test delete) | **Complete** |
 | F | First-GM invitation + membership | **Complete** |
-| G | Module controls | Pending |
+| G | Module controls | **Complete** |
 | H | Audit log UI | Pending |
 | I | Security verification + smoke tests | Pending |
 
@@ -191,6 +191,23 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-f.mjs
+```
+
+## Stage G — Module controls
+
+| File | Purpose |
+|------|---------|
+| `app/api/admin/organizations/[id]/modules/route.ts` | `GET` / `PATCH` org module entitlements |
+| `app/lib/platform-admin/organization-module-keys.ts` | Shared module key constants |
+| `app/lib/platform-admin/server/organization-modules.ts` | Parse/update modules, cap membership permissions |
+| `app/admin/components/AdminModuleControls.tsx` | Module toggle UI on org detail |
+
+Disabling a module updates `organization_modules`, caps `user_properties.module_permissions` and `team_members.module_permissions` for that org, and writes `modules.updated` audit when changes occur.
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-g.mjs
 ```
 
 ## Authorization model (permanent)

@@ -9,6 +9,7 @@ import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
 import AdminInviteGmForm from "../../components/AdminInviteGmForm";
 import AdminInvitationsTable from "../../components/AdminInvitationsTable";
+import AdminModuleControls from "../../components/AdminModuleControls";
 import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 
@@ -128,31 +129,15 @@ export default function AdminOrganizationDetailPage() {
         </ul>
       </section>
 
-      <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Enabled modules</h3>
-        {organization.modules.length === 0 ? (
-          <p className="admin-portal__muted">No module entitlements configured.</p>
-        ) : (
-          <div className="admin-portal__table-wrap">
-            <table className="admin-portal__table">
-              <thead>
-                <tr>
-                  <th>Module</th>
-                  <th>Enabled</th>
-                </tr>
-              </thead>
-              <tbody>
-                {organization.modules.map((module) => (
-                  <tr key={module.moduleKey}>
-                    <td>{module.moduleKey}</td>
-                    <td>{module.enabled ? "Yes" : "No"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      <AdminModuleControls
+        organizationId={organization.id}
+        modules={organization.modules}
+        onModulesUpdated={(modules) => {
+          setActionError(null);
+          setOrganization((current) => (current ? { ...current, modules } : current));
+        }}
+        onError={setActionError}
+      />
 
       <section className="admin-portal__card">
         <div className="admin-portal__section-header">
