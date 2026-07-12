@@ -85,3 +85,16 @@ export type AdminDashboardResponse = {
   activeOrganizationCount: number;
   organizations: AdminOrganizationSummary[];
 };
+
+export type CreateOrganizationRequest = {
+  name: string;
+  slug?: string;
+};
+
+export type CreatePropertyRequest = {
+  name: string;
+  brand?: string | null;
+  address?: string;
+  phoneNumber?: string;
+  timezone?: string;
+};

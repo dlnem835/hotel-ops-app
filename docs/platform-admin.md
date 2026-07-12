@@ -9,8 +9,8 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | A | Database schema, platform admin RLS, property ID sequence | **Complete** (migrations 037–040 applied; owner seeded manually) |
 | B | Server-side `resolvePlatformAdminRequest` helper | **Complete** |
 | C | Protected `/admin` layout + route guard | **Complete** |
-| D | Organizations/properties list + detail | **Ready for review** |
-| E | Organization/property creation | Pending |
+| D | Organizations/properties list + detail | **Complete** |
+| E | Organization/property creation | **Complete** |
 | F | First-GM invitation + membership | Pending |
 | G | Module controls + suspend/reactivate | Pending |
 | H | Audit log UI | Pending |
@@ -129,6 +129,25 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-d.mjs
+```
+
+## Stage E — Organization and property creation
+
+| File | Purpose |
+|------|---------|
+| `app/api/admin/organizations/route.ts` | `POST` create organization |
+| `app/api/admin/organizations/[id]/properties/route.ts` | `POST` create property |
+| `app/lib/platform-admin/server/create-organization.ts` | Org insert + module seed + audit |
+| `app/lib/platform-admin/server/create-property.ts` | Property insert + audit |
+| `app/lib/platform-admin/server/admin-audit-log.ts` | Audit log writer |
+| `app/lib/platform-admin/server/admin-slug.ts` | Slug generation/validation |
+| `app/admin/organizations/new/page.tsx` | Create organization form |
+| `app/admin/organizations/[id]/properties/new/page.tsx` | Create property form |
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-e.mjs
 ```
 
 ## Authorization model (permanent)

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type { AdminOrganizationSummary } from "@/app/lib/platform-admin/types";
@@ -51,7 +52,12 @@ export default function AdminOrganizationsPage() {
 
   return (
     <section className="admin-portal__card">
-      <h2 className="admin-portal__section-title">Organizations</h2>
+      <div className="admin-portal__section-header">
+        <h2 className="admin-portal__section-title">Organizations</h2>
+        <Link href="/admin/organizations/new" className="admin-portal__button admin-portal__button--primary">
+          Create organization
+        </Link>
+      </div>
       <AdminOrganizationsTable organizations={organizations} />
     </section>
   );

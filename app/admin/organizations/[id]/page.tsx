@@ -135,7 +135,15 @@ export default function AdminOrganizationDetailPage() {
       </section>
 
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Properties</h3>
+        <div className="admin-portal__section-header">
+          <h3 className="admin-portal__section-title">Properties</h3>
+          <Link
+            href={`/admin/organizations/${organization.id}/properties/new`}
+            className="admin-portal__button admin-portal__button--primary"
+          >
+            Add property
+          </Link>
+        </div>
         {organization.properties.length === 0 ? (
           <p className="admin-portal__muted">No properties yet.</p>
         ) : (
