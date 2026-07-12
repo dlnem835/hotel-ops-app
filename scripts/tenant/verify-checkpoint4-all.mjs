@@ -18,6 +18,7 @@ const SCRIPTS = [
   "verify-checkpoint4-sc6.mjs",
   "verify-checkpoint4-sc7.mjs",
   "verify-checkpoint4-sc8.mjs",
+  "verify-checkpoint5-rls.mjs",
 ];
 
 let failures = 0;
@@ -40,4 +41,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-console.log("OK      All Checkpoint 4 verification scripts passed");
+console.log("OK      All tenant verification scripts passed");

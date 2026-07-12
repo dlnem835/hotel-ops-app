@@ -1,10 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/app/settings/lib/hotel-property-db";
 
-// PUBLIC guest-facing route: the guest is NOT authenticated here (they arrive via
-// the emailed /label?id= link). It intentionally stays unauthenticated. The write
-// is bounded to a single known item id and is namespaced to that item's tenant.
-// A public-scoped RLS policy for this flow is deferred to Checkpoint 5.
-const supabase = createClient(
+// PUBLIC guest-facing route: guests arrive via the emailed /label?id= link without
+// authenticating. Storage writes use the anon key with tenant-namespaced paths
+// enforced by migration 036 storage policies. Item lookup/update uses service role
+// because lost_items RLS requires membership (Checkpoint 5).
+const supabaseAnon = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
@@ -19,7 +20,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "Missing file or item ID" }, { status: 400 });
   }
 
-  const { data: item, error: itemError } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: item, error: itemError } = await supabaseAdmin
     .from("lost_items")
     .select("id, organization_id, property_id")
     .eq("id", itemId)
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
       : "";
   const filePath = `${tenantPrefix}${itemId}-${Date.now()}-${file.name}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabaseAnon.storage
     .from("shipping-labels")
     .upload(filePath, file);
 
@@ -46,17 +48,21 @@ export async function POST(request: Request) {
     return Response.json({ error: uploadError.message }, { status: 500 });
   }
 
-  const { data } = supabase.storage
+  const { data } = supabaseAnon.storage
     .from("shipping-labels")
     .getPublicUrl(filePath);
 
-  await supabase
+  const { error: updateError } = await supabaseAdmin
     .from("lost_items")
     .update({
       label_url: data.publicUrl,
       status: "Ready to be shipped",
     })
     .eq("id", itemId);
+
+  if (updateError) {
+    return Response.json({ error: updateError.message }, { status: 500 });
+  }
 
   return Response.json({ success: true, labelUrl: data.publicUrl });
 }

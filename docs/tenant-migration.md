@@ -55,8 +55,11 @@ Applied manually in Supabase SQL Editor. App smoke-tested after each step.
 | 031 | `031_tenant_columns_not_null.sql` | **Applied** — smoke-tested |
 | 032 | `032_tenant_stamp_triggers.sql` | **Applied** — smoke-tested |
 | 033 | `033_hotel_property_compat_view.sql` | **Applied** — Checkpoint 2 complete |
+| 034 | `034_remove_hotel_property_compat.sql` | **Applied** — `hotel_property` removed |
+| 035 | `035_tenant_row_level_security.sql` | **Applied** — verified |
+| 036 | `036_tenant_storage_isolation.sql` | **Applied** — verified |
 
-**Checkpoint 2 schema migrations (026–033) are complete.** Application tenant wiring continues in Checkpoints 3–8.
+**Checkpoint 2 schema migrations (026–033) are complete.** Migrations 034–036 complete the tenant security layer (Checkpoint 5 + 8 compat) and are applied and verified.
 
 ## Migration apply order (Checkpoint 2)
 
@@ -139,7 +142,7 @@ This overwrites `000_live_baseline_pass_on_lost_items_team_members.sql` with exa
 |------------|-------|--------|
 | 3 | `PropertyContextProvider` + property selector in sidebar | **Complete** |
 | 4 | API session auth + tenant-scoped queries | **Complete** (sc1–sc8) |
-| 5 | RLS + storage path isolation | Pending |
+| 5 | RLS + storage path isolation | **Complete** (migrations 035–036 applied) |
 | 6 | Reports + scheduled reports isolation | Pending |
 | 7 | Admin property/membership UI | **Complete** (within Checkpoint 4 sc7) |
 | 8 | Test orgs/properties; remove `hotel_property` compat | **Complete** (app + migration 034) |
@@ -164,13 +167,31 @@ node scripts/tenant/verify-checkpoint4-all.mjs
 node scripts/tenant/smoke-checkpoint4.mjs
 ```
 
-## Checkpoint 8 — compatibility cleanup
+## Checkpoint 5 — RLS + storage isolation
 
-Migration **034** (`034_remove_hotel_property_compat.sql`) drops `hotel_property_compat` and `hotel_property`. Apply manually in Supabase SQL editor after sc8 app code is deployed. Application code reads/writes `properties` only.
+Migrations **035** and **036** replace permissive `USING (true)` policies with membership-backed checks via `user_properties` and `organization_users`. Storage paths under `inspection-photos`, `work-order-photos`, and `shipping-labels` require the `org-{orgId}/property-{propertyId}/` prefix.
+
+Apply in Supabase SQL editor (or `node scripts/tenant/apply-sql-migration.mjs <file>` when `SUPABASE_DB_URL` is set):
+
+1. `035_tenant_row_level_security.sql`
+2. `036_tenant_storage_isolation.sql`
+
+Verification:
+
+```bash
+node scripts/tenant/verify-checkpoint5-rls.mjs
+```
+
+Included in `verify-checkpoint4-all.mjs` (runs Checkpoint 3–5 scripts).
+
+### Checkpoint 5 app adjustment
+
+`POST /api/upload-label` uses service role for `lost_items` read/update (guests are unauthenticated) while storage uploads remain on the anon client with tenant-namespaced paths enforced by migration 036.
 
 ## Legacy removal criteria (Checkpoint 8)
 
-- All business API routes enforce session auth and tenant scope — **done** (operational dashboard included in sc8)
-- RLS policies replace permissive `USING (true)` on tenant tables — **deferred to Checkpoint 5**
+- All business API routes enforce session auth and tenant scope — **done**
+- RLS policies replace permissive `USING (true)` on tenant tables — **done** (migration 035)
+- Storage paths isolated by organization/property — **done** (migration 036)
 - No application reads/writes to `hotel_property` table — **done**
-- Drop `hotel_property_compat` view and `hotel_property` table — **migration 034 committed; apply in Supabase**
+- Drop `hotel_property_compat` view and `hotel_property` table — **migration 034 applied**
