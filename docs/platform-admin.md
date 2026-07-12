@@ -7,7 +7,7 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | Stage | Scope | Status |
 |-------|-------|--------|
 | A | Database schema, platform admin RLS, property ID sequence | **Complete** (migrations 037–040 applied; owner seeded manually) |
-| B | Server-side `resolvePlatformAdminRequest` helper | Pending |
+| B | Server-side `resolvePlatformAdminRequest` helper | **Complete** |
 | C | Protected `/admin` layout + route guard | Pending |
 | D | Organizations/properties list + detail | Pending |
 | E | Organization/property creation | Pending |
@@ -68,6 +68,21 @@ scripts/tenant/rollback-platform-admin.sql
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-a.mjs
+```
+
+## Stage B — Server authorization helper
+
+| File | Purpose |
+|------|---------|
+| `app/lib/platform-admin/types.ts` | Platform admin types |
+| `app/lib/platform-admin/server/resolve-platform-admin-request.ts` | `resolvePlatformAdminRequest()`, fail-closed 401/403 |
+| `app/lib/platform-admin/admin-fetch.ts` | Client Bearer fetch for `/api/admin/*` |
+| `app/api/admin/me/route.ts` | Auth probe for platform administrators |
+
+Verification (requires `npm run dev` or `SMOKE_BASE_URL`):
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-b.mjs
 ```
 
 ## Authorization model (permanent)
