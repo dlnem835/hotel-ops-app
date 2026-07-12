@@ -145,6 +145,11 @@ async function main() {
     if (!pilotOrg?.slug) {
       failures += fail("Load pilot organization slug for duplicate check");
     } else {
+      const { count: duplicateNameCountBefore } = await admin
+        .from("organizations")
+        .select("id", { count: "exact", head: true })
+        .eq("name", "Duplicate Slug Test");
+
       const duplicateSlugRes = await fetch(`${BASE}/api/admin/organizations`, {
         method: "POST",
         headers: authHeaders,
@@ -158,6 +163,30 @@ async function main() {
               "POST /api/admin/organizations with duplicate slug returns 409",
               `got ${duplicateSlugRes.status}`
             );
+
+      const { count: duplicateNameCountAfter } = await admin
+        .from("organizations")
+        .select("id", { count: "exact", head: true })
+        .eq("name", "Duplicate Slug Test");
+
+      failures +=
+        duplicateNameCountAfter === duplicateNameCountBefore
+          ? pass("Duplicate slug test leaves no Duplicate Slug Test organization behind")
+          : failures +
+            fail(
+              "Duplicate slug test leaves no Duplicate Slug Test organization behind",
+              `before=${duplicateNameCountBefore}, after=${duplicateNameCountAfter}`
+            );
+
+      if ((duplicateNameCountAfter ?? 0) > 0) {
+        const { data: orphanRows } = await admin
+          .from("organizations")
+          .select("id")
+          .eq("name", "Duplicate Slug Test");
+        for (const row of orphanRows ?? []) {
+          cleanup.push(() => admin.from("organizations").delete().eq("id", row.id));
+        }
+      }
     }
 
     const createOrgRes = await fetch(`${BASE}/api/admin/organizations`, {

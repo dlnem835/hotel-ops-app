@@ -62,12 +62,20 @@ export type AdminOnboardingStatus = {
   hotelConfigured: boolean;
 };
 
+export type AdminOrganizationLifecycle = {
+  canSuspend: boolean;
+  canReactivate: boolean;
+  canDeleteTestOrganization: boolean;
+  deleteBlockers: string[];
+};
+
 export type AdminOrganizationDetail = AdminOrganizationSummary & {
   properties: AdminPropertySummary[];
   modules: AdminOrganizationModule[];
   onboarding: AdminOnboardingStatus;
   onboardingLabel: string;
   pendingInvitations: number;
+  lifecycle: AdminOrganizationLifecycle;
 };
 
 export type AdminPropertyDetail = AdminPropertySummary & {

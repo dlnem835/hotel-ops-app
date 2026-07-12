@@ -7,6 +7,7 @@ import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
+import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 
 function formatDate(value: string) {
@@ -17,6 +18,7 @@ export default function AdminOrganizationDetailPage() {
   const params = useParams<{ id: string }>();
   const [organization, setOrganization] = useState<AdminOrganizationDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,6 +98,14 @@ export default function AdminOrganizationDetailPage() {
           </div>
         </dl>
       </section>
+
+      {actionError ? <AdminErrorState message={actionError} /> : null}
+
+      <AdminOrganizationLifecycleActions
+        organization={organization}
+        onOrganizationUpdated={setOrganization}
+        onError={setActionError}
+      />
 
       <section className="admin-portal__card">
         <h3 className="admin-portal__section-title">Onboarding status</h3>

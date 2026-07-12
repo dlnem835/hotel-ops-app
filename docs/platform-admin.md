@@ -11,8 +11,9 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | C | Protected `/admin` layout + route guard | **Complete** |
 | D | Organizations/properties list + detail | **Complete** |
 | E | Organization/property creation | **Complete** |
+| Pre-F | Organization lifecycle (suspend/reactivate/test delete) | **Complete** |
 | F | First-GM invitation + membership | Pending |
-| G | Module controls + suspend/reactivate | Pending |
+| G | Module controls | Pending |
 | H | Audit log UI | Pending |
 | I | Security verification + smoke tests | Pending |
 
@@ -148,6 +149,26 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-e.mjs
+```
+
+## Pre-Stage F — Organization lifecycle
+
+| File | Purpose |
+|------|---------|
+| `app/api/admin/organizations/[id]/suspend/route.ts` | Suspend active organization |
+| `app/api/admin/organizations/[id]/reactivate/route.ts` | Reactivate suspended organization |
+| `app/api/admin/organizations/[id]/route.ts` | `DELETE` test organization (platform_owner) |
+| `app/lib/platform-admin/server/organization-lifecycle.ts` | Suspend, reactivate, delete |
+| `app/lib/platform-admin/server/organization-delete-eligibility.ts` | Empty-org checks |
+| `app/admin/components/AdminOrganizationLifecycleActions.tsx` | Org detail lifecycle UI |
+| `app/admin/components/AdminConfirmNameModal.tsx` | Typed-name delete confirmation |
+
+Pilot org `id = 1` cannot be suspended or deleted. Only `active` and `suspended` statuses are used. Permanent deletion requires `platform_owner`, exact name confirmation, and zero related records.
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-e-lifecycle.mjs
 ```
 
 ## Authorization model (permanent)

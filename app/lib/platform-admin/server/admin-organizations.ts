@@ -10,6 +10,7 @@ import {
   buildOrganizationOnboarding,
   formatOnboardingSummary,
 } from "@/app/lib/platform-admin/server/onboarding-status";
+import { buildOrganizationLifecycle } from "@/app/lib/platform-admin/server/organization-lifecycle";
 
 type OrganizationRow = {
   id: number;
@@ -180,6 +181,7 @@ export async function fetchAdminOrganizationDetail(
   );
 
   const orgRow = organization as OrganizationRow;
+  const lifecycle = await buildOrganizationLifecycle(supabase, orgRow);
 
   return {
     ...mapOrganizationSummary(orgRow, propertyRows.length),
@@ -191,6 +193,7 @@ export async function fetchAdminOrganizationDetail(
     onboarding,
     onboardingLabel: formatOnboardingSummary(onboarding),
     pendingInvitations: pendingInvitations ?? 0,
+    lifecycle,
   };
 }
 
