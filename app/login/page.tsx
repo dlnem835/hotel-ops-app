@@ -6,6 +6,8 @@ import {
   waitForInitialAuthSession,
 } from "@/app/lib/auth-session";
 import { consumeInactivityLogoutMessage } from "@/app/lib/inactivity-logout";
+import { completePendingInvitationIfNeeded } from "@/app/lib/invitations/complete-pending-invitation";
+import { resolveStaffLoginEmail } from "@/app/lib/login-email";
 import {
   captureLoginReturnFromUrl,
   consumeExplicitLoginRedirect,
@@ -63,6 +65,7 @@ export default function LoginPage() {
 
     void waitForInitialAuthSession().then(async (session) => {
       if (!mounted || !session || submittingRef.current) return;
+      await completePendingInvitationIfNeeded();
       const target = await resolvePostLoginTarget();
       window.location.replace(target);
     });
@@ -77,7 +80,7 @@ export default function LoginPage() {
     submittingRef.current = true;
     setAuthDebug("Signing in…");
 
-    const authEmail = `${username.trim()}@oneeyrie.local`;
+    const authEmail = resolveStaffLoginEmail(username);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: authEmail,
@@ -104,6 +107,7 @@ export default function LoginPage() {
       return;
     }
 
+    await completePendingInvitationIfNeeded();
     const target = await resolvePostLoginTarget();
     setAuthDebug(`Session created, redirecting… → ${target}`);
     window.location.assign(target);
@@ -171,7 +175,7 @@ export default function LoginPage() {
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
+          placeholder="Username or email"
           className="one-eyrie-login-field"
           style={inputStyle}
         />

@@ -62,6 +62,19 @@ export type AdminOnboardingStatus = {
   hotelConfigured: boolean;
 };
 
+export type AdminOrganizationInvitation = {
+  id: string;
+  organizationId: number;
+  propertyId: number;
+  propertyName: string | null;
+  email: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  createdAt: string;
+  acceptedAt: string | null;
+};
+
 export type AdminOrganizationLifecycle = {
   canSuspend: boolean;
   canReactivate: boolean;
@@ -76,6 +89,8 @@ export type AdminOrganizationDetail = AdminOrganizationSummary & {
   onboardingLabel: string;
   pendingInvitations: number;
   lifecycle: AdminOrganizationLifecycle;
+  invitations: AdminOrganizationInvitation[];
+  canInviteGm: boolean;
 };
 
 export type AdminPropertyDetail = AdminPropertySummary & {

@@ -12,7 +12,7 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | D | Organizations/properties list + detail | **Complete** |
 | E | Organization/property creation | **Complete** |
 | Pre-F | Organization lifecycle (suspend/reactivate/test delete) | **Complete** |
-| F | First-GM invitation + membership | Pending |
+| F | First-GM invitation + membership | **Complete** |
 | G | Module controls | Pending |
 | H | Audit log UI | Pending |
 | I | Security verification + smoke tests | Pending |
@@ -169,6 +169,28 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-e-lifecycle.mjs
+```
+
+## Stage F — First-GM invitation + membership
+
+| File | Purpose |
+|------|---------|
+| `app/api/admin/organizations/[id]/invitations/route.ts` | Create/list GM invitations |
+| `app/api/invitations/complete/route.ts` | Complete pending invitation after GM login |
+| `app/lib/platform-admin/server/create-gm-invitation.ts` | `inviteUserByEmail` + invitation row + audit |
+| `app/lib/platform-admin/server/complete-gm-invitation.ts` | Membership + team_members provisioning |
+| `app/lib/platform-admin/server/gm-module-permissions.ts` | Cap GM permissions by org modules |
+| `app/admin/components/AdminInviteGmForm.tsx` | Invite GM form on org detail |
+| `app/admin/components/AdminInvitationsTable.tsx` | Invitation list |
+| `app/lib/login-email.ts` | Username or real-email login resolution |
+| `app/lib/invitations/complete-pending-invitation.ts` | Client helper after login |
+
+Minimal hotel login touchpoint: `/login` accepts username **or** real email and calls invitation completion after sign-in.
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-f.mjs
 ```
 
 ## Authorization model (permanent)

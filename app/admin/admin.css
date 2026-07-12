@@ -290,6 +290,21 @@
   outline-offset: 1px;
 }
 
+.admin-portal__field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #3a352e;
+  border-radius: 8px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.admin-portal__field select:focus {
+  outline: 2px solid rgba(200, 169, 106, 0.45);
+  outline-offset: 1px;
+}
+
 .admin-portal__form-actions {
   display: flex;
   gap: 12px;

@@ -11,6 +11,10 @@ import {
   formatOnboardingSummary,
 } from "@/app/lib/platform-admin/server/onboarding-status";
 import { buildOrganizationLifecycle } from "@/app/lib/platform-admin/server/organization-lifecycle";
+import {
+  canInviteFirstGm,
+  fetchOrganizationInvitations,
+} from "@/app/lib/platform-admin/server/create-gm-invitation";
 
 type OrganizationRow = {
   id: number;
@@ -182,6 +186,12 @@ export async function fetchAdminOrganizationDetail(
 
   const orgRow = organization as OrganizationRow;
   const lifecycle = await buildOrganizationLifecycle(supabase, orgRow);
+  const invitations = await fetchOrganizationInvitations(supabase, organizationId);
+  const canInviteGm = canInviteFirstGm({
+    organizationStatus: orgRow.status,
+    propertyCount: propertyRows.length,
+    invitations,
+  });
 
   return {
     ...mapOrganizationSummary(orgRow, propertyRows.length),
@@ -194,6 +204,8 @@ export async function fetchAdminOrganizationDetail(
     onboardingLabel: formatOnboardingSummary(onboarding),
     pendingInvitations: pendingInvitations ?? 0,
     lifecycle,
+    invitations,
+    canInviteGm,
   };
 }
 

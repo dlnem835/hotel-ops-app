@@ -7,6 +7,8 @@ import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
+import AdminInviteGmForm from "../../components/AdminInviteGmForm";
+import AdminInvitationsTable from "../../components/AdminInvitationsTable";
 import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 
@@ -21,36 +23,28 @@ export default function AdminOrganizationDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
+  async function loadOrganization() {
     const organizationId = params.id;
+    if (!organizationId) return;
 
-    async function loadOrganization() {
-      if (!organizationId) return;
+    setLoading(true);
+    setError(null);
 
-      setLoading(true);
-      setError(null);
-
-      const response = await adminFetch(`/api/admin/organizations/${organizationId}`);
-      if (!mounted) return;
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null;
-        setError(body?.error ?? `Request failed (${response.status})`);
-        setLoading(false);
-        return;
-      }
-
-      const body = (await response.json()) as AdminOrganizationDetail;
-      setOrganization(body);
+    const response = await adminFetch(`/api/admin/organizations/${organizationId}`);
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      setError(body?.error ?? `Request failed (${response.status})`);
       setLoading(false);
+      return;
     }
 
-    void loadOrganization();
+    const body = (await response.json()) as AdminOrganizationDetail;
+    setOrganization(body);
+    setLoading(false);
+  }
 
-    return () => {
-      mounted = false;
-    };
+  useEffect(() => {
+    void loadOrganization();
   }, [params.id]);
 
   if (loading) {
@@ -106,6 +100,22 @@ export default function AdminOrganizationDetailPage() {
         onOrganizationUpdated={setOrganization}
         onError={setActionError}
       />
+
+      {organization.canInviteGm ? (
+        <AdminInviteGmForm
+          organization={organization}
+          onInvitationCreated={() => {
+            setActionError(null);
+            void loadOrganization();
+          }}
+          onError={setActionError}
+        />
+      ) : null}
+
+      <section className="admin-portal__card">
+        <h3 className="admin-portal__section-title">GM invitations</h3>
+        <AdminInvitationsTable invitations={organization.invitations} />
+      </section>
 
       <section className="admin-portal__card">
         <h3 className="admin-portal__section-title">Onboarding status</h3>
