@@ -5,10 +5,12 @@ import InactivityGuard from "./components/InactivityGuard";
 import OneEyrieThemeBootstrap from "./components/OneEyrieThemeBootstrap";
 import RoleAccessProvider from "./components/RoleAccessProvider";
 import RoleRouteGuard from "./components/RoleRouteGuard";
+import TenantContextProviders from "./components/TenantContextProvidersRoot";
 import ThemeProvider from "./components/ThemeProvider";
 import "./globals.css";
 import "./one-eyrie-shell.css";
 import "./one-eyrie-themes.css";
+import "./one-eyrie-tenant-sidebar.css";
 import "./components/one-eyrie-modal.css";
 import "./one-eyrie-desktop-responsive.css";
 import "./one-eyrie-button-standards.css";
@@ -65,10 +67,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <OneEyrieThemeBootstrap />
         <RoleAccessProvider>
-          <ThemeProvider>
-            {children}
-            <RoleRouteGuard />
-          </ThemeProvider>
+          <TenantContextProviders>
+            <ThemeProvider>
+              {children}
+              <RoleRouteGuard />
+            </ThemeProvider>
+          </TenantContextProviders>
         </RoleAccessProvider>
         <InactivityGuard />
       </body>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
+import OneEyriePropertySelector from "@/app/components/OneEyriePropertySelector";
 import OneEyrieUserProfileMenu from "@/app/components/OneEyrieUserProfileMenu";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import { DESKTOP_NAV_ICONS } from "@/app/lib/one-eyrie-desktop-nav-icons";
@@ -20,6 +21,8 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
       <div className="one-eyrie-logo-block">
         <OneEyrieWordmark className="one-eyrie-wordmark--sidebar" />
       </div>
+
+      <OneEyriePropertySelector />
 
       <nav className="one-eyrie-sidebar__nav" aria-label="Main navigation">
         {navItems.map((item) => {

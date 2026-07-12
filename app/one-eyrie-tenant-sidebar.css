@@ -1,0 +1,104 @@
+.one-eyrie-property-selector {
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+
+.one-eyrie-property-selector__label {
+  display: block;
+  margin-bottom: 6px;
+  color: #c8a96a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.one-eyrie-property-selector__single,
+.one-eyrie-property-selector__control-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #3a3834;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.one-eyrie-property-selector__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #c8a96a;
+}
+
+.one-eyrie-property-selector__value {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.one-eyrie-property-selector__control-wrap {
+  position: relative;
+}
+
+.one-eyrie-property-selector__select {
+  appearance: none;
+  width: 100%;
+  padding: 0 22px 0 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.one-eyrie-property-selector__select:focus {
+  outline: none;
+}
+
+.one-eyrie-property-selector__select:focus-visible {
+  outline: 2px solid #c8a96a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.one-eyrie-property-selector__chevron {
+  position: absolute;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.one-eyrie-property-selector--loading .one-eyrie-property-selector__value {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+html[data-theme="light"] .one-eyrie-property-selector__label {
+  color: #8a6b35;
+}
+
+html[data-theme="light"] .one-eyrie-property-selector__single,
+html[data-theme="light"] .one-eyrie-property-selector__control-wrap {
+  border-color: var(--oe-border-subtle, #ece7de);
+  background: #ffffff;
+}
+
+html[data-theme="light"] .one-eyrie-property-selector__value,
+html[data-theme="light"] .one-eyrie-property-selector__select {
+  color: #2c2a26;
+}
+
+html[data-theme="light"] .one-eyrie-property-selector__icon {
+  color: #8a6b35;
+}
+
+html[data-theme="light"] .one-eyrie-property-selector__chevron {
+  color: #6b6760;
+}
