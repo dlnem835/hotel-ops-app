@@ -9,7 +9,7 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 | A | Database schema, platform admin RLS, property ID sequence | **Complete** (migrations 037–040 applied; owner seeded manually) |
 | B | Server-side `resolvePlatformAdminRequest` helper | **Complete** |
 | C | Protected `/admin` layout + route guard | **Complete** |
-| D | Organizations/properties list + detail | Pending |
+| D | Organizations/properties list + detail | **Ready for review** |
 | E | Organization/property creation | Pending |
 | F | First-GM invitation + membership | Pending |
 | G | Module controls + suspend/reactivate | Pending |
@@ -108,6 +108,27 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-c.mjs
+```
+
+## Stage D — Organizations and properties list/detail
+
+| File | Purpose |
+|------|---------|
+| `app/api/admin/dashboard/route.ts` | Dashboard counts + organization list |
+| `app/api/admin/organizations/route.ts` | Organization list |
+| `app/api/admin/organizations/[id]/route.ts` | Organization detail |
+| `app/api/admin/properties/[id]/route.ts` | Property detail |
+| `app/lib/platform-admin/server/admin-organizations.ts` | Service-role data loaders |
+| `app/lib/platform-admin/server/onboarding-status.ts` | Derived onboarding status |
+| `app/admin/page.tsx` | Dashboard UI |
+| `app/admin/organizations/page.tsx` | Organizations list |
+| `app/admin/organizations/[id]/page.tsx` | Organization detail |
+| `app/admin/properties/[id]/page.tsx` | Property detail |
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-d.mjs
 ```
 
 ## Authorization model (permanent)

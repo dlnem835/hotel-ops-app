@@ -25,3 +25,63 @@ export type PlatformAdminMeResponse = {
   role: PlatformAdminRole;
   platformAdminId: string;
 };
+
+export type AdminOrganizationSummary = {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  propertyCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminPropertySummary = {
+  id: number;
+  organizationId: number;
+  name: string;
+  brand: string | null;
+  address: string;
+  phoneNumber: string;
+  timezone: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminOrganizationModule = {
+  moduleKey: string;
+  enabled: boolean;
+};
+
+export type AdminOnboardingStatus = {
+  organizationCreated: boolean;
+  propertyCreated: boolean;
+  gmInvited: boolean;
+  gmAccepted: boolean;
+  hotelConfigured: boolean;
+};
+
+export type AdminOrganizationDetail = AdminOrganizationSummary & {
+  properties: AdminPropertySummary[];
+  modules: AdminOrganizationModule[];
+  onboarding: AdminOnboardingStatus;
+  onboardingLabel: string;
+  pendingInvitations: number;
+};
+
+export type AdminPropertyDetail = AdminPropertySummary & {
+  organizationName: string | null;
+  organizationSlug?: string | null;
+  organizationStatus?: string | null;
+  onboarding?: AdminOnboardingStatus;
+  onboardingLabel?: string;
+  areaCount?: number;
+};
+
+export type AdminDashboardResponse = {
+  organizationCount: number;
+  propertyCount: number;
+  activeOrganizationCount: number;
+  organizations: AdminOrganizationSummary[];
+};
