@@ -48,6 +48,7 @@ import {
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
 import RoomsAreasSection from "./components/RoomsAreasSection";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
   buildUserAccessProfile,
   buildSettingsRoleCatalog,
@@ -81,7 +82,7 @@ type ModalType = Exclude<
 > | null;
 
 type AnyRecord = {
-  id: number;
+  id: string | number;
   [key: string]: any;
 };
 
@@ -94,24 +95,22 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SectionId>("home");
   const [search, setSearch] = useState("");
   const [modalType, setModalType] = useState<ModalType>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | number | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const [teamMembers, setTeamMembers] = useState<AnyRecord[]>([]);
 
   async function fetchTeamMembers() {
-  const { data, error } = await supabase
-    .from("team_members")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const response = await tenantFetch("/api/team-members");
+    const result = await response.json();
 
-  if (error) {
-    console.error("Error loading team members:", error);
-    return;
+    if (!response.ok) {
+      console.error("Error loading team members:", result.error);
+      return;
+    }
+
+    setTeamMembers(result.members || []);
   }
-
-  setTeamMembers(data || []);
-}
 
 useEffect(() => {
   async function checkAuth() {
@@ -312,7 +311,7 @@ async function saveItem() {
       tempPassword: draft.tempPassword || "",
     };
 
-    const response = await fetch(
+    const response = await tenantFetch(
       editingId ? "/api/update-user" : "/api/create-user",
       {
         method: editingId ? "PATCH" : "POST",
@@ -354,7 +353,7 @@ async function saveItem() {
   closeModal();
 }
 
-  function deleteItem(type: ModalType, id: number) {
+  function deleteItem(type: ModalType, id: string | number) {
     if (!type) return;
 
     if (type === "team") {

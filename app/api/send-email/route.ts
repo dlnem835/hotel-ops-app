@@ -35,9 +35,10 @@ export async function POST(req: Request) {
       return Response.json({ success: false, error: "Lost item not found" }, { status: 404 });
     }
 
-    // NOTE (Checkpoint 7): hotel property config is not yet property-scoped; it
-    // returns the single pilot property record. Scope this once Settings is migrated.
-    const property = await fetchHotelProperty(supabase);
+    const property = await fetchHotelProperty(supabase, {
+      organizationId,
+      propertyId,
+    });
 
     const itemName = item.item_name ? String(item.item_name) : "Your item";
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2 } from "lucide-react";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { HotelProperty } from "../lib/hotel-property-types";
 import {
   goldHoverHandlers,
@@ -43,7 +44,7 @@ export default function HotelPropertyInfoPanel({
   useEffect(() => {
     let mounted = true;
 
-    void fetch("/api/hotel-property")
+    void tenantFetch("/api/hotel-property")
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) {
@@ -83,7 +84,7 @@ export default function HotelPropertyInfoPanel({
     setSaved(false);
 
     try {
-      const response = await fetch("/api/hotel-property", {
+      const response = await tenantFetch("/api/hotel-property", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

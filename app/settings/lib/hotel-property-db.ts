@@ -1,5 +1,10 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { HotelProperty } from "./hotel-property-types";
+import { HotelProperty, HotelPropertyInput } from "./hotel-property-types";
+
+export type PropertyTenantScope = {
+  organizationId: number;
+  propertyId: number;
+};
 
 export function getSupabaseAdmin() {
   return createClient(
@@ -10,7 +15,7 @@ export function getSupabaseAdmin() {
 
 export function toHotelProperty(row: Record<string, unknown>): HotelProperty {
   return {
-    hotelName: String(row.hotel_name || ""),
+    hotelName: String(row.name ?? row.hotel_name ?? ""),
     address: String(row.address || ""),
     phoneNumber: String(row.phone_number || ""),
     updatedAt: row.updated_at ? String(row.updated_at) : null,
@@ -18,12 +23,14 @@ export function toHotelProperty(row: Record<string, unknown>): HotelProperty {
 }
 
 export async function fetchHotelProperty(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope: PropertyTenantScope
 ): Promise<HotelProperty> {
   const { data, error } = await supabase
-    .from("hotel_property")
-    .select("hotel_name, address, phone_number, updated_at")
-    .eq("id", 1)
+    .from("properties")
+    .select("name, address, phone_number, updated_at")
+    .eq("id", scope.propertyId)
+    .eq("organization_id", scope.organizationId)
     .maybeSingle();
 
   if (error || !data) {
@@ -33,6 +40,31 @@ export async function fetchHotelProperty(
       phoneNumber: "",
       updatedAt: null,
     };
+  }
+
+  return toHotelProperty(data);
+}
+
+export async function updateHotelProperty(
+  supabase: SupabaseClient,
+  scope: PropertyTenantScope,
+  input: HotelPropertyInput
+): Promise<HotelProperty> {
+  const { data, error } = await supabase
+    .from("properties")
+    .update({
+      name: input.hotelName,
+      address: input.address,
+      phone_number: input.phoneNumber,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", scope.propertyId)
+    .eq("organization_id", scope.organizationId)
+    .select("name, address, phone_number, updated_at")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
   }
 
   return toHotelProperty(data);

@@ -1,115 +1,52 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
-  getAdministratorPermissions,
-  normalizeModulePermissions,
-} from "@/app/lib/role-permissions";
+  assertCanManageTeamMembers,
+  createTeamMember,
+  type TeamMemberInput,
+} from "@/app/settings/lib/team-members-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+function parseTeamMemberInput(body: Record<string, unknown>): TeamMemberInput {
+  const jobTitle = String(body.job_title || body.role || "").trim();
 
-function resolveStoredPermissions(
-  isAdministrator: boolean,
-  modulePermissions: unknown
-) {
-  if (isAdministrator) {
-    return getAdministratorPermissions();
-  }
-  return normalizeModulePermissions(
-    modulePermissions as Record<string, boolean> | null | undefined
-  );
+  return {
+    first_name: String(body.first_name || ""),
+    last_name: String(body.last_name || ""),
+    email: String(body.email || ""),
+    phone: String(body.phone || ""),
+    department:
+      body.department === undefined
+        ? undefined
+        : body.department == null
+          ? null
+          : String(body.department),
+    job_title: jobTitle,
+    is_administrator: Boolean(body.is_administrator),
+    module_permissions:
+      (body.module_permissions as Record<string, boolean> | undefined) ?? {},
+    status: String(body.status || "Active"),
+    can_login: Boolean(body.can_login),
+    username: String(body.username || ""),
+    tempPassword: String(body.tempPassword || ""),
+  };
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const { supabase, user, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    const scope = { organizationId, propertyId };
+    await assertCanManageTeamMembers(supabase, user.id, scope);
 
-    const {
-      first_name,
-      last_name,
-      email,
-      phone,
-      department,
-      job_title,
-      role,
-      is_administrator,
-      module_permissions,
-      status,
-      can_login,
-      username,
-      tempPassword,
-    } = body;
+    const body = (await request.json()) as Record<string, unknown>;
+    const input = parseTeamMemberInput(body);
+    const member = await createTeamMember(supabase, scope, input);
 
-    const jobTitle = String(job_title || role || "").trim();
-    const isAdministrator = Boolean(is_administrator);
-    const permissions = resolveStoredPermissions(
-      isAdministrator,
-      module_permissions
-    );
-
-    const supabaseAdmin = getSupabaseAdmin();
-
-    let authUserId = null;
-    let authEmail = null;
-
-    if (can_login && username && tempPassword) {
-      authEmail = `${username}@oneeyrie.local`;
-
-      const { data: authData, error: authError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email: authEmail,
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
-            first_name,
-            last_name,
-            job_title: jobTitle,
-            is_administrator: isAdministrator,
-            username,
-          },
-        });
-
-      if (authError) {
-        return NextResponse.json({ error: authError.message }, { status: 500 });
-      }
-
-      authUserId = authData.user.id;
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("team_members")
-      .insert([
-        {
-          first_name,
-          last_name,
-          email,
-          phone,
-          department: department ?? null,
-          job_title: jobTitle || null,
-          role: jobTitle || null,
-          is_administrator: isAdministrator,
-          module_permissions: permissions,
-          status,
-          can_login,
-          username: username || null,
-          auth_email: authEmail,
-          auth_user_id: authUserId,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ user: data });
+    return NextResponse.json({ user: member });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

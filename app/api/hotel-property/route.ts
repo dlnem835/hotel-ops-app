@@ -1,13 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { HotelPropertyInput } from "@/app/settings/lib/hotel-property-types";
 import {
-  HotelPropertyInput,
-} from "@/app/settings/lib/hotel-property-types";
+  assertCanManageTeamMembers,
+} from "@/app/settings/lib/team-members-db";
 import {
   fetchHotelProperty,
-  getSupabaseAdmin,
-  toHotelProperty,
+  updateHotelProperty,
 } from "@/app/settings/lib/hotel-property-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 function normalizeInput(body: Record<string, unknown>): HotelPropertyInput {
   return {
@@ -17,45 +20,34 @@ function normalizeInput(body: Record<string, unknown>): HotelPropertyInput {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    const property = await fetchHotelProperty(supabaseAdmin);
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const property = await fetchHotelProperty(supabase, {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ property });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
+    const { supabase, user, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    const scope = { organizationId, propertyId };
+    await assertCanManageTeamMembers(supabase, user.id, scope);
+
+    const body = (await request.json()) as Record<string, unknown>;
     const input = normalizeInput(body);
+    const property = await updateHotelProperty(supabase, scope, input);
 
-    const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .from("hotel_property")
-      .upsert(
-        {
-          id: 1,
-          hotel_name: input.hotelName,
-          address: input.address,
-          phone_number: input.phoneNumber,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "id" }
-      )
-      .select("hotel_name, address, phone_number, updated_at")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ property: toHotelProperty(data) });
+    return NextResponse.json({ property });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
