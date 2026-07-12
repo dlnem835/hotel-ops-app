@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 030: team_members org columns + buildings_and_areas per-property uniqueness
+-- Applied to Supabase (Checkpoint 2).
 
 BEGIN;
 

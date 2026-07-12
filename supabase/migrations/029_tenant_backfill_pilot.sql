@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 029: Backfill pilot organization_id=1 and property_id=1 on all tenant tables
+-- Applied to Supabase (Checkpoint 2).
 
 BEGIN;
 
