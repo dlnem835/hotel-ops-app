@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 028: Add nullable organization_id + property_id to tenant-owned tables
+-- Applied to Supabase (Checkpoint 2).
 
 BEGIN;
 

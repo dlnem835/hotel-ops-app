@@ -4,16 +4,16 @@ Permanent commercial architecture: **Organization → Properties → Memberships
 
 This document covers Checkpoint 1 (review artifacts) and Checkpoint 2 (apply plan). No application code, API, RLS, storage, or UI changes occur until later checkpoints.
 
-## Checkpoint 1 Status — Ready for Review
+## Checkpoint 1 Status — Complete
 
-Checkpoint 1 is **complete and stopped** pending your approval before Checkpoint 2.
+Checkpoint 1 is **complete** (commit `checkpoint-1-multi-tenant-preparation`).
 
 | Deliverable | Location | Status |
 |-------------|----------|--------|
 | Live baseline (sample-row inventory) | `supabase/migrations/history/000_live_baseline_pass_on_lost_items_team_members.sql` | Done |
 | Constraint/RLS supplement | `supabase/migrations/history/000_live_baseline_supplement_constraints.sql` | Done |
 | Exact pg_dump DDL | Same path via `export-live-ddl.mjs` | **Blocked** — needs `SUPABASE_DB_URL` |
-| Review migrations 026–033 | `supabase/migrations/026_*.sql` … `033_*.sql` | Done — **not applied** |
+| Review migrations 026–033 | `supabase/migrations/026_*.sql` … `033_*.sql` | Done — 026–028 **applied**; 029–033 pending |
 | Pre-migration row counts | `scripts/tenant/snapshots/row-counts-checkpoint1-before.json` | Done |
 | Row-count script | `scripts/tenant/verify-row-counts.mjs` | Done |
 | Null-tenant verification | `scripts/tenant/verify-null-tenant-columns.sql` | Done |
@@ -41,9 +41,24 @@ Checkpoint 1 is **complete and stopped** pending your approval before Checkpoint
 - **Property id=1:** Migrated from `hotel_property` (SpringHill Suites Tampa Suncoast Parkway)
 - Property IDs remain **INT**; id=1 is preserved for the pilot property.
 
-## Migration apply order (Checkpoint 2 only)
+## Checkpoint 2 apply status
 
-Apply in strict order via Supabase SQL editor or CLI. Each file header says **REVIEW ONLY** until Checkpoint 2 is approved.
+Applied manually in Supabase SQL Editor. App smoke-tested after each step.
+
+| # | File | Supabase status |
+|---|------|-----------------|
+| 026 | `026_tenant_organizations_properties.sql` | **Applied** — verified |
+| 027 | `027_tenant_memberships_backfill.sql` | **Applied** — verified |
+| 028 | `028_tenant_columns_nullable.sql` | **Applied** — smoke-tested |
+| 029 | `029_tenant_backfill_pilot.sql` | Pending approval |
+| 030 | `030_tenant_team_members_and_constraints.sql` | Pending |
+| 031 | `031_tenant_columns_not_null.sql` | Pending |
+| 032 | `032_tenant_stamp_triggers.sql` | Pending |
+| 033 | `033_hotel_property_compat_view.sql` | Pending |
+
+## Migration apply order (Checkpoint 2)
+
+Apply in strict order via Supabase SQL editor. One migration at a time; smoke-test after each.
 
 | # | File | Purpose |
 |---|------|---------|

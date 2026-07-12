@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 026: Canonical tenant root tables + migrate hotel_property → properties
+-- Applied to Supabase (Checkpoint 2).
 
 BEGIN;
 

@@ -1,5 +1,5 @@
--- CHECKPOINT 2 — REVIEW ONLY. DO NOT APPLY until approved after Checkpoint 1 review.
 -- Migration 027: Membership tables + pilot backfill from team_members
+-- Applied to Supabase (Checkpoint 2).
 
 BEGIN;
 
