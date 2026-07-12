@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "./supabaseClient";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 export default function SendLabelRequestForm({
   itemId,
@@ -17,7 +17,7 @@ export default function SendLabelRequestForm({
 
     const link = `${window.location.origin}/label?id=${itemId}`;
 
-    const res = await fetch("/api/send-email", {
+    const res = await tenantFetch("/api/send-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,14 +30,6 @@ export default function SendLabelRequestForm({
     });
 
     if (res.ok) {
-      await supabase
-        .from("lost_items")
-        .update({
-          status: "Label sent",
-          label_sent_at: new Date().toISOString(),
-        })
-        .eq("id", itemId);
-
       alert("✅ Email sent successfully!");
       window.location.reload();
     } else {

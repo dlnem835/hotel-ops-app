@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 const statuses = [
   "Found",
@@ -17,7 +18,7 @@ export default function StatusSelect({ id, currentStatus }: any) {
     const newStatus = e.target.value;
     setStatus(newStatus);
 
-    await fetch("/api/update-status", {
+    await tenantFetch("/api/update-status", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

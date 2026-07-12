@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus, Search } from "lucide-react";
@@ -123,12 +124,13 @@ export default function LostAndFoundPage() {
   });
 
   async function fetchItems() {
-    const { data } = await supabase
-      .from("lost_items")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    setLostItems(data || []);
+    const res = await tenantFetch("/api/lost-and-found");
+    if (!res.ok) {
+      setLostItems([]);
+      return;
+    }
+    const data = await res.json();
+    setLostItems(data.items || []);
   }
 
   useEffect(() => {
@@ -200,26 +202,22 @@ setTeamMembers(allTeamMembers || []);
   }, [filtersOpen]);
 
   async function submitNewItem(data: LostFoundAddItemFormData, keepOpen: boolean) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    const insertPayload: Record<string, string | null> = {
+    const body = {
       item_name: data.item_name,
       room_number: combineLostFoundLocation(data.room_number, data.other_location),
       guest_last_name: data.guest_last_name,
       found_by: data.found_by,
       status: data.status,
-      created_by: session?.user?.id || null,
+      comments: data.comments || null,
     };
 
-    if (data.comments) {
-      insertPayload.comments = data.comments;
-    }
+    const res = await tenantFetch("/api/lost-and-found", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-    const { error } = await supabase.from("lost_items").insert([insertPayload]);
-
-    if (error) {
+    if (!res.ok) {
       alert("Unable to add item.");
       return false;
     }
@@ -237,23 +235,29 @@ setTeamMembers(allTeamMembers || []);
   async function deleteItem(id: string) {
     if (!confirm("Delete this item?")) return;
 
-    await supabase.from("lost_items").delete().eq("id", id);
+    await tenantFetch(`/api/lost-and-found/${id}`, { method: "DELETE" });
     fetchItems();
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from("lost_items").update({ status }).eq("id", id);
+    await tenantFetch(`/api/lost-and-found/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
     fetchItems();
   }
 
   async function updateComments(id: string | number, comments: string) {
-    const { error } = await supabase
-      .from("lost_items")
-      .update({ comments })
-      .eq("id", id);
+    const res = await tenantFetch(`/api/lost-and-found/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments }),
+    });
 
-    if (error) {
-      throw new Error(error.message);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to update comments");
     }
 
     setLostItems((prev) =>

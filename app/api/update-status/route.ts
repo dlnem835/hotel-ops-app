@@ -1,21 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
+import { updateLostItem } from "@/app/lost-and-found/lib/lost-found-server-db";
 
 export async function POST(request: Request) {
-  const { id, status } = await request.json();
+  try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(request);
+    const { id, status } = await request.json();
 
-  const { error } = await supabase
-    .from("lost_items")
-    .update({ status })
-    .eq("id", id);
+    await updateLostItem(supabase, id, { organizationId, propertyId }, { status });
 
-  if (error) {
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    return Response.json({ success: true });
+  } catch (error) {
+    return tenantErrorResponse(error);
   }
-
-  return Response.json({ success: true });
 }

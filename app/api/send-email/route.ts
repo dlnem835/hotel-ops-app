@@ -1,38 +1,45 @@
 import { Resend } from "resend";
-import { createClient } from "@supabase/supabase-js";
 import { buildShippingLabelEmailHtml } from "@/app/lost-and-found/lib/shipping-label-email";
+import { fetchHotelProperty } from "@/app/settings/lib/hotel-property-db";
 import {
-  fetchHotelProperty,
-  getSupabaseAdmin,
-} from "@/app/settings/lib/hotel-property-db";
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey || !resendApiKey) {
+if (!resendApiKey) {
   throw new Error("Missing environment variables");
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const resend = new Resend(resendApiKey);
 
 export async function POST(req: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(req);
     const { email, link, itemId } = await req.json();
 
-    const [property, itemResult] = await Promise.all([
-      fetchHotelProperty(getSupabaseAdmin()),
-      supabase
-        .from("lost_items")
-        .select("item_name")
-        .eq("id", itemId)
-        .maybeSingle(),
-    ]);
+    // Verify the item belongs to the caller's active tenant before doing anything.
+    const { data: item, error: itemError } = await supabase
+      .from("lost_items")
+      .select("item_name")
+      .eq("id", itemId)
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId)
+      .maybeSingle();
 
-    const itemName = itemResult.data?.item_name
-      ? String(itemResult.data.item_name)
-      : "Your item";
+    if (itemError) {
+      return Response.json({ success: false, error: itemError.message }, { status: 500 });
+    }
+    if (!item) {
+      return Response.json({ success: false, error: "Lost item not found" }, { status: 404 });
+    }
+
+    // NOTE (Checkpoint 7): hotel property config is not yet property-scoped; it
+    // returns the single pilot property record. Scope this once Settings is migrated.
+    const property = await fetchHotelProperty(supabase);
+
+    const itemName = item.item_name ? String(item.item_name) : "Your item";
 
     const html = buildShippingLabelEmailHtml({
       itemName,
@@ -51,16 +58,20 @@ export async function POST(req: Request) {
       return Response.json({ success: false, error: result.error });
     }
 
+    const now = new Date().toISOString();
     await supabase
       .from("lost_items")
       .update({
-        label_requested_at: new Date().toISOString(),
+        label_requested_at: now,
+        label_sent_at: now,
         status: "Label sent",
       })
-      .eq("id", itemId);
+      .eq("id", itemId)
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId);
 
     return Response.json({ success: true, result });
   } catch (error) {
-    return Response.json({ success: false, error }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
