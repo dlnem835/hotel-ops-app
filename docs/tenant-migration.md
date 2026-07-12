@@ -144,6 +144,7 @@ This overwrites `000_live_baseline_pass_on_lost_items_team_members.sql` with exa
 | 4 | API session auth + tenant-scoped queries | **Complete** (sc1–sc8) |
 | 5 | RLS + storage path isolation | **Complete** (migrations 035–036 applied) |
 | 6 | Reports + scheduled reports isolation | Pending |
+| — | [Platform admin portal](./platform-admin.md) Stage A | **Complete** (migrations 037–040) |
 | 7 | Admin property/membership UI | **Complete** (within Checkpoint 4 sc7) |
 | 8 | Test orgs/properties; remove `hotel_property` compat | **Complete** (app + migration 034) |
 

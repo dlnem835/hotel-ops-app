@@ -1,0 +1,22 @@
+-- Migration 041: Manual platform owner seed (DO NOT auto-apply without editing)
+--
+-- The first platform_owner must be inserted explicitly using your auth.users.id.
+-- Do NOT auto-promote the first registered user. Do NOT hardcode emails or usernames.
+--
+-- Steps:
+--   1. Apply migrations 037–040 first.
+--   2. Find your user id in Supabase Dashboard → Authentication → Users.
+--   3. Run the INSERT below in the SQL editor with your UUID.
+--
+-- Example (replace the UUID before running):
+--
+-- INSERT INTO platform_admins (user_id, role, active, created_by)
+-- VALUES (
+--   '00000000-0000-0000-0000-000000000000'::uuid,
+--   'platform_owner',
+--   true,
+--   NULL
+-- )
+-- ON CONFLICT (user_id) DO NOTHING;
+--
+-- This migration file intentionally contains no executable INSERT.
