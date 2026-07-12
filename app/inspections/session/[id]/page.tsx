@@ -9,6 +9,7 @@ import CompletedInspectionReview from "../../components/CompletedInspectionRevie
 import FailedItemDetails from "../../components/FailedItemDetails";
 import InspectionCategorySection from "../../components/InspectionCategorySection";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { useIsMobileInspectionLayout } from "../../lib/use-inspection-breakpoint";
 import "../../inspections-responsive.css";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
@@ -26,7 +27,6 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
-import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,7 +87,7 @@ export default function InspectionSessionPage() {
         return;
       }
 
-      const response = await fetch(`/api/inspections/sessions/${sessionId}`);
+      const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`);
       const result = await response.json();
       setLoading(false);
 
@@ -272,7 +272,7 @@ export default function InspectionSessionPage() {
     formData.append("categoryKey", categoryKeyValue);
     formData.append("itemKey", itemKeyValue);
 
-    const response = await fetch(`/api/inspections/sessions/${sessionId}/item-photo`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}/item-photo`, {
       method: "POST",
       body: formData,
     });
@@ -289,7 +289,7 @@ export default function InspectionSessionPage() {
 
   async function saveProgress() {
     setSaving(true);
-    const response = await fetch(`/api/inspections/sessions/${sessionId}`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -320,7 +320,7 @@ export default function InspectionSessionPage() {
     }
 
     setSaving(true);
-    const response = await fetch(`/api/inspections/sessions/${sessionId}`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

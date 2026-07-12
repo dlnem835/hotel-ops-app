@@ -33,7 +33,7 @@ export async function fetchInspectionDashboard(
   program: "VR" | "RPM",
   period = "mtd"
 ): Promise<DashboardPayload> {
-  const response = await fetch(
+  const response = await tenantFetch(
     `/api/inspections/dashboard?period=${period}&program=${program.toLowerCase()}`
   );
   const result = await response.json();
@@ -52,7 +52,7 @@ export async function fetchInspectionBootstrap(
   }
 
   const [templatesRes, areasRes, membersRes, teamMemberRes] = await Promise.all([
-    fetch("/api/inspections/sessions"),
+    tenantFetch("/api/inspections/sessions"),
     tenantFetch("/api/buildings-areas"),
     supabase
       .from("team_members")
@@ -151,7 +151,7 @@ export async function startInspectionSession(params: {
   associateId: string | null;
   program: "VR" | "RPM";
 }): Promise<number> {
-  const response = await fetch("/api/inspections/sessions", {
+  const response = await tenantFetch("/api/inspections/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
 import {
   getStandardTemplate,
   resolveStandardKeyFromName,
@@ -16,6 +17,27 @@ export function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+export type InspectionTenantScope = {
+  organizationId: number;
+  propertyId: number;
+};
+
+export async function assertPropertyTemplateInTenant(
+  supabase: SupabaseClient,
+  id: number,
+  scope: InspectionTenantScope
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("property_inspection_templates")
+    .select("id")
+    .eq("id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new TenantRequestError(404, "Inspection template not found");
 }
 
 function normalizeRow(row: Record<string, unknown>): PropertyInspectionTemplate {
@@ -36,14 +58,23 @@ function normalizeRow(row: Record<string, unknown>): PropertyInspectionTemplate 
 }
 
 export async function fetchAllPropertyTemplates(
-  supabaseAdmin: SupabaseClient
+  supabaseAdmin: SupabaseClient,
+  scope?: InspectionTenantScope
 ): Promise<PropertyInspectionTemplate[]> {
-  await migrateLegacyTemplatesIfNeeded(supabaseAdmin);
+  await migrateLegacyTemplatesIfNeeded(supabaseAdmin, scope);
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("property_inspection_templates")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -54,13 +85,21 @@ export async function fetchAllPropertyTemplates(
 
 export async function fetchPropertyTemplateById(
   supabaseAdmin: SupabaseClient,
-  id: number
+  id: number,
+  scope?: InspectionTenantScope
 ): Promise<PropertyInspectionTemplate> {
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("property_inspection_templates")
     .select("*")
-    .eq("id", id)
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     throw new Error(error.message);
@@ -71,18 +110,26 @@ export async function fetchPropertyTemplateById(
 
 export async function activateStandardTemplate(
   supabaseAdmin: SupabaseClient,
-  standardKey: string
+  standardKey: string,
+  scope?: InspectionTenantScope
 ) {
   const standard = getStandardTemplate(standardKey);
   if (!standard) {
     throw new Error("Standard template not found");
   }
 
-  const { data: existing } = await supabaseAdmin
+  let existingQuery = supabaseAdmin
     .from("property_inspection_templates")
     .select("id")
-    .eq("standard_key", standardKey)
-    .maybeSingle();
+    .eq("standard_key", standardKey);
+
+  if (scope) {
+    existingQuery = existingQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data: existing } = await existingQuery.maybeSingle();
 
   if (existing) {
     throw new Error("This standard template is already activated for your property");
@@ -90,20 +137,25 @@ export async function activateStandardTemplate(
 
   const content = standardToPropertyContent(standard);
 
+  const insertPayload: Record<string, unknown> = {
+    standard_key: standard.key,
+    based_on_standard_version: standard.version,
+    name: standard.name,
+    template_type: standard.templateType,
+    status: "Active",
+    property_version: 1,
+    content,
+    last_modified_at: new Date().toISOString(),
+  };
+
+  if (scope) {
+    insertPayload.organization_id = scope.organizationId;
+    insertPayload.property_id = scope.propertyId;
+  }
+
   const { data, error } = await supabaseAdmin
     .from("property_inspection_templates")
-    .insert([
-      {
-        standard_key: standard.key,
-        based_on_standard_version: standard.version,
-        name: standard.name,
-        template_type: standard.templateType,
-        status: "Active",
-        property_version: 1,
-        content,
-        last_modified_at: new Date().toISOString(),
-      },
-    ])
+    .insert([insertPayload])
     .select("*")
     .single();
 
@@ -122,11 +174,12 @@ export async function savePropertyTemplate(
     template_type: TemplateType;
     status: TemplateStatus;
     content: PropertyTemplateContent;
-  }
+  },
+  scope?: InspectionTenantScope
 ) {
-  const current = await fetchPropertyTemplateById(supabaseAdmin, id);
+  const current = await fetchPropertyTemplateById(supabaseAdmin, id, scope);
 
-  const { data, error } = await supabaseAdmin
+  let updateQuery = supabaseAdmin
     .from("property_inspection_templates")
     .update({
       name: payload.name.trim(),
@@ -136,9 +189,15 @@ export async function savePropertyTemplate(
       property_version: current.property_version + 1,
       last_modified_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    updateQuery = updateQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await updateQuery.select("*").single();
 
   if (error || !data) {
     throw new Error(error?.message || "Unable to save template");
@@ -149,9 +208,10 @@ export async function savePropertyTemplate(
 
 export async function restorePropertyTemplateFromStandard(
   supabaseAdmin: SupabaseClient,
-  id: number
+  id: number,
+  scope?: InspectionTenantScope
 ) {
-  const current = await fetchPropertyTemplateById(supabaseAdmin, id);
+  const current = await fetchPropertyTemplateById(supabaseAdmin, id, scope);
 
   if (!current.standard_key) {
     throw new Error("Custom templates cannot be restored to a standard version");
@@ -164,7 +224,7 @@ export async function restorePropertyTemplateFromStandard(
 
   const content = standardToPropertyContent(standard);
 
-  const { data, error } = await supabaseAdmin
+  let restoreQuery = supabaseAdmin
     .from("property_inspection_templates")
     .update({
       name: standard.name,
@@ -174,9 +234,15 @@ export async function restorePropertyTemplateFromStandard(
       property_version: current.property_version + 1,
       last_modified_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    restoreQuery = restoreQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await restoreQuery.select("*").single();
 
   if (error || !data) {
     throw new Error(error?.message || "Unable to restore template");
@@ -187,24 +253,30 @@ export async function restorePropertyTemplateFromStandard(
 
 export async function duplicatePropertyTemplate(
   supabaseAdmin: SupabaseClient,
-  id: number
+  id: number,
+  scope?: InspectionTenantScope
 ) {
-  const source = await fetchPropertyTemplateById(supabaseAdmin, id);
+  const source = await fetchPropertyTemplateById(supabaseAdmin, id, scope);
+
+  const insertPayload: Record<string, unknown> = {
+    standard_key: null,
+    based_on_standard_version: source.based_on_standard_version,
+    name: `${source.name} (Copy)`,
+    template_type: source.template_type,
+    status: source.status,
+    property_version: 1,
+    content: source.content,
+    last_modified_at: new Date().toISOString(),
+  };
+
+  if (scope) {
+    insertPayload.organization_id = scope.organizationId;
+    insertPayload.property_id = scope.propertyId;
+  }
 
   const { data, error } = await supabaseAdmin
     .from("property_inspection_templates")
-    .insert([
-      {
-        standard_key: null,
-        based_on_standard_version: source.based_on_standard_version,
-        name: `${source.name} (Copy)`,
-        template_type: source.template_type,
-        status: source.status,
-        property_version: 1,
-        content: source.content,
-        last_modified_at: new Date().toISOString(),
-      },
-    ])
+    .insert([insertPayload])
     .select("*")
     .single();
 
@@ -217,12 +289,25 @@ export async function duplicatePropertyTemplate(
 
 export async function deletePropertyTemplate(
   supabaseAdmin: SupabaseClient,
-  id: number
+  id: number,
+  scope?: InspectionTenantScope
 ) {
-  const { error } = await supabaseAdmin
+  if (scope) {
+    await assertPropertyTemplateInTenant(supabaseAdmin, id, scope);
+  }
+
+  let deleteQuery = supabaseAdmin
     .from("property_inspection_templates")
     .delete()
     .eq("id", id);
+
+  if (scope) {
+    deleteQuery = deleteQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { error } = await deleteQuery;
 
   if (error) {
     throw new Error(error.message);
@@ -232,17 +317,24 @@ export async function deletePropertyTemplate(
 export async function setPropertyTemplateStatus(
   supabaseAdmin: SupabaseClient,
   id: number,
-  status: TemplateStatus
+  status: TemplateStatus,
+  scope?: InspectionTenantScope
 ) {
-  const { data, error } = await supabaseAdmin
+  let updateQuery = supabaseAdmin
     .from("property_inspection_templates")
     .update({
       status,
       last_modified_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    updateQuery = updateQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await updateQuery.select("*").single();
 
   if (error || !data) {
     throw new Error(error?.message || "Unable to update status");
@@ -251,10 +343,21 @@ export async function setPropertyTemplateStatus(
   return normalizeRow(data);
 }
 
-async function migrateLegacyTemplatesIfNeeded(supabaseAdmin: SupabaseClient) {
-  const { count, error: countError } = await supabaseAdmin
+async function migrateLegacyTemplatesIfNeeded(
+  supabaseAdmin: SupabaseClient,
+  scope?: InspectionTenantScope
+) {
+  let countQuery = supabaseAdmin
     .from("property_inspection_templates")
     .select("id", { count: "exact", head: true });
+
+  if (scope) {
+    countQuery = countQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { count, error: countError } = await countQuery;
 
   if (countError) {
     if (countError.message.includes("does not exist")) return;
@@ -293,17 +396,22 @@ async function migrateLegacyTemplatesIfNeeded(supabaseAdmin: SupabaseClient) {
 
     if (exists) continue;
 
-    await supabaseAdmin.from("property_inspection_templates").insert([
-      {
-        standard_key: standardKey,
-        based_on_standard_version: standard.version,
-        name: standard.name,
-        template_type: standard.templateType,
-        status: legacy.status || "Active",
-        property_version: 1,
-        content: standardToPropertyContent(standard),
-        last_modified_at: new Date().toISOString(),
-      },
-    ]);
+    const legacyInsert: Record<string, unknown> = {
+      standard_key: standardKey,
+      based_on_standard_version: standard.version,
+      name: standard.name,
+      template_type: standard.templateType,
+      status: legacy.status || "Active",
+      property_version: 1,
+      content: standardToPropertyContent(standard),
+      last_modified_at: new Date().toISOString(),
+    };
+
+    if (scope) {
+      legacyInsert.organization_id = scope.organizationId;
+      legacyInsert.property_id = scope.propertyId;
+    }
+
+    await supabaseAdmin.from("property_inspection_templates").insert([legacyInsert]);
   }
 }

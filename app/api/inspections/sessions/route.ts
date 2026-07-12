@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
+  assertAreaInTenant,
   createInspectionSession,
   fetchActiveTemplates,
-  getSupabaseAdmin,
 } from "@/app/inspections/lib/inspection-db";
 import {
   resolveMemberJobTitle,
@@ -10,19 +10,32 @@ import {
 import { templateMatchesDashboard } from "@/app/inspections/lib/program-map";
 import { parseDashboardProgram } from "@/app/inspections/lib/period-utils";
 import { memberJobTitleMatchesInspectionProgram } from "@/app/lib/role-permissions";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-export async function GET() {  try {
-    const supabase = getSupabaseAdmin();
-    const templates = await fetchActiveTemplates(supabase);
+export async function GET(request: Request) {
+  try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const templates = await fetchActiveTemplates(supabase, {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ templates });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const scope = { organizationId, propertyId };
     const body = await request.json();
     const areaId = Number(body.areaId);
     const templateId = Number(body.templateId);
@@ -34,11 +47,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
+    await assertAreaInTenant(supabase, areaId, scope);
+
     let program = body.program ? parseDashboardProgram(String(body.program)) : null;
 
     if (program) {
-      const templates = await fetchActiveTemplates(supabase);
+      const templates = await fetchActiveTemplates(supabase, scope);
       const template = templates.find((entry) => entry.id === templateId);
       if (
         template &&
@@ -50,7 +64,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      const templates = await fetchActiveTemplates(supabase);
+      const templates = await fetchActiveTemplates(supabase, scope);
       const template = templates.find((entry) => entry.id === templateId);
       if (template) {
         program = templateMatchesDashboard(template.inspection_program, "RPM")
@@ -103,15 +117,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const session = await createInspectionSession(supabase, {      areaId,
-      templateId,
-      inspectorId: body.inspectorId ? String(body.inspectorId) : null,
-      associateId: body.associateId ? String(body.associateId) : null,
-    });
+    const session = await createInspectionSession(
+      supabase,
+      {
+        areaId,
+        templateId,
+        inspectorId: body.inspectorId ? String(body.inspectorId) : null,
+        associateId: body.associateId ? String(body.associateId) : null,
+      },
+      scope
+    );
 
     return NextResponse.json({ session });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

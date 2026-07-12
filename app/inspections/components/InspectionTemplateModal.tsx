@@ -8,6 +8,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
   CategoryDraft,
   contentToDraft,
@@ -177,7 +178,7 @@ export default function InspectionTemplateModal({
     }
 
     setSaving(true);
-    const response = await fetch(
+    const response = await tenantFetch(
       `/api/property-inspection-templates/${propertyTemplate.id}`,
       {
         method: "PATCH",
@@ -214,7 +215,7 @@ export default function InspectionTemplateModal({
     }
 
     setSaving(true);
-    const response = await fetch(
+    const response = await tenantFetch(
       `/api/property-inspection-templates/${propertyTemplate.id}/restore-standard`,
       { method: "POST" }
     );

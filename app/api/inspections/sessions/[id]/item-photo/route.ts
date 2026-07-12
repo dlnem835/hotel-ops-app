@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { fetchInspectionSession } from "@/app/inspections/lib/inspection-db";
 import {
-  fetchInspectionSession,
-  getSupabaseAdmin,
-} from "@/app/inspections/lib/inspection-db";
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,9 @@ function sanitizeSegment(value: string): string {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
     const sessionId = Number(id);
     if (!sessionId) {
@@ -53,8 +57,8 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
-    const session = await fetchInspectionSession(supabase, sessionId);
+    const scope = { organizationId, propertyId };
+    const session = await fetchInspectionSession(supabase, sessionId, scope);
 
     if (session.status !== "in_progress") {
       return NextResponse.json(
@@ -64,7 +68,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const filePath = `${sessionId}/${sanitizeSegment(categoryKey)}--${sanitizeSegment(itemKey)}/${Date.now()}.${extension}`;
+    const filePath = `org-${organizationId}/property-${propertyId}/inspections/${sessionId}/${sanitizeSegment(categoryKey)}--${sanitizeSegment(itemKey)}/${Date.now()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("inspection-photos")
@@ -84,7 +88,6 @@ export async function POST(request: Request, context: RouteContext) {
       storagePath: filePath,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

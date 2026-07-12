@@ -3,47 +3,68 @@ import {
   completeInspectionSession,
   fetchInspectionResponses,
   fetchInspectionSession,
-  getSupabaseAdmin,
   saveInspectionProgress,
 } from "@/app/inspections/lib/inspection-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabase = getSupabaseAdmin();
-    const session = await fetchInspectionSession(supabase, Number(id));
-    const responses = await fetchInspectionResponses(supabase, Number(id));
+    const scope = { organizationId, propertyId };
+    const session = await fetchInspectionSession(supabase, Number(id), scope);
+    const responses = await fetchInspectionResponses(
+      supabase,
+      Number(id),
+      scope
+    );
     return NextResponse.json({ session, responses });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 404 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
     const body = await request.json();
-    const supabase = getSupabaseAdmin();
+    const scope = { organizationId, propertyId };
 
     if (body.action === "complete") {
-      const session = await completeInspectionSession(supabase, Number(id), {
-        responses: body.responses || [],
-        sessionNotes: body.sessionNotes,
-        completedBy: body.completedBy ?? body.completed_by ?? null,
-      });
+      const session = await completeInspectionSession(
+        supabase,
+        Number(id),
+        {
+          responses: body.responses || [],
+          sessionNotes: body.sessionNotes,
+          completedBy: body.completedBy ?? body.completed_by ?? null,
+        },
+        scope
+      );
       return NextResponse.json({ session });
     }
 
-    const session = await saveInspectionProgress(supabase, Number(id), {
-      responses: body.responses || [],
-      sessionNotes: body.sessionNotes,
-    });
+    const session = await saveInspectionProgress(
+      supabase,
+      Number(id),
+      {
+        responses: body.responses || [],
+        sessionNotes: body.sessionNotes,
+      },
+      scope
+    );
     return NextResponse.json({ session });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return tenantErrorResponse(error);
   }
 }

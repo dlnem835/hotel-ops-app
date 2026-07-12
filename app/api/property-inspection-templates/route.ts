@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 import {
   activateStandardTemplate,
   fetchAllPropertyTemplates,
-  getSupabaseAdmin,
 } from "@/app/inspections/lib/property-template-db";
 import { getStandardSummaries } from "@/app/inspections/standards";
 import { getStandardVersion } from "@/app/inspections/standards/index";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    const templates = await fetchAllPropertyTemplates(supabaseAdmin);
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const scope = { organizationId, propertyId };
+    const templates = await fetchAllPropertyTemplates(supabase, scope);
     const standards = getStandardSummaries();
 
     const activatedKeys = new Set(
@@ -37,15 +43,17 @@ export async function GET() {
       })),
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const scope = { organizationId, propertyId };
     const body = await request.json();
-    const supabaseAdmin = getSupabaseAdmin();
 
     if (body.action === "activate") {
       if (!body.standardKey) {
@@ -56,8 +64,9 @@ export async function POST(request: Request) {
       }
 
       const template = await activateStandardTemplate(
-        supabaseAdmin,
-        String(body.standardKey)
+        supabase,
+        String(body.standardKey),
+        scope
       );
 
       return NextResponse.json({ template });

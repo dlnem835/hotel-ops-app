@@ -3,7 +3,6 @@ import {
   deletePropertyTemplate,
   duplicatePropertyTemplate,
   fetchPropertyTemplateById,
-  getSupabaseAdmin,
   restorePropertyTemplateFromStandard,
   savePropertyTemplate,
   setPropertyTemplateStatus,
@@ -13,34 +12,46 @@ import {
   TemplateStatus,
   TemplateType,
 } from "@/app/inspections/standards/types";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
-    const template = await fetchPropertyTemplateById(supabaseAdmin, Number(id));
+    const template = await fetchPropertyTemplateById(supabase, Number(id), {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ template });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 404 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
     const body = await request.json();
-    const supabaseAdmin = getSupabaseAdmin();
+    const scope = { organizationId, propertyId };
 
     if (body.action === "set_status") {
       const status: TemplateStatus =
         body.status === "Inactive" ? "Inactive" : "Active";
       const template = await setPropertyTemplateStatus(
-        supabaseAdmin,
+        supabase,
         Number(id),
-        status
+        status,
+        scope
       );
       return NextResponse.json({ template });
     }
@@ -56,40 +67,52 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const template = await savePropertyTemplate(supabaseAdmin, Number(id), {
-      name: body.name,
-      template_type: body.template_type as TemplateType,
-      status: body.status as TemplateStatus,
-      content: body.content as PropertyTemplateContent,
-    });
+    const template = await savePropertyTemplate(
+      supabase,
+      Number(id),
+      {
+        name: body.name,
+        template_type: body.template_type as TemplateType,
+        status: body.status as TemplateStatus,
+        content: body.content as PropertyTemplateContent,
+      },
+      scope
+    );
 
     return NextResponse.json({ template });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
-    await deletePropertyTemplate(supabaseAdmin, Number(id));
+    await deletePropertyTemplate(supabase, Number(id), {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
-    const template = await duplicatePropertyTemplate(supabaseAdmin, Number(id));
+    const template = await duplicatePropertyTemplate(supabase, Number(id), {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ template });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

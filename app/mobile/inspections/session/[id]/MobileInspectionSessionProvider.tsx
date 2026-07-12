@@ -128,7 +128,7 @@ export function MobileInspectionSessionProvider({
         return;
       }
 
-      const response = await fetch(`/api/inspections/sessions/${sessionId}`);
+      const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`);
       const result = await response.json();
       setLoading(false);
 
@@ -360,7 +360,7 @@ export function MobileInspectionSessionProvider({
     formData.append("categoryKey", categoryKeyValue);
     formData.append("itemKey", itemKeyValue);
 
-    const response = await fetch(`/api/inspections/sessions/${sessionId}/item-photo`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}/item-photo`, {
       method: "POST",
       body: formData,
     });
@@ -391,7 +391,7 @@ export function MobileInspectionSessionProvider({
 
   async function saveProgress() {
     setSaving(true);
-    const response = await fetch(`/api/inspections/sessions/${sessionId}`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -424,7 +424,7 @@ export function MobileInspectionSessionProvider({
     }
 
     setSaving(true);
-    const response = await fetch(`/api/inspections/sessions/${sessionId}`, {
+    const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
 import { calculateInspectionScore, deriveScorePercent } from "./scoring";
 import { getGridState } from "./grid-state";
 import {
@@ -31,9 +32,42 @@ import {
 } from "./rpm-cycle";
 import { standardToPropertyContent } from "../standards/builders";
 import { PropertyInspectionTemplate, PropertyTemplateContent } from "../standards/types";
-import { getSupabaseAdmin } from "./property-template-db";
+import { getSupabaseAdmin, InspectionTenantScope, assertPropertyTemplateInTenant } from "./property-template-db";
 
 export { getSupabaseAdmin };
+export type { InspectionTenantScope };
+
+export async function assertInspectionSessionInTenant(
+  supabase: SupabaseClient,
+  id: number,
+  scope: InspectionTenantScope
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("inspection_sessions")
+    .select("id")
+    .eq("id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new TenantRequestError(404, "Inspection session not found");
+}
+
+export async function assertAreaInTenant(
+  supabase: SupabaseClient,
+  areaId: number,
+  scope: InspectionTenantScope
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("buildings_and_areas")
+    .select("id")
+    .eq("id", areaId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new TenantRequestError(404, "Area not found");
+}
 
 type SettingsRow = {
   property_timezone: string;
@@ -90,13 +124,17 @@ function normalizeSession(row: SessionRow): InspectionSession {
 }
 
 export async function fetchInspectionSettings(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope?: InspectionTenantScope
 ): Promise<SettingsRow> {
-  const { data, error } = await supabase
-    .from("inspection_settings")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
+  let query = supabase.from("inspection_settings").select("*");
+  if (scope) {
+    query = query.eq("organization_id", scope.organizationId);
+  } else {
+    query = query.eq("id", 1);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
     return {
@@ -117,13 +155,22 @@ export async function fetchInspectionSettings(
 }
 
 export async function fetchGuestRooms(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope?: InspectionTenantScope
 ): Promise<GuestRoomRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("buildings_and_areas")
     .select("id, name, area_type, floor_location, status, inspection_enabled")
     .eq("area_type", "Guest Room")
     .order("name");
+
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -338,11 +385,12 @@ export async function buildDashboard(
   periodParam: string | null,
   programParam: string | null,
   monthParam: string | null = null,
-  yearParam: string | null = null
+  yearParam: string | null = null,
+  scope?: InspectionTenantScope
 ): Promise<DashboardPayload> {
   const period = parsePeriod(periodParam);
   const program = parseDashboardProgram(programParam);
-  const settings = await fetchInspectionSettings(supabase);
+  const settings = await fetchInspectionSettings(supabase, scope);
   const now = new Date();
   const mtdMonthYear = parseMtdMonthYear(monthParam, yearParam, now);
   const periodBounds =
@@ -352,27 +400,40 @@ export async function buildDashboard(
   const mtdReferenceDate = new Date(periodBounds.end);
   const rpmCycleBounds = getRpmCycleBounds(now, settings.week_starts_on);
 
-  const rooms = await fetchGuestRooms(supabase);
+  const rooms = await fetchGuestRooms(supabase, scope);
   const activeRooms = rooms.filter(
     (room) => room.inspection_enabled && room.status === "Active"
   );
   const activeRoomIds = new Set(activeRooms.map((room) => room.id));
 
+  let completedSessionsQuery = supabase
+    .from("inspection_sessions")
+    .select(
+      "area_id, inspection_program, completed_at, score_percent, earned_points, possible_points, status, inspector_id, associate_id, template_snapshot"
+    )
+    .eq("status", "completed")
+    .gte("completed_at", periodBounds.start)
+    .lte("completed_at", periodBounds.end);
+
+  let rpmCycleSessionsQuery = supabase
+    .from("inspection_sessions")
+    .select("area_id, inspection_program, completed_at")
+    .eq("status", "completed")
+    .gte("completed_at", rpmCycleBounds.start.toISOString())
+    .lte("completed_at", getRpmCycleEndIso(rpmCycleBounds));
+
+  if (scope) {
+    completedSessionsQuery = completedSessionsQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    rpmCycleSessionsQuery = rpmCycleSessionsQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
   const [sessionResult, rpmCycleSessionResult] = await Promise.all([
-    supabase
-      .from("inspection_sessions")
-      .select(
-        "area_id, inspection_program, completed_at, score_percent, earned_points, possible_points, status, inspector_id, associate_id, template_snapshot"
-      )
-      .eq("status", "completed")
-      .gte("completed_at", periodBounds.start)
-      .lte("completed_at", periodBounds.end),
-    supabase
-      .from("inspection_sessions")
-      .select("area_id, inspection_program, completed_at")
-      .eq("status", "completed")
-      .gte("completed_at", rpmCycleBounds.start.toISOString())
-      .lte("completed_at", getRpmCycleEndIso(rpmCycleBounds)),
+    completedSessionsQuery,
+    rpmCycleSessionsQuery,
   ]);
 
   const { data: sessionRows, error: sessionError } = sessionResult;
@@ -449,11 +510,19 @@ export async function buildDashboard(
     return score !== null && score !== undefined && score < settings.low_score_threshold;
   }).length;
 
-  const { data: summaryRows } = await supabase
+  let summaryQuery = supabase
     .from("area_inspection_summary")
     .select(
       "area_id, inspection_program, last_completed_at, last_score_percent, last_failed_item_count, open_deficiency_count, recurring_deficiency_count, never_inspected"
     );
+
+  if (scope) {
+    summaryQuery = summaryQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data: summaryRows } = await summaryQuery;
 
   const summaryByArea = new Map<number, typeof summaryRows>();
   for (const row of summaryRows || []) {
@@ -601,9 +670,14 @@ export const ROOM_HISTORY_LIMIT = 12;
 
 export async function fetchRoomHistory(
   supabase: SupabaseClient,
-  areaId: number
+  areaId: number,
+  scope?: InspectionTenantScope
 ): Promise<{ history: RoomHistoryEntry[]; hasMore: boolean }> {
-  const { data: sessions, error } = await supabase
+  if (scope) {
+    await assertAreaInTenant(supabase, areaId, scope);
+  }
+
+  let sessionsQuery = supabase
     .from("inspection_sessions")
     .select(
       "id, inspection_program, completed_at, score_percent, earned_points, possible_points, failed_item_count, template_snapshot, inspector_id, associate_id"
@@ -612,6 +686,14 @@ export async function fetchRoomHistory(
     .eq("status", "completed")
     .order("completed_at", { ascending: false })
     .limit(ROOM_HISTORY_LIMIT + 1);
+
+  if (scope) {
+    sessionsQuery = sessionsQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data: sessions, error } = await sessionsQuery;
 
   if (error) {
     throw new Error(error.message);
@@ -715,16 +797,30 @@ export async function createInspectionSession(
     templateId: number;
     inspectorId?: string | null;
     associateId?: string | null;
-  }
+  },
+  scope?: InspectionTenantScope
 ) {
+  if (scope) {
+    await assertAreaInTenant(supabase, input.areaId, scope);
+    await assertPropertyTemplateInTenant(supabase, input.templateId, scope);
+  }
+
   const { data: templateRow, error: templateError } = await supabase
     .from("property_inspection_templates")
     .select("*")
     .eq("id", input.templateId)
-    .single();
+    .maybeSingle();
 
   if (templateError || !templateRow) {
     throw new Error("Template not found");
+  }
+
+  if (
+    scope &&
+    (Number(templateRow.organization_id) !== scope.organizationId ||
+      Number(templateRow.property_id) !== scope.propertyId)
+  ) {
+    throw new TenantRequestError(404, "Template not found");
   }
 
   const template: PropertyInspectionTemplate = {
@@ -748,19 +844,24 @@ export async function createInspectionSession(
     name: template.name,
   });
 
+  const insertPayload: Record<string, unknown> = {
+    area_id: input.areaId,
+    template_id: input.templateId,
+    inspection_program: inspectionProgram,
+    status: "in_progress",
+    inspector_id: input.inspectorId ?? null,
+    associate_id: input.associateId ?? null,
+    template_snapshot: buildTemplateSnapshot(template),
+  };
+
+  if (scope) {
+    insertPayload.organization_id = scope.organizationId;
+    insertPayload.property_id = scope.propertyId;
+  }
+
   const { data, error } = await supabase
     .from("inspection_sessions")
-    .insert([
-      {
-        area_id: input.areaId,
-        template_id: input.templateId,
-        inspection_program: inspectionProgram,
-        status: "in_progress",
-        inspector_id: input.inspectorId ?? null,
-        associate_id: input.associateId ?? null,
-        template_snapshot: buildTemplateSnapshot(template),
-      },
-    ])
+    .insert([insertPayload])
     .select("*")
     .single();
 
@@ -773,13 +874,17 @@ export async function createInspectionSession(
 
 export async function fetchInspectionSession(
   supabase: SupabaseClient,
-  id: number
+  id: number,
+  scope?: InspectionTenantScope
 ) {
-  const { data, error } = await supabase
-    .from("inspection_sessions")
-    .select("*")
-    .eq("id", id)
-    .single();
+  let query = supabase.from("inspection_sessions").select("*").eq("id", id);
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query.single();
 
   if (error || !data) {
     throw new Error("Inspection session not found");
@@ -790,8 +895,13 @@ export async function fetchInspectionSession(
 
 export async function fetchInspectionResponses(
   supabase: SupabaseClient,
-  inspectionId: number
+  inspectionId: number,
+  scope?: InspectionTenantScope
 ): Promise<InspectionItemResponse[]> {
+  if (scope) {
+    await assertInspectionSessionInTenant(supabase, inspectionId, scope);
+  }
+
   const { data, error } = await supabase
     .from("inspection_item_responses")
     .select("*")
@@ -917,9 +1027,10 @@ export async function completeInspectionSession(
     responses: ItemResponseInput[];
     sessionNotes?: string;
     completedBy?: string | null;
-  }
+  },
+  scope?: InspectionTenantScope
 ) {
-  const session = await fetchInspectionSession(supabase, id);
+  const session = await fetchInspectionSession(supabase, id, scope);
   if (session.status === "completed") {
     throw new Error("Inspection already completed");
   }
@@ -996,7 +1107,7 @@ export async function completeInspectionSession(
     throw new Error(responseError.message);
   }
 
-  const { data: updatedSession, error: sessionError } = await supabase
+  let sessionUpdateQuery = supabase
     .from("inspection_sessions")
     .update({
       status: "completed",
@@ -1009,7 +1120,15 @@ export async function completeInspectionSession(
       session_notes: input.sessionNotes || null,
       updated_at: completedAt,
     })
-    .eq("id", id)
+    .eq("id", id);
+
+  if (scope) {
+    sessionUpdateQuery = sessionUpdateQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data: updatedSession, error: sessionError } = await sessionUpdateQuery
     .select("*")
     .single();
 
@@ -1051,9 +1170,10 @@ export async function saveInspectionProgress(
   input: {
     responses: ItemResponseInput[];
     sessionNotes?: string;
-  }
+  },
+  scope?: InspectionTenantScope
 ) {
-  const session = await fetchInspectionSession(supabase, id);
+  const session = await fetchInspectionSession(supabase, id, scope);
   if (session.status === "completed") {
     throw new Error("Inspection already completed");
   }
@@ -1100,15 +1220,21 @@ export async function saveInspectionProgress(
     if (error) throw new Error(error.message);
   }
 
-  const { data, error } = await supabase
+  let progressUpdateQuery = supabase
     .from("inspection_sessions")
     .update({
       session_notes: input.sessionNotes ?? session.session_notes,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    progressUpdateQuery = progressUpdateQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await progressUpdateQuery.select("*").single();
 
   if (error || !data) {
     throw new Error(error?.message || "Unable to save progress");
@@ -1117,12 +1243,23 @@ export async function saveInspectionProgress(
   return normalizeSession(data as SessionRow);
 }
 
-export async function fetchActiveTemplates(supabase: SupabaseClient) {
-  const { data, error } = await supabase
+export async function fetchActiveTemplates(
+  supabase: SupabaseClient,
+  scope?: InspectionTenantScope
+) {
+  let query = supabase
     .from("property_inspection_templates")
     .select("id, name, template_type, standard_key, status")
     .eq("status", "Active")
     .order("name");
+
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);

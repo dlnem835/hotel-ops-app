@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import {
   fetchPropertyTemplateById,
-  getSupabaseAdmin,
   restorePropertyTemplateFromStandard,
 } from "@/app/inspections/lib/property-template-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
     const template = await restorePropertyTemplateFromStandard(
-      supabaseAdmin,
-      Number(id)
+      supabase,
+      Number(id),
+      { organizationId, propertyId }
     );
     return NextResponse.json({ template });
   } catch (error: unknown) {
@@ -22,14 +28,18 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
-    const template = await fetchPropertyTemplateById(supabaseAdmin, Number(id));
+    const template = await fetchPropertyTemplateById(supabase, Number(id), {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ template });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 404 });
+    return tenantErrorResponse(error);
   }
 }

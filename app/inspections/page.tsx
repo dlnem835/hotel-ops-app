@@ -115,7 +115,7 @@ export default function InspectionsPage() {
       params.set("month", String(mtdMonth + 1));
       params.set("year", String(mtdYear));
     }
-    const response = await fetch(`/api/inspections/dashboard?${params}`);
+    const response = await tenantFetch(`/api/inspections/dashboard?${params}`);
     const result = await response.json();
     setLoading(false);
 
@@ -148,7 +148,7 @@ export default function InspectionsPage() {
       }
 
       const [templatesRes, areasRes, membersRes] = await Promise.all([
-        fetch("/api/inspections/sessions"),
+        tenantFetch("/api/inspections/sessions"),
         tenantFetch("/api/buildings-areas"),
         supabase
           .from("team_members")
@@ -259,7 +259,7 @@ export default function InspectionsPage() {
     setHistoryRoom(room);
     setHistoryOpen(true);
     setHistoryLoading(true);
-    const response = await fetch(`/api/inspections/rooms/${room.areaId}/history`);
+    const response = await tenantFetch(`/api/inspections/rooms/${room.areaId}/history`);
     const result = await response.json();
     setHistoryLoading(false);
     if (response.ok) {
@@ -303,7 +303,7 @@ export default function InspectionsPage() {
     }
 
     setStarting(true);
-    const response = await fetch("/api/inspections/sessions", {
+    const response = await tenantFetch("/api/inspections/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

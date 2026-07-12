@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import InspectionTemplateModal from "@/app/inspections/components/InspectionTemplateModal";
-import { formatTemplateDate } from "@/app/inspections/lib/template-draft";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { countContentItems } from "@/app/inspections/standards/builders";
+import { formatTemplateDate } from "@/app/inspections/lib/template-draft";
 import {
   getStandardTemplate,
   STANDARD_TEMPLATE_LIBRARY,
@@ -95,7 +96,7 @@ export default function InspectionTemplatesSection({
 
   async function fetchData() {
     setLoading(true);
-    const response = await fetch("/api/property-inspection-templates");
+    const response = await tenantFetch("/api/property-inspection-templates");
     const result = await response.json();
     setLoading(false);
 
@@ -147,7 +148,7 @@ export default function InspectionTemplatesSection({
 
   async function activateStandard(standardKey: string) {
     setSaving(true);
-    const response = await fetch("/api/property-inspection-templates", {
+    const response = await tenantFetch("/api/property-inspection-templates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "activate", standardKey }),
@@ -174,7 +175,7 @@ export default function InspectionTemplatesSection({
     }
 
     setSaving(true);
-    const response = await fetch(
+    const response = await tenantFetch(
       `/api/property-inspection-templates/${id}/restore-standard`,
       { method: "POST" }
     );
@@ -192,7 +193,7 @@ export default function InspectionTemplatesSection({
 
   async function duplicateTemplate(id: number) {
     setSaving(true);
-    const response = await fetch(`/api/property-inspection-templates/${id}`, {
+    const response = await tenantFetch(`/api/property-inspection-templates/${id}`, {
       method: "POST",
     });
     const result = await response.json();
@@ -211,7 +212,7 @@ export default function InspectionTemplatesSection({
     if (!confirm("Delete this property template?")) return;
 
     setSaving(true);
-    const response = await fetch(`/api/property-inspection-templates/${id}`, {
+    const response = await tenantFetch(`/api/property-inspection-templates/${id}`, {
       method: "DELETE",
     });
     const result = await response.json();
@@ -228,7 +229,7 @@ export default function InspectionTemplatesSection({
 
   async function setTemplateStatus(id: number, status: "Active" | "Inactive") {
     setSaving(true);
-    const response = await fetch(`/api/property-inspection-templates/${id}`, {
+    const response = await tenantFetch(`/api/property-inspection-templates/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set_status", status }),
