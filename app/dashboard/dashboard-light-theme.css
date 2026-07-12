@@ -6,18 +6,8 @@
 
 /* ── Light-mode design tokens (dashboard only) ── */
 
-html[data-theme="light"] main.one-eyrie-dashboard-route {
-  background: #ffffff !important;
-  color: #2c2a26 !important;
-}
-
-html[data-theme="light"] main.one-eyrie-dashboard-route .one-eyrie-sidebar {
-  background: var(--dash-lm-sidebar-bg, #f7f5f1) !important;
-  border-right-color: var(--oe-border-subtle, #ece7de) !important;
-}
-
 html[data-theme="light"] .one-eyrie-dashboard-page {
-  --dash-lm-sidebar-bg: #f7f5f1;
+  --dash-lm-sidebar-bg: var(--oe-bg-sidebar, #f7f5f1);
   --dash-lm-surface: #ffffff;
   --dash-lm-action: #f8f9fa;
   --dash-lm-action-hover: #f1f3f5;
@@ -27,7 +17,9 @@ html[data-theme="light"] .one-eyrie-dashboard-page {
   --dash-lm-slate-panel-hover: #5e6573;
   --dash-lm-border: #e4dfd6;
   --dash-lm-text: #2c2a26;
-  --dash-lm-text-muted: #6b6760;
+  --dash-lm-text-muted: #9ca3af;
+  --dash-lm-text-muted-soft: #c2c6ce;
+  --dash-lm-row-text-muted: #7a7670;
   --dash-lm-text-subtle: #4a4741;
   --dash-lm-gold: #c8a96a;
   --dash-lm-shadow: rgba(44, 42, 38, 0.08);
@@ -41,9 +33,12 @@ html[data-theme="light"] .one-eyrie-dashboard-page {
   --dash-lm-gold-status: #c8a96a;
   --dash-lm-gold-status-bg: rgba(200, 169, 106, 0.14);
   --dash-lm-gold-status-border: rgba(200, 169, 106, 0.52);
+  --dash-lm-wo-important-text: #8a6b35;
+  --dash-lm-wo-important-border: #b8944f;
   --dash-lm-urgent-text: #c9a8a8;
   --dash-lm-urgent-border: #8b5252;
-  --dash-lm-urgent-bg: rgba(139, 82, 82, 0.22);
+  --dash-lm-wo-urgent-text: #7a2e2e;
+  --dash-lm-wo-urgent-border: #8b5252;
   --dash-lm-urgent-bg-solid: #1e1414;
   --dash-lm-normal-wo-text: #9ca3af;
   --dash-lm-normal-wo-bg: rgba(20, 20, 20, 0.72);
@@ -53,17 +48,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page {
   --dash-lm-stored-text: #e5e7eb;
 }
 
-/* ── Dashboard-route sidebar (Figma frame) ── */
-
-html[data-theme="light"] main.one-eyrie-dashboard-route .one-eyrie-wordmark.one-eyrie-wordmark--sidebar {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  font-size: 18px;
-  letter-spacing: 0.28em;
-  padding-left: 16px;
-  text-align: left;
-}
+/* ── Dashboard-route sidebar wordmark colors (size from shared shell CSS) ── */
 
 html[data-theme="light"] main.one-eyrie-dashboard-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
   color: #000000 !important;
@@ -195,7 +180,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__he
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__header-title .dashboard-section-subtitle,
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__header-title > div > div:last-child {
-  color: #9ca3af !important;
+  color: var(--dash-lm-text-muted-soft) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__header-title + a,
@@ -208,7 +193,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__gr
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget__empty {
-  color: #9ca3af !important;
+  color: var(--dash-lm-text-muted-soft) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-entry {
@@ -236,7 +221,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-entry__sub
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-entry__meta {
-  color: var(--dash-lm-text-muted) !important;
+  color: var(--dash-lm-row-text-muted) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-entry__edited,
@@ -285,7 +270,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-s
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child > div:first-child > div:last-child {
-  color: #9ca3af !important;
+  color: var(--dash-lm-text-muted-soft) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child a {
@@ -293,17 +278,17 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-s
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:nth-child(2) > div {
-  color: #9ca3af !important;
+  color: var(--dash-lm-text-muted-soft) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card {
-  background: var(--dash-lm-action) !important;
+  background: var(--dash-lm-pass-on-row) !important;
   border-color: var(--dash-lm-border) !important;
   box-shadow: 0 1px 2px var(--dash-lm-shadow) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card:hover {
-  background: var(--dash-lm-action-hover) !important;
+  background: var(--dash-lm-pass-on-row-hover) !important;
   border-color: var(--dash-lm-hover-border) !important;
   box-shadow: 0 4px 10px var(--dash-lm-shadow-hover) !important;
   transform: translateY(-1px);
@@ -314,11 +299,11 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-s
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__location {
-  color: var(--dash-lm-text-muted) !important;
+  color: var(--dash-lm-row-text-muted) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-priority-queue-card__opened {
-  color: var(--dash-lm-text-muted) !important;
+  color: var(--dash-lm-row-text-muted) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__chevron {
@@ -339,15 +324,15 @@ html[data-theme="light"] .one-eyrie-dashboard-page .work-order-priority-badge--n
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .work-order-priority-badge--important {
-  color: var(--dash-lm-gold-status) !important;
-  background: var(--dash-lm-gold-status-bg) !important;
-  border: 1px solid var(--dash-lm-gold-status-border) !important;
+  color: var(--dash-lm-wo-important-text) !important;
+  background: transparent !important;
+  border: 1px solid var(--dash-lm-wo-important-border) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .work-order-priority-badge--urgent {
-  color: var(--dash-lm-urgent-text) !important;
-  background: var(--dash-lm-urgent-bg) !important;
-  border: 1px solid rgba(139, 82, 82, 0.62) !important;
+  color: var(--dash-lm-wo-urgent-text) !important;
+  background: transparent !important;
+  border: 1px solid var(--dash-lm-wo-urgent-border) !important;
 }
 
 /* ── Lost & Found ── */
@@ -363,7 +348,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-lost-found-card > 
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-lost-found-card > div:first-child > div:last-child {
-  color: #9ca3af !important;
+  color: var(--dash-lm-text-muted-soft) !important;
 }
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-lost-found-card > div:nth-child(2) > a:first-child {
@@ -404,12 +389,6 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-list-card:focus-vi
 /* ── Desktop refinements (mirror dashboard-responsive.css, light palette only) ── */
 
 @media (min-width: 769px) {
-  html[data-theme="light"] main.one-eyrie-dashboard-route .one-eyrie-wordmark--sidebar {
-    font-size: 15px;
-    letter-spacing: 0.22em;
-    padding-left: 10px;
-  }
-
   html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-todays-work-section > div:first-child > div:first-child {
     font-size: 17px;
   }
@@ -467,7 +446,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-list-card:focus-vi
   }
 
   html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__meta {
-    color: var(--dash-lm-text-muted) !important;
+    color: var(--dash-lm-row-text-muted) !important;
   }
 
   html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__message {

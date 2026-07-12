@@ -24,8 +24,10 @@ html:not([data-theme]) {
 html[data-theme="light"] {
   color-scheme: light;
 
-  /* Inspired by warm invoice / enterprise SaaS palette */
-  --oe-bg-app: #f7f5f1;
+  /* Approved light shell: white main + warm off-white sidebar (all desktop tabs) */
+  --oe-bg-main: #ffffff;
+  --oe-bg-sidebar: #f7f5f1;
+  --oe-bg-app: var(--oe-bg-main);
   --oe-bg-surface: #ffffff;
   --oe-bg-elevated: #f1eee8;
   --oe-bg-card: #ffffff;
@@ -56,6 +58,26 @@ body {
 
 .one-eyrie-sidebar {
   background: var(--oe-bg-surface);
+  border-right-color: var(--oe-border-subtle);
+}
+
+/* ── Light mode desktop shell (locked: do not swap sidebar/main) ── */
+
+html[data-theme="light"] body {
+  background: var(--oe-bg-main);
+}
+
+html[data-theme="light"] .one-eyrie-app-shell {
+  background: var(--oe-bg-main) !important;
+  color: var(--oe-text-primary);
+}
+
+html[data-theme="light"] .one-eyrie-main-content {
+  background: var(--oe-bg-main);
+}
+
+html[data-theme="light"] .one-eyrie-sidebar {
+  background: var(--oe-bg-sidebar) !important;
   border-right-color: var(--oe-border-subtle);
 }
 

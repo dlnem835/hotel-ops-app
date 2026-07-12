@@ -24,8 +24,8 @@ function buildMenuItems(
       value: theme,
       onChange: setTheme,
       options: [
-        { value: "dark", label: "Dark", description: "Default" },
-        { value: "light", label: "Light" },
+        { value: "dark", label: "Dark", description: "Production" },
+        { value: "light", label: "Light", description: "Admin preview" },
       ],
     },
     {
@@ -51,7 +51,7 @@ export default function OneEyrieUserProfileMenu({
 }: OneEyrieUserProfileMenuProps) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const { theme, setTheme } = useOneEyrieTheme();
+  const { theme, setTheme, canUseLightMode } = useOneEyrieTheme();
   const { profile, loading } = useCurrentUserProfile();
   const [open, setOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
@@ -59,7 +59,9 @@ export default function OneEyrieUserProfileMenu({
   const displayName = profile?.displayName ?? "User";
   const jobTitle = profile?.jobTitle ?? "Team Member";
   const initials = profile?.initials ?? "U";
-  const menuItems = buildMenuItems(theme, setTheme);
+  const menuItems = buildMenuItems(theme, setTheme).filter(
+    (item) => item.type !== "appearance" || canUseLightMode
+  );
 
   useEffect(() => {
     if (!open) return;

@@ -43,6 +43,7 @@ export default function MaintenanceKpiPeriodFilters({
           <button
             key={entry}
             type="button"
+            data-active={period === entry ? "true" : undefined}
             onClick={() => onPeriodChange(entry)}
             style={{
               ...SETTINGS_BUTTON_BASE,

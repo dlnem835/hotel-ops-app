@@ -121,6 +121,7 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
               <button
                 key={option.key}
                 type="button"
+                data-active={active ? "true" : undefined}
                 onClick={() => toggleFilter(option.key)}
                 style={{
                   ...SETTINGS_BUTTON_BASE,

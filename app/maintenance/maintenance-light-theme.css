@@ -1,0 +1,540 @@
+/**
+ * Maintenance Light Mode — matches approved Dashboard Light Mode.
+ * ALL rules scoped to html[data-theme="light"] on the maintenance route.
+ * Dark mode is untouched (desktop + mobile).
+ */
+
+/* ── Design tokens (maintenance page) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page {
+  --mnt-lm-sidebar-bg: var(--oe-bg-sidebar, #f7f5f1);
+  --mnt-lm-surface: #ffffff;
+  --mnt-lm-action-hover: #f1f3f5;
+  --mnt-lm-pass-on-row: #e8eaed;
+  --mnt-lm-pass-on-row-hover: #dfe2e6;
+  --mnt-lm-slate-panel: #545b69;
+  --mnt-lm-slate-panel-hover: #5e6573;
+  --mnt-lm-border: #e4dfd6;
+  --mnt-lm-text: #2c2a26;
+  --mnt-lm-text-muted: #9ca3af;
+  --mnt-lm-text-muted-soft: #c2c6ce;
+  --mnt-lm-row-text-muted: #7a7670;
+  --mnt-lm-text-subtle: #4a4741;
+  --mnt-lm-gold: #c8a96a;
+  --mnt-lm-shadow: rgba(44, 42, 38, 0.08);
+  --mnt-lm-shadow-hover: rgba(44, 42, 38, 0.12);
+  --mnt-lm-hover-border: rgba(200, 169, 106, 0.55);
+  --mnt-lm-forest-border: #3d6b4f;
+  --mnt-lm-forest-text: #b8d4c4;
+  --mnt-lm-forest-bg: #1c3428;
+  --mnt-lm-gold-status: #c8a96a;
+  --mnt-lm-wo-important-text: #8a6b35;
+  --mnt-lm-wo-important-border: #b8944f;
+  --mnt-lm-wo-urgent-text: #7a2e2e;
+  --mnt-lm-wo-urgent-border: #8b5252;
+  --mnt-lm-urgent-text: #c9a8a8;
+  --mnt-lm-urgent-border: #8b5252;
+  --mnt-lm-normal-wo-text: #9ca3af;
+  --mnt-lm-normal-wo-bg: rgba(20, 20, 20, 0.72);
+  --mnt-lm-normal-wo-border: rgba(61, 107, 79, 0.48);
+  --mnt-lm-overdue-text: #7a2e2e;
+  --mnt-lm-overdue-gold: #8a6b35;
+}
+
+/* ── Sidebar wordmark + nav (Dashboard parity) ── */
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
+  color: #000000 !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--eyrie {
+  color: #c8a96a !important;
+  margin-top: 2px;
+  margin-left: 0.4em;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active .one-eyrie-nav-item__label,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active .one-eyrie-nav-item__icon {
+  color: #000000 !important;
+}
+
+/* ── Page header + loading ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-route .one-eyrie-page-header h1 {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-route .one-eyrie-page-header p {
+  color: var(--mnt-lm-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-loading {
+  color: var(--mnt-lm-text-muted) !important;
+}
+
+/* ── Section headers ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-section-header__title:not(.maintenance-section-header__title--upper) {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-section-header__title--upper {
+  color: var(--mnt-lm-gold) !important;
+}
+
+/* ── KPI period filters ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button {
+  background: transparent !important;
+  color: var(--mnt-lm-text) !important;
+  border: 1px solid var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button[data-active="true"] {
+  background: var(--mnt-lm-gold) !important;
+  color: #111111 !important;
+  border-color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button:hover:not([data-active="true"]) {
+  border-color: var(--mnt-lm-hover-border) !important;
+  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
+  transform: translateY(-1px);
+}
+
+/* ── PM metric cards (white KPI cards) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-metric-card {
+  background: var(--mnt-lm-surface) !important;
+  border: 1px solid var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card > div:first-child {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card > div:last-child {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-value--overdue {
+  color: var(--mnt-lm-overdue-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-value--gold {
+  color: var(--mnt-lm-overdue-gold) !important;
+}
+
+/* ── PM controls (title, filter pills, showing label) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls > div:first-child {
+  color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button {
+  background: transparent !important;
+  color: var(--mnt-lm-text) !important;
+  border: 1px solid var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button[data-active="true"] {
+  background: var(--mnt-lm-gold) !important;
+  color: #111111 !important;
+  border-color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button:hover:not([data-active="true"]) {
+  border-color: var(--mnt-lm-hover-border) !important;
+  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
+  transform: translateY(-1px);
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls > div:nth-child(3) {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+/* ── PM tile grid panel (charcoal feature panel) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel {
+  background: var(--mnt-lm-slate-panel) !important;
+  border: 1px solid #6e665c !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .pass-on-search-wrap__icon {
+  color: var(--mnt-lm-text-muted-soft) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field {
+  background: var(--mnt-lm-surface) !important;
+  color: var(--mnt-lm-text) !important;
+  border: 1px solid rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field::placeholder {
+  color: var(--mnt-lm-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:hover,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:focus,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:focus-visible {
+  background: var(--mnt-lm-surface) !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel > div:nth-child(2) > span {
+  color: var(--mnt-lm-text-muted-soft) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel .maintenance-pm-tile-grid-carousel__body > div:first-child {
+  color: var(--mnt-lm-text-muted-soft) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-carousel-arrow button {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-border) !important;
+  color: var(--mnt-lm-gold) !important;
+  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-more,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-previous {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-more {
+  color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-previous {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+/* PM tiles keep dark-mode urgency colors on charcoal panel (Dashboard Today's Work parity) */
+
+/* ── WO KPI cards ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card {
+  background: var(--mnt-lm-surface) !important;
+  border: 1px solid var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__label {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__value {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__value.maintenance-metric-value--overdue {
+  color: var(--mnt-lm-overdue-text) !important;
+}
+
+/* ── WO workspace divider ── */
+
+@media (min-width: 768px) {
+  html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-workspace {
+    border-left-color: var(--mnt-lm-border) !important;
+  }
+}
+
+/* ── Work order panel (charcoal — Dashboard WO Priority Queue parity) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel {
+  background: var(--mnt-lm-slate-panel) !important;
+  border: 1px solid #6e665c !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel__header-copy > div:first-child {
+  color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel__header-copy > div:last-child {
+  color: var(--mnt-lm-text-muted-soft) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel__empty {
+  color: var(--mnt-lm-text-muted-soft) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card {
+  background: var(--mnt-lm-pass-on-row) !important;
+  border-color: var(--mnt-lm-border) !important;
+  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card:hover {
+  background: var(--mnt-lm-pass-on-row-hover) !important;
+  border-color: var(--mnt-lm-hover-border) !important;
+  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
+  transform: translateY(-1px);
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card__title {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card__location,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .maintenance-work-order-card__opened {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .one-eyrie-updated-timestamp {
+  color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card__chevron {
+  color: var(--mnt-lm-gold) !important;
+  opacity: 0.82;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card:hover .dashboard-list-card__chevron {
+  opacity: 1;
+  transform: translateX(1px);
+}
+
+/* WO priority badges — exact Dashboard light-mode colors */
+html[data-theme="light"] .one-eyrie-maintenance-page .work-order-priority-badge--normal {
+  color: var(--mnt-lm-normal-wo-text) !important;
+  background: var(--mnt-lm-normal-wo-bg) !important;
+  border: 1px solid var(--mnt-lm-normal-wo-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .work-order-priority-badge--important {
+  color: var(--mnt-lm-wo-important-text) !important;
+  background: transparent !important;
+  border: 1px solid var(--mnt-lm-wo-important-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .work-order-priority-badge--urgent {
+  color: var(--mnt-lm-wo-urgent-text) !important;
+  background: transparent !important;
+  border: 1px solid var(--mnt-lm-wo-urgent-border) !important;
+}
+
+/* ── WO filters dropdown ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn {
+  background: var(--mnt-lm-surface) !important;
+  border: 1px solid rgba(200, 169, 106, 0.78) !important;
+  color: var(--mnt-lm-text) !important;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:hover,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:focus,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:focus-visible,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn[aria-expanded="true"] {
+  background: var(--mnt-lm-surface) !important;
+  border-color: rgba(200, 169, 106, 0.78) !important;
+  color: var(--mnt-lm-text) !important;
+  transform: none;
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 106, 0.35),
+    0 0 14px rgba(200, 169, 106, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .lnf-filter-menu {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-border) !important;
+  box-shadow: 0 12px 32px var(--mnt-lm-shadow-hover) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .lnf-filter-menu__heading {
+  color: var(--mnt-lm-text-subtle) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .lnf-filter-menu__divider {
+  background: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-menu-item {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-menu-item:hover {
+  color: var(--mnt-lm-gold) !important;
+}
+
+/* ── Work Order create modal ── */
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal.one-eyrie-modal {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-gold) !important;
+  color: var(--mnt-lm-text) !important;
+  box-shadow: 0 12px 40px var(--mnt-lm-shadow-hover) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__header {
+  border-bottom-color: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__title,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__title.one-eyrie-modal__title {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__subtitle {
+  color: var(--mnt-lm-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-modal__close {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__label {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__input,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__select,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__textarea {
+  background: var(--mnt-lm-surface) !important;
+  color: var(--mnt-lm-text) !important;
+  border-color: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__input:hover,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__select:hover,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__textarea:hover,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__input:focus,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__select:focus,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__textarea:focus,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__input:focus-visible,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__select:focus-visible,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__textarea:focus-visible {
+  border-color: var(--mnt-lm-hover-border) !important;
+  box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.12) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__footer {
+  background: var(--mnt-lm-surface) !important;
+  border-top-color: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-modal__btn--cancel {
+  color: var(--mnt-lm-row-text-muted) !important;
+  border-color: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-location-field__list {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-border) !important;
+  box-shadow: 0 8px 24px var(--mnt-lm-shadow-hover) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-location-field__option {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-location-field__option:hover,
+html[data-theme="light"] main.one-eyrie-maintenance-route .work-order-location-field__option:focus-visible {
+  background: var(--mnt-lm-action-hover) !important;
+}
+
+/* ── WO detail + PM health modals (inline shell) ── */
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal.one-eyrie-modal {
+  background: var(--mnt-lm-surface) !important;
+  border-color: var(--mnt-lm-gold) !important;
+  color: var(--mnt-lm-text) !important;
+  box-shadow: 0 12px 40px var(--mnt-lm-shadow-hover) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal h2 {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .one-eyrie-modal__close,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal button[aria-label="Close"] {
+  color: var(--mnt-lm-text) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata > div {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata span {
+  color: var(--mnt-lm-text-subtle) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .maintenance-wo-detail-description {
+  background: var(--mnt-lm-surface) !important;
+  border-top-color: var(--mnt-lm-border) !important;
+  border-right-color: var(--mnt-lm-border) !important;
+  border-bottom-color: var(--mnt-lm-border) !important;
+  border-left-color: var(--mnt-lm-gold) !important;
+  color: var(--mnt-lm-text-subtle) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-source-note {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal label > div:first-child {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .one-eyrie-maintenance-field {
+  background: var(--mnt-lm-surface) !important;
+  color: var(--mnt-lm-text) !important;
+  border: 1px solid var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .one-eyrie-maintenance-field:hover,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .one-eyrie-maintenance-field:focus,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .one-eyrie-maintenance-field:focus-visible {
+  border-color: var(--mnt-lm-hover-border) !important;
+  box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.12) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-pm-health-section-title {
+  color: var(--mnt-lm-gold) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-pm-health-panel {
+  background: #f8f9fa !important;
+  border-color: var(--mnt-lm-border) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-pm-health-panel ul {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-pm-health-breakdown-row > div:first-child > span:first-child {
+  color: var(--mnt-lm-row-text-muted) !important;
+}
+
+/* ── Desktop refinements ── */
+
+@media (min-width: 769px) {
+  html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card {
+    border-radius: 12px;
+  }
+}

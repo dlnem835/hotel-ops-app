@@ -35,6 +35,8 @@ import WorkOrderModal, {
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
+import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
+import "./pass-on-log-light-theme.css";
 import {
   clearPassOnDraft,
   emptyPassOnDraftSnapshot,
@@ -866,7 +868,7 @@ function dateHeader(dateString: string) {
 
 
       return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-pass-on-log-route`}>
       <style>
         {`
           .icon-button:hover,
@@ -1210,7 +1212,7 @@ function dateHeader(dateString: string) {
         </div>
 
         <div className="one-eyrie-pass-on-page-body" style={{ maxWidth: "1120px", margin: "0 auto" }}>
-          <div style={panelStyle}>
+          <div style={panelStyle} className="pass-on-log-panel">
   <div className="one-eyrie-pass-on-toolbar" style={searchHeaderRow}>
     <div className="one-eyrie-pass-on-search-wrap pass-on-search-wrap" style={searchWrap}>
       <Search
@@ -1485,7 +1487,10 @@ function dateHeader(dateString: string) {
               aria-label={isRead ? "Read" : "Unread"}
             />
 
-            <div style={priorityPill(entry.priority)}>
+            <div
+              className={priorityClassName(entry.priority || "Normal")}
+              style={priorityPill(entry.priority)}
+            >
               {entry.priority || "Normal"}
             </div>
 
@@ -1774,7 +1779,7 @@ function dateHeader(dateString: string) {
               </div>
 
 {entry.pass_on_log_views?.length > 0 && (
-  <div style={viewedByRow}>
+  <div className="pass-on-viewed-by-row" style={viewedByRow}>
     <strong>Viewed by:</strong>{" "}
     {entry.pass_on_log_views
       .map((view: any) => {

@@ -9,11 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import {
   applyThemeToDocument,
+  canUseLightMode,
   ONE_EYRIE_DEFAULT_THEME,
   persistTheme,
   readStoredTheme,
+  resolveEffectiveTheme,
   type OneEyrieTheme,
 } from "@/app/lib/one-eyrie-theme";
 
@@ -21,12 +24,15 @@ type ThemeContextValue = {
   theme: OneEyrieTheme;
   setTheme: (theme: OneEyrieTheme) => void;
   ready: boolean;
+  /** True when the signed-in user may enable Light Mode (administrators during development). */
+  canUseLightMode: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: ONE_EYRIE_DEFAULT_THEME,
   setTheme: () => {},
   ready: false,
+  canUseLightMode: false,
 });
 
 export function useOneEyrieTheme() {
@@ -34,29 +40,45 @@ export function useOneEyrieTheme() {
 }
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
+  const { access, loading: accessLoading } = useRoleAccess();
   const [theme, setThemeState] = useState<OneEyrieTheme>(ONE_EYRIE_DEFAULT_THEME);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const stored = readStoredTheme();
-    setThemeState(stored);
-    applyThemeToDocument(stored);
-    setReady(true);
-  }, []);
+  const isAdministrator = Boolean(access?.isAdministrator);
+  const lightModeAllowed = canUseLightMode(isAdministrator);
 
-  const setTheme = useCallback((next: OneEyrieTheme) => {
-    setThemeState(next);
-    persistTheme(next);
-    applyThemeToDocument(next);
-  }, []);
+  useEffect(() => {
+    if (accessLoading) {
+      applyThemeToDocument(ONE_EYRIE_DEFAULT_THEME);
+      setThemeState(ONE_EYRIE_DEFAULT_THEME);
+      return;
+    }
+
+    const stored = readStoredTheme();
+    const effective = resolveEffectiveTheme(stored, isAdministrator);
+    setThemeState(effective);
+    applyThemeToDocument(effective);
+    setReady(true);
+  }, [accessLoading, isAdministrator]);
+
+  const setTheme = useCallback(
+    (next: OneEyrieTheme) => {
+      const effective = resolveEffectiveTheme(next, isAdministrator);
+      setThemeState(effective);
+      persistTheme(effective);
+      applyThemeToDocument(effective);
+    },
+    [isAdministrator]
+  );
 
   const value = useMemo(
     () => ({
       theme,
       setTheme,
       ready,
+      canUseLightMode: lightModeAllowed,
     }),
-    [theme, setTheme, ready]
+    [theme, setTheme, ready, lightModeAllowed]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

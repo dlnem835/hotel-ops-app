@@ -64,12 +64,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <OneEyrieThemeBootstrap />
-        <ThemeProvider>
-          <RoleAccessProvider>
+        <RoleAccessProvider>
+          <ThemeProvider>
             {children}
             <RoleRouteGuard />
-          </RoleAccessProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </RoleAccessProvider>
         <InactivityGuard />
       </body>
     </html>

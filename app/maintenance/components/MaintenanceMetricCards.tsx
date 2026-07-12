@@ -18,6 +18,13 @@ function MetricCard({
   value: string;
   accent?: string;
 }) {
+  const accentClassName =
+    accent === FLAT_RED.text
+      ? "maintenance-metric-value--overdue"
+      : accent === ONE_EYRIE.gold
+        ? "maintenance-metric-value--gold"
+        : undefined;
+
   return (
     <div
       className="maintenance-metric-card maintenance-pm-metric-card"
@@ -40,6 +47,7 @@ function MetricCard({
         {label}
       </div>
       <div
+        className={accentClassName}
         style={{
           color: accent || ONE_EYRIE.text,
           fontSize: "28px",

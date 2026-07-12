@@ -77,7 +77,10 @@ export default function WorkOrdersPanel({
       </div>
 
       {workOrders.length === 0 ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "12px 0" }}>
+        <div
+          className="maintenance-work-order-panel__empty"
+          style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "12px 0" }}
+        >
           No open work orders. Guest issues and pass-ons will appear here.
         </div>
       ) : (

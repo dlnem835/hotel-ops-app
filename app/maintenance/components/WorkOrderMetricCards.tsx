@@ -35,7 +35,7 @@ function CompactKpiCard({
     <div className="maintenance-wo-kpi-card">
       <div className="maintenance-wo-kpi-card__label">{label}</div>
       <div
-        className="maintenance-wo-kpi-card__value"
+        className={`maintenance-wo-kpi-card__value${accent === FLAT_RED.text ? " maintenance-metric-value--overdue" : ""}`}
         style={{ color: accent || ONE_EYRIE.text }}
       >
         {value}

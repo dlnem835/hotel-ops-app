@@ -52,6 +52,7 @@ import {
   WorkOrderListFilters,
 } from "./lib/work-order-list-filters";
 import "./maintenance-responsive.css";
+import "./maintenance-light-theme.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -215,11 +216,11 @@ export default function MaintenancePage() {
   }, [dashboard, workOrderFilters]);
 
   return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-maintenance-route`}>
       <OneEyrieSidebar active="Maintenance" />
 
       <section
-        className={`maintenance-mobile-page-content maintenance-page-content ${MAIN_CONTENT_CLASS}`}
+        className={`maintenance-mobile-page-content maintenance-page-content one-eyrie-maintenance-page ${MAIN_CONTENT_CLASS}`}
         style={MAIN_CONTENT}
       >
         <OneEyriePageHeader
@@ -272,7 +273,7 @@ export default function MaintenancePage() {
         ) : null}
 
         {loading || !dashboard ? (
-          <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
+          <div className="maintenance-dashboard-loading" style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
             Loading maintenance dashboard...
           </div>
         ) : (
@@ -327,10 +328,12 @@ export default function MaintenancePage() {
 
         {selectedWorkOrder && (
           <div
+            className="one-eyrie-modal-overlay one-eyrie-maintenance-detail-modal-overlay"
             style={ONE_EYRIE_MODAL_OVERLAY}
             onClick={() => setSelectedWorkOrder(null)}
           >
             <div
+              className="one-eyrie-modal one-eyrie-maintenance-detail-modal"
               style={{ ...ONE_EYRIE_MODAL_BOX, width: "720px", maxWidth: "100%" }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -368,6 +371,7 @@ export default function MaintenancePage() {
               />
               {selectedWorkOrder.description && (
                 <div
+                  className="maintenance-wo-detail-description"
                   style={{
                     background: "#0D0D0D",
                     borderTop: "1px solid #2A2A2A",
@@ -388,6 +392,7 @@ export default function MaintenancePage() {
               )}
               {selectedWorkOrder.sourceNote && (
                 <p
+                  className="maintenance-wo-detail-source-note"
                   style={{
                     color: ONE_EYRIE.textSubtle,
                     fontSize: "11px",

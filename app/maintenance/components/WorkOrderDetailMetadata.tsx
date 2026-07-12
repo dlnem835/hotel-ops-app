@@ -23,6 +23,7 @@ export default function WorkOrderDetailMetadata({
 }: WorkOrderDetailMetadataProps) {
   return (
     <div
+      className="maintenance-wo-detail-metadata"
       style={{
         display: "flex",
         flexDirection: "column",

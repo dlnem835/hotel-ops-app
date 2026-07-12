@@ -117,6 +117,7 @@ function HealthBreakdownRow({
 
   return (
     <div
+      className="maintenance-pm-health-breakdown-row"
       style={{
         padding: "12px 0",
         borderBottom: isLast ? "none" : `1px solid ${ONE_EYRIE.borderDivider}`,
@@ -179,8 +180,9 @@ export default function PmHealthDetailModal({
   const missedPercent = formatBreakdownPercent(pmHealth.missedCount, total, "negative");
 
   return (
-    <div style={ONE_EYRIE_MODAL_OVERLAY} onClick={onClose}>
+    <div style={ONE_EYRIE_MODAL_OVERLAY} className="one-eyrie-modal-overlay" onClick={onClose}>
       <div
+        className="one-eyrie-modal one-eyrie-maintenance-detail-modal"
         style={{ ...ONE_EYRIE_MODAL_BOX, width: "520px", maxWidth: "100%" }}
         onClick={(event) => event.stopPropagation()}
       >
@@ -199,6 +201,7 @@ export default function PmHealthDetailModal({
         </div>
 
         <div
+          className="maintenance-pm-health-section-title"
           style={{
             color: ONE_EYRIE.gold,
             fontWeight: 800,
@@ -210,6 +213,7 @@ export default function PmHealthDetailModal({
         </div>
 
         <div
+          className="maintenance-pm-health-panel"
           style={{
             background: ONE_EYRIE.surfaceInset,
             border: `1px solid ${ONE_EYRIE.border}`,
@@ -249,6 +253,7 @@ export default function PmHealthDetailModal({
         </div>
 
         <div
+          className="maintenance-pm-health-section-title"
           style={{
             color: ONE_EYRIE.gold,
             fontWeight: 800,
@@ -260,6 +265,7 @@ export default function PmHealthDetailModal({
         </div>
 
         <div
+          className="maintenance-pm-health-panel"
           style={{
             background: ONE_EYRIE.surfaceInset,
             border: `1px solid ${ONE_EYRIE.border}`,
