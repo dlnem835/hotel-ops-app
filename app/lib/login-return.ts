@@ -8,10 +8,16 @@ function isMobileLoginPath(path: string): boolean {
   return pathname === "/mobile" || pathname.startsWith("/mobile/");
 }
 
+function isAdminLoginPath(path: string): boolean {
+  const pathname = path.split("?")[0] ?? path;
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 export function sanitizeLoginNext(value: string | null | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
-  if (!isMobileLoginPath(value)) return null;
-  return value;
+  const pathname = value.split("?")[0] ?? value;
+  if (isMobileLoginPath(pathname) || isAdminLoginPath(pathname)) return pathname;
+  return null;
 }
 
 export function loginUrlWithNext(nextPath: string): string {

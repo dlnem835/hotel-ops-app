@@ -8,7 +8,7 @@ Internal SaaS operations console at `/admin` — separate from the hotel-facing 
 |-------|-------|--------|
 | A | Database schema, platform admin RLS, property ID sequence | **Complete** (migrations 037–040 applied; owner seeded manually) |
 | B | Server-side `resolvePlatformAdminRequest` helper | **Complete** |
-| C | Protected `/admin` layout + route guard | Pending |
+| C | Protected `/admin` layout + route guard | **Complete** |
 | D | Organizations/properties list + detail | Pending |
 | E | Organization/property creation | Pending |
 | F | First-GM invitation + membership | Pending |
@@ -83,6 +83,31 @@ Verification (requires `npm run dev` or `SMOKE_BASE_URL`):
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-b.mjs
+```
+
+## Stage C — Protected `/admin` layout
+
+| File | Purpose |
+|------|---------|
+| `app/admin/layout.tsx` | Admin portal layout + `AdminAccessGate` |
+| `app/admin/components/AdminAccessGate.tsx` | Server-validated gate via `GET /api/admin/me` |
+| `app/admin/components/AdminShell.tsx` | Separate admin shell (no hotel sidebar) |
+| `app/admin/components/AdminHeader.tsx` | “One Eyrie Admin” header |
+| `app/admin/components/AdminAccessDenied.tsx` | Dedicated access-denied view |
+| `app/admin/access-denied/page.tsx` | `/admin/access-denied` route |
+| `app/admin/page.tsx` | Minimal admin home placeholder |
+| `app/lib/platform-admin/admin-paths.ts` | Admin path helpers |
+
+Minimal hotel-app touchpoints (login redirect + route guard bypass only):
+
+- `app/lib/login-return.ts` — accept `/admin` as `?next=` target
+- `app/login/page.tsx` — honor admin post-login redirect
+- `app/lib/role-permissions.ts` + `RoleRouteGuard.tsx` — skip hotel module guard on `/admin/*`
+
+Verification:
+
+```bash
+node scripts/tenant/verify-platform-admin-stage-c.mjs
 ```
 
 ## Authorization model (permanent)

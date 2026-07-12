@@ -323,6 +323,11 @@ export function isMobileAppPath(pathname: string): boolean {
   return path === "/mobile" || path.startsWith("/mobile/");
 }
 
+export function isPlatformAdminAppPath(pathname: string): boolean {
+  const path = pathname.split("?")[0] ?? pathname;
+  return path === "/admin" || path.startsWith("/admin/");
+}
+
 function canAccessDesktopPath(permissions: ModulePermissions, path: string): boolean {
   if (path === "/" || path === "") return permissions.dashboard;
   if (path.startsWith("/reports")) return permissions.reports;
@@ -354,6 +359,7 @@ export function canAccessPath(
   const path = pathname.split("?")[0] ?? pathname;
 
   if (isPublicAppPath(path)) return true;
+  if (isPlatformAdminAppPath(path)) return true;
   if (path.startsWith("/api/") || path.startsWith("/_next/")) return true;
 
   if (isMobileAppPath(path)) {

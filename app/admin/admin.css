@@ -1,0 +1,92 @@
+.admin-portal {
+  min-height: 100vh;
+  background: #111111;
+  color: #ffffff;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.admin-portal__loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c9c9c9;
+  font-size: 14px;
+}
+
+.admin-portal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #3a352e;
+  background: #1a1815;
+}
+
+.admin-portal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #c8a96a;
+}
+
+.admin-portal__subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.admin-portal__main {
+  padding: 24px;
+  max-width: 1200px;
+}
+
+.admin-portal__card {
+  background: #211f1b;
+  border: 1px solid #3a352e;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.admin-portal__denied {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-portal__denied-card {
+  width: min(480px, 100%);
+  background: #211f1b;
+  border: 1px solid #3a352e;
+  border-radius: 12px;
+  padding: 28px 24px;
+}
+
+.admin-portal__denied-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.admin-portal__denied-text {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #c9c9c9;
+}
+
+.admin-portal__link {
+  color: #c8a96a;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-portal__link:hover {
+  text-decoration: underline;
+}

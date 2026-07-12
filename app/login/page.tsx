@@ -17,13 +17,20 @@ import {
   getDefaultDesktopHome,
   getDefaultMobileHome,
   isMobileAppPath,
+  isPlatformAdminAppPath,
 } from "@/app/lib/role-permissions";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
 async function resolvePostLoginTarget(): Promise<string> {
-  const explicitMobileTarget = consumeExplicitLoginRedirect();
+  const explicitTarget = consumeExplicitLoginRedirect();
+
+  if (explicitTarget && isPlatformAdminAppPath(explicitTarget)) {
+    return explicitTarget;
+  }
+
+  const explicitMobileTarget = explicitTarget;
   const access = await fetchTeamMemberAccess();
 
   if (!access) {
