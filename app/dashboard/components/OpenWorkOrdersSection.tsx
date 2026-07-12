@@ -13,6 +13,7 @@ import { formatWorkOrderCardTimestamp } from "@/app/maintenance/lib/work-order-d
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { getWorkOrderPriorityBadgeClassName } from "@/app/lib/workOrderPriority";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
 import "@/app/components/dashboard-list-card.css";
 
@@ -79,7 +80,7 @@ export default function OpenWorkOrdersSection({
   async function openWorkOrder(orderId: number) {
     setOpeningWorkOrderId(orderId);
 
-    const response = await fetch(`/api/work-orders/${orderId}`);
+    const response = await tenantFetch(`/api/work-orders/${orderId}`);
     const result = await response.json();
     setOpeningWorkOrderId(null);
 
@@ -94,7 +95,7 @@ export default function OpenWorkOrdersSection({
   function handleWorkOrderUpdated() {
     void reloadPreviewWorkOrders();
     if (selectedWorkOrder) {
-      void fetch(`/api/work-orders/${selectedWorkOrder.id}`)
+      void tenantFetch(`/api/work-orders/${selectedWorkOrder.id}`)
         .then((response) => response.json())
         .then((result) => {
           if (result.workOrder) {

@@ -5,19 +5,25 @@ import {
 } from "@/app/maintenance/lib/work-order-db";
 import { WorkOrderInput } from "@/app/maintenance/lib/maintenance-types";
 import { isWorkOrderCategory } from "@/app/maintenance/lib/work-order-categories";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
 import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 export async function GET(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { searchParams } = new URL(request.url);
     const openOnly = searchParams.get("open") === "1";
-    const supabase = getSupabaseAdmin();
+    const scope = { organizationId, propertyId };
     const [workOrders, memberResolver] = await Promise.all([
-      fetchWorkOrders(
-        supabase,
-        openOnly ? { status: ["Open", "In Progress"] } : undefined
-      ),
+      fetchWorkOrders(supabase, {
+        scope,
+        ...(openOnly ? { status: ["Open", "In Progress"] } : {}),
+      }),
       fetchMemberDisplayNameResolver(supabase),
     ]);
 
@@ -30,13 +36,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ workOrders: enrichedWorkOrders });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const body = (await request.json()) as WorkOrderInput;
     if (!body.subject?.trim()) {
       return NextResponse.json(
@@ -59,11 +67,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Details are required." }, { status: 400 });
     }
 
-    const supabase = getSupabaseAdmin();
-    const workOrder = await createWorkOrder(supabase, body);
+    const workOrder = await createWorkOrder(supabase, body, {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ workOrder });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

@@ -18,6 +18,7 @@ import {
 } from "@/app/inspections/lib/inspection-associates";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 export type { AssociateOption, RoomOption, TemplateOption };
 
@@ -52,7 +53,7 @@ export async function fetchInspectionBootstrap(
 
   const [templatesRes, areasRes, membersRes, teamMemberRes] = await Promise.all([
     fetch("/api/inspections/sessions"),
-    fetch("/api/buildings-areas"),
+    tenantFetch("/api/buildings-areas"),
     supabase
       .from("team_members")
       .select("id, first_name, last_name, username, job_title, role, status"),

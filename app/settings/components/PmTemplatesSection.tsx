@@ -26,6 +26,7 @@ import {
   secondaryHoverHandlers,
 } from "../lib/settings-ui-interactions";
 import { BuildingArea } from "../lib/buildings-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import PmAssignmentGrid, { PmGridLegend } from "./PmAssignmentGrid";
 import PmTemplateModal from "./PmTemplateModal";
 
@@ -123,7 +124,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     try {
       const [pmRes, areasRes] = await Promise.all([
         fetch("/api/pm-templates"),
-        fetch("/api/buildings-areas"),
+        tenantFetch("/api/buildings-areas"),
       ]);
 
       const pmData = await pmRes.json();

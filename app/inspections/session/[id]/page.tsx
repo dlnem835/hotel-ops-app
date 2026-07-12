@@ -26,6 +26,7 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -157,7 +158,7 @@ export default function InspectionSessionPage() {
       setNotes(initialNotes);
       setPhotos(initialPhotos);
 
-      const areaRes = await fetch("/api/buildings-areas");
+      const areaRes = await tenantFetch("/api/buildings-areas");
       const areaJson = await areaRes.json();
       const area = (areaJson.areas || []).find(
         (entry: { id: number }) => Number(entry.id) === Number(result.session.area_id)

@@ -51,6 +51,7 @@ import {
   DEFAULT_WORK_ORDER_LIST_FILTERS,
   WorkOrderListFilters,
 } from "./lib/work-order-list-filters";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import "./maintenance-responsive.css";
 import "./maintenance-light-theme.css";
 
@@ -167,7 +168,7 @@ export default function MaintenancePage() {
     setSavingComments(true);
     setCommentsSaved(false);
 
-    const response = await fetch(`/api/work-orders/${selectedWorkOrder.id}`, {
+    const response = await tenantFetch(`/api/work-orders/${selectedWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ comments: workOrderComments.trim() || null }),
@@ -190,7 +191,7 @@ export default function MaintenancePage() {
   async function completeWorkOrder() {
     if (!selectedWorkOrder) return;
     setCompletingWo(true);
-    const response = await fetch(`/api/work-orders/${selectedWorkOrder.id}`, {
+    const response = await tenantFetch(`/api/work-orders/${selectedWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

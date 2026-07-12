@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -12,6 +15,9 @@ const ALLOWED_TYPES = new Set([
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -34,9 +40,8 @@ export async function POST(request: Request) {
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const filePath = `manual/${Date.now()}.${extension}`;
+    const filePath = `org-${organizationId}/property-${propertyId}/manual/${Date.now()}.${extension}`;
 
-    const supabase = getSupabaseAdmin();
     const { error: uploadError } = await supabase.storage
       .from("work-order-photos")
       .upload(filePath, file, {
@@ -55,7 +60,6 @@ export async function POST(request: Request) {
       storagePath: filePath,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

@@ -58,6 +58,11 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
   };
 }
 
+export type WorkOrderTenantScope = {
+  organizationId: number;
+  propertyId: number;
+};
+
 export function sortWorkOrdersByPriority(orders: WorkOrder[]): WorkOrder[] {
   return [...orders].sort((a, b) => {
     const guestDiff =
@@ -73,11 +78,17 @@ export function sortWorkOrdersByPriority(orders: WorkOrder[]): WorkOrder[] {
 
 export async function fetchWorkOrders(
   supabase: SupabaseClient,
-  options?: { status?: string[] }
+  options?: { status?: string[]; scope?: WorkOrderTenantScope }
 ): Promise<WorkOrder[]> {
   let query = supabase.from("work_orders").select("*").order("created_at", {
     ascending: false,
   });
+
+  if (options?.scope) {
+    query = query
+      .eq("organization_id", options.scope.organizationId)
+      .eq("property_id", options.scope.propertyId);
+  }
 
   if (options?.status?.length) {
     query = query.in("status", options.status);
@@ -93,25 +104,34 @@ export async function fetchWorkOrders(
 
 export async function createWorkOrder(
   supabase: SupabaseClient,
-  input: WorkOrderInput
+  input: WorkOrderInput,
+  scope?: WorkOrderTenantScope
 ): Promise<WorkOrder> {
+  const insertPayload: Record<string, unknown> = {
+    subject: input.subject,
+    description: input.description ?? null,
+    priority: input.priority ?? "Normal",
+    status: input.status ?? "Open",
+    area_id: input.area_id ?? null,
+    area_label: input.area_label ?? null,
+    source_module: input.source_module ?? null,
+    source_record_id: input.source_record_id ?? null,
+    source_note: input.source_note ?? null,
+    photo_url: input.photo_url ?? null,
+    category: input.category ?? null,
+    item: input.item?.trim() || null,
+    created_by: input.created_by ?? null,
+  };
+
+  // work_orders is a root table (no DB stamp trigger); stamp tenant explicitly.
+  if (scope) {
+    insertPayload.organization_id = scope.organizationId;
+    insertPayload.property_id = scope.propertyId;
+  }
+
   const { data, error } = await supabase
     .from("work_orders")
-    .insert({
-      subject: input.subject,
-      description: input.description ?? null,
-      priority: input.priority ?? "Normal",
-      status: input.status ?? "Open",
-      area_id: input.area_id ?? null,
-      area_label: input.area_label ?? null,
-      source_module: input.source_module ?? null,
-      source_record_id: input.source_record_id ?? null,
-      source_note: input.source_note ?? null,
-      photo_url: input.photo_url ?? null,
-      category: input.category ?? null,
-      item: input.item?.trim() || null,
-      created_by: input.created_by ?? null,
-    })
+    .insert(insertPayload)
     .select("*")
     .single();
 
@@ -122,7 +142,8 @@ export async function createWorkOrder(
 export async function updateWorkOrder(
   supabase: SupabaseClient,
   id: number,
-  patch: Partial<WorkOrderInput> & { status?: WorkOrder["status"] }
+  patch: Partial<WorkOrderInput> & { status?: WorkOrder["status"] },
+  scope?: WorkOrderTenantScope
 ): Promise<WorkOrder> {
   const payload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -148,12 +169,14 @@ export async function updateWorkOrder(
   }
   if (patch.photo_url !== undefined) payload.photo_url = patch.photo_url;
 
-  const { data, error } = await supabase
-    .from("work_orders")
-    .update(payload)
-    .eq("id", id)
-    .select("*")
-    .single();
+  let updateQuery = supabase.from("work_orders").update(payload).eq("id", id);
+  if (scope) {
+    updateQuery = updateQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await updateQuery.select("*").single();
 
   if (error) throw new Error(error.message);
   return normalizeWorkOrder(data as WorkOrderRow);
@@ -161,13 +184,17 @@ export async function updateWorkOrder(
 
 export async function fetchWorkOrderById(
   supabase: SupabaseClient,
-  id: number
+  id: number,
+  scope?: WorkOrderTenantScope
 ): Promise<WorkOrder | null> {
-  const { data, error } = await supabase
-    .from("work_orders")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  let query = supabase.from("work_orders").select("*").eq("id", id);
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return null;

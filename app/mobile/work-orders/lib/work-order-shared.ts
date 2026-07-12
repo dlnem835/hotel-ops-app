@@ -1,6 +1,7 @@
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 export async function resolveWorkOrderCreatedBy(): Promise<string | null> {
   const session = await getClientSession();
@@ -22,7 +23,7 @@ export async function resolveWorkOrderCreatedBy(): Promise<string | null> {
 }
 
 export async function fetchOpenWorkOrders(): Promise<WorkOrder[]> {
-  const response = await fetch("/api/work-orders?open=1");
+  const response = await tenantFetch("/api/work-orders?open=1");
   const result = await response.json();
 
   if (!response.ok) {
@@ -33,7 +34,7 @@ export async function fetchOpenWorkOrders(): Promise<WorkOrder[]> {
 }
 
 export async function fetchWorkOrderById(id: number): Promise<WorkOrder | null> {
-  const response = await fetch(`/api/work-orders/${id}`);
+  const response = await tenantFetch(`/api/work-orders/${id}`);
   const result = await response.json();
 
   if (response.status === 404) return null;
@@ -49,7 +50,7 @@ export async function saveWorkOrderComments(
   id: number,
   comments: string
 ): Promise<WorkOrder> {
-  const response = await fetch(`/api/work-orders/${id}`, {
+  const response = await tenantFetch(`/api/work-orders/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ comments: comments.trim() || null }),
@@ -67,7 +68,7 @@ export async function completeWorkOrder(
   id: number,
   completedBy?: string | null
 ): Promise<WorkOrder> {
-  const response = await fetch(`/api/work-orders/${id}`, {
+  const response = await tenantFetch(`/api/work-orders/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

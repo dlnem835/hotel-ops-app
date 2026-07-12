@@ -1,14 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getNameKey } from "@/app/settings/lib/buildings-areas";
 import { AreaType } from "@/app/settings/lib/buildings-types";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+type TenantScope = { organizationId: number; propertyId: number };
 
 function normalizeRecord(record: Record<string, unknown>) {
   const name = String(record.name || "").trim();
@@ -32,10 +31,15 @@ function normalizeRecord(record: Record<string, unknown>) {
 }
 
 async function getExistingNameKeys(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  supabaseAdmin: SupabaseClient,
+  scope: TenantScope,
   excludeId?: number
 ) {
-  let query = supabaseAdmin.from("buildings_and_areas").select("id, name, area_type");
+  let query = supabaseAdmin
+    .from("buildings_and_areas")
+    .select("id, name, area_type")
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
 
   if (excludeId) {
     query = query.neq("id", excludeId);
@@ -54,13 +58,17 @@ async function getExistingNameKeys(
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabaseAdmin = getSupabaseAdmin();
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("buildings_and_areas")
       .select("*")
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -69,13 +77,16 @@ export async function GET() {
 
     return NextResponse.json({ areas: data || [] });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const scope = { organizationId, propertyId };
     const body = await request.json();
     const record = normalizeRecord(body);
 
@@ -83,9 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const existingNames = await getExistingNameKeys(supabaseAdmin);
+    const existingNames = await getExistingNameKeys(supabase, scope);
     const { nameKey, ...recordToInsert } = record;
 
     if (existingNames.has(nameKey)) {
@@ -100,9 +109,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("buildings_and_areas")
-      .insert([recordToInsert])
+      .insert([
+        {
+          ...recordToInsert,
+          organization_id: organizationId,
+          property_id: propertyId,
+        },
+      ])
       .select()
       .single();
 
@@ -112,13 +127,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ area: data });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const scope = { organizationId, propertyId };
     const body = await request.json();
     const { id, ...rest } = body;
 
@@ -127,9 +145,8 @@ export async function PATCH(request: Request) {
     }
 
     const record = normalizeRecord(rest);
-    const supabaseAdmin = getSupabaseAdmin();
 
-    const existingNames = await getExistingNameKeys(supabaseAdmin, Number(id));
+    const existingNames = await getExistingNameKeys(supabase, scope, Number(id));
     const { nameKey, ...recordToUpdate } = record;
 
     if (existingNames.has(nameKey)) {
@@ -142,10 +159,12 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("buildings_and_areas")
       .update(recordToUpdate)
       .eq("id", id)
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId)
       .select()
       .single();
 
@@ -153,15 +172,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    if (!data) {
+      return NextResponse.json({ error: "Location not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ area: data });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -169,12 +194,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Id is required" }, { status: 400 });
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from("buildings_and_areas")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -182,7 +207,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

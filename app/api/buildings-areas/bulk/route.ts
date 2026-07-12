@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   generateRoomRecords,
@@ -7,13 +7,12 @@ import {
   STANDARD_HOTEL_AREAS,
 } from "@/app/settings/lib/buildings-areas";
 import { AreaType, BuildingAreaInput } from "@/app/settings/lib/buildings-types";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+type TenantScope = { organizationId: number; propertyId: number };
 
 function normalizeRecord(record: BuildingAreaInput) {
   const isGuestRoom = record.area_type === "Guest Room";
@@ -31,10 +30,12 @@ function normalizeRecord(record: BuildingAreaInput) {
   };
 }
 
-async function getExistingNames(supabaseAdmin: ReturnType<typeof getSupabaseAdmin>) {
+async function getExistingNames(supabaseAdmin: SupabaseClient, scope: TenantScope) {
   const { data, error } = await supabaseAdmin
     .from("buildings_and_areas")
-    .select("name, area_type");
+    .select("name, area_type")
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
 
   if (error) {
     throw new Error(error.message);
@@ -48,12 +49,17 @@ async function getExistingNames(supabaseAdmin: ReturnType<typeof getSupabaseAdmi
 }
 
 async function insertRecords(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  records: BuildingAreaInput[]
+  supabaseAdmin: SupabaseClient,
+  records: BuildingAreaInput[],
+  scope: TenantScope
 ) {
-  const existingNames = await getExistingNames(supabaseAdmin);
+  const existingNames = await getExistingNames(supabaseAdmin, scope);
   const { toInsert, skipped } = partitionNewRecords(records, existingNames);
-  const newRecords = toInsert.map(normalizeRecord);
+  const newRecords = toInsert.map((record) => ({
+    ...normalizeRecord(record),
+    organization_id: scope.organizationId,
+    property_id: scope.propertyId,
+  }));
 
   if (newRecords.length === 0) {
     return { created: 0, skipped, areas: [], addedNames: [] as string[] };
@@ -78,9 +84,11 @@ async function insertRecords(
 
 export async function POST(request: Request) {
   try {
+    const { supabase: supabaseAdmin, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    const scope = { organizationId, propertyId };
     const body = await request.json();
     const { action } = body;
-    const supabaseAdmin = getSupabaseAdmin();
 
     if (action === "generate") {
       const records = generateRoomRecords({
@@ -98,12 +106,12 @@ export async function POST(request: Request) {
         );
       }
 
-      const result = await insertRecords(supabaseAdmin, records);
+      const result = await insertRecords(supabaseAdmin, records, scope);
       return NextResponse.json({ ...result, action: "generate" });
     }
 
     if (action === "standard") {
-      const result = await insertRecords(supabaseAdmin, STANDARD_HOTEL_AREAS);
+      const result = await insertRecords(supabaseAdmin, STANDARD_HOTEL_AREAS, scope);
       return NextResponse.json({ ...result, action: "standard" });
     }
 
@@ -117,7 +125,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const result = await insertRecords(supabaseAdmin, records);
+      const result = await insertRecords(supabaseAdmin, records, scope);
       return NextResponse.json({ ...result, action: "import" });
     }
 
@@ -193,7 +201,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const result = await insertRecords(supabaseAdmin, allRecords);
+      const result = await insertRecords(supabaseAdmin, allRecords, scope);
       return NextResponse.json({ ...result, action: "wizard" });
     }
 
@@ -210,7 +218,9 @@ export async function POST(request: Request) {
       const { error } = await supabaseAdmin
         .from("buildings_and_areas")
         .delete()
-        .in("id", ids);
+        .in("id", ids)
+        .eq("organization_id", organizationId)
+        .eq("property_id", propertyId);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
@@ -238,7 +248,9 @@ export async function POST(request: Request) {
       const { error } = await supabaseAdmin
         .from("buildings_and_areas")
         .update({ status })
-        .in("id", ids);
+        .in("id", ids)
+        .eq("organization_id", organizationId)
+        .eq("property_id", propertyId);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
@@ -249,7 +261,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

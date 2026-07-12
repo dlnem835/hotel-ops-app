@@ -27,6 +27,7 @@ import {
 } from "@/app/reports/lib/report-definitions";
 import { buildWorkOrderLocationOptions } from "@/app/maintenance/lib/work-order-location";
 import type { BuildingArea } from "@/app/settings/lib/buildings-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsWoPlaceholderResults from "@/app/reports/components/ReportsWoPlaceholderResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
@@ -87,7 +88,7 @@ export default function ReportsWoFilterModal({
 
     async function loadLocationOptions() {
       try {
-        const response = await fetch("/api/buildings-areas");
+        const response = await tenantFetch("/api/buildings-areas");
         const result = await response.json();
         if (!response.ok) {
           throw new Error(result.error || "Unable to load areas");

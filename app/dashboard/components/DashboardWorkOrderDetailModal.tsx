@@ -23,6 +23,7 @@ import {
   resolveMemberDisplayLabel,
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type DashboardWorkOrderDetailModalProps = {
   workOrder: WorkOrder;
@@ -57,7 +58,7 @@ export default function DashboardWorkOrderDetailModal({
     setSavingComments(true);
     setCommentsSaved(false);
 
-    const response = await fetch(`/api/work-orders/${currentWorkOrder.id}`, {
+    const response = await tenantFetch(`/api/work-orders/${currentWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ comments: workOrderComments.trim() || null }),
@@ -79,7 +80,7 @@ export default function DashboardWorkOrderDetailModal({
 
   async function completeWorkOrder() {
     setCompletingWo(true);
-    const response = await fetch(`/api/work-orders/${currentWorkOrder.id}`, {
+    const response = await tenantFetch(`/api/work-orders/${currentWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

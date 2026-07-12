@@ -13,6 +13,7 @@ import {
 } from "../lib/work-order-location";
 import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import "./work-order-modal.css";
 
 export type WorkOrderModalInitialValues = Partial<WorkOrderInput> & {
@@ -63,7 +64,7 @@ export default function WorkOrderModal({
 
     async function loadAreas() {
       setAreasLoading(true);
-      const response = await fetch("/api/buildings-areas");
+      const response = await tenantFetch("/api/buildings-areas");
       const result = await response.json();
       setAreasLoading(false);
 
@@ -111,7 +112,7 @@ export default function WorkOrderModal({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/work-orders/photo", {
+      const response = await tenantFetch("/api/work-orders/photo", {
         method: "POST",
         body: formData,
       });
@@ -195,7 +196,7 @@ export default function WorkOrderModal({
       created_by: createdBy || initialValues?.created_by || null,
     };
 
-    const response = await fetch("/api/work-orders", {
+    const response = await tenantFetch("/api/work-orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

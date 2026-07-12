@@ -40,6 +40,7 @@ import {
   goldHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -148,7 +149,7 @@ export default function InspectionsPage() {
 
       const [templatesRes, areasRes, membersRes] = await Promise.all([
         fetch("/api/inspections/sessions"),
-        fetch("/api/buildings-areas"),
+        tenantFetch("/api/buildings-areas"),
         supabase
           .from("team_members")
           .select("id, first_name, last_name, username, job_title, role, status"),

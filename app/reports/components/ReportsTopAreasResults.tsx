@@ -10,6 +10,7 @@ import {
   resolveWorkOrderReportCreatedByLabel,
   type WorkOrderReportRow,
 } from "@/app/reports/lib/work-order-report-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type ReportsTopAreasResultsProps = {
   rows: WorkOrderReportRow[];
@@ -118,7 +119,7 @@ export default function ReportsTopAreasResults({ rows }: ReportsTopAreasResultsP
     setOpeningWorkOrderId(workOrderId);
 
     try {
-      const response = await fetch(`/api/work-orders/${workOrderId}`);
+      const response = await tenantFetch(`/api/work-orders/${workOrderId}`);
       const result = await response.json();
 
       if (!response.ok) {

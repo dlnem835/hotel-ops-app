@@ -28,6 +28,7 @@ import {
   secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "../lib/settings-ui-interactions";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type RoomsAreasSectionProps = {
   styles: Record<string, React.CSSProperties>;
@@ -351,7 +352,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
   const fetchAreas = useCallback(async () => {
     setLoading(true);
 
-    const response = await fetch("/api/buildings-areas");
+    const response = await tenantFetch("/api/buildings-areas");
     const result = await response.json();
 
     if (!response.ok) {
@@ -371,7 +372,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
     async function loadAreas() {
       setLoading(true);
 
-      const response = await fetch("/api/buildings-areas");
+      const response = await tenantFetch("/api/buildings-areas");
       const result = await response.json();
 
       if (cancelled) return;
@@ -574,7 +575,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
     setSaving(true);
     try {
-      const response = await fetch("/api/buildings-areas/bulk", {
+      const response = await tenantFetch("/api/buildings-areas/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "standard" }),
@@ -644,7 +645,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
       inspection_enabled: draft.inspection_enabled === "true",
     };
 
-    const response = await fetch("/api/buildings-areas", {
+    const response = await tenantFetch("/api/buildings-areas", {
       method: editingId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
@@ -672,7 +673,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
     setSaving(true);
 
-    const response = await fetch(`/api/buildings-areas?id=${id}`, {
+    const response = await tenantFetch(`/api/buildings-areas?id=${id}`, {
       method: "DELETE",
     });
 
@@ -728,7 +729,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
     setSaving(true);
 
-    const response = await fetch("/api/buildings-areas/bulk", {
+    const response = await tenantFetch("/api/buildings-areas/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "bulk-delete", ids }),
@@ -753,7 +754,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
     setSaving(true);
 
-    const response = await fetch("/api/buildings-areas/bulk", {
+    const response = await tenantFetch("/api/buildings-areas/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "bulk-status", ids, status }),
@@ -823,7 +824,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
       importRecords: hasValidCsvImport ? importPreview : [],
     };
 
-    const response = await fetch("/api/buildings-areas/bulk", {
+    const response = await tenantFetch("/api/buildings-areas/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

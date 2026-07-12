@@ -21,6 +21,7 @@ import {
   formatInspectionScoreDisplay,
 } from "@/app/inspections/lib/scoring";
 import { PropertyTemplateContent } from "@/app/inspections/standards/types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type Outcome = "pass" | "fail" | "na";
 type ResponseMap = Record<string, Outcome | undefined>;
@@ -195,7 +196,7 @@ export function MobileInspectionSessionProvider({
       setNotes(initialNotes);
       setPhotos(initialPhotos);
 
-      const areaRes = await fetch("/api/buildings-areas");
+      const areaRes = await tenantFetch("/api/buildings-areas");
       const areaJson = await areaRes.json();
       const area = (areaJson.areas || []).find(
         (entry: { id: number }) => Number(entry.id) === Number(result.session.area_id)
