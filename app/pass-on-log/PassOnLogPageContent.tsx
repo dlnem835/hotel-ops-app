@@ -55,6 +55,7 @@ import {
   matchesPassOnDateFilter,
   type PassOnDateFilter,
 } from "@/app/lib/hotel-business-date";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -164,29 +165,24 @@ export default function PassOnLogPageContent() {
 
   const editedAt = new Date().toISOString();
 
-  const { data, error } = await supabase
-    .from("pass_on_log")
-    .update({ message: text,
-    edited_at: editedAt,
-     })
-    .eq("id", id)
-    .select();
+  const response = await tenantFetch(`/api/pass-on/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text }),
+  });
+  const result = await response.json().catch(() => ({}));
 
-    console.log("Updated entry", data);
-    console.log("Updat error:", error);
-
-
-  if (error) {
-    console.error("Update failed:", error);
-    alert(error.message);
+  if (!response.ok) {
+    console.error("Update failed:", result.error);
+    alert(result.error || "Unable to update entry");
     return;
   }
 
-  console.log("Updated entry:", data);
+  const resolvedEditedAt = result.entry?.edited_at ?? editedAt;
 
   setEntries((prev) =>
     prev.map((entry) =>
-      entry.id === id ? { ...entry, message: text, edited_at: editedAt } : entry
+      entry.id === id ? { ...entry, message: text, edited_at: resolvedEditedAt } : entry
     )
   );
 
@@ -211,26 +207,27 @@ async function updateReply(replyId: number) {
   }
 
   const editedAt = new Date().toISOString();
-  const { error } = await supabase
-    .from("pass_on_log_replies")
-    .update({
-      reply_message: text,
-      edited_at: editedAt,
-    })
-    .eq("id", replyId);
+  const response = await tenantFetch(`/api/pass-on/replies/${replyId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reply_message: text }),
+  });
+  const result = await response.json().catch(() => ({}));
 
-  if (error) {
-    console.error("Reply update failed:", error);
-    alert(error.message);
+  if (!response.ok) {
+    console.error("Reply update failed:", result.error);
+    alert(result.error || "Unable to update reply");
     return;
   }
+
+  const resolvedEditedAt = result.reply?.edited_at ?? editedAt;
 
   setEntries((prev) =>
     prev.map((entry) => ({
       ...entry,
       pass_on_log_replies: (entry.pass_on_log_replies || []).map((reply: any) =>
         reply.id === replyId
-          ? { ...reply, reply_message: text, edited_at: editedAt }
+          ? { ...reply, reply_message: text, edited_at: resolvedEditedAt }
           : reply
       ),
     }))
@@ -242,13 +239,11 @@ async function updateReply(replyId: number) {
 
 
   async function fetchEntries() {
-    const { data } = await supabase
-      .from("pass_on_log")
-      .select("*, pass_on_log_replies(*), pass_on_log_views(*)")
-      .order("entry_date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    setEntries(data || []);
+    const response = await tenantFetch("/api/pass-on");
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) {
+      setEntries(result.entries || []);
+    }
   }
 
 async function markAsViewed(entryId: number) {
@@ -258,18 +253,7 @@ async function markAsViewed(entryId: number) {
 
   if (!session) return;
 
-  await supabase
-    .from("pass_on_log_views")
-    .upsert(
-      {
-        entry_id: entryId,
-        auth_user_id: session.user.id,
-        viewed_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "entry_id,auth_user_id",
-      }
-    );
+  await tenantFetch(`/api/pass-on/${entryId}/views`, { method: "POST" });
 
   const viewedAt = new Date().toISOString();
   const userId = session.user.id;
@@ -443,28 +427,27 @@ async function markAsViewed(entryId: number) {
       ).padStart(2, "0")}:00`
     ).toISOString();
 
-    const { data, error } = await supabase
-      .from("pass_on_log")
-      .insert([
-        {
-          subject: entrySubject,
-          author: currentUserName,
-          priority: entryPriority,
-          message: entryMessage,
-          created_at: selectedDateTime,
-          entry_date: entryDateValue,
-        },
-      ])
-      .select("id")
-      .single();
+    const response = await tenantFetch("/api/pass-on", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subject: entrySubject,
+        author: currentUserName,
+        priority: entryPriority,
+        message: entryMessage,
+        created_at: selectedDateTime,
+        entry_date: entryDateValue,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
 
-    if (error) {
-      alert(error.message);
+    if (!response.ok) {
+      alert(result.error || "Unable to create pass-on entry");
       return null;
     }
 
     await fetchEntries();
-    return data?.id ?? null;
+    return result.entry?.id ?? null;
   }
 
   async function publishDraft() {
@@ -765,13 +748,17 @@ setTeamMembers(allTeamMembers || []);
     const text = replyMessages[entryId]?.trim();
     if (!text) return;
 
-    await supabase.from("pass_on_log_replies").insert([
-      {
-        entry_id: entryId,
-        reply_author: currentUserName,
-        reply_message: text,
-      },
-    ]);
+    const response = await tenantFetch(`/api/pass-on/${entryId}/replies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reply_author: currentUserName, reply_message: text }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      alert(result.error || "Unable to send reply");
+      return;
+    }
 
     await markAsViewed(entryId);
 
@@ -787,7 +774,12 @@ setTeamMembers(allTeamMembers || []);
     }
 
     if (!confirm("Delete this pass-on entry?")) return;
-    await supabase.from("pass_on_log").delete().eq("id", id);
+    const response = await tenantFetch(`/api/pass-on/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      alert(result.error || "Unable to delete entry");
+      return;
+    }
     fetchEntries();
   }
 
@@ -803,18 +795,13 @@ setTeamMembers(allTeamMembers || []);
 
     if (!confirm("Delete this reply?")) return;
 
-    const { error, count } = await supabase
-      .from("pass_on_log_replies")
-      .delete({ count: "exact" })
-      .eq("id", replyId);
+    const response = await tenantFetch(`/api/pass-on/replies/${replyId}`, {
+      method: "DELETE",
+    });
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    if ((count ?? 0) === 0) {
-      alert("Unable to delete this reply. You may not have permission.");
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      alert(result.error || "Unable to delete this reply. You may not have permission.");
       return;
     }
 

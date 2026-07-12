@@ -17,13 +17,10 @@ import {
   resolvePassOnAuthorDisplay,
 } from "./lib/pass-on-shared";
 
-type MobilePassOnLogListProps = {
-  entries: PassOnEntry[];
-};
-
-export default function MobilePassOnLogList({ entries: initialEntries }: MobilePassOnLogListProps) {
+export default function MobilePassOnLogList() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [entries, setEntries] = useState(initialEntries);
+  const [entries, setEntries] = useState<PassOnEntry[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
 
@@ -48,8 +45,13 @@ export default function MobilePassOnLogList({ entries: initialEntries }: MobileP
   useEffect(() => {
     void fetchPassOnEntries()
       .then((data) => setEntries(filterRecentPassOnEntries(data)))
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setLoaded(true));
   }, []);
+
+  if (!loaded) {
+    return <div className="one-eyrie-mobile-status">Loading pass-on log…</div>;
+  }
 
   if (entries.length === 0) {
     return (

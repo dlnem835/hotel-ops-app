@@ -7,6 +7,7 @@ import {
   shiftHotelBusinessDateString,
 } from "@/app/lib/hotel-business-date";
 import { supabase } from "@/app/supabaseClient";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 export type PassOnReply = {
   id: number;
@@ -109,25 +110,18 @@ export function groupEntriesByDate(entries: PassOnEntry[]): [string, PassOnEntry
 }
 
 export async function fetchPassOnEntries(): Promise<PassOnEntry[]> {
-  const { data, error } = await supabase
-    .from("pass_on_log")
-    .select("*, pass_on_log_replies(*), pass_on_log_views(*)")
-    .order("entry_date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return (data || []) as PassOnEntry[];
+  const response = await tenantFetch("/api/pass-on");
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Unable to load pass-on log");
+  return (result.entries || []) as PassOnEntry[];
 }
 
 export async function fetchPassOnEntry(id: number): Promise<PassOnEntry | null> {
-  const { data, error } = await supabase
-    .from("pass_on_log")
-    .select("*, pass_on_log_replies(*), pass_on_log_views(*)")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return (data as PassOnEntry | null) ?? null;
+  const response = await tenantFetch(`/api/pass-on/${id}`);
+  if (response.status === 404) return null;
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Unable to load pass-on entry");
+  return (result.entry as PassOnEntry | null) ?? null;
 }
 
 export async function fetchTeamMembers(): Promise<TeamMember[]> {
@@ -155,17 +149,9 @@ export async function resolveCurrentUserName(): Promise<string | null> {
 
 export async function markPassOnAsViewed(entryId: number): Promise<void> {
   const session = await getClientSession();
-
   if (!session) return;
 
-  await supabase.from("pass_on_log_views").upsert(
-    {
-      entry_id: entryId,
-      auth_user_id: session.user.id,
-      viewed_at: new Date().toISOString(),
-    },
-    { onConflict: "entry_id,auth_user_id" }
-  );
+  await tenantFetch(`/api/pass-on/${entryId}/views`, { method: "POST" });
 }
 
 export async function createPassOnEntry(input: {
@@ -182,32 +168,36 @@ export async function createPassOnEntry(input: {
     ).padStart(2, "0")}:00`
   ).toISOString();
 
-  const { error } = await supabase.from("pass_on_log").insert([
-    {
+  const response = await tenantFetch("/api/pass-on", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
       subject: input.subject,
       author: input.author,
       priority: input.priority,
       message: input.message,
       created_at: selectedDateTime,
       entry_date: input.entryDate,
-    },
-  ]);
+    }),
+  });
 
-  if (error) throw new Error(error.message);
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "Unable to save entry");
+  }
 }
 
 export async function addPassOnReply(entryId: number, author: string, text: string): Promise<void> {
-  const { error } = await supabase.from("pass_on_log_replies").insert([
-    {
-      entry_id: entryId,
-      reply_author: author,
-      reply_message: text,
-    },
-  ]);
+  const response = await tenantFetch(`/api/pass-on/${entryId}/replies`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reply_author: author, reply_message: text }),
+  });
 
-  if (error) throw new Error(error.message);
-
-  await markPassOnAsViewed(entryId);
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "Unable to send reply");
+  }
 }
 
 export function memberDisplayName(
