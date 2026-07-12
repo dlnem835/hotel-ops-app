@@ -135,18 +135,42 @@ This overwrites `000_live_baseline_pass_on_lost_items_team_members.sql` with exa
 
 ## Later checkpoints (after Checkpoint 2 approval)
 
-| Checkpoint | Scope |
-|------------|-------|
-| 3 | `PropertyContextProvider` + property selector in sidebar |
-| 4 | API session auth + tenant-scoped queries |
-| 5 | RLS + storage path isolation |
-| 6 | Reports + scheduled reports isolation |
-| 7 | Admin property/membership UI |
-| 8 | Test orgs/properties; remove `hotel_property` compat |
+| Checkpoint | Scope | Status |
+|------------|-------|--------|
+| 3 | `PropertyContextProvider` + property selector in sidebar | **Complete** |
+| 4 | API session auth + tenant-scoped queries | **Complete** (sc1–sc8) |
+| 5 | RLS + storage path isolation | Pending |
+| 6 | Reports + scheduled reports isolation | Pending |
+| 7 | Admin property/membership UI | **Complete** (within Checkpoint 4 sc7) |
+| 8 | Test orgs/properties; remove `hotel_property` compat | **Complete** (app + migration 034) |
+
+## Checkpoint 4 apply status (application tenant wiring)
+
+| # | Commit scope | Status |
+|---|--------------|--------|
+| sc1 | Shared `resolveTenantRequest` + `tenantFetch` | **Pushed** |
+| sc2 | Buildings/Areas + Work Orders | **Pushed** |
+| sc3 | Pass-On desktop/mobile APIs | **Pushed** |
+| sc4 | Lost & Found + label/email/status | **Pushed** |
+| sc5 | PM templates/assignments/occurrences/dashboard | **Pushed** |
+| sc6 | Inspections sessions/templates/dashboard | **Pushed** |
+| sc7 | Settings/team/property settings | **Pushed** |
+| sc8 | Cross-property verification + compat cleanup | **Pushed** |
+
+Verification:
+
+```bash
+node scripts/tenant/verify-checkpoint4-all.mjs
+node scripts/tenant/smoke-checkpoint4.mjs
+```
+
+## Checkpoint 8 — compatibility cleanup
+
+Migration **034** (`034_remove_hotel_property_compat.sql`) drops `hotel_property_compat` and `hotel_property`. Apply manually in Supabase SQL editor after sc8 app code is deployed. Application code reads/writes `properties` only.
 
 ## Legacy removal criteria (Checkpoint 8)
 
-- All API routes enforce session auth and tenant scope
-- RLS policies replace permissive `USING (true)` on tenant tables
-- No application reads/writes to `hotel_property` table
-- Drop `hotel_property_compat` view and `hotel_property` table
+- All business API routes enforce session auth and tenant scope — **done** (operational dashboard included in sc8)
+- RLS policies replace permissive `USING (true)` on tenant tables — **deferred to Checkpoint 5**
+- No application reads/writes to `hotel_property` table — **done**
+- Drop `hotel_property_compat` view and `hotel_property` table — **migration 034 committed; apply in Supabase**

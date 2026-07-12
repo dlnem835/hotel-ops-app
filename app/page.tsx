@@ -6,6 +6,7 @@ import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
 import TodaysWorkSection from "./dashboard/components/TodaysWorkSection";
 import PastDueSummaryBar from "./dashboard/components/PastDueSummaryBar";
@@ -28,7 +29,7 @@ export default function DashboardPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const response = await fetch("/api/dashboard");
+    const response = await tenantFetch("/api/dashboard");
     const result = await response.json();
     setLoading(false);
 

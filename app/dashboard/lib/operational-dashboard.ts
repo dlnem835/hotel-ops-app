@@ -58,7 +58,8 @@ function countPastDueInspectionRooms(rooms: RoomGridTile[]): number {
 }
 
 export async function buildOperationalDashboard(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope?: { organizationId: number; propertyId: number }
 ): Promise<OperationalDashboardPayload> {
   const [today, yesterday, tomorrow] = passOnDashboardDateKeys();
 
@@ -70,17 +71,33 @@ export async function buildOperationalDashboard(
     passOnResult,
     lostItemsResult,
   ] = await Promise.all([
-    buildMaintenanceDashboard(supabase),
-    buildInspectionDashboard(supabase, "today", "rpm"),
-    buildInspectionDashboard(supabase, "mtd", "vr"),
-    buildInspectionDashboard(supabase, "mtd", "rpm"),
-    supabase
-      .from("pass_on_log")
-      .select("id, subject, author, message, priority, entry_date, created_at, edited_at")
-      .in("entry_date", [today, yesterday, tomorrow])
-      .order("entry_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase.from("lost_items").select("id, status, created_at"),
+    buildMaintenanceDashboard(supabase, scope),
+    buildInspectionDashboard(supabase, "today", "rpm", null, null, scope),
+    buildInspectionDashboard(supabase, "mtd", "vr", null, null, scope),
+    buildInspectionDashboard(supabase, "mtd", "rpm", null, null, scope),
+    (() => {
+      let query = supabase
+        .from("pass_on_log")
+        .select("id, subject, author, message, priority, entry_date, created_at, edited_at")
+        .in("entry_date", [today, yesterday, tomorrow])
+        .order("entry_date", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (scope) {
+        query = query
+          .eq("organization_id", scope.organizationId)
+          .eq("property_id", scope.propertyId);
+      }
+      return query;
+    })(),
+    (() => {
+      let query = supabase.from("lost_items").select("id, status, created_at");
+      if (scope) {
+        query = query
+          .eq("organization_id", scope.organizationId)
+          .eq("property_id", scope.propertyId);
+      }
+      return query;
+    })(),
   ]);
 
   if (passOnResult.error) {

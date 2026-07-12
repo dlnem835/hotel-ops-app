@@ -68,7 +68,7 @@ export default function OpenWorkOrdersSection({
   }, []);
 
   const reloadPreviewWorkOrders = useCallback(async () => {
-    const response = await fetch("/api/dashboard");
+    const response = await tenantFetch("/api/dashboard");
     const result = (await response.json()) as OperationalDashboardPayload;
 
     if (!response.ok) return;

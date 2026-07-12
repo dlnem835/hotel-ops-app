@@ -73,7 +73,7 @@ export const PM_TYPE_FILTER_OPTIONS = [
 
 export const FALLBACK_REPORT_PROPERTY_NAME = "";
 
-/** @deprecated Use hotel_property.hotel_name via useReportPropertyName. */
+/** @deprecated Use properties.name via useReportPropertyName / tenantFetch hotel-property API. */
 export const REPORT_PROPERTY_OPTIONS = [FALLBACK_REPORT_PROPERTY_NAME] as const;
 
 export type PmReportFilters = {

@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { buildOperationalDashboard } from "@/app/dashboard/lib/operational-dashboard";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = getSupabaseAdmin();
-    const payload = await buildOperationalDashboard(supabase);
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
+    const payload = await buildOperationalDashboard(supabase, {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json(payload);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

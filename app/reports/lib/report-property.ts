@@ -1,8 +1,10 @@
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+
 export const LOST_FOUND_AGING_RETENTION_LABEL = "Older than 6 months";
 
 export async function fetchReportPropertyName(): Promise<string> {
   try {
-    const response = await fetch("/api/hotel-property");
+    const response = await tenantFetch("/api/hotel-property");
     const result = await response.json();
 
     if (!response.ok) {
