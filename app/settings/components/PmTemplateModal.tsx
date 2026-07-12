@@ -22,6 +22,7 @@ import {
   PmAssignmentSchedule,
   PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { BuildingArea } from "../lib/buildings-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -229,7 +230,7 @@ export default function PmTemplateModal({
         : "/api/pm-templates";
       const method = editingId ? "PATCH" : "POST";
 
-      const response = await fetch(url, {
+      const response = await tenantFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

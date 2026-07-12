@@ -1,5 +1,6 @@
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import { MaintenanceDashboardPayload } from "@/app/maintenance/lib/maintenance-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { getClientSession } from "@/app/lib/auth";
 import { supabase } from "@/app/supabaseClient";
 
@@ -23,7 +24,7 @@ export async function resolvePmCreatedBy(): Promise<string | null> {
 }
 
 export async function fetchPmTiles(): Promise<PmTile[]> {
-  const response = await fetch("/api/maintenance/dashboard");
+  const response = await tenantFetch("/api/maintenance/dashboard");
   const result = await response.json();
 
   if (!response.ok) {
@@ -38,7 +39,7 @@ export async function startPmAssignment(
   assignmentId: number,
   createdBy?: string | null
 ): Promise<number> {
-  const response = await fetch("/api/maintenance/pm-occurrences", {
+  const response = await tenantFetch("/api/maintenance/pm-occurrences", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

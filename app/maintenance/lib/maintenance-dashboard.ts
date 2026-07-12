@@ -8,7 +8,7 @@ import {
   PmTile,
   WorkOrder,
 } from "./maintenance-types";
-import { fetchPmDashboardData } from "./pm-db";
+import { fetchPmDashboardData, PmTenantScope } from "./pm-db";
 import { PM_FREQUENCY_LABELS } from "./pm-types";
 import { calculatePmPerformanceByPeriod } from "./pm-compliance";
 import {
@@ -111,10 +111,11 @@ function countFailedSteps(responses: PmOccurrenceResponses | null | undefined): 
 }
 
 export async function buildMaintenanceDashboard(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope?: PmTenantScope
 ): Promise<MaintenanceDashboardPayload> {
   const now = new Date();
-  const pmData = await fetchPmDashboardData(supabase);
+  const pmData = await fetchPmDashboardData(supabase, scope);
 
   const reconcileSchedules = pmData.schedules
     .filter(
@@ -131,23 +132,41 @@ export async function buildMaintenanceDashboard(
       frequency: schedule.frequency,
     }));
 
-  await reconcilePmMissedCycles(supabase, reconcileSchedules, now);
+  await reconcilePmMissedCycles(supabase, reconcileSchedules, now, scope);
+
+  let openWorkOrdersQuery = supabase
+    .from("work_orders")
+    .select("*")
+    .in("status", ["Open", "In Progress"])
+    .order("created_at", { ascending: false });
+
+  let closedWorkOrdersQuery = supabase
+    .from("work_orders")
+    .select("id, completed_at")
+    .eq("status", "Completed")
+    .not("completed_at", "is", null);
+
+  let occurrenceQuery = supabase
+    .from("pm_occurrences")
+    .select("id, assignment_id, due_date, status, completed_at, completed_by, responses");
+
+  if (scope) {
+    openWorkOrdersQuery = openWorkOrdersQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    closedWorkOrdersQuery = closedWorkOrdersQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    occurrenceQuery = occurrenceQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
 
   const [workOrderResult, closedWorkOrdersResult, occurrenceResult] =
     await Promise.all([
-      supabase
-        .from("work_orders")
-        .select("*")
-        .in("status", ["Open", "In Progress"])
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("work_orders")
-        .select("id, completed_at")
-        .eq("status", "Completed")
-        .not("completed_at", "is", null),
-      supabase
-        .from("pm_occurrences")
-        .select("id, assignment_id, due_date, status, completed_at, completed_by, responses"),
+      openWorkOrdersQuery,
+      closedWorkOrdersQuery,
+      occurrenceQuery,
     ]);
 
   if (workOrderResult.error) {

@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { resolvePmOccurrenceForAssignment } from "@/app/maintenance/lib/pm-occurrence-db";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId, user } =
+      await resolveTenantRequest(request);
     const body = await request.json();
     const assignmentId = Number(body.assignment_id);
     if (!assignmentId) {
@@ -13,15 +18,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
+    const scope = { organizationId, propertyId };
+    const createdBy =
+      body.created_by != null ? String(body.created_by) : user.id;
     const occurrence = await resolvePmOccurrenceForAssignment(
       supabase,
       assignmentId,
-      body.created_by ? String(body.created_by) : null
+      createdBy,
+      scope
     );
     return NextResponse.json({ occurrence });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

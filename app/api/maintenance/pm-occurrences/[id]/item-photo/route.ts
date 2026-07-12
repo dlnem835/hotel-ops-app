@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { fetchPmOccurrenceById } from "@/app/maintenance/lib/pm-occurrence-db";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -19,6 +22,9 @@ function sanitizeSegment(value: string): string {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
     const occurrenceId = Number(id);
     if (!occurrenceId) {
@@ -50,8 +56,8 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
-    const occurrence = await fetchPmOccurrenceById(supabase, occurrenceId);
+    const scope = { organizationId, propertyId };
+    const occurrence = await fetchPmOccurrenceById(supabase, occurrenceId, scope);
 
     if (!occurrence) {
       return NextResponse.json({ error: "PM session not found" }, { status: 404 });
@@ -65,7 +71,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const filePath = `pm/${occurrenceId}/${sanitizeSegment(stepKey)}/${Date.now()}.${extension}`;
+    const filePath = `org-${organizationId}/property-${propertyId}/pm/${occurrenceId}/${sanitizeSegment(stepKey)}/${Date.now()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("inspection-photos")
@@ -85,7 +91,6 @@ export async function POST(request: Request, context: RouteContext) {
       storagePath: filePath,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

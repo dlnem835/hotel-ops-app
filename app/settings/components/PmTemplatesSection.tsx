@@ -123,7 +123,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     setLoading(true);
     try {
       const [pmRes, areasRes] = await Promise.all([
-        fetch("/api/pm-templates"),
+        tenantFetch("/api/pm-templates"),
         tenantFetch("/api/buildings-areas"),
       ]);
 
@@ -210,7 +210,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
   async function openEdit(templateId: number) {
     try {
-      const response = await fetch(`/api/pm-templates/${templateId}`);
+      const response = await tenantFetch(`/api/pm-templates/${templateId}`);
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || "Unable to load template");
@@ -243,7 +243,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
   async function openDuplicate(templateId: number) {
     try {
-      const response = await fetch(`/api/pm-templates/${templateId}`);
+      const response = await tenantFetch(`/api/pm-templates/${templateId}`);
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || "Unable to load template");

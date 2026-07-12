@@ -12,6 +12,7 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "../../components/WorkOrderModal";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { PmChecklist, PmStepOutcome, PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { PmOccurrenceResponses } from "../../lib/maintenance-types";
@@ -101,7 +102,7 @@ export default function PmSessionPage() {
         setCurrentUserName(displayName);
       }
 
-      const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
+      const response = await tenantFetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
       const result = await response.json();
       setLoading(false);
 
@@ -200,7 +201,7 @@ export default function PmSessionPage() {
     formData.append("file", file);
     formData.append("stepKey", stepKey);
 
-    const response = await fetch(
+    const response = await tenantFetch(
       `/api/maintenance/pm-occurrences/${occurrenceId}/item-photo`,
       {
         method: "POST",
@@ -235,7 +236,7 @@ export default function PmSessionPage() {
   async function saveProgress() {
     setSaving(true);
     setSaveMessage(null);
-    const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`, {
+    const response = await tenantFetch(`/api/maintenance/pm-occurrences/${occurrenceId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -270,7 +271,7 @@ export default function PmSessionPage() {
     }
 
     setSaving(true);
-    const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`, {
+    const response = await tenantFetch(`/api/maintenance/pm-occurrences/${occurrenceId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

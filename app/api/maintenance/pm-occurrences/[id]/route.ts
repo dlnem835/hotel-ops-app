@@ -4,30 +4,38 @@ import {
   updatePmOccurrence,
 } from "@/app/maintenance/lib/pm-occurrence-db";
 import { PmOccurrenceResponses } from "@/app/maintenance/lib/maintenance-types";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
-    const supabase = getSupabaseAdmin();
-    const detail = await fetchPmOccurrenceDetail(supabase, Number(id));
+    const scope = { organizationId, propertyId };
+    const detail = await fetchPmOccurrenceDetail(supabase, Number(id), scope);
     if (!detail) {
       return NextResponse.json({ error: "PM session not found." }, { status: 404 });
     }
     return NextResponse.json(detail);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
+      request
+    );
     const { id } = await context.params;
     const body = await request.json();
-    const supabase = getSupabaseAdmin();
+    const scope = { organizationId, propertyId };
 
     const patch: {
       responses?: PmOccurrenceResponses;
@@ -43,10 +51,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (body.completed_by !== undefined) patch.completedBy = body.completed_by;
     if (body.saved_by !== undefined) patch.savedBy = body.saved_by;
 
-    const occurrence = await updatePmOccurrence(supabase, Number(id), patch);
+    const occurrence = await updatePmOccurrence(
+      supabase,
+      Number(id),
+      patch,
+      scope
+    );
     return NextResponse.json({ occurrence });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

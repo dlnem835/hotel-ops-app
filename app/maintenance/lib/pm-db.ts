@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
 import { derivePmCategory } from "./pm-category";
 import {
   AreaPmGridSummary,
@@ -17,6 +18,27 @@ export function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+export type PmTenantScope = {
+  organizationId: number;
+  propertyId: number;
+};
+
+export async function assertPmTemplateInTenant(
+  supabase: SupabaseClient,
+  id: number,
+  scope: PmTenantScope
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("pm_templates")
+    .select("id")
+    .eq("id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new TenantRequestError(404, "PM template not found");
 }
 
 type AssignmentRow = {
@@ -110,21 +132,40 @@ function buildAssignmentSchedule(
   };
 }
 
-export async function fetchPmDashboardData(supabase: SupabaseClient) {
-  const { data, error } = await supabase
+export async function fetchPmDashboardData(
+  supabase: SupabaseClient,
+  scope?: PmTenantScope
+) {
+  let templatesQuery = supabase
     .from("pm_templates")
     .select("*, pm_schedule_assignments(*)")
     .order("created_at", { ascending: false });
+
+  if (scope) {
+    templatesQuery = templatesQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await templatesQuery;
 
   if (error) {
     throw new Error(error.message);
   }
 
-  const { data: areaRows, error: areaError } = await supabase
+  let areasQuery = supabase
     .from("buildings_and_areas")
     .select("id, name, area_type, status")
     .neq("area_type", "Guest Room")
     .order("name");
+
+  if (scope) {
+    areasQuery = areasQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data: areaRows, error: areaError } = await areasQuery;
 
   if (areaError) {
     throw new Error(areaError.message);
@@ -228,13 +269,21 @@ function buildAreaGridSummaries(
 
 export async function fetchPmTemplateById(
   supabase: SupabaseClient,
-  id: number
+  id: number,
+  scope?: PmTenantScope
 ) {
-  const { data, error } = await supabase
+  let query = supabase
     .from("pm_templates")
     .select("*, pm_schedule_assignments(*)")
-    .eq("id", id)
-    .single();
+    .eq("id", id);
+
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     throw new Error(error.message);
@@ -249,7 +298,8 @@ export async function fetchPmTemplateById(
 
 async function resolveTemplateCategory(
   supabase: SupabaseClient,
-  input: PmTemplateInput
+  input: PmTemplateInput,
+  scope?: PmTenantScope
 ): Promise<PmTemplate["category"]> {
   if (input.category) {
     return input.category;
@@ -259,11 +309,18 @@ async function resolveTemplateCategory(
   let areaName: string | null = null;
 
   if (input.assignment.area_id) {
-    const { data } = await supabase
+    let areaQuery = supabase
       .from("buildings_and_areas")
       .select("area_type, name")
-      .eq("id", input.assignment.area_id)
-      .maybeSingle();
+      .eq("id", input.assignment.area_id);
+
+    if (scope) {
+      areaQuery = areaQuery
+        .eq("organization_id", scope.organizationId)
+        .eq("property_id", scope.propertyId);
+    }
+
+    const { data } = await areaQuery.maybeSingle();
 
     areaType = data?.area_type ? String(data.area_type) : null;
     areaName = data?.name ? String(data.name) : null;
@@ -279,24 +336,32 @@ async function resolveTemplateCategory(
 
 export async function createPmTemplate(
   supabase: SupabaseClient,
-  input: PmTemplateInput
+  input: PmTemplateInput,
+  scope?: PmTenantScope
 ) {
-  const category = await resolveTemplateCategory(supabase, input);
+  const category = await resolveTemplateCategory(supabase, input, scope);
+
+  const templateInsert: Record<string, unknown> = {
+    name: input.name,
+    description: input.description || null,
+    category,
+    frequency: input.frequency,
+    estimated_minutes: input.estimated_minutes ?? null,
+    assigned_role: input.assigned_role || "Maintenance",
+    assigned_member_id: input.assigned_member_id || null,
+    applies_to: input.applies_to || "asset",
+    checklist: input.checklist,
+    status: input.status || "Active",
+  };
+
+  if (scope) {
+    templateInsert.organization_id = scope.organizationId;
+    templateInsert.property_id = scope.propertyId;
+  }
 
   const { data: templateRow, error: templateError } = await supabase
     .from("pm_templates")
-    .insert({
-      name: input.name,
-      description: input.description || null,
-      category,
-      frequency: input.frequency,
-      estimated_minutes: input.estimated_minutes ?? null,
-      assigned_role: input.assigned_role || "Maintenance",
-      assigned_member_id: input.assigned_member_id || null,
-      applies_to: input.applies_to || "asset",
-      checklist: input.checklist,
-      status: input.status || "Active",
-    })
+    .insert(templateInsert)
     .select("*")
     .single();
 
@@ -334,11 +399,16 @@ export async function createPmTemplate(
 export async function updatePmTemplate(
   supabase: SupabaseClient,
   id: number,
-  input: PmTemplateInput
+  input: PmTemplateInput,
+  scope?: PmTenantScope
 ) {
-  const category = await resolveTemplateCategory(supabase, input);
+  if (scope) {
+    await assertPmTemplateInTenant(supabase, id, scope);
+  }
 
-  const { error: templateError } = await supabase
+  const category = await resolveTemplateCategory(supabase, input, scope);
+
+  let templateUpdate = supabase
     .from("pm_templates")
     .update({
       name: input.name,
@@ -354,6 +424,14 @@ export async function updatePmTemplate(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
+
+  if (scope) {
+    templateUpdate = templateUpdate
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { error: templateError } = await templateUpdate;
 
   if (templateError) {
     throw new Error(templateError.message);
@@ -399,11 +477,26 @@ export async function updatePmTemplate(
     }
   }
 
-  return fetchPmTemplateById(supabase, id);
+  return fetchPmTemplateById(supabase, id, scope);
 }
 
-export async function deletePmTemplate(supabase: SupabaseClient, id: number) {
-  const { error } = await supabase.from("pm_templates").delete().eq("id", id);
+export async function deletePmTemplate(
+  supabase: SupabaseClient,
+  id: number,
+  scope?: PmTenantScope
+) {
+  if (scope) {
+    await assertPmTemplateInTenant(supabase, id, scope);
+  }
+
+  let deleteQuery = supabase.from("pm_templates").delete().eq("id", id);
+  if (scope) {
+    deleteQuery = deleteQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { error } = await deleteQuery;
   if (error) {
     throw new Error(error.message);
   }

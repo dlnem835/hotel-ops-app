@@ -86,7 +86,7 @@ export default function MaintenancePage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const response = await fetch("/api/maintenance/dashboard");
+    const response = await tenantFetch("/api/maintenance/dashboard");
     const result = await response.json();
     setLoading(false);
 
@@ -135,7 +135,7 @@ export default function MaintenancePage() {
 
   async function startPmForAssignment(assignmentId: number) {
     setStartingPm(true);
-    const response = await fetch("/api/maintenance/pm-occurrences", {
+    const response = await tenantFetch("/api/maintenance/pm-occurrences", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
