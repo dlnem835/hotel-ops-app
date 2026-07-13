@@ -40,7 +40,7 @@
 
 .admin-portal__main {
   padding: 24px;
-  max-width: 1200px;
+  max-width: 1500px;
 }
 
 .admin-portal__card {
@@ -146,10 +146,6 @@
   overflow-x: auto;
 }
 
-.admin-portal__table-wrap--administrators {
-  -webkit-overflow-scrolling: touch;
-}
-
 .admin-portal__table {
   width: 100%;
   border-collapse: collapse;
@@ -157,131 +153,106 @@
 }
 
 /*
- * Administrators table: fits cleanly at standard laptop widths (~1366px and the
- * portal's 1200px content cap) without horizontal scrolling. Columns wrap long
- * values and carry sensible minimum widths that sum well under the available
- * ~1085px content area. Role+scope and Sent+Accepted are stacked within a cell
- * to keep the column count manageable while showing every field.
+ * Property Administrators are rendered as readable cards (not a dense table).
+ * Cards flow in a responsive grid that fills the wider admin content area, and
+ * collapse to a single column on smaller screens. Long values (email, property)
+ * wrap freely; nothing is horizontally compressed.
  */
-.admin-portal__table--administrators {
-  width: 100%;
-  table-layout: auto;
-}
-
-.admin-portal__table--administrators th,
-.admin-portal__table--administrators td {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--name {
-  min-width: 92px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--email {
-  min-width: 150px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--role {
-  min-width: 116px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--property {
-  min-width: 96px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--status {
-  min-width: 70px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--date {
-  min-width: 124px;
-}
-
-.admin-portal__table--administrators .admin-portal__cell--actions {
-  min-width: 190px;
-  vertical-align: top;
-}
-
-.admin-portal__cell-primary {
-  display: block;
-  color: #ffffff;
-}
-
-.admin-portal__cell-sub {
-  display: block;
-  font-size: 12px;
-  line-height: 1.35;
-  color: #9ca3af;
-}
-
-/* Stacked administrator cards, shown on narrower screens (see media query). */
 .admin-portal__admin-cards {
-  display: none;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  align-items: start;
 }
 
 .admin-portal__admin-card {
+  display: flex;
+  flex-direction: column;
   border: 1px solid #3a352e;
-  border-radius: 10px;
-  padding: 14px 16px;
+  border-radius: 12px;
+  padding: 18px 20px;
   background: #1c1a17;
 }
 
 .admin-portal__admin-card-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #3a352e;
+}
+
+.admin-portal__admin-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .admin-portal__admin-card-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
+  line-height: 1.3;
   color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.admin-portal__admin-card-role {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c8a96a;
 }
 
 .admin-portal__admin-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px 16px;
-  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.admin-portal__admin-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .admin-portal__admin-card-field dt {
-  margin-bottom: 2px;
   font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: #9ca3af;
 }
 
 .admin-portal__admin-card-field dd {
   margin: 0;
   font-size: 14px;
+  line-height: 1.45;
   color: #e7e7e7;
+  overflow-wrap: anywhere;
 }
 
 .admin-portal__admin-card-email {
-  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .admin-portal__admin-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
   border-top: 1px solid #3a352e;
-  padding-top: 12px;
 }
 
-@media (max-width: 1180px) {
-  .admin-portal__table-wrap--administrators {
-    display: none;
-  }
-
-  .admin-portal__admin-cards {
-    display: flex;
-  }
+.admin-portal__admin-card-actions-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
 }
 
 .admin-portal__table th,
