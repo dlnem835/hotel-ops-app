@@ -10,6 +10,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { loadEnvLocal } from "./load-env-local.mjs";
+import { assertAuthEmailsSuppressed, testEmail } from "./auth-email-guard.mjs";
 import {
   fail,
   findTeamManagerAuthUserId,
@@ -21,7 +22,7 @@ const BASE = process.env.SMOKE_BASE_URL || "http://localhost:3000";
 const STAMP = Date.now();
 const TEST_ORG_SLUG = `acct-setup-${STAMP}`;
 const TEST_ORG_NAME = `Account Setup Verify ${STAMP}`;
-const TEST_EMAIL = `acctsetup.gm.${STAMP}@gmail.com`;
+const TEST_EMAIL = testEmail(`acctsetup.gm.${STAMP}`);
 const NEW_USERNAME = `gm.setup.${STAMP}`;
 const DUP_USERNAME = `dupe.${STAMP}`;
 
@@ -54,6 +55,7 @@ async function expectStatus(response, status, label, failures) {
 
 async function main() {
   loadEnvLocal();
+  assertAuthEmailsSuppressed();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
@@ -284,7 +286,7 @@ async function main() {
 
             // Duplicate username rejected (seed another profile first).
             const { data: dupUser } = await admin.auth.admin.createUser({
-              email: `dupe.${STAMP}@gmail.com`,
+              email: testEmail(`dupe.${STAMP}`),
               email_confirm: true,
             });
             dupUserId = dupUser?.user?.id ?? null;

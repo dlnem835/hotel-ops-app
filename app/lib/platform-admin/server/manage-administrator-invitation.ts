@@ -4,6 +4,10 @@ import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resol
 import {
   fetchOrganizationInvitations,
 } from "@/app/lib/platform-admin/server/create-gm-invitation";
+import {
+  inviteUserOrGenerateLink,
+  sendPasswordResetOrGenerateLink,
+} from "@/app/lib/platform-admin/server/auth-email-dispatch";
 import type { AdminOrganizationInvitation } from "@/app/lib/platform-admin/types";
 
 const INVITATION_TTL_DAYS = 7;
@@ -208,7 +212,8 @@ export async function manageAdministratorInvitation(
         Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+      const { error: inviteError } = await inviteUserOrGenerateLink(
+        supabase,
         normalizeEmail(invitation.email),
         {
           redirectTo: resolveInviteRedirectUrl(),
@@ -321,7 +326,8 @@ export async function manageAdministratorInvitation(
       if (!invitation.auth_user_id) {
         throw new PlatformAdminRequestError(409, "Administrator has no linked account");
       }
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      const { error: resetError } = await sendPasswordResetOrGenerateLink(
+        supabase,
         normalizeEmail(invitation.email),
         { redirectTo: resolvePasswordResetRedirectUrl() }
       );

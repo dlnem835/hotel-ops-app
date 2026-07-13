@@ -10,6 +10,7 @@ import {
   resolveInviteRoles,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
+import { inviteUserOrGenerateLink } from "@/app/lib/platform-admin/server/auth-email-dispatch";
 
 /** How long a pending invitation stays valid before it is treated as expired. */
 const INVITATION_TTL_DAYS = 7;
@@ -362,7 +363,7 @@ export async function createAdministratorInvitation(
   let authUserId: string | null = null;
 
   const { data: inviteData, error: inviteError } =
-    await supabase.auth.admin.inviteUserByEmail(input.email, {
+    await inviteUserOrGenerateLink(supabase, input.email, {
       redirectTo: resolveInviteRedirectUrl(),
       data: inviteMetadata,
     });

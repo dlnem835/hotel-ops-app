@@ -9,6 +9,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { loadEnvLocal } from "./load-env-local.mjs";
+import { assertAuthEmailsSuppressed, testEmail } from "./auth-email-guard.mjs";
 import {
   fail,
   findTeamManagerAuthUserId,
@@ -19,7 +20,7 @@ import {
 const BASE = process.env.SMOKE_BASE_URL || "http://localhost:3000";
 const TEST_ORG_SLUG = `stage-f-verify-${Date.now()}`;
 const TEST_ORG_NAME = `Stage F Verify ${Date.now()}`;
-const TEST_EMAIL = `stagef.gm.${Date.now()}@gmail.com`;
+const TEST_EMAIL = testEmail(`stagef.gm.${Date.now()}`);
 
 async function findPlatformAdminUserId(admin) {
   const { data: owner } = await admin
@@ -52,6 +53,7 @@ async function expectStatus(response, status, label, failures) {
 
 async function main() {
   loadEnvLocal();
+  assertAuthEmailsSuppressed();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
@@ -105,7 +107,7 @@ async function main() {
       },
       body: JSON.stringify({
         propertyId: 1,
-        email: "blocked@example.com",
+        email: testEmail("blocked"),
         firstName: "Blocked",
         lastName: "User",
       }),
@@ -326,7 +328,7 @@ async function main() {
                 body: JSON.stringify({
                   propertyId,
                   role: "organization_admin",
-                  email: `another.admin.${Date.now()}@gmail.com`,
+                  email: testEmail(`another.admin.${Date.now()}`),
                   firstName: "Another",
                   lastName: "Admin",
                 }),

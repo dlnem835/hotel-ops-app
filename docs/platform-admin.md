@@ -244,6 +244,17 @@ Flow:
 Disable/Remove are enforced at the tenant data layer (`resolveTenantContextForUser`
 requires `active = true` memberships).
 
+**Auth-email suppression (dev/test only).** Invite, resend, and password-reset
+sends go through `app/lib/platform-admin/server/auth-email-dispatch.ts`. When
+`SUPPRESS_AUTH_EMAILS` is truthy the flows use Supabase `generateLink` (which
+returns the action link without dispatching an email), so verification scripts
+never create bounced-email traffic. It defaults to false and is unconditionally
+ignored in production (`NODE_ENV=production` always sends real emails).
+Verification scripts (`verify-platform-admin-stage-f`,
+`verify-invited-account-setup`) refuse to run unless suppression is enabled and
+use non-deliverable `@oneeyrie-test.invalid` addresses;
+`scripts/tenant/cleanup-test-users.mjs` removes previously-created test artifacts.
+
 ### Job title (descriptive only)
 
 - Optional on the invite form. Defaults to **Administrator** when blank.
