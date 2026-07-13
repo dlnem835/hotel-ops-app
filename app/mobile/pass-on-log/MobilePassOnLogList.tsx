@@ -20,6 +20,7 @@ import {
 export default function MobilePassOnLogList() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [entries, setEntries] = useState<PassOnEntry[]>([]);
+  const [readBaseline, setReadBaseline] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
@@ -44,7 +45,10 @@ export default function MobilePassOnLogList() {
 
   useEffect(() => {
     void fetchPassOnEntries()
-      .then((data) => setEntries(filterRecentPassOnEntries(data)))
+      .then((result) => {
+        setEntries(filterRecentPassOnEntries(result.entries));
+        setReadBaseline(result.readBaseline);
+      })
       .catch(() => undefined)
       .finally(() => setLoaded(true));
   }, []);
@@ -82,7 +86,7 @@ export default function MobilePassOnLogList() {
               <h2 className="one-eyrie-mobile-pass-on-group__title">{dateHeader(date)}</h2>
               <div className="one-eyrie-mobile-list">
                 {dateEntries.map((entry) => {
-                  const isRead = isPassOnReadByUser(entry, authUserId);
+                  const isRead = isPassOnReadByUser(entry, authUserId, readBaseline);
 
                   return (
                     <Link

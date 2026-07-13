@@ -5,16 +5,19 @@ import {
 } from "@/app/lib/tenant/server/resolve-tenant-request";
 import {
   createPassOnEntry,
+  getPassOnReadBaseline,
   listPassOnEntries,
 } from "@/app/pass-on-log/lib/pass-on-server-db";
 
 export async function GET(request: Request) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
-    const entries = await listPassOnEntries(supabase, { organizationId, propertyId });
-    return NextResponse.json({ entries });
+    const { supabase, user, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    const [entries, readBaseline] = await Promise.all([
+      listPassOnEntries(supabase, { organizationId, propertyId }),
+      getPassOnReadBaseline(supabase, user.id, propertyId),
+    ]);
+    return NextResponse.json({ entries, readBaseline });
   } catch (error) {
     return tenantErrorResponse(error);
   }

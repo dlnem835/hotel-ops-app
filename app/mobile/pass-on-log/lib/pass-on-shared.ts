@@ -109,11 +109,19 @@ export function groupEntriesByDate(entries: PassOnEntry[]): [string, PassOnEntry
   return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
 }
 
-export async function fetchPassOnEntries(): Promise<PassOnEntry[]> {
+export type PassOnListResult = {
+  entries: PassOnEntry[];
+  readBaseline: string | null;
+};
+
+export async function fetchPassOnEntries(): Promise<PassOnListResult> {
   const response = await tenantFetch("/api/pass-on");
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || "Unable to load pass-on log");
-  return (result.entries || []) as PassOnEntry[];
+  return {
+    entries: (result.entries || []) as PassOnEntry[],
+    readBaseline: (result.readBaseline as string | null | undefined) ?? null,
+  };
 }
 
 export async function fetchPassOnEntry(id: number): Promise<PassOnEntry | null> {

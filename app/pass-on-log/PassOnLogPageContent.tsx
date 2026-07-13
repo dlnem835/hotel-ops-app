@@ -115,6 +115,10 @@ export default function PassOnLogPageContent() {
   const [editingReplyMessage, setEditingReplyMessage] = useState("");
   const [currentUserName, setCurrentUserName] = useState("Unknown");
   const [currentAuthUserId, setCurrentAuthUserId] = useState<string | null>(null);
+  const [readBaseline, setReadBaseline] = useState<string | null>(null);
+  const PASS_ON_DAYS_PER_PAGE = 7;
+  const [visibleDayCount, setVisibleDayCount] = useState(PASS_ON_DAYS_PER_PAGE);
+  const [loadingMoreDays, setLoadingMoreDays] = useState(false);
   const [canDeleteAnyPassOn, setCanDeleteAnyPassOn] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([])
 
@@ -243,6 +247,7 @@ async function updateReply(replyId: number) {
     const result = await response.json().catch(() => ({}));
     if (response.ok) {
       setEntries(result.entries || []);
+      setReadBaseline(result.readBaseline ?? null);
     }
   }
 
@@ -848,6 +853,26 @@ const groupedEntries = filteredEntries.reduce((acc: any, entry: any) => {
   return acc;
 }, {});
 
+// Windowed history: show only the most recent N day-groups, with "Load more"
+// revealing the next 7 previous days. The window is bypassed while searching or
+// when a specific date filter is active, so search always spans full history
+// and does not duplicate already-shown entries.
+const groupedEntryPairs = Object.entries(groupedEntries) as [string, any[]][];
+const isSearching = search.trim().length > 0;
+const dayWindowActive = !isSearching && dateFilter === "All";
+const visibleGroupedEntryPairs = dayWindowActive
+  ? groupedEntryPairs.slice(0, visibleDayCount)
+  : groupedEntryPairs;
+const hasMoreDays = dayWindowActive && groupedEntryPairs.length > visibleDayCount;
+
+function loadMoreDays() {
+  setLoadingMoreDays(true);
+  window.setTimeout(() => {
+    setVisibleDayCount((count) => count + PASS_ON_DAYS_PER_PAGE);
+    setLoadingMoreDays(false);
+  }, 200);
+}
+
 function dateHeader(dateString: string) {
   return formatPassOnBusinessDateHeader(dateString);
 }
@@ -1437,7 +1462,7 @@ function dateHeader(dateString: string) {
               {!filteredEntries.length ? (
                 <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
               ) : (
-             Object.entries(groupedEntries).map(([dateKey, entriesForDate]: any) => (
+             visibleGroupedEntryPairs.map(([dateKey, entriesForDate]: any) => (
   <div key={dateKey}>
     <h3 className="pass-on-day-heading" style={{ color: gold, fontSize: "14px", margin: "18px 0 8px" }}>
       {dateHeader(dateKey)}
@@ -1448,7 +1473,7 @@ function dateHeader(dateString: string) {
       const isOpen = expandedEntries.has(entry.id);
       const replyCount = entry.pass_on_log_replies?.length || 0;
       const viewCount = entry.pass_on_log_views?.length || 0;
-      const isRead = isPassOnReadByUser(entry, currentAuthUserId);
+      const isRead = isPassOnReadByUser(entry, currentAuthUserId, readBaseline);
 
       return (
         <div
@@ -1791,6 +1816,28 @@ function dateHeader(dateString: string) {
   </div>
 ))
               )}
+
+              {hasMoreDays ? (
+                <div
+                  className="pass-on-load-more-wrap"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    marginTop: "20px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="pass-on-load-more-btn"
+                    onClick={loadMoreDays}
+                    disabled={loadingMoreDays}
+                    style={{ ...NEUTRAL_BUTTON, opacity: loadingMoreDays ? 0.7 : 1 }}
+                    {...neutralHoverHandlers}
+                  >
+                    {loadingMoreDays ? "Loading…" : "Load more"}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

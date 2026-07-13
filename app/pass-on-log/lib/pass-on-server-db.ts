@@ -41,6 +41,38 @@ async function assertReplyInTenant(
   if (!data) throw new TenantRequestError(404, "Pass-on reply not found");
 }
 
+/**
+ * Reads the user's Pass-On read baseline for the active property. Returns null
+ * for legacy memberships (pre-044) or when the user has no explicit
+ * user_properties row for this property (e.g. org-wide access), in which case
+ * the client preserves legacy unread behavior.
+ */
+export async function getPassOnReadBaseline(
+  supabase: SupabaseClient,
+  userId: string,
+  propertyId: number
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("user_properties")
+    .select("pass_on_read_baseline")
+    .eq("user_id", userId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (error) {
+    // Tolerate environments where migration 044 has not been applied yet
+    // (missing column/table): fall back to legacy unread behavior.
+    if (
+      error.code === "42703" ||
+      error.code === "42P01" ||
+      /does not exist/i.test(error.message)
+    ) {
+      return null;
+    }
+    throw new Error(error.message);
+  }
+  return (data?.pass_on_read_baseline as string | null | undefined) ?? null;
+}
+
 export async function listPassOnEntries(supabase: SupabaseClient, scope: PassOnScope) {
   const { data, error } = await supabase
     .from("pass_on_log")

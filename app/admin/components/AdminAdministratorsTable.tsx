@@ -134,7 +134,7 @@ export default function AdminAdministratorsTable({
             disabled={busy}
             onClick={() => void runAction(invitation, "cancel")}
           >
-            Cancel
+            Cancel Invite
           </button>
         </div>
       );
@@ -147,21 +147,23 @@ export default function AdminAdministratorsTable({
     return <span className="admin-portal__muted">—</span>;
   }
 
+  const propertyName = (invitation: AdminOrganizationInvitation) =>
+    invitation.propertyName ?? `Property #${invitation.propertyId}`;
+
   return (
     <>
+      {/* Wide layout: table (hidden on narrow screens via CSS). */}
       <div className="admin-portal__table-wrap admin-portal__table-wrap--administrators">
         <table className="admin-portal__table admin-portal__table--administrators">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Scope</th>
-              <th>Property</th>
-              <th>Status</th>
-              <th>Sent</th>
-              <th>Accepted</th>
-              <th>Actions</th>
+              <th className="admin-portal__cell--name">Administrator</th>
+              <th className="admin-portal__cell--email">Email</th>
+              <th className="admin-portal__cell--role">Role &amp; scope</th>
+              <th className="admin-portal__cell--property">Property</th>
+              <th className="admin-portal__cell--status">Status</th>
+              <th className="admin-portal__cell--date">Dates</th>
+              <th className="admin-portal__cell--actions">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -171,21 +173,70 @@ export default function AdminAdministratorsTable({
                   {invitation.firstName} {invitation.lastName}
                 </td>
                 <td className="admin-portal__cell--email">{invitation.email}</td>
-                <td className="admin-portal__cell--role">{invitation.roleLabel}</td>
-                <td className="admin-portal__cell--scope">{invitation.scopeLabel}</td>
-                <td className="admin-portal__cell--property">
-                  {invitation.propertyName ?? `Property #${invitation.propertyId}`}
+                <td className="admin-portal__cell--role">
+                  <span className="admin-portal__cell-primary">{invitation.roleLabel}</span>
+                  <span className="admin-portal__cell-sub">{invitation.scopeLabel}</span>
                 </td>
+                <td className="admin-portal__cell--property">{propertyName(invitation)}</td>
                 <td className="admin-portal__cell--status">
                   <AdminStatusBadge status={displayStatus(invitation)} />
                 </td>
-                <td className="admin-portal__cell--date">{formatDate(invitation.createdAt)}</td>
-                <td className="admin-portal__cell--date">{formatDate(invitation.acceptedAt)}</td>
+                <td className="admin-portal__cell--date">
+                  <span className="admin-portal__cell-sub">
+                    Sent: {formatDate(invitation.createdAt)}
+                  </span>
+                  <span className="admin-portal__cell-sub">
+                    Accepted: {formatDate(invitation.acceptedAt)}
+                  </span>
+                </td>
                 <td className="admin-portal__cell--actions">{renderActions(invitation)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Narrow layout: stacked cards (hidden on wide screens via CSS). */}
+      <div className="admin-portal__admin-cards">
+        {invitations.map((invitation) => (
+          <article key={invitation.id} className="admin-portal__admin-card">
+            <div className="admin-portal__admin-card-head">
+              <span className="admin-portal__admin-card-name">
+                {invitation.firstName} {invitation.lastName}
+              </span>
+              <AdminStatusBadge status={displayStatus(invitation)} />
+            </div>
+            <dl className="admin-portal__admin-card-grid">
+              <div className="admin-portal__admin-card-field">
+                <dt>Email</dt>
+                <dd className="admin-portal__admin-card-email">{invitation.email}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Role</dt>
+                <dd>{invitation.roleLabel}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Scope</dt>
+                <dd>{invitation.scopeLabel}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Property</dt>
+                <dd>{propertyName(invitation)}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Sent</dt>
+                <dd>{formatDate(invitation.createdAt)}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Accepted</dt>
+                <dd>{formatDate(invitation.acceptedAt)}</dd>
+              </div>
+            </dl>
+            <div className="admin-portal__admin-card-actions">
+              {renderActions(invitation)}
+            </div>
+          </article>
+        ))}
       </div>
 
       <AdminConfirmNameModal
