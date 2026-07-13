@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "@/app/lib/tenant/server/authenticate-request";
 import { resolveTenantContextForUser } from "@/app/lib/tenant/server/resolve-tenant-context";
+import { isAccountSetupIncomplete } from "@/app/lib/account-setup/server/account-setup-state";
 import { ONE_EYRIE_PROPERTY_HEADER } from "@/app/lib/tenant/server/tenant-headers";
 import type { TenantContextResponse } from "@/app/lib/tenant/types";
 
@@ -77,6 +78,14 @@ export async function resolveTenantRequest(request: Request): Promise<TenantApiC
     throw new TenantRequestError(401, "Unauthorized");
   }
 
+  // Fail closed: authenticated users who have not finished first-login account
+  // setup get no access to hotel operational data. This is the security
+  // boundary; the client redirect to /onboarding/account is only for UX.
+  const serviceClient = getServiceClient();
+  if (await isAccountSetupIncomplete(user.id, serviceClient)) {
+    throw new TenantRequestError(403, "Account setup incomplete");
+  }
+
   const requestedPropertyId = readRequestedPropertyId(request);
   const context = await resolveTenantContextForUser(user, requestedPropertyId);
 
@@ -92,7 +101,7 @@ export async function resolveTenantRequest(request: Request): Promise<TenantApiC
 
   return {
     user,
-    supabase: getServiceClient(),
+    supabase: serviceClient,
     organizationId: context.activeProperty.organizationId,
     propertyId: context.activeProperty.id,
     role: context.activeProperty.role,

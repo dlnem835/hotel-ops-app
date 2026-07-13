@@ -180,9 +180,9 @@ async function main() {
         } else {
           const orgDetail = await orgDetailRes.json();
           failures +=
-            orgDetail.canInviteGm === true
-              ? pass("Organization detail exposes canInviteGm=true")
-              : fail("Organization detail exposes canInviteGm=true");
+            orgDetail.canInviteAdministrator === true
+              ? pass("Organization detail exposes canInviteAdministrator=true")
+              : fail("Organization detail exposes canInviteAdministrator=true");
         }
 
         const inviteRes = await fetch(`${BASE}/api/admin/organizations/${orgId}/invitations`, {
@@ -315,26 +315,82 @@ async function main() {
                 .eq("organization_id", orgId);
             });
 
-            const duplicateInviteRes = await fetch(
+            // Multiple administrators per organization are now supported: a
+            // second invitation must succeed and be a non-primary Organization
+            // Admin (Primary Owner remains the first administrator).
+            const secondInviteRes = await fetch(
               `${BASE}/api/admin/organizations/${orgId}/invitations`,
               {
                 method: "POST",
                 headers: authHeaders,
                 body: JSON.stringify({
                   propertyId,
-                  email: `another.gm.${Date.now()}@gmail.com`,
+                  role: "organization_admin",
+                  email: `another.admin.${Date.now()}@gmail.com`,
                   firstName: "Another",
-                  lastName: "GM",
+                  lastName: "Admin",
                 }),
               }
             );
-            failures =
-              duplicateInviteRes.status === 409
-                ? pass("Second GM invitation blocked while one is accepted/pending")
-                : failures +
-                  fail(
-                    "Second GM invitation blocked while one is accepted/pending",
-                    `got ${duplicateInviteRes.status}`
+
+            if (secondInviteRes.status !== 201) {
+              const body = await secondInviteRes.text();
+              failures += fail(
+                "Second administrator invitation allowed (multi-admin)",
+                `got ${secondInviteRes.status}: ${body}`
+              );
+            } else {
+              const secondInvitation = await secondInviteRes.json();
+              failures +=
+                secondInvitation.isPrimary === false && secondInvitation.orgRole === "org_admin"
+                  ? pass("Second administrator is a non-primary Organization Admin")
+                  : fail(
+                      "Second administrator is a non-primary Organization Admin",
+                      `isPrimary=${secondInvitation.isPrimary} orgRole=${secondInvitation.orgRole}`
+                    );
+
+              const secondUserId = secondInvitation.authUserId;
+              cleanup.unshift(async () => {
+                await admin
+                  .from("organization_invitations")
+                  .delete()
+                  .eq("id", secondInvitation.id);
+                if (secondUserId) await admin.auth.admin.deleteUser(secondUserId);
+              });
+
+              // Cancel the pending second invitation and confirm the lifecycle.
+              const cancelRes = await fetch(
+                `${BASE}/api/admin/organizations/${orgId}/invitations/${secondInvitation.id}`,
+                {
+                  method: "POST",
+                  headers: authHeaders,
+                  body: JSON.stringify({ action: "cancel" }),
+                }
+              );
+              failures +=
+                cancelRes.status === 200
+                  ? pass("Pending administrator invitation can be cancelled")
+                  : fail(
+                      "Pending administrator invitation can be cancelled",
+                      `got ${cancelRes.status}`
+                    );
+            }
+
+            // The Primary Administrator is protected from removal.
+            const removePrimaryRes = await fetch(
+              `${BASE}/api/admin/organizations/${orgId}/invitations/${invitationId}`,
+              {
+                method: "POST",
+                headers: authHeaders,
+                body: JSON.stringify({ action: "remove" }),
+              }
+            );
+            failures +=
+              removePrimaryRes.status === 409
+                ? pass("Primary Administrator is protected from removal")
+                : fail(
+                    "Primary Administrator is protected from removal",
+                    `got ${removePrimaryRes.status}`
                   );
           }
         }

@@ -12,7 +12,7 @@ import {
 } from "@/app/lib/platform-admin/server/onboarding-status";
 import { buildOrganizationLifecycle } from "@/app/lib/platform-admin/server/organization-lifecycle";
 import {
-  canInviteFirstGm,
+  canInviteAdministrator,
   fetchOrganizationInvitations,
 } from "@/app/lib/platform-admin/server/create-gm-invitation";
 
@@ -187,10 +187,9 @@ export async function fetchAdminOrganizationDetail(
   const orgRow = organization as OrganizationRow;
   const lifecycle = await buildOrganizationLifecycle(supabase, orgRow);
   const invitations = await fetchOrganizationInvitations(supabase, organizationId);
-  const canInviteGm = canInviteFirstGm({
+  const canInviteAdmin = canInviteAdministrator({
     organizationStatus: orgRow.status,
     propertyCount: propertyRows.length,
-    invitations,
   });
 
   return {
@@ -205,7 +204,7 @@ export async function fetchAdminOrganizationDetail(
     pendingInvitations: pendingInvitations ?? 0,
     lifecycle,
     invitations,
-    canInviteGm,
+    canInviteAdministrator: canInviteAdmin,
   };
 }
 

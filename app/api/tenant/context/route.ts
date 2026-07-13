@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/tenant/server/authenticate-request";
 import { resolveTenantContextForUser } from "@/app/lib/tenant/server/resolve-tenant-context";
+import { isAccountSetupIncomplete } from "@/app/lib/account-setup/server/account-setup-state";
 
 function parseRequestedPropertyId(request: Request): number | null {
   const value = new URL(request.url).searchParams.get("propertyId");
@@ -15,6 +16,14 @@ export async function GET(request: Request) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Fail closed until first-login account setup is complete.
+    if (await isAccountSetupIncomplete(user.id)) {
+      return NextResponse.json(
+        { error: "Account setup incomplete" },
+        { status: 403 }
+      );
     }
 
     const requestedPropertyId = parseRequestedPropertyId(request);

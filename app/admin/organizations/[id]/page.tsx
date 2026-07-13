@@ -7,8 +7,8 @@ import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
-import AdminInviteGmForm from "../../components/AdminInviteGmForm";
-import AdminInvitationsTable from "../../components/AdminInvitationsTable";
+import AdminInviteAdministratorForm from "../../components/AdminInviteAdministratorForm";
+import AdminAdministratorsTable from "../../components/AdminAdministratorsTable";
 import AdminModuleControls from "../../components/AdminModuleControls";
 import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
@@ -102,8 +102,8 @@ export default function AdminOrganizationDetailPage() {
         onError={setActionError}
       />
 
-      {organization.canInviteGm ? (
-        <AdminInviteGmForm
+      {organization.canInviteAdministrator ? (
+        <AdminInviteAdministratorForm
           organization={organization}
           onInvitationCreated={() => {
             setActionError(null);
@@ -114,8 +114,16 @@ export default function AdminOrganizationDetailPage() {
       ) : null}
 
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">GM invitations</h3>
-        <AdminInvitationsTable invitations={organization.invitations} />
+        <h3 className="admin-portal__section-title">Property Administrators</h3>
+        <AdminAdministratorsTable
+          organizationId={organization.id}
+          invitations={organization.invitations}
+          onChanged={() => {
+            setActionError(null);
+            void loadOrganization();
+          }}
+          onError={setActionError}
+        />
       </section>
 
       <section className="admin-portal__card">
@@ -123,8 +131,8 @@ export default function AdminOrganizationDetailPage() {
         <ul className="admin-portal__checklist">
           <li>{organization.onboarding.organizationCreated ? "✓" : "○"} Organization created</li>
           <li>{organization.onboarding.propertyCreated ? "✓" : "○"} Property created</li>
-          <li>{organization.onboarding.gmInvited ? "✓" : "○"} GM invited</li>
-          <li>{organization.onboarding.gmAccepted ? "✓" : "○"} GM accepted invitation</li>
+          <li>{organization.onboarding.administratorInvited ? "✓" : "○"} Administrator invited</li>
+          <li>{organization.onboarding.administratorAccepted ? "✓" : "○"} Administrator accepted invitation</li>
           <li>{organization.onboarding.hotelConfigured ? "✓" : "○"} Hotel setup started</li>
         </ul>
       </section>

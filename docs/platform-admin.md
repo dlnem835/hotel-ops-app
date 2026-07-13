@@ -171,21 +171,115 @@ Verification:
 node scripts/tenant/verify-platform-admin-stage-e-lifecycle.mjs
 ```
 
-## Stage F — First-GM invitation + membership
+## Stage F — Property Administrators (multiple admins) + membership
+
+Organizations and properties are **not** limited to a single administrator. Any
+number of administrators can be invited at any time within the same organization
+(no new organization required). Each invitation has a durable lifecycle, audit
+trail, and membership rows that scale from one property to many properties to the
+entire organization without a permission-model redesign.
 
 | File | Purpose |
 |------|---------|
-| `app/api/admin/organizations/[id]/invitations/route.ts` | Create/list GM invitations |
-| `app/api/invitations/complete/route.ts` | Complete pending invitation after GM login |
-| `app/lib/platform-admin/server/create-gm-invitation.ts` | `inviteUserByEmail` + invitation row + audit |
+| `app/api/admin/organizations/[id]/invitations/route.ts` | Create/list administrator invitations |
+| `app/api/admin/organizations/[id]/invitations/[invitationId]/route.ts` | Per-invite actions: resend, cancel, disable, enable, remove, send password reset |
+| `app/api/invitations/complete/route.ts` | Complete pending invitation after login |
+| `app/lib/platform-admin/roles.ts` | Org/property role constants + display labels + invite-role mapping |
+| `app/lib/platform-admin/server/create-gm-invitation.ts` | `createAdministratorInvitation` + `fetchOrganizationInvitations` (lazy-expire, derived active) + `canInviteAdministrator` |
+| `app/lib/platform-admin/server/manage-administrator-invitation.ts` | Invitation lifecycle actions (audit-logged, primary-protected where applicable) |
 | `app/lib/platform-admin/server/complete-gm-invitation.ts` | Membership + team_members provisioning |
-| `app/lib/platform-admin/server/gm-module-permissions.ts` | Cap GM permissions by org modules |
-| `app/admin/components/AdminInviteGmForm.tsx` | Invite GM form on org detail |
-| `app/admin/components/AdminInvitationsTable.tsx` | Invitation list |
+| `app/lib/platform-admin/server/gm-module-permissions.ts` | Cap admin permissions by org modules |
+| `app/admin/components/AdminInviteAdministratorForm.tsx` | Always-on **Invite Administrator** form (role + optional job title) |
+| `app/admin/components/AdminAdministratorsTable.tsx` | **Property Administrators** table with per-row actions |
 | `app/lib/login-email.ts` | Username or real-email login resolution |
 | `app/lib/invitations/complete-pending-invitation.ts` | Client helper after login |
 
-Minimal hotel login touchpoint: `/login` accepts username **or** real email and calls invitation completion after sign-in.
+### Multiple administrators per organization and property
+
+- **Invite Administrator** is always available for active organizations with at
+  least one property (`canInviteAdministrator`).
+- Additional administrators can be invited after onboarding is complete.
+- The first administrator per organization becomes the **Primary Owner**
+  (`org_owner`, `is_primary = true`). Subsequent invites choose:
+  - **Organization Admin** (`org_admin`) — org-wide access to every active property.
+  - **Property Administrator** (`org_member` + `user_properties` row) — scoped to
+    the selected property; multiple property rows can be added later without
+    redesigning the model.
+- Pending-email uniqueness is scoped per organization (not global), so the same
+  person can be re-invited after cancel/revoke/expire.
+
+### Primary Administrator protection
+
+- The Primary Owner is durable via `organization_invitations.is_primary` and is
+  **protected from Disable and Remove** (returns 409).
+- **Transfer Primary Administrator** is a future stage; removal of the current
+  primary is blocked until transfer exists.
+- Primary administrators **can** receive **Send Password Reset** and pending
+  primaries **can** receive **Resend Invite**.
+
+### Invitation lifecycle
+
+| Stage | Status | Platform-admin actions |
+|-------|--------|------------------------|
+| Invited | `pending` | **Resend Invite**, **Cancel** |
+| Expired (7-day TTL) | `expired` | **Resend Invite**, **Cancel** |
+| Accepted | `accepted` | **Send Password Reset**, **Disable** / **Enable**, **Remove** |
+| Cancelled | `cancelled` | — |
+| Removed | `revoked` | — |
+
+Flow:
+
+1. **Invite** — platform admin sends invitation (`invitation.created` audit).
+2. **Resend Invite** — re-sends Supabase invite email, resets TTL (`invitation.resent`).
+3. **Cancel** — pending/expired → cancelled (`invitation.cancelled`).
+4. **Accept** — invited user signs in via link; `/api/invitations/complete`
+   provisions memberships (`invitation.accepted`).
+5. **Send Password Reset** — accepted administrators receive a Supabase recovery
+   email (`administrator.password_reset_sent`).
+6. **Disable / Enable** — flips `organization_users.active`, `user_properties.active`,
+   and `team_members` login state (`administrator.disabled` / `administrator.enabled`).
+7. **Remove** — deactivates memberships and sets invitation `revoked`
+   (`administrator.removed`). Blocked for Primary Owner.
+
+Disable/Remove are enforced at the tenant data layer (`resolveTenantContextForUser`
+requires `active = true` memberships).
+
+### Job title (descriptive only)
+
+- Optional on the invite form. Defaults to **Administrator** when blank.
+- Examples: General Manager, Assistant General Manager, Area General Manager,
+  Regional Director, Corporate Administrator.
+- Stored on `team_members.job_title` at completion. **Never affects permissions.**
+  Access is governed solely by `is_administrator`, `org_role` / `property_role`,
+  and `module_permissions`.
+
+### Roles & scope (scales without redesign)
+
+- **Primary Owner** (`org_owner`) — first admin per org; org-wide (every active
+  property). Displayed as "Primary Owner" in the administrators table (no
+  duplicate badge).
+- **Organization Admin** (`org_admin`) — org-wide (every active property).
+- **Property Administrator** (`org_member` + `user_properties` row) —
+  property-scoped; can hold multiple properties via multiple rows.
+
+Org-wide access is derived in `resolveTenantContextForUser`: `org_owner`/`org_admin`
+reach every active property in the org (including ones added later); `org_member`
+reaches only explicit `user_properties` rows.
+
+### Audit actions
+
+`invitation.created`, `invitation.resent`, `invitation.cancelled`,
+`invitation.accepted`, `administrator.password_reset_sent`, `administrator.disabled`,
+`administrator.enabled`, `administrator.removed`.
+
+### Migration
+
+`supabase/migrations/043_property_administrators.sql`: adds `cancelled` status,
+`is_primary` (+ backfill earliest invite per org), and scopes the pending unique
+index to `(organization_id, lower(email))`.
+
+Minimal hotel login touchpoint: `/login` accepts username **or** real email and
+calls invitation completion after sign-in.
 
 Verification:
 
@@ -208,6 +302,71 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-g.mjs
+```
+
+## First-login account setup (invited users)
+
+Invited GMs must complete a required first-login setup before receiving hotel
+access. Enforcement is **server-side at the tenant data layer** (Option A).
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/042_invited_account_setup.sql` | `user_profiles` table + partial-unique username index + incomplete-invite backfill |
+| `app/lib/account-setup/username.ts` | Username normalization/validation + password rules |
+| `app/lib/account-setup/server/account-setup-state.ts` | Server setup-state reader (missing row = complete) |
+| `app/lib/account-setup/server/complete-account-setup.ts` | Finalizes setup; canonicalizes login identity |
+| `app/api/onboarding/account/route.ts` | `GET` state / `POST` complete |
+| `app/onboarding/account/page.tsx` | Required setup form (name, username, password, appearance) |
+| `app/auth/callback/page.tsx` | Invite landing → complete invitation → redirect to setup |
+| `app/lib/account-setup/account-setup-client.ts` | Client setup-state fetch + `/onboarding/account` path |
+
+Behavior:
+
+- Invitation `redirectTo` is `/auth/callback`. Invitation completion writes a
+  `user_profiles` row with `account_setup_completed = false`.
+- `resolveTenantRequest()` and `/api/tenant/context` return **403** for
+  authenticated users whose setup is incomplete. This is the security boundary.
+- `RoleRouteGuard` redirects incomplete users to `/onboarding/account` for UX
+  only; it is not relied on for security.
+- Setup requires first/last name, username, password + confirmation
+  (min 8 chars), and appearance (default Dark). Password is set client-side via
+  `supabase.auth.updateUser` and never sent to or stored by app tables/logs.
+- Username is normalized (lowercase, `a-z0-9._-`, 3–32) and globally unique via
+  `user_profiles.username_normalized`. On completion the login identity is
+  canonicalized to `<username>@oneeyrie.local`, preserving username login
+  compatibility without exposing that format to the user.
+- Existing users are unaffected: absence of a `user_profiles` row means complete.
+  The migration only backfills genuinely-incomplete accepted invitations
+  (`team_members.username IS NULL`).
+
+Light Mode is experimental and authorized to a single platform-owner account by
+`auth.users.id` UUID only — not username, email, hotel/organization role, or
+`platform_admin` status. The UUID is held in the **server-only** env var
+`LIGHT_MODE_ALLOWED_USER_ID` and is never exposed to the client (no
+`NEXT_PUBLIC_*`). The decision lives in one place,
+`app/lib/theme/server/light-mode-access.ts` (`isLightModeAllowedForUser`), and is
+delivered to the client as a plain boolean via `GET /api/theme/light-mode`,
+revalidated on every session load. Everyone else stays in Dark Mode, never sees
+the Appearance control, and any stored/altered `light` value resolves to Dark
+(`resolveEffectiveTheme`). Setup completion also coerces `light` to Dark
+server-side for non-authorized users. To later release Light Mode to all users,
+change `isLightModeAllowedForUser` to return `true` — no theme-system rewrite.
+
+Set the env var in `.env.local` (server-only):
+
+```bash
+LIGHT_MODE_ALLOWED_USER_ID=<your-auth-user-uuid>
+```
+
+> **Future hardening (not in this stage):** full cookie-based server *page*
+> gating via `@supabase/ssr` + a root `proxy.ts` (Next.js 16 renamed Middleware
+> to Proxy). This stage keeps the existing bearer-token + localStorage session
+> model and enforces incomplete-account protection at the data layer only.
+
+Verification (requires dev server + migration 042 applied):
+
+```bash
+node scripts/tenant/verify-invited-account-setup.mjs
 ```
 
 ## Authorization model (permanent)

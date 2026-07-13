@@ -197,6 +197,24 @@ export async function completeGmInvitationForUser(
     throw new Error(propertyUserError.message);
   }
 
+  // Mark this user as requiring first-login account setup (durable, server-
+  // validated). Missing row = complete, so this only affects invited users.
+  const { error: profileError } = await supabase.from("user_profiles").upsert(
+    {
+      user_id: user.id,
+      first_name: invitation.first_name,
+      last_name: invitation.last_name,
+      appearance_preference: "dark",
+      account_setup_completed: false,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id", ignoreDuplicates: false }
+  );
+
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
+
   const acceptedAt = new Date().toISOString();
   const { error: invitationUpdateError } = await supabase
     .from("organization_invitations")

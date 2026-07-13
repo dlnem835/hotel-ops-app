@@ -57,8 +57,8 @@ export type AdminOrganizationModule = {
 export type AdminOnboardingStatus = {
   organizationCreated: boolean;
   propertyCreated: boolean;
-  gmInvited: boolean;
-  gmAccepted: boolean;
+  administratorInvited: boolean;
+  administratorAccepted: boolean;
   hotelConfigured: boolean;
 };
 
@@ -71,6 +71,15 @@ export type AdminOrganizationInvitation = {
   firstName: string;
   lastName: string;
   status: string;
+  isPrimary: boolean;
+  orgRole: string;
+  propertyRole: string;
+  roleLabel: string;
+  scopeLabel: string;
+  /** Membership active flag for accepted admins; null when not yet accepted. */
+  active: boolean | null;
+  authUserId: string | null;
+  expiresAt: string | null;
   createdAt: string;
   acceptedAt: string | null;
 };
@@ -90,7 +99,7 @@ export type AdminOrganizationDetail = AdminOrganizationSummary & {
   pendingInvitations: number;
   lifecycle: AdminOrganizationLifecycle;
   invitations: AdminOrganizationInvitation[];
-  canInviteGm: boolean;
+  canInviteAdministrator: boolean;
 };
 
 export type AdminPropertyDetail = AdminPropertySummary & {

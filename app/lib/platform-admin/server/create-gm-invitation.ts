@@ -4,13 +4,28 @@ import { resolveGmModulePermissions } from "@/app/lib/platform-admin/server/gm-m
 import { ORGANIZATION_STATUS_ACTIVE } from "@/app/lib/platform-admin/server/organization-constants";
 import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
 import type { AdminOrganizationInvitation } from "@/app/lib/platform-admin/types";
+import {
+  administratorRoleLabel,
+  administratorScopeLabel,
+  resolveInviteRoles,
+  type AdministratorInviteRole,
+} from "@/app/lib/platform-admin/roles";
 
-export type CreateGmInvitationInput = {
+/** How long a pending invitation stays valid before it is treated as expired. */
+const INVITATION_TTL_DAYS = 7;
+
+export type CreateAdministratorInvitationInput = {
   propertyId: number;
   email: string;
   firstName: string;
   lastName: string;
+  role: AdministratorInviteRole;
+  jobTitle: string;
 };
+
+/** Operational job title fallback when the inviter leaves the field blank. */
+const DEFAULT_JOB_TITLE = "Administrator";
+const JOB_TITLE_MAX_LENGTH = 80;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -25,16 +40,25 @@ function resolveInviteRedirectUrl(): string {
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SMOKE_BASE_URL ||
     "http://localhost:3000";
-  return `${siteUrl.replace(/\/$/, "")}/login`;
+  return `${siteUrl.replace(/\/$/, "")}/auth/callback`;
 }
 
-function parseCreateGmInvitationInput(
+function parseCreateAdministratorInvitationInput(
   body: Record<string, unknown>
-): CreateGmInvitationInput {
+): CreateAdministratorInvitationInput {
   const propertyId = Number.parseInt(String(body.propertyId ?? ""), 10);
   const email = normalizeEmail(String(body.email ?? ""));
   const firstName = String(body.firstName ?? body.first_name ?? "").trim();
   const lastName = String(body.lastName ?? body.last_name ?? "").trim();
+  const rawRole = String(body.role ?? "property_administrator");
+  const role: AdministratorInviteRole =
+    rawRole === "organization_admin" ? "organization_admin" : "property_administrator";
+  // Operational job title is optional and independent of permissions. Blank
+  // falls back to "Administrator"; it never influences access.
+  const jobTitle =
+    String(body.jobTitle ?? body.job_title ?? "")
+      .trim()
+      .slice(0, JOB_TITLE_MAX_LENGTH) || DEFAULT_JOB_TITLE;
 
   if (!Number.isInteger(propertyId) || propertyId <= 0) {
     throw new PlatformAdminRequestError(400, "Property id is required");
@@ -49,7 +73,36 @@ function parseCreateGmInvitationInput(
     throw new PlatformAdminRequestError(400, "Last name is required");
   }
 
-  return { propertyId, email, firstName, lastName };
+  return { propertyId, email, firstName, lastName, role, jobTitle };
+}
+
+type InvitationSelectRow = {
+  id: string | number;
+  organization_id: number;
+  property_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  status: string;
+  is_primary: boolean | null;
+  org_role: string | null;
+  property_role: string | null;
+  auth_user_id: string | null;
+  expires_at: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  properties?: { name?: string } | null;
+};
+
+const INVITATION_SELECT =
+  "id, organization_id, property_id, email, first_name, last_name, status, is_primary, org_role, property_role, auth_user_id, expires_at, created_at, accepted_at, properties(name)";
+
+function isExpiredPending(row: InvitationSelectRow, now: number): boolean {
+  return (
+    row.status === "pending" &&
+    !!row.expires_at &&
+    new Date(row.expires_at).getTime() < now
+  );
 }
 
 export async function fetchOrganizationInvitations(
@@ -58,57 +111,147 @@ export async function fetchOrganizationInvitations(
 ): Promise<AdminOrganizationInvitation[]> {
   const { data, error } = await supabase
     .from("organization_invitations")
-    .select(
-      "id, organization_id, property_id, email, first_name, last_name, status, created_at, accepted_at, properties(name)"
-    )
+    .select(INVITATION_SELECT)
     .eq("organization_id", organizationId)
+    .order("is_primary", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return (data ?? []).map((row) => {
-    const property = row.properties as { name?: string } | null | undefined;
+  const rows = (data ?? []) as unknown as InvitationSelectRow[];
+  const now = Date.now();
+
+  // Lazily flip overdue pending invitations to 'expired' so status is truthful
+  // without a background job. Only touches rows that just crossed their TTL.
+  const newlyExpired = rows.filter((row) => isExpiredPending(row, now));
+  if (newlyExpired.length > 0) {
+    const ids = newlyExpired.map((row) => row.id);
+    await supabase
+      .from("organization_invitations")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .in("id", ids);
+    for (const row of newlyExpired) {
+      row.status = "expired";
+    }
+  }
+
+  // Derive membership active state for accepted administrators from
+  // organization_users (the access gate). Disabled/removed admins read inactive.
+  const acceptedAuthUserIds = Array.from(
+    new Set(
+      rows
+        .filter((row) => row.status === "accepted" && row.auth_user_id)
+        .map((row) => row.auth_user_id as string)
+    )
+  );
+
+  const activeByUserId = new Map<string, boolean>();
+  if (acceptedAuthUserIds.length > 0) {
+    const { data: memberships, error: membershipError } = await supabase
+      .from("organization_users")
+      .select("user_id, active")
+      .eq("organization_id", organizationId)
+      .in("user_id", acceptedAuthUserIds);
+
+    if (membershipError) {
+      throw new Error(membershipError.message);
+    }
+    for (const membership of memberships ?? []) {
+      activeByUserId.set(String(membership.user_id), Boolean(membership.active));
+    }
+  }
+
+  return rows.map((row) => {
+    const isPrimary = Boolean(row.is_primary);
+    const orgRole = String(row.org_role ?? "org_member");
+    const propertyRole = String(row.property_role ?? "property_admin");
+    const active =
+      row.status === "accepted" && row.auth_user_id
+        ? activeByUserId.get(row.auth_user_id) ?? true
+        : null;
+
     return {
       id: String(row.id),
-      organizationId: row.organization_id as number,
-      propertyId: row.property_id as number,
-      propertyName: property?.name ?? null,
+      organizationId: row.organization_id,
+      propertyId: row.property_id,
+      propertyName: row.properties?.name ?? null,
       email: String(row.email),
       firstName: String(row.first_name),
       lastName: String(row.last_name),
       status: String(row.status),
+      isPrimary,
+      orgRole,
+      propertyRole,
+      roleLabel: administratorRoleLabel({ isPrimary, orgRole }),
+      scopeLabel: administratorScopeLabel(orgRole),
+      active,
+      authUserId: row.auth_user_id ?? null,
+      expiresAt: row.expires_at ?? null,
       createdAt: String(row.created_at),
       acceptedAt: row.accepted_at ? String(row.accepted_at) : null,
     };
   });
 }
 
-export function canInviteFirstGm(input: {
+/**
+ * An administrator invitation can be sent whenever the organization is active
+ * and has at least one property. There is intentionally NO single-admin limit —
+ * multiple administrators per organization/property are supported.
+ */
+export function canInviteAdministrator(input: {
   organizationStatus: string;
   propertyCount: number;
-  invitations: AdminOrganizationInvitation[];
 }): boolean {
   if (input.organizationStatus !== ORGANIZATION_STATUS_ACTIVE) {
     return false;
   }
-  if (input.propertyCount === 0) {
-    return false;
-  }
-
-  return !input.invitations.some(
-    (invitation) => invitation.status === "pending" || invitation.status === "accepted"
-  );
+  return input.propertyCount > 0;
 }
 
-export async function createGmInvitation(
+async function organizationHasPrimaryAdministrator(
+  supabase: SupabaseClient,
+  organizationId: number
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("organization_invitations")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("is_primary", true)
+    .in("status", ["pending", "accepted"]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return (count ?? 0) > 0;
+}
+
+async function findExistingAuthUserIdForEmail(
+  supabase: SupabaseClient,
+  organizationId: number,
+  email: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("organization_invitations")
+    .select("auth_user_id, created_at")
+    .eq("organization_id", organizationId)
+    .eq("email", email)
+    .not("auth_user_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (data?.auth_user_id as string | undefined) ?? null;
+}
+
+export async function createAdministratorInvitation(
   supabase: SupabaseClient,
   actorUserId: string,
   organizationId: number,
   body: Record<string, unknown>
 ): Promise<AdminOrganizationInvitation> {
-  const input = parseCreateGmInvitationInput(body);
+  const input = parseCreateAdministratorInvitationInput(body);
 
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
@@ -142,26 +285,40 @@ export async function createGmInvitation(
     throw new PlatformAdminRequestError(404, "Property not found for organization");
   }
 
-  const { count: propertyCount, error: propertyCountError } = await supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("organization_id", organizationId);
+  // Reject re-inviting someone who is already an accepted administrator here.
+  const { data: existingAccepted, error: existingAcceptedError } = await supabase
+    .from("organization_invitations")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("email", input.email)
+    .eq("status", "accepted")
+    .maybeSingle();
 
-  if (propertyCountError) {
-    throw new Error(propertyCountError.message);
+  if (existingAcceptedError) {
+    throw new Error(existingAcceptedError.message);
   }
-
-  const existingInvitations = await fetchOrganizationInvitations(supabase, organizationId);
-  if (!canInviteFirstGm({
-    organizationStatus: organization.status,
-    propertyCount: propertyCount ?? 0,
-    invitations: existingInvitations,
-  })) {
+  if (existingAccepted) {
     throw new PlatformAdminRequestError(
       409,
-      "A pending or accepted GM invitation already exists for this organization"
+      "This person is already an administrator for this organization"
     );
   }
+
+  // The first administrator for an organization becomes the Primary Owner.
+  const hasPrimary = await organizationHasPrimaryAdministrator(supabase, organizationId);
+  const isPrimary = !hasPrimary;
+  const { orgRole, propertyRole } = isPrimary
+    ? { orgRole: "org_owner", propertyRole: "property_admin" }
+    : resolveInviteRoles(input.role);
+  // Operational job title is descriptive only. Access is governed entirely by
+  // is_administrator + membership roles (org_role / property_role) + module
+  // permissions — never by this title. The Primary/Org-Admin/Property-Admin
+  // distinction is carried by org_role + is_primary in the platform-admin portal.
+  const jobTitle = input.jobTitle;
+
+  const expiresAt = new Date(
+    Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString();
 
   const { data: invitation, error: insertError } = await supabase
     .from("organization_invitations")
@@ -171,11 +328,13 @@ export async function createGmInvitation(
       email: input.email,
       first_name: input.firstName,
       last_name: input.lastName,
-      org_role: "org_owner",
-      property_role: "property_admin",
-      job_title: "General Manager",
+      org_role: orgRole,
+      property_role: propertyRole,
+      job_title: jobTitle,
       status: "pending",
+      is_primary: isPrimary,
       invited_by: actorUserId,
+      expires_at: expiresAt,
     })
     .select("id")
     .single();
@@ -184,7 +343,7 @@ export async function createGmInvitation(
     if (insertError.code === "23505") {
       throw new PlatformAdminRequestError(
         409,
-        "A pending invitation already exists for this email"
+        "A pending invitation already exists for this email in this organization"
       );
     }
     throw new Error(insertError.message);
@@ -192,55 +351,78 @@ export async function createGmInvitation(
 
   const invitationId = String(invitation.id);
 
+  const inviteMetadata = {
+    oe_invitation_id: invitationId,
+    first_name: input.firstName,
+    last_name: input.lastName,
+    job_title: jobTitle,
+    is_administrator: true,
+  };
+
   let authUserId: string | null = null;
 
   const { data: inviteData, error: inviteError } =
     await supabase.auth.admin.inviteUserByEmail(input.email, {
       redirectTo: resolveInviteRedirectUrl(),
-      data: {
-        oe_invitation_id: invitationId,
-        first_name: input.firstName,
-        last_name: input.lastName,
-        job_title: "General Manager",
-        is_administrator: true,
-      },
+      data: inviteMetadata,
     });
 
   if (inviteError) {
-    const canFallback =
-      inviteError.message.toLowerCase().includes("rate limit") ||
-      inviteError.message.toLowerCase().includes("invalid");
+    const message = inviteError.message.toLowerCase();
+    const canCreateFallback =
+      message.includes("rate limit") || message.includes("invalid");
+    const alreadyRegistered =
+      message.includes("already") || message.includes("registered") || message.includes("exists");
 
-    if (!canFallback) {
+    if (canCreateFallback) {
+      const { data: createdUser, error: createUserError } =
+        await supabase.auth.admin.createUser({
+          email: input.email,
+          email_confirm: true,
+          user_metadata: inviteMetadata,
+        });
+
+      if (createUserError) {
+        await supabase.from("organization_invitations").delete().eq("id", invitationId);
+        throw new PlatformAdminRequestError(
+          502,
+          `Supabase user provisioning failed: ${createUserError.message}`
+        );
+      }
+      authUserId = createdUser.user?.id ?? null;
+    } else if (alreadyRegistered) {
+      // Re-invite of an existing account (e.g. a previously removed admin).
+      const existingAuthUserId = await findExistingAuthUserIdForEmail(
+        supabase,
+        organizationId,
+        input.email
+      );
+      if (!existingAuthUserId) {
+        await supabase.from("organization_invitations").delete().eq("id", invitationId);
+        throw new PlatformAdminRequestError(
+          502,
+          `Supabase invitation failed: ${inviteError.message}`
+        );
+      }
+      const { error: updateMetaError } = await supabase.auth.admin.updateUserById(
+        existingAuthUserId,
+        { user_metadata: inviteMetadata }
+      );
+      if (updateMetaError) {
+        await supabase.from("organization_invitations").delete().eq("id", invitationId);
+        throw new PlatformAdminRequestError(
+          502,
+          `Supabase user update failed: ${updateMetaError.message}`
+        );
+      }
+      authUserId = existingAuthUserId;
+    } else {
       await supabase.from("organization_invitations").delete().eq("id", invitationId);
       throw new PlatformAdminRequestError(
         502,
         `Supabase invitation failed: ${inviteError.message}`
       );
     }
-
-    const { data: createdUser, error: createUserError } =
-      await supabase.auth.admin.createUser({
-        email: input.email,
-        email_confirm: true,
-        user_metadata: {
-          oe_invitation_id: invitationId,
-          first_name: input.firstName,
-          last_name: input.lastName,
-          job_title: "General Manager",
-          is_administrator: true,
-        },
-      });
-
-    if (createUserError) {
-      await supabase.from("organization_invitations").delete().eq("id", invitationId);
-      throw new PlatformAdminRequestError(
-        502,
-        `Supabase user provisioning failed: ${createUserError.message}`
-      );
-    }
-
-    authUserId = createdUser.user?.id ?? null;
   } else {
     authUserId = inviteData.user?.id ?? null;
   }
@@ -271,6 +453,10 @@ export async function createGmInvitation(
       lastName: input.lastName,
       organizationName: organization.name,
       propertyName: property.name,
+      orgRole,
+      propertyRole,
+      jobTitle,
+      isPrimary,
     },
   });
 

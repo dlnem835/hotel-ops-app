@@ -14,10 +14,10 @@ export async function buildOrganizationOnboarding(
     .eq("organization_id", organizationId);
 
   const rows = invitations ?? [];
-  const gmInvited = rows.some(
+  const administratorInvited = rows.some(
     (row) => row.status === "pending" || row.status === "accepted"
   );
-  const gmAccepted = rows.some((row) => row.status === "accepted");
+  const administratorAccepted = rows.some((row) => row.status === "accepted");
 
   let hotelConfigured = false;
   if (propertyIds.length > 0) {
@@ -35,21 +35,21 @@ export async function buildOrganizationOnboarding(
   return {
     organizationCreated: true,
     propertyCreated: propertyIds.length > 0,
-    gmInvited,
-    gmAccepted,
+    administratorInvited,
+    administratorAccepted,
     hotelConfigured,
   };
 }
 
 export function formatOnboardingSummary(onboarding: AdminOnboardingStatus): string {
-  if (onboarding.hotelConfigured && onboarding.gmAccepted) {
+  if (onboarding.hotelConfigured && onboarding.administratorAccepted) {
     return "Onboarding complete";
   }
-  if (onboarding.gmInvited && !onboarding.gmAccepted) {
-    return "Awaiting GM acceptance";
+  if (onboarding.administratorInvited && !onboarding.administratorAccepted) {
+    return "Awaiting administrator acceptance";
   }
-  if (onboarding.propertyCreated && !onboarding.gmInvited) {
-    return "Property created — invite GM";
+  if (onboarding.propertyCreated && !onboarding.administratorInvited) {
+    return "Property created — invite administrator";
   }
   if (onboarding.organizationCreated && !onboarding.propertyCreated) {
     return "Organization created — add property";

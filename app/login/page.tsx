@@ -7,6 +7,10 @@ import {
 } from "@/app/lib/auth-session";
 import { consumeInactivityLogoutMessage } from "@/app/lib/inactivity-logout";
 import { completePendingInvitationIfNeeded } from "@/app/lib/invitations/complete-pending-invitation";
+import {
+  ACCOUNT_SETUP_PATH,
+  fetchAccountSetupState,
+} from "@/app/lib/account-setup/account-setup-client";
 import { resolveStaffLoginEmail } from "@/app/lib/login-email";
 import {
   captureLoginReturnFromUrl,
@@ -50,6 +54,22 @@ async function resolvePostLoginTarget(): Promise<string> {
     : getDefaultDesktopHome(permissions);
 }
 
+/**
+ * Completes any pending invitation, then routes based on account-setup state.
+ * Invited users who have not finished first-login setup are sent to the setup
+ * page (UX); server routes independently enforce the same gate.
+ */
+async function resolvePostAuthTarget(): Promise<string> {
+  await completePendingInvitationIfNeeded();
+
+  const setupState = await fetchAccountSetupState();
+  if (setupState && !setupState.accountSetupComplete) {
+    return ACCOUNT_SETUP_PATH;
+  }
+
+  return resolvePostLoginTarget();
+}
+
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -65,8 +85,7 @@ export default function LoginPage() {
 
     void waitForInitialAuthSession().then(async (session) => {
       if (!mounted || !session || submittingRef.current) return;
-      await completePendingInvitationIfNeeded();
-      const target = await resolvePostLoginTarget();
+      const target = await resolvePostAuthTarget();
       window.location.replace(target);
     });
 
@@ -107,8 +126,7 @@ export default function LoginPage() {
       return;
     }
 
-    await completePendingInvitationIfNeeded();
-    const target = await resolvePostLoginTarget();
+    const target = await resolvePostAuthTarget();
     setAuthDebug(`Session created, redirecting… → ${target}`);
     window.location.assign(target);
   }

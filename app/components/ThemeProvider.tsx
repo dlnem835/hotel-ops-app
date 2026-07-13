@@ -9,10 +9,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRoleAccess } from "@/app/components/RoleAccessProvider";
+import { subscribeAuthSession } from "@/app/lib/auth-session";
+import { fetchLightModeAccess } from "@/app/lib/theme/light-mode-client";
 import {
   applyThemeToDocument,
-  canUseLightMode,
   ONE_EYRIE_DEFAULT_THEME,
   persistTheme,
   readStoredTheme,
@@ -40,35 +40,60 @@ export function useOneEyrieTheme() {
 }
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
-  const { access, loading: accessLoading } = useRoleAccess();
+  const [sessionResolved, setSessionResolved] = useState(false);
+  const [lightModeAllowed, setLightModeAllowed] = useState(false);
   const [theme, setThemeState] = useState<OneEyrieTheme>(ONE_EYRIE_DEFAULT_THEME);
   const [ready, setReady] = useState(false);
 
-  const isAdministrator = Boolean(access?.isAdministrator);
-  const lightModeAllowed = canUseLightMode(isAdministrator);
+  useEffect(() => {
+    let active = true;
+
+    const unsubscribe = subscribeAuthSession((session) => {
+      if (!session) {
+        // No session → force Dark and ignore any stored light preference.
+        if (active) {
+          setLightModeAllowed(false);
+          setSessionResolved(true);
+        }
+        return;
+      }
+
+      // Revalidate permission server-side on every session load.
+      void fetchLightModeAccess().then((allowed) => {
+        if (!active) return;
+        setLightModeAllowed(allowed);
+        setSessionResolved(true);
+      });
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
-    if (accessLoading) {
+    if (!sessionResolved) {
       applyThemeToDocument(ONE_EYRIE_DEFAULT_THEME);
       setThemeState(ONE_EYRIE_DEFAULT_THEME);
       return;
     }
 
     const stored = readStoredTheme();
-    const effective = resolveEffectiveTheme(stored, isAdministrator);
+    const effective = resolveEffectiveTheme(stored, lightModeAllowed);
     setThemeState(effective);
     applyThemeToDocument(effective);
     setReady(true);
-  }, [accessLoading, isAdministrator]);
+  }, [sessionResolved, lightModeAllowed]);
 
   const setTheme = useCallback(
     (next: OneEyrieTheme) => {
-      const effective = resolveEffectiveTheme(next, isAdministrator);
+      const effective = resolveEffectiveTheme(next, lightModeAllowed);
       setThemeState(effective);
       persistTheme(effective);
       applyThemeToDocument(effective);
     },
-    [isAdministrator]
+    [lightModeAllowed]
   );
 
   const value = useMemo(

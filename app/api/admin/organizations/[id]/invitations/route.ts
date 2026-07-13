@@ -5,7 +5,7 @@ import {
   resolvePlatformAdminRequest,
 } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
 import {
-  createGmInvitation,
+  createAdministratorInvitation,
   fetchOrganizationInvitations,
 } from "@/app/lib/platform-admin/server/create-gm-invitation";
 
@@ -46,7 +46,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const body = (await request.json()) as Record<string, unknown>;
-    const invitation = await createGmInvitation(
+    const invitation = await createAdministratorInvitation(
       supabase,
       user.id,
       organizationId,

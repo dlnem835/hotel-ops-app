@@ -146,10 +146,69 @@
   overflow-x: auto;
 }
 
+.admin-portal__table-wrap--administrators {
+  -webkit-overflow-scrolling: touch;
+}
+
 .admin-portal__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+}
+
+.admin-portal__table--administrators {
+  min-width: 1080px;
+  table-layout: fixed;
+}
+
+.admin-portal__table--administrators th,
+.admin-portal__table--administrators td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--name {
+  width: 11%;
+  min-width: 96px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--email {
+  width: 16%;
+  min-width: 140px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--role {
+  width: 12%;
+  min-width: 108px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--scope {
+  width: 11%;
+  min-width: 100px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--property {
+  width: 11%;
+  min-width: 100px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--status {
+  width: 8%;
+  min-width: 72px;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--date {
+  width: 10%;
+  min-width: 108px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #c9c9c9;
+}
+
+.admin-portal__table--administrators .admin-portal__cell--actions {
+  width: 21%;
+  min-width: 220px;
+  vertical-align: top;
 }
 
 .admin-portal__table th,
@@ -190,6 +249,32 @@
 .admin-portal__badge--suspended {
   background: rgba(139, 115, 85, 0.35);
   color: #e8d4b0;
+}
+
+.admin-portal__badge--pending {
+  background: rgba(200, 169, 106, 0.28);
+  color: #e6cf9c;
+}
+
+.admin-portal__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.admin-portal__row-actions-note {
+  align-self: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.admin-portal__button--compact {
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .admin-portal__meta-grid {

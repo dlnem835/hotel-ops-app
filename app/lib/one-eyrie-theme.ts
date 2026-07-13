@@ -4,22 +4,19 @@ export const ONE_EYRIE_THEME_STORAGE_KEY = "one-eyrie-theme";
 export const ONE_EYRIE_DEFAULT_THEME: OneEyrieTheme = "dark";
 
 /**
- * Light Mode is in active development and gated to administrators only.
- * Production users always receive Dark Mode until Light Mode is officially released.
- * Set to false when Light Mode launches for all users.
+ * Whether Light Mode is available is decided **server-side** (see
+ * `app/lib/theme/server/light-mode-access.ts`) and delivered to the client as a
+ * plain boolean. The client never learns the authorized UUID. These helpers
+ * therefore take the already-resolved permission, not a user id.
+ *
+ * A stored "light" preference from any non-authorized user (including stale or
+ * manually altered localStorage) always resolves back to Dark.
  */
-export const LIGHT_MODE_REQUIRES_ADMIN = true;
-
-export function canUseLightMode(isAdministrator: boolean): boolean {
-  if (!LIGHT_MODE_REQUIRES_ADMIN) return true;
-  return isAdministrator;
-}
-
 export function resolveEffectiveTheme(
   stored: OneEyrieTheme,
-  isAdministrator: boolean
+  lightModeAllowed: boolean
 ): OneEyrieTheme {
-  if (stored === "light" && !canUseLightMode(isAdministrator)) {
+  if (stored === "light" && !lightModeAllowed) {
     return ONE_EYRIE_DEFAULT_THEME;
   }
   return stored;

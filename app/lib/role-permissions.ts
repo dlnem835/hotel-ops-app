@@ -328,6 +328,21 @@ export function isPlatformAdminAppPath(pathname: string): boolean {
   return path === "/admin" || path.startsWith("/admin/");
 }
 
+/**
+ * Routes an authenticated-but-incomplete user is still allowed to reach:
+ * first-login account setup and the auth callback. Login/logout is handled by
+ * isPublicAppPath. Everything else is gated until setup is complete.
+ */
+export function isAccountOnboardingPath(pathname: string): boolean {
+  const path = pathname.split("?")[0] ?? pathname;
+  return (
+    path === "/onboarding/account" ||
+    path.startsWith("/onboarding/account") ||
+    path === "/auth/callback" ||
+    path.startsWith("/auth/callback")
+  );
+}
+
 function canAccessDesktopPath(permissions: ModulePermissions, path: string): boolean {
   if (path === "/" || path === "") return permissions.dashboard;
   if (path.startsWith("/reports")) return permissions.reports;

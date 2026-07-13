@@ -6,6 +6,7 @@ import type {
   TenantOrganizationSummary,
   TenantPropertySummary,
 } from "@/app/lib/tenant/types";
+import { isOrgWideRole, PROPERTY_ROLE } from "@/app/lib/platform-admin/roles";
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -119,6 +120,17 @@ export async function resolveTenantContextForUser(
       .filter((id): id is number => typeof id === "number")
   );
 
+  // Org-wide roles (Primary Owner / Organization Admin) administer EVERY active
+  // property in their organization — including properties added later — without
+  // needing an explicit user_properties row per property. Property-scoped
+  // members (org_member) still only reach their explicit user_properties rows.
+  const orgWideOrgIds = new Set(
+    organizationUsers
+      .filter((row) => isOrgWideRole(row.role))
+      .map((row) => row.organizations?.id ?? row.organization_id)
+      .filter((id): id is number => typeof id === "number")
+  );
+
   const { data: propertyRows, error: propertyError } = await supabase
     .from("user_properties")
     .select(
@@ -134,8 +146,38 @@ export async function resolveTenantContextForUser(
   const properties = ((propertyRows ?? []) as unknown as UserPropertyRow[])
     .map(mapProperty)
     .filter((property): property is TenantPropertySummary => property !== null)
-    .filter((property) => authorizedOrgIds.has(property.organizationId))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter((property) => authorizedOrgIds.has(property.organizationId));
+
+  if (orgWideOrgIds.size > 0) {
+    const { data: orgPropertyRows, error: orgPropertyError } = await supabase
+      .from("properties")
+      .select("id, name, brand, timezone, active, organization_id")
+      .in("organization_id", Array.from(orgWideOrgIds))
+      .eq("active", true);
+
+    if (orgPropertyError) {
+      throw new Error(orgPropertyError.message);
+    }
+
+    const seenPropertyIds = new Set(properties.map((property) => property.id));
+    for (const row of orgPropertyRows ?? []) {
+      if (seenPropertyIds.has(row.id)) {
+        continue;
+      }
+      seenPropertyIds.add(row.id);
+      properties.push({
+        id: row.id,
+        name: row.name,
+        brand: row.brand,
+        timezone: row.timezone,
+        organizationId: row.organization_id,
+        role: PROPERTY_ROLE.propertyAdministrator,
+        isDefault: false,
+      });
+    }
+  }
+
+  properties.sort((a, b) => a.name.localeCompare(b.name));
 
   const activeProperty = resolveActiveProperty(properties, requestedPropertyId);
   if (!activeProperty) {
