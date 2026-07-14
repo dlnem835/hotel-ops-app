@@ -166,7 +166,11 @@ async function main() {
         {
           method: "POST",
           headers: authHeaders,
-          body: JSON.stringify({ name: "Account Setup Property", address: "1 Setup Way" }),
+          body: JSON.stringify({
+            name: "Account Setup Property",
+            address: "1 Setup Way",
+            timezone: "America/New_York",
+          }),
         }
       );
       if (createPropRes.status !== 201) {

@@ -3,13 +3,17 @@ import type { AdminPropertyDetail } from "@/app/lib/platform-admin/types";
 import { writeAdminAuditLog } from "@/app/lib/platform-admin/server/admin-audit-log";
 import { fetchAdminPropertyDetail } from "@/app/lib/platform-admin/server/admin-organizations";
 import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
+import {
+  DEFAULT_PROPERTY_TIMEZONE,
+  isSupportedTimezone,
+} from "@/app/lib/timezones";
 
 export type CreatePropertyInput = {
   name: string;
   brand?: string | null;
   address: string;
   phoneNumber?: string;
-  timezone?: string;
+  timezone: string;
 };
 
 function parseCreatePropertyInput(body: Record<string, unknown>): CreatePropertyInput {
@@ -20,10 +24,21 @@ function parseCreatePropertyInput(body: Record<string, unknown>): CreateProperty
       ? null
       : String(body.brand).trim() || null;
   const phoneNumber = String(body.phoneNumber ?? body.phone_number ?? "").trim();
-  const timezone = String(body.timezone ?? "America/New_York").trim() || "America/New_York";
+  const timezone = String(body.timezone ?? "").trim();
 
   if (!name) {
     throw new PlatformAdminRequestError(400, "Property name is required");
+  }
+
+  if (!timezone) {
+    throw new PlatformAdminRequestError(400, "Timezone is required");
+  }
+
+  if (!isSupportedTimezone(timezone)) {
+    throw new PlatformAdminRequestError(
+      400,
+      "Timezone must be a supported IANA identifier"
+    );
   }
 
   return {
@@ -86,7 +101,7 @@ export async function createAdminProperty(
       brand: input.brand,
       address: input.address,
       phone_number: input.phoneNumber ?? "",
-      timezone: input.timezone ?? "America/New_York",
+      timezone: input.timezone || DEFAULT_PROPERTY_TIMEZONE,
       active: true,
     });
 
@@ -121,6 +136,7 @@ export async function createAdminProperty(
     metadata: {
       name: input.name,
       organizationName: organization.name,
+      timezone: input.timezone,
     },
   });
 

@@ -246,6 +246,27 @@ async function main() {
           : failures +
             fail("POST property for missing organization returns 404", `got ${missingOrgPropertyRes.status}`);
 
+      const invalidTimezoneRes = await fetch(
+        `${BASE}/api/admin/organizations/${organization.id}/properties`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            name: "Should Fail Timezone",
+            address: "1 Bad Tz Way",
+            timezone: "Not/A_Real_Zone",
+          }),
+        }
+      );
+      failures =
+        invalidTimezoneRes.status === 400
+          ? pass("POST property with unsupported timezone returns 400")
+          : failures +
+            fail(
+              "POST property with unsupported timezone returns 400",
+              `got ${invalidTimezoneRes.status}`
+            );
+
       const createPropertyRes = await fetch(
         `${BASE}/api/admin/organizations/${organization.id}/properties`,
         {

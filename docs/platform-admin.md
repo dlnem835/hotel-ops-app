@@ -144,6 +144,42 @@ node scripts/tenant/verify-platform-admin-stage-d.mjs
 | `app/lib/platform-admin/server/admin-slug.ts` | Slug generation/validation |
 | `app/admin/organizations/new/page.tsx` | Create organization form |
 | `app/admin/organizations/[id]/properties/new/page.tsx` | Create property form |
+| `app/admin/components/AdminTimezoneSelect.tsx` | Searchable IANA timezone control |
+| `app/lib/timezones.ts` | Supported IANA allow-list, labels, validation |
+
+### Property timezone
+
+Timezone belongs to the **property**, not permanently to the user or organization.
+
+- Create-property UI uses a searchable dropdown of curated IANA identifiers with
+  friendly labels (e.g. `Eastern Time — America/New_York`). The database stores
+  only the IANA id (`America/New_York`).
+- Default: first existing property timezone in the organization when available
+  and supported; otherwise `America/New_York` (pilot default).
+- Platform admins can change the selection before creating the property.
+- `POST /api/admin/organizations/[id]/properties` rejects any timezone not on
+  the supported allow-list (`400`).
+- Tenant context already exposes `activeProperty.timezone` and each
+  `properties[].timezone` from `resolveTenantContextForUser`. When a user
+  switches properties, consumers must use the active property’s timezone for
+  property-scoped date/time calculations.
+
+#### Later timezone-hardening checkpoint
+
+The following still hardcode or rely on browser-local formatting rather than
+`activeProperty.timezone`. Do **not** treat this as complete multi-property TZ
+support yet:
+
+| Area | Notes |
+|------|--------|
+| `app/lib/hotel-business-date.ts` | Hardcodes `HOTEL_TIMEZONE = "America/New_York"` for Pass-On business dates |
+| Pass-On Log (desktop + mobile) | Uses `hotel-business-date` / `toLocaleString` without active property TZ |
+| Maintenance / PM / work orders | Various `Date` + `toLocale*` helpers; not wired to active property TZ |
+| Inspections | Period/age/duration utilities use local or hardcoded logic |
+| Lost & Found page | Client `toLocale*` / local `Date` formatting |
+| Reports (filters, schedules, outputs) | Mix of schedule TZ fields and browser/`new Date()` formatting |
+| Dashboard date helpers | `app/dashboard/lib/date-utils.ts` browser-oriented |
+| Admin portal tables | Display timestamps via `toLocaleString()` (admin UX only) |
 
 Verification:
 

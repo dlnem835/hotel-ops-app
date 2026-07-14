@@ -227,6 +227,7 @@ async function main() {
         body: JSON.stringify({
           name: "Lifecycle Blocker Property",
           address: "1 Blocker Way",
+          timezone: "America/New_York",
         }),
       });
 

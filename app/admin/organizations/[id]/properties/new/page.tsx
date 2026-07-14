@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
-import type { AdminPropertyDetail } from "@/app/lib/platform-admin/types";
+import type {
+  AdminOrganizationDetail,
+  AdminPropertyDetail,
+} from "@/app/lib/platform-admin/types";
+import {
+  DEFAULT_PROPERTY_TIMEZONE,
+  isSupportedTimezone,
+  resolveDefaultPropertyTimezone,
+} from "@/app/lib/timezones";
 import AdminErrorState from "@/app/admin/components/AdminErrorState";
+import AdminTimezoneSelect from "@/app/admin/components/AdminTimezoneSelect";
 
 export default function AdminCreatePropertyPage() {
   const params = useParams<{ id: string }>();
@@ -16,13 +25,58 @@ export default function AdminCreatePropertyPage() {
   const [brand, setBrand] = useState("");
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [timezone, setTimezone] = useState("America/New_York");
+  const [timezone, setTimezone] = useState(DEFAULT_PROPERTY_TIMEZONE);
+  const [timezoneReady, setTimezoneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadTimezoneDefault() {
+      if (!organizationId) {
+        if (mounted) setTimezoneReady(true);
+        return;
+      }
+
+      const parsedOrgId = Number.parseInt(organizationId, 10);
+      const response = await adminFetch(`/api/admin/organizations/${organizationId}`);
+      if (!mounted) return;
+
+      if (!response.ok) {
+        setTimezone(DEFAULT_PROPERTY_TIMEZONE);
+        setTimezoneReady(true);
+        return;
+      }
+
+      const organization = (await response.json()) as AdminOrganizationDetail;
+      const existingTimezones = (organization.properties ?? []).map(
+        (property) => property.timezone
+      );
+      setTimezone(
+        resolveDefaultPropertyTimezone({
+          organizationId: Number.isFinite(parsedOrgId) ? parsedOrgId : null,
+          existingPropertyTimezones: existingTimezones,
+        })
+      );
+      setTimezoneReady(true);
+    }
+
+    void loadTimezoneDefault();
+
+    return () => {
+      mounted = false;
+    };
+  }, [organizationId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!organizationId) return;
+
+    if (!isSupportedTimezone(timezone)) {
+      setError("Select a supported timezone from the list.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -35,7 +89,7 @@ export default function AdminCreatePropertyPage() {
         brand: brand.trim() || null,
         address: address.trim(),
         phoneNumber: phoneNumber.trim(),
-        timezone: timezone.trim() || "America/New_York",
+        timezone,
       }),
     });
 
@@ -60,6 +114,8 @@ export default function AdminCreatePropertyPage() {
         <h2 className="admin-portal__section-title">Create property</h2>
         <p className="admin-portal__muted">
           Property IDs are allocated from the platform sequence after the pilot property.
+          Timezone belongs to this property and is used for property-scoped date and time
+          calculations when it is the active property.
         </p>
 
         {error ? <AdminErrorState message={error} /> : null}
@@ -100,18 +156,22 @@ export default function AdminCreatePropertyPage() {
 
           <label className="admin-portal__field">
             <span>Timezone</span>
-            <input
-              type="text"
-              value={timezone}
-              onChange={(event) => setTimezone(event.target.value)}
-            />
+            {timezoneReady ? (
+              <AdminTimezoneSelect
+                value={timezone}
+                onChange={setTimezone}
+                disabled={submitting}
+              />
+            ) : (
+              <p className="admin-portal__muted">Loading timezone default…</p>
+            )}
           </label>
 
           <div className="admin-portal__form-actions">
             <button
               type="submit"
               className="admin-portal__button admin-portal__button--primary"
-              disabled={submitting}
+              disabled={submitting || !timezoneReady}
             >
               {submitting ? "Creating…" : "Create property"}
             </button>

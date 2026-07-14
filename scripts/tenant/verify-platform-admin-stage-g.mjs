@@ -180,6 +180,7 @@ async function main() {
           body: JSON.stringify({
             name: "Stage G Test Property",
             address: "200 Module Lane",
+            timezone: "America/New_York",
           }),
         }
       );
