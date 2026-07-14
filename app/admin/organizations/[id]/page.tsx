@@ -117,6 +117,7 @@ export default function AdminOrganizationDetailPage() {
         <h3 className="admin-portal__section-title">Property Administrators</h3>
         <AdminAdministratorsTable
           organizationId={organization.id}
+          organizationName={organization.name}
           invitations={organization.invitations}
           properties={organization.properties}
           modules={organization.modules}

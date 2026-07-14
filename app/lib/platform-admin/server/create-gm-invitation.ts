@@ -366,17 +366,56 @@ async function findExistingAuthUserIdForEmail(
   organizationId: number,
   email: string
 ): Promise<string | null> {
-  const { data } = await supabase
+  const normalizedEmail = normalizeEmail(email);
+
+  const { data: sameOrg } = await supabase
     .from("organization_invitations")
     .select("auth_user_id, created_at")
     .eq("organization_id", organizationId)
-    .eq("email", email)
+    .eq("email", normalizedEmail)
     .not("auth_user_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return (data?.auth_user_id as string | undefined) ?? null;
+  if (sameOrg?.auth_user_id) {
+    return String(sameOrg.auth_user_id);
+  }
+
+  // Cross-organization: the same Auth user may already belong to another hotel.
+  const { data: anyOrg } = await supabase
+    .from("organization_invitations")
+    .select("auth_user_id, created_at")
+    .eq("email", normalizedEmail)
+    .not("auth_user_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (anyOrg?.auth_user_id) {
+    return String(anyOrg.auth_user_id);
+  }
+
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+    const match = (data.users ?? []).find(
+      (user) => normalizeEmail(user.email ?? "") === normalizedEmail
+    );
+    if (match?.id) {
+      return match.id;
+    }
+    if ((data.users ?? []).length < 200) {
+      break;
+    }
+  }
+
+  return null;
 }
 
 export async function createAdministratorInvitation(

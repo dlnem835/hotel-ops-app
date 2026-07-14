@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type {
   AdminOrganizationInvitation,
   AdminOrganizationModule,
   AdminPropertySummary,
+  PlatformAdminMeResponse,
 } from "@/app/lib/platform-admin/types";
 import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
 import {
@@ -19,6 +20,7 @@ import AdminEditAdministratorModal from "./AdminEditAdministratorModal";
 
 type AdminAdministratorsTableProps = {
   organizationId: number;
+  organizationName: string;
   invitations: AdminOrganizationInvitation[];
   properties: AdminPropertySummary[];
   modules: AdminOrganizationModule[];
@@ -45,8 +47,13 @@ function displayStatus(invitation: AdminOrganizationInvitation): string {
   return invitation.status;
 }
 
+function administratorFullName(invitation: AdminOrganizationInvitation): string {
+  return `${invitation.firstName} ${invitation.lastName}`.trim();
+}
+
 export default function AdminAdministratorsTable({
   organizationId,
+  organizationName,
   invitations,
   properties,
   modules,
@@ -57,6 +64,51 @@ export default function AdminAdministratorsTable({
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [confirmValue, setConfirmValue] = useState("");
+  const [canRemoveAdministrators, setCanRemoveAdministrators] = useState(false);
+  const [openMoreMenuId, setOpenMoreMenuId] = useState<string | null>(null);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAdminRole() {
+      const response = await adminFetch("/api/admin/me");
+      if (!mounted || !response.ok) return;
+      const body = (await response.json()) as PlatformAdminMeResponse;
+      setCanRemoveAdministrators(body.role === "platform_owner");
+    }
+
+    void loadAdminRole();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!openMoreMenuId) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMoreMenuId(null);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenMoreMenuId(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMoreMenuId]);
 
   if (invitations.length === 0) {
     return <p className="admin-portal__muted">No administrators yet.</p>;
@@ -64,7 +116,8 @@ export default function AdminAdministratorsTable({
 
   async function runAction(
     invitation: AdminOrganizationInvitation,
-    action: AdministratorInvitationAction
+    action: AdministratorInvitationAction,
+    bodyExtras?: Record<string, string>
   ) {
     setBusyId(invitation.id);
     onError("");
@@ -74,7 +127,7 @@ export default function AdminAdministratorsTable({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...bodyExtras }),
       }
     );
 
@@ -87,6 +140,90 @@ export default function AdminAdministratorsTable({
     }
 
     onChanged();
+  }
+
+  const propertyNames = (invitation: AdminOrganizationInvitation) => {
+    if (isOrgWideRole(invitation.orgRole)) {
+      return [];
+    }
+    return invitation.assignedPropertyIds.map(
+      (id) =>
+        properties.find((property) => property.id === id)?.name ??
+        (id === invitation.propertyId
+          ? invitation.propertyName
+          : null) ??
+        `Property #${id}`
+    );
+  };
+
+  function affectedPropertiesLabel(invitation: AdminOrganizationInvitation): string {
+    if (isOrgWideRole(invitation.orgRole) || invitation.orgRole === "org_owner") {
+      if (properties.length === 0) return "All organization properties";
+      return properties.map((property) => property.name).join(", ");
+    }
+    const names = propertyNames(invitation);
+    return names.length > 0 ? names.join(", ") : "Assigned properties";
+  }
+
+  function renderMoreActions(
+    invitation: AdminOrganizationInvitation,
+    busy: boolean,
+    isDisabled: boolean
+  ) {
+    const menuOpen = openMoreMenuId === invitation.id;
+
+    return (
+      <div
+        className="admin-portal__more-actions"
+        ref={menuOpen ? moreMenuRef : undefined}
+      >
+        <button
+          type="button"
+          className="admin-portal__button admin-portal__button--compact"
+          disabled={busy}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          onClick={() =>
+            setOpenMoreMenuId((current) =>
+              current === invitation.id ? null : invitation.id
+            )
+          }
+        >
+          More actions
+        </button>
+        {menuOpen ? (
+          <div className="admin-portal__more-actions-menu" role="menu">
+            <button
+              type="button"
+              role="menuitem"
+              className="admin-portal__more-actions-item"
+              disabled={busy}
+              onClick={() => {
+                setOpenMoreMenuId(null);
+                void runAction(invitation, isDisabled ? "enable" : "disable");
+              }}
+            >
+              {isDisabled ? "Enable" : "Disable"}
+            </button>
+            {canRemoveAdministrators ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="admin-portal__more-actions-item admin-portal__more-actions-item--danger"
+                disabled={busy}
+                onClick={() => {
+                  setOpenMoreMenuId(null);
+                  setConfirmValue("");
+                  setRemoveTarget(invitation);
+                }}
+              >
+                Remove
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   function renderAcceptedActions(invitation: AdminOrganizationInvitation, busy: boolean) {
@@ -113,30 +250,10 @@ export default function AdminAdministratorsTable({
         </button>
         {isPrimary ? (
           <span className="admin-portal__muted admin-portal__row-actions-note">
-            Protected
+            Transfer ownership required
           </span>
         ) : (
-          <>
-            <button
-              type="button"
-              className="admin-portal__button admin-portal__button--compact"
-              disabled={busy}
-              onClick={() => void runAction(invitation, isDisabled ? "enable" : "disable")}
-            >
-              {isDisabled ? "Enable" : "Disable"}
-            </button>
-            <button
-              type="button"
-              className="admin-portal__button admin-portal__button--compact admin-portal__button--danger"
-              disabled={busy}
-              onClick={() => {
-                setConfirmValue("");
-                setRemoveTarget(invitation);
-              }}
-            >
-              Remove
-            </button>
-          </>
+          renderMoreActions(invitation, busy, isDisabled)
         )}
       </div>
     );
@@ -176,19 +293,7 @@ export default function AdminAdministratorsTable({
     return <span className="admin-portal__muted">—</span>;
   }
 
-  const propertyNames = (invitation: AdminOrganizationInvitation) => {
-    if (isOrgWideRole(invitation.orgRole)) {
-      return [];
-    }
-    return invitation.assignedPropertyIds.map(
-      (id) =>
-        properties.find((property) => property.id === id)?.name ??
-        (id === invitation.propertyId
-          ? invitation.propertyName
-          : null) ??
-        `Property #${id}`
-    );
-  };
+  const removeConfirmName = removeTarget ? administratorFullName(removeTarget) : "";
 
   return (
     <>
@@ -270,11 +375,35 @@ export default function AdminAdministratorsTable({
         title="Remove administrator"
         description={
           removeTarget
-            ? `This revokes ${removeTarget.firstName} ${removeTarget.lastName}'s access to this organization. Type their email to confirm.`
+            ? `Permanently revoke ${administratorFullName(removeTarget)}'s access to this organization and its properties.`
             : ""
         }
-        organizationName={removeTarget?.email ?? ""}
+        organizationName={removeConfirmName}
         confirmLabel="Remove administrator"
+        confirmPromptLabel={
+          removeTarget
+            ? `Type ${removeConfirmName} to confirm`
+            : "Type the administrator name to confirm"
+        }
+        details={
+          removeTarget
+            ? [
+                {
+                  label: "Administrator",
+                  value: administratorFullName(removeTarget),
+                },
+                {
+                  label: "Organization",
+                  value: organizationName,
+                },
+                {
+                  label: "Affected properties",
+                  value: affectedPropertiesLabel(removeTarget),
+                },
+              ]
+            : undefined
+        }
+        warningNote="Removal revokes access immediately but preserves historical activity (pass-ons, work orders, inspections, and reports). The Auth account is not deleted."
         submitting={busyId === removeTarget?.id}
         confirmName={confirmValue}
         onConfirmNameChange={setConfirmValue}
@@ -282,8 +411,9 @@ export default function AdminAdministratorsTable({
         onConfirm={() => {
           if (removeTarget) {
             const target = removeTarget;
+            const confirmName = confirmValue.trim();
             setRemoveTarget(null);
-            void runAction(target, "remove");
+            void runAction(target, "remove", { confirmName });
           }
         }}
       />

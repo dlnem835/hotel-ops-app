@@ -1,11 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
+
+type ConfirmDetail = {
+  label: string;
+  value: string;
+};
 
 type AdminConfirmNameModalProps = {
   open: boolean;
   title: string;
   description: string;
+  /** Text the user must type exactly to enable confirm. */
   organizationName: string;
   confirmLabel: string;
   submitting?: boolean;
@@ -13,6 +19,9 @@ type AdminConfirmNameModalProps = {
   onConfirm: () => void;
   confirmName: string;
   onConfirmNameChange: (value: string) => void;
+  details?: ConfirmDetail[];
+  warningNote?: string;
+  confirmPromptLabel?: string;
 };
 
 export default function AdminConfirmNameModal({
@@ -26,12 +35,17 @@ export default function AdminConfirmNameModal({
   onConfirm,
   confirmName,
   onConfirmNameChange,
+  details,
+  warningNote,
+  confirmPromptLabel,
 }: AdminConfirmNameModalProps) {
   if (!open) {
     return null;
   }
 
   const nameMatches = confirmName.trim() === organizationName;
+  const promptLabel =
+    confirmPromptLabel ?? `Type ${organizationName} to confirm`;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,9 +68,24 @@ export default function AdminConfirmNameModal({
         </h3>
         <p className="admin-portal__muted">{description}</p>
 
+        {details && details.length > 0 ? (
+          <dl className="admin-portal__confirm-details">
+            {details.map((detail) => (
+              <div key={detail.label} className="admin-portal__confirm-details-row">
+                <dt>{detail.label}</dt>
+                <dd>{detail.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {warningNote ? (
+          <p className="admin-portal__confirm-warning">{warningNote}</p>
+        ) : null}
+
         <form className="admin-portal__form" onSubmit={handleSubmit}>
           <label className="admin-portal__field">
-            <span>Type {organizationName} to confirm</span>
+            <span>{promptLabel}</span>
             <input
               type="text"
               value={confirmName}
@@ -80,7 +109,7 @@ export default function AdminConfirmNameModal({
               className="admin-portal__button admin-portal__button--danger"
               disabled={!nameMatches || submitting}
             >
-              {submitting ? "Deleting…" : confirmLabel}
+              {submitting ? "Working…" : confirmLabel}
             </button>
           </div>
         </form>

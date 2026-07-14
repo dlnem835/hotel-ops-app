@@ -25,7 +25,7 @@ function parseOrganizationId(value: string): number | null {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { supabase, user } = await resolvePlatformAdminRequest(request);
+    const { supabase, user, platformAdmin } = await resolvePlatformAdminRequest(request);
     const { id, invitationId } = await context.params;
     const organizationId = parseOrganizationId(id);
 
@@ -43,12 +43,16 @@ export async function POST(request: Request, context: RouteContext) {
       throw new PlatformAdminRequestError(400, "Unsupported action");
     }
 
+    const confirmName =
+      typeof body.confirmName === "string" ? body.confirmName : undefined;
+
     const invitation = await manageAdministratorInvitation(
       supabase,
       user.id,
       organizationId,
       invitationId,
-      action
+      action,
+      { platformAdmin, confirmName }
     );
 
     return NextResponse.json({ invitation });

@@ -90,6 +90,8 @@ async function findPendingInvitationForUser(
     .select(selectWithAssigned)
     .eq("status", "pending")
     .eq("email", email)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error && error.message.includes("assigned_property_ids")) {
@@ -98,6 +100,8 @@ async function findPendingInvitationForUser(
       .select(selectBase)
       .eq("status", "pending")
       .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     data = fallback.data as typeof data;
     error = fallback.error;
@@ -169,6 +173,19 @@ export async function completeGmInvitationForUser(
   const homePropertyId = assignedPropertyIds[0] ?? invitation.property_id;
   const timestamp = new Date().toISOString();
 
+  const { data: existingDefault, error: existingDefaultError } = await supabase
+    .from("user_properties")
+    .select("property_id")
+    .eq("user_id", user.id)
+    .eq("is_default", true)
+    .maybeSingle();
+
+  if (existingDefaultError) {
+    throw new Error(existingDefaultError.message);
+  }
+
+  const shouldSetDefaultHome = !existingDefault;
+
   const { data: existingTeamMember, error: existingTeamMemberError } = await supabase
     .from("team_members")
     .select("id")
@@ -228,7 +245,7 @@ export async function completeGmInvitationForUser(
         user_id: user.id,
         property_id: propertyId,
         role: invitation.property_role,
-        is_default: propertyId === homePropertyId,
+        is_default: shouldSetDefaultHome && propertyId === homePropertyId,
         active: true,
         module_permissions: modulePermissions,
         updated_at: timestamp,
@@ -241,13 +258,23 @@ export async function completeGmInvitationForUser(
     }
   }
 
+  const { data: existingProfile, error: existingProfileError } = await supabase
+    .from("user_profiles")
+    .select("account_setup_completed")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    throw new Error(existingProfileError.message);
+  }
+
   const { error: profileError } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
       first_name: invitation.first_name,
       last_name: invitation.last_name,
       appearance_preference: "dark",
-      account_setup_completed: false,
+      account_setup_completed: Boolean(existingProfile?.account_setup_completed),
       updated_at: timestamp,
     },
     { onConflict: "user_id", ignoreDuplicates: false }

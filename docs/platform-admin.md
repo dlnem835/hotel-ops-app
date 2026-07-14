@@ -259,7 +259,7 @@ entire organization without a permission-model redesign.
 |-------|--------|------------------------|
 | Invited | `pending` | **Resend Invite**, **Cancel** |
 | Expired (7-day TTL) | `expired` | **Resend Invite**, **Cancel** |
-| Accepted | `accepted` | **Send Password Reset**, **Disable** / **Enable**, **Remove** |
+| Accepted | `accepted` | **Edit**, **Send Password Reset**, **Disable** / **Enable**; **Remove** (platform owner only; under More actions). Primary Owner: Edit + password reset; Transfer ownership required instead of Disable/Remove |
 | Cancelled | `cancelled` | — |
 | Removed | `revoked` | — |
 
@@ -274,11 +274,16 @@ Flow:
    email (`administrator.password_reset_sent`).
 6. **Disable / Enable** — flips `organization_users.active`, `user_properties.active`,
    and `team_members` login state (`administrator.disabled` / `administrator.enabled`).
-7. **Remove** — deactivates memberships and sets invitation `revoked`
-   (`administrator.removed`). Blocked for Primary Owner.
+7. **Remove** — platform owner only. Requires typed administrator-name
+   confirmation. Deletes `organization_users` and this org's `user_properties`
+   rows, deactivates related `team_members` login access, and sets invitation
+   `revoked` (`administrator.removed`). Preserves operational history and the
+   Auth user (account deletion is a separate future workflow). Blocked for
+   Primary Owner (409) and for self-targeting the active actor (403).
+   Non–platform-owner SaaS actors receive 403.
 
 Disable/Remove are enforced at the tenant data layer (`resolveTenantContextForUser`
-requires `active = true` memberships).
+requires active memberships; removed users have no remaining org/property rows).
 
 **Auth-email suppression (dev/test only).** Invite, resend, and password-reset
 sends go through `app/lib/platform-admin/server/auth-email-dispatch.ts`. When
@@ -332,6 +337,7 @@ Verification:
 
 ```bash
 node scripts/tenant/verify-platform-admin-stage-f.mjs
+node scripts/tenant/verify-platform-admin-administrator-remove.mjs
 ```
 
 ## Stage G — Module controls
