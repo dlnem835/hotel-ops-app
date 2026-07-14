@@ -8,6 +8,10 @@ import type {
   AdminPropertySummary,
 } from "@/app/lib/platform-admin/types";
 import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
+import {
+  administratorPropertyFieldLabel,
+  isOrgWideRole,
+} from "@/app/lib/platform-admin/roles";
 import AdminStatusBadge from "./AdminStatusBadge";
 import AdminConfirmNameModal from "./AdminConfirmNameModal";
 import AdminEditAdministratorModal from "./AdminEditAdministratorModal";
@@ -172,8 +176,18 @@ export default function AdminAdministratorsTable({
   }
 
   const propertyName = (invitation: AdminOrganizationInvitation) => {
-    if (invitation.assignedPropertyIds.length > 1) {
-      return `${invitation.assignedPropertyIds.length} properties`;
+    if (
+      !isOrgWideRole(invitation.orgRole) &&
+      invitation.assignedPropertyIds.length > 1
+    ) {
+      const names = invitation.assignedPropertyIds
+        .map(
+          (id) =>
+            properties.find((property) => property.id === id)?.name ??
+            `Property #${id}`
+        )
+        .join(", ");
+      return names;
     }
     return invitation.propertyName ?? `Property #${invitation.propertyId}`;
   };
@@ -205,12 +219,16 @@ export default function AdminAdministratorsTable({
                 <dd>{invitation.jobTitle || "Administrator"}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
-                <dt>Property</dt>
-                <dd>{propertyName(invitation)}</dd>
+                <dt>Role</dt>
+                <dd>{invitation.roleLabel}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Scope</dt>
                 <dd>{invitation.scopeLabel}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>{administratorPropertyFieldLabel(invitation.orgRole)}</dt>
+                <dd>{propertyName(invitation)}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Sent</dt>

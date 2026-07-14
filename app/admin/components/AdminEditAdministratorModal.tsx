@@ -271,9 +271,19 @@ export default function AdminEditAdministratorModal({
           <section className="admin-portal__edit-section">
             <h4 className="admin-portal__edit-section-title">Role &amp; scope</h4>
             {isPrimary ? (
-              <p className="admin-portal__muted">
-                Role: Primary Owner · Scope: Entire organization
-              </p>
+              <>
+                <div className="admin-portal__field">
+                  <span>Role</span>
+                  <p className="admin-portal__static-value">Primary Owner</p>
+                </div>
+                <div className="admin-portal__field">
+                  <span>Scope</span>
+                  <p className="admin-portal__static-value">Entire organization</p>
+                  <span className="admin-portal__muted">
+                    Includes every current property and any properties added later.
+                  </span>
+                </div>
+              </>
             ) : (
               <>
                 <label className="admin-portal__field">
@@ -298,27 +308,38 @@ export default function AdminEditAdministratorModal({
                     }
                   </span>
                 </label>
-                <p className="admin-portal__muted">
-                  Scope:{" "}
-                  {scopeIsOrganization
-                    ? "Entire organization"
-                    : "Selected property/properties"}
-                </p>
+                <div className="admin-portal__field">
+                  <span>Scope</span>
+                  <p className="admin-portal__static-value">
+                    {scopeIsOrganization
+                      ? "Entire organization"
+                      : "Selected property"}
+                  </p>
+                  <span className="admin-portal__muted">
+                    {scopeIsOrganization
+                      ? "Includes every current property and any properties added later."
+                      : "Limited to the property assignments chosen below."}
+                  </span>
+                </div>
               </>
             )}
           </section>
 
           <section className="admin-portal__edit-section">
             <h4 className="admin-portal__edit-section-title">
-              {scopeIsOrganization || isPrimary
-                ? "Home property"
-                : "Property assignments"}
+              {scopeIsOrganization || isPrimary ? "Home property" : "Property"}
             </h4>
             {isPrimary ? (
-              <p className="admin-portal__muted">
-                {properties.find((property) => property.id === invitation.propertyId)
-                  ?.name ?? `Property #${invitation.propertyId}`}
-              </p>
+              <>
+                <p className="admin-portal__static-value">
+                  {properties.find((property) => property.id === invitation.propertyId)
+                    ?.name ?? `Property #${invitation.propertyId}`}
+                </p>
+                <span className="admin-portal__muted">
+                  This administrator can access all properties. Home property
+                  determines where they land after login.
+                </span>
+              </>
             ) : scopeIsOrganization ? (
               <label className="admin-portal__field">
                 <span>Home property</span>
@@ -334,20 +355,31 @@ export default function AdminEditAdministratorModal({
                     </option>
                   ))}
                 </select>
+                <span className="admin-portal__muted">
+                  This administrator can access all properties. Home property
+                  determines where they land after login. Changing home property
+                  does not change organization-wide access.
+                </span>
               </label>
             ) : (
-              <div className="admin-portal__checkbox-grid">
-                {properties.map((property) => (
-                  <label key={property.id} className="admin-portal__checkbox-field">
-                    <input
-                      type="checkbox"
-                      checked={propertyIds.includes(property.id)}
-                      onChange={() => toggleProperty(property.id)}
-                    />
-                    <span>{property.name}</span>
-                  </label>
-                ))}
-              </div>
+              <>
+                <div className="admin-portal__checkbox-grid">
+                  {properties.map((property) => (
+                    <label key={property.id} className="admin-portal__checkbox-field">
+                      <input
+                        type="checkbox"
+                        checked={propertyIds.includes(property.id)}
+                        onChange={() => toggleProperty(property.id)}
+                      />
+                      <span>{property.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <span className="admin-portal__muted">
+                  This administrator will only have access to the selected
+                  property.
+                </span>
+              </>
             )}
           </section>
 

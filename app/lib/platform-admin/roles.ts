@@ -67,12 +67,13 @@ export const ADMINISTRATOR_INVITE_ROLES: {
   {
     value: "organization_admin",
     label: "Organization Admin",
-    description: "Administers the entire organization and every property.",
+    description:
+      "Scope is the entire organization — every current and future property.",
   },
   {
     value: "property_administrator",
     label: "Property Administrator",
-    description: "Administers only the selected property.",
+    description: "Scope is the selected property only.",
   },
 ];
 
@@ -106,7 +107,15 @@ export function administratorScopeLabel(
   if (isOrgWideRole(orgRole)) {
     return "Entire organization";
   }
-  return assignedPropertyCount > 1 ? "Selected properties" : "Assigned property";
+  return assignedPropertyCount > 1 ? "Selected properties" : "Selected property";
+}
+
+/**
+ * Card / form label for the property field: home landing property for org-wide
+ * roles, assigned property for property-scoped administrators.
+ */
+export function administratorPropertyFieldLabel(orgRole: string): string {
+  return isOrgWideRole(orgRole) ? "Home property" : "Property";
 }
 
 /** Maps a stored org_role back to the invite/edit role choice (non-primary). */

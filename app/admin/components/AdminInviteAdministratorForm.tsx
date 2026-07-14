@@ -39,8 +39,17 @@ export default function AdminInviteAdministratorForm({
   const [jobTitle, setJobTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const propertyLabel =
-    role === "property_administrator" ? "Property" : "Home property";
+  // First invite becomes Primary Owner (org-wide). Later invites follow the
+  // selected role. Scope is always derived — never chosen independently.
+  const isOrgWideInvite = !hasPrimary || role === "organization_admin";
+  const propertyFieldLabel = isOrgWideInvite ? "Home property" : "Property";
+  const propertyPlaceholder = isOrgWideInvite
+    ? "Select home property"
+    : "Select property";
+  const propertyHelper = isOrgWideInvite
+    ? "This administrator can access all properties. Home property determines where they land after login."
+    : "This administrator will only have access to the selected property.";
+  const scopeLabel = isOrgWideInvite ? "Entire organization" : "Selected property";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -106,22 +115,41 @@ export default function AdminInviteAdministratorForm({
               {ADMINISTRATOR_INVITE_ROLES.find((option) => option.value === role)?.description}
             </span>
           </label>
-        ) : null}
+        ) : (
+          <div className="admin-portal__field">
+            <span>Role</span>
+            <p className="admin-portal__static-value">Primary Owner</p>
+            <span className="admin-portal__muted">
+              Assigned automatically to the first administrator for this organization.
+            </span>
+          </div>
+        )}
+
+        <div className="admin-portal__field">
+          <span>Scope</span>
+          <p className="admin-portal__static-value">{scopeLabel}</p>
+          <span className="admin-portal__muted">
+            {isOrgWideInvite
+              ? "Includes every current property and any properties added later."
+              : "Limited to the property chosen below."}
+          </span>
+        </div>
 
         <label className="admin-portal__field">
-          <span>{propertyLabel}</span>
+          <span>{propertyFieldLabel}</span>
           <select
             value={propertyId}
             onChange={(event) => setPropertyId(event.target.value)}
             required
           >
-            <option value="">Select property</option>
+            <option value="">{propertyPlaceholder}</option>
             {organization.properties.map((property) => (
               <option key={property.id} value={property.id}>
                 {property.name}
               </option>
             ))}
           </select>
+          <span className="admin-portal__muted">{propertyHelper}</span>
         </label>
 
         <label className="admin-portal__field">

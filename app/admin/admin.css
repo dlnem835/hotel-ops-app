@@ -686,3 +686,10 @@
   background: rgba(200, 169, 106, 0.08);
 }
 
+.admin-portal__static-value {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+

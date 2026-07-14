@@ -651,6 +651,32 @@ export async function updateAdministrator(
       ? [effectiveHomeId]
       : afterPropertyIds;
 
+    const targetSet = new Set(targetPropertyIds);
+
+    // Clear the previous default first. Postgres enforces at most one active
+    // is_default=true row per user (user_properties_one_default_per_user).
+    for (const propertyId of orgPropertyIds) {
+      if (propertyId === effectiveHomeId) continue;
+      const { error } = await supabase
+        .from("user_properties")
+        .update({
+          is_default: false,
+          active: targetSet.has(propertyId),
+          ...(targetSet.has(propertyId)
+            ? {
+                role: afterPropertyRole,
+                module_permissions: afterModules,
+              }
+            : {}),
+          updated_at: timestamp,
+        })
+        .eq("user_id", authUserId)
+        .eq("property_id", propertyId);
+      if (error) {
+        throw new Error(error.message);
+      }
+    }
+
     // Upsert desired active assignments (no duplicates via onConflict).
     for (const propertyId of targetPropertyIds) {
       const { error } = await supabase.from("user_properties").upsert(
@@ -671,7 +697,6 @@ export async function updateAdministrator(
     }
 
     // Deactivate org property memberships that are no longer assigned.
-    const targetSet = new Set(targetPropertyIds);
     for (const propertyId of orgPropertyIds) {
       if (targetSet.has(propertyId)) continue;
       const { error } = await supabase
