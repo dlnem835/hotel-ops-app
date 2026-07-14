@@ -1,14 +1,9 @@
 /**
  * Canonical membership roles for organizations and properties.
  *
- * Internal DB values are kept stable (org_owner/org_admin/... and
- * property_admin/...) while the product surfaces cleaner display names. Scope is
- * derived from the org role, so a user can administer one property, several, or
- * the whole organization without a schema/permission-model redesign:
- *
- *   org_owner  -> Primary Owner      (org-wide: every active property)
- *   org_admin  -> Organization Admin (org-wide: every active property)
- *   org_member -> property-scoped    (only explicit user_properties rows)
+ *   org_owner  -> Primary Owner      (org-wide: every current + future property)
+ *   org_admin  -> Organization Admin (selected properties via user_properties)
+ *   org_member -> Property Admin     (exactly one property via user_properties)
  */
 
 export type OrgRole = "org_owner" | "org_admin" | "org_member" | "org_billing";
@@ -31,15 +26,19 @@ export const PROPERTY_ROLE = {
   propertyAdministrator: "property_admin",
 } as const;
 
-/** Org roles that grant access to every active property in the organization. */
+/**
+ * Only the Primary Owner receives every current and future property through
+ * organization membership. Organization Admins and Property Administrators must
+ * have explicit user_properties rows.
+ */
 export function isOrgWideRole(role: string | null | undefined): boolean {
-  return role === ORG_ROLE.primaryOwner || role === ORG_ROLE.organizationAdmin;
+  return role === ORG_ROLE.primaryOwner;
 }
 
 export const ORG_ROLE_LABELS: Record<string, string> = {
   org_owner: "Primary Owner",
   org_admin: "Organization Admin",
-  org_member: "Member",
+  org_member: "Property Administrator",
   org_billing: "Billing",
 };
 
@@ -68,12 +67,12 @@ export const ADMINISTRATOR_INVITE_ROLES: {
     value: "organization_admin",
     label: "Organization Admin",
     description:
-      "Scope is the entire organization — every current and future property.",
+      "Scope is selected properties — one or many. New properties are not added automatically.",
   },
   {
     value: "property_administrator",
     label: "Property Administrator",
-    description: "Scope is the selected property only.",
+    description: "Scope is a single property.",
   },
 ];
 
@@ -96,6 +95,9 @@ export function administratorRoleLabel(input: {
   if (input.isPrimary) {
     return ORG_ROLE_LABELS.org_owner;
   }
+  if (input.orgRole === ORG_ROLE.member) {
+    return "Property Administrator";
+  }
   return ORG_ROLE_LABELS[input.orgRole] ?? "Administrator";
 }
 
@@ -107,15 +109,37 @@ export function administratorScopeLabel(
   if (isOrgWideRole(orgRole)) {
     return "Entire organization";
   }
-  return assignedPropertyCount > 1 ? "Selected properties" : "Selected property";
+  if (orgRole === ORG_ROLE.organizationAdmin) {
+    return assignedPropertyCount === 1
+      ? "1 selected property"
+      : `${assignedPropertyCount} selected properties`;
+  }
+  return "Single property";
 }
 
-/**
- * Card / form label for the property field: home landing property for org-wide
- * roles, assigned property for property-scoped administrators.
- */
+/** Card / form label for the property field. */
 export function administratorPropertyFieldLabel(orgRole: string): string {
-  return isOrgWideRole(orgRole) ? "Home property" : "Property";
+  if (isOrgWideRole(orgRole)) {
+    return "Properties";
+  }
+  if (orgRole === ORG_ROLE.organizationAdmin) {
+    return "Assigned properties";
+  }
+  return "Property";
+}
+
+/** Display value for the properties field on administrator cards. */
+export function administratorPropertiesDisplay(input: {
+  orgRole: string;
+  propertyNames: string[];
+}): string {
+  if (isOrgWideRole(input.orgRole)) {
+    return "All properties";
+  }
+  if (input.propertyNames.length === 0) {
+    return "—";
+  }
+  return input.propertyNames.join(", ");
 }
 
 /** Maps a stored org_role back to the invite/edit role choice (non-primary). */
@@ -123,4 +147,22 @@ export function inviteRoleFromOrgRole(orgRole: string): AdministratorInviteRole 
   return orgRole === ORG_ROLE.organizationAdmin
     ? "organization_admin"
     : "property_administrator";
+}
+
+/** Normalize a list of positive property ids (deduped, insertion order preserved). */
+export function normalizePropertyIdList(raw: unknown): number[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const seen = new Set<number>();
+  const ids: number[] = [];
+  for (const value of raw) {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isInteger(parsed) || parsed <= 0 || seen.has(parsed)) {
+      continue;
+    }
+    seen.add(parsed);
+    ids.push(parsed);
+  }
+  return ids;
 }

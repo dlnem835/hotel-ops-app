@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { writeAdminAuditLog } from "@/app/lib/platform-admin/server/admin-audit-log";
 import { resolveGmModulePermissions } from "@/app/lib/platform-admin/server/gm-module-permissions";
 import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
+import { normalizePropertyIdList } from "@/app/lib/platform-admin/roles";
 
 type InvitationRow = {
   id: string;
@@ -15,6 +16,7 @@ type InvitationRow = {
   job_title: string;
   status: string;
   auth_user_id: string | null;
+  assigned_property_ids?: number[] | null;
 };
 
 function normalizeEmail(email: string): string {
@@ -42,23 +44,40 @@ async function findPendingInvitationForUser(
   supabase: SupabaseClient,
   user: User
 ): Promise<InvitationRow | null> {
-  const metadataInvitationId = user.user_metadata?.oe_invitation_id;
-  if (typeof metadataInvitationId === "string" && metadataInvitationId.trim()) {
-    const { data, error } = await supabase
+  const selectWithAssigned =
+    "id, organization_id, property_id, email, first_name, last_name, org_role, property_role, job_title, status, auth_user_id, assigned_property_ids";
+  const selectBase =
+    "id, organization_id, property_id, email, first_name, last_name, org_role, property_role, job_title, status, auth_user_id";
+
+  async function loadById(invitationId: string): Promise<InvitationRow | null> {
+    let { data, error } = await supabase
       .from("organization_invitations")
-      .select(
-        "id, organization_id, property_id, email, first_name, last_name, org_role, property_role, job_title, status, auth_user_id"
-      )
-      .eq("id", metadataInvitationId)
+      .select(selectWithAssigned)
+      .eq("id", invitationId)
       .eq("status", "pending")
       .maybeSingle();
+
+    if (error && error.message.includes("assigned_property_ids")) {
+      const fallback = await supabase
+        .from("organization_invitations")
+        .select(selectBase)
+        .eq("id", invitationId)
+        .eq("status", "pending")
+        .maybeSingle();
+      data = fallback.data as typeof data;
+      error = fallback.error;
+    }
 
     if (error) {
       throw new Error(error.message);
     }
-    if (data) {
-      return data as InvitationRow;
-    }
+    return (data as InvitationRow | null) ?? null;
+  }
+
+  const metadataInvitationId = user.user_metadata?.oe_invitation_id;
+  if (typeof metadataInvitationId === "string" && metadataInvitationId.trim()) {
+    const byId = await loadById(metadataInvitationId);
+    if (byId) return byId;
   }
 
   const email = user.email ? normalizeEmail(user.email) : null;
@@ -66,20 +85,43 @@ async function findPendingInvitationForUser(
     return null;
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("organization_invitations")
-    .select(
-      "id, organization_id, property_id, email, first_name, last_name, org_role, property_role, job_title, status, auth_user_id"
-    )
+    .select(selectWithAssigned)
     .eq("status", "pending")
     .eq("email", email)
     .maybeSingle();
+
+  if (error && error.message.includes("assigned_property_ids")) {
+    const fallback = await supabase
+      .from("organization_invitations")
+      .select(selectBase)
+      .eq("status", "pending")
+      .eq("email", email)
+      .maybeSingle();
+    data = fallback.data as typeof data;
+    error = fallback.error;
+  }
 
   if (error) {
     throw new Error(error.message);
   }
 
   return (data as InvitationRow | null) ?? null;
+}
+
+function resolveAssignedPropertyIds(invitation: InvitationRow, user: User): number[] {
+  const fromColumn = normalizePropertyIdList(invitation.assigned_property_ids ?? []);
+  if (fromColumn.length > 0) {
+    return fromColumn;
+  }
+  const fromMeta = normalizePropertyIdList(
+    user.user_metadata?.oe_assigned_property_ids
+  );
+  if (fromMeta.length > 0) {
+    return fromMeta;
+  }
+  return [invitation.property_id];
 }
 
 export type CompleteGmInvitationResult = {
@@ -103,10 +145,7 @@ export async function completeGmInvitationForUser(
     };
   }
 
-  if (
-    invitation.auth_user_id &&
-    invitation.auth_user_id !== user.id
-  ) {
+  if (invitation.auth_user_id && invitation.auth_user_id !== user.id) {
     throw new PlatformAdminRequestError(
       403,
       "Invitation is assigned to a different user"
@@ -126,13 +165,16 @@ export async function completeGmInvitationForUser(
     invitation.organization_id
   );
   const modulePermissions = resolveGmModulePermissions(enabledModuleKeys);
+  const assignedPropertyIds = resolveAssignedPropertyIds(invitation, user);
+  const homePropertyId = assignedPropertyIds[0] ?? invitation.property_id;
+  const timestamp = new Date().toISOString();
 
   const { data: existingTeamMember, error: existingTeamMemberError } = await supabase
     .from("team_members")
     .select("id")
     .eq("auth_user_id", user.id)
     .eq("organization_id", invitation.organization_id)
-    .eq("property_id", invitation.property_id)
+    .eq("property_id", homePropertyId)
     .maybeSingle();
 
   if (existingTeamMemberError) {
@@ -156,8 +198,8 @@ export async function completeGmInvitationForUser(
       auth_email: invitation.email,
       auth_user_id: user.id,
       organization_id: invitation.organization_id,
-      property_id: invitation.property_id,
-      default_property_id: invitation.property_id,
+      property_id: homePropertyId,
+      default_property_id: homePropertyId,
     });
 
     if (teamMemberError) {
@@ -171,7 +213,7 @@ export async function completeGmInvitationForUser(
       user_id: user.id,
       role: invitation.org_role,
       active: true,
-      updated_at: new Date().toISOString(),
+      updated_at: timestamp,
     },
     { onConflict: "organization_id,user_id" }
   );
@@ -180,25 +222,25 @@ export async function completeGmInvitationForUser(
     throw new Error(orgUserError.message);
   }
 
-  const { error: propertyUserError } = await supabase.from("user_properties").upsert(
-    {
-      user_id: user.id,
-      property_id: invitation.property_id,
-      role: invitation.property_role,
-      is_default: true,
-      active: true,
-      module_permissions: modulePermissions,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,property_id" }
-  );
+  for (const propertyId of assignedPropertyIds) {
+    const { error: propertyUserError } = await supabase.from("user_properties").upsert(
+      {
+        user_id: user.id,
+        property_id: propertyId,
+        role: invitation.property_role,
+        is_default: propertyId === homePropertyId,
+        active: true,
+        module_permissions: modulePermissions,
+        updated_at: timestamp,
+      },
+      { onConflict: "user_id,property_id" }
+    );
 
-  if (propertyUserError) {
-    throw new Error(propertyUserError.message);
+    if (propertyUserError) {
+      throw new Error(propertyUserError.message);
+    }
   }
 
-  // Mark this user as requiring first-login account setup (durable, server-
-  // validated). Missing row = complete, so this only affects invited users.
   const { error: profileError } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
@@ -206,7 +248,7 @@ export async function completeGmInvitationForUser(
       last_name: invitation.last_name,
       appearance_preference: "dark",
       account_setup_completed: false,
-      updated_at: new Date().toISOString(),
+      updated_at: timestamp,
     },
     { onConflict: "user_id", ignoreDuplicates: false }
   );
@@ -215,13 +257,14 @@ export async function completeGmInvitationForUser(
     throw new Error(profileError.message);
   }
 
-  const acceptedAt = new Date().toISOString();
+  const acceptedAt = timestamp;
   const { error: invitationUpdateError } = await supabase
     .from("organization_invitations")
     .update({
       status: "accepted",
       auth_user_id: user.id,
       accepted_at: acceptedAt,
+      property_id: homePropertyId,
       updated_at: acceptedAt,
     })
     .eq("id", invitation.id)
@@ -237,11 +280,12 @@ export async function completeGmInvitationForUser(
     targetType: "organization_invitation",
     targetId: invitation.id,
     organizationId: invitation.organization_id,
-    propertyId: invitation.property_id,
+    propertyId: homePropertyId,
     metadata: {
       email: invitation.email,
       firstName: invitation.first_name,
       lastName: invitation.last_name,
+      propertyIds: assignedPropertyIds,
     },
   });
 
@@ -249,6 +293,6 @@ export async function completeGmInvitationForUser(
     completed: true,
     invitationId: invitation.id,
     organizationId: invitation.organization_id,
-    propertyId: invitation.property_id,
+    propertyId: homePropertyId,
   };
 }

@@ -389,7 +389,7 @@ async function main() {
         ? pass("Non-primary name/job-title edit succeeds")
         : fail("Non-primary name/job-title edit succeeds", `got ${namePatch.status}`);
 
-    // Promote property admin → organization-wide (widening; no confirm needed)
+    // Promote property admin → Organization Admin (still selected-property scoped)
     const promotePatch = await fetch(
       `${BASE}/api/admin/organizations/${orgId}/invitations/${adminInviteId}`,
       {
@@ -410,16 +410,16 @@ async function main() {
       const body = await promotePatch.json();
       failures +=
         body.invitation?.orgRole === "org_admin"
-          ? pass("Property administrator promoted to organization-wide access")
-          : fail("Property administrator promoted to organization-wide access");
+          ? pass("Property administrator promoted to Organization Admin")
+          : fail("Property administrator promoted to Organization Admin");
     } else {
       failures += fail(
-        "Property administrator promoted to organization-wide access",
+        "Property administrator promoted to Organization Admin",
         `got ${promotePatch.status}`
       );
     }
 
-    // Org → selected properties without confirm should 409
+    // Org Admin → Property Admin without confirm should 409
     const reduceWithoutConfirm = await fetch(
       `${BASE}/api/admin/organizations/${orgId}/invitations/${adminInviteId}`,
       {
@@ -438,9 +438,9 @@ async function main() {
     );
     failures +=
       reduceWithoutConfirm.status === 409
-        ? pass("Org→property scope reduction requires confirmation")
+        ? pass("Org Admin→Property Administrator reduction requires confirmation")
         : fail(
-            "Org→property scope reduction requires confirmation",
+            "Org Admin→Property Administrator reduction requires confirmation",
             `got ${reduceWithoutConfirm.status}`
           );
 
@@ -453,7 +453,7 @@ async function main() {
           firstName: "ScopedUpdated",
           lastName: "AdminUpdated",
           jobTitle: "Area Manager",
-          role: "property_administrator",
+          role: "organization_admin",
           propertyIds: [propertyA, propertyB],
           modulePermissions: {
             ...allModules(true),
@@ -467,14 +467,14 @@ async function main() {
       const body = await reduceWithConfirm.json();
       const ids = body.invitation?.assignedPropertyIds ?? [];
       failures +=
-        body.invitation?.orgRole === "org_member" &&
+        body.invitation?.orgRole === "org_admin" &&
         ids.includes(propertyA) &&
         ids.includes(propertyB)
-          ? pass("Organization admin reduced to multi-property access")
-          : fail("Organization admin reduced to multi-property access");
+          ? pass("Organization Admin assigned to multiple properties")
+          : fail("Organization Admin assigned to multiple properties");
     } else {
       failures += fail(
-        "Organization admin reduced to multi-property access",
+        "Organization Admin assigned to multiple properties",
         `got ${reduceWithConfirm.status}`
       );
     }
@@ -511,9 +511,9 @@ async function main() {
       .eq("user_id", adminUserId)
       .maybeSingle();
     failures +=
-      orgUser?.role === "org_member"
-        ? pass("organization_users role is org_member after property scope")
-        : fail("organization_users role is org_member after property scope");
+      orgUser?.role === "org_admin"
+        ? pass("organization_users role is org_admin after multi-property assignment")
+        : fail("organization_users role is org_admin after multi-property assignment");
 
     const { data: auditRows } = await admin
       .from("admin_audit_log")
@@ -561,7 +561,7 @@ async function main() {
           firstName: "ScopedUpdated",
           lastName: "AdminUpdated",
           jobTitle: "Area Manager",
-          role: "property_administrator",
+          role: "organization_admin",
           propertyIds: [propertyA],
           modulePermissions: {
             ...allModules(true),

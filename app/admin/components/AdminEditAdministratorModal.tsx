@@ -19,6 +19,7 @@ import {
   normalizeModulePermissions,
   type ModulePermissions,
 } from "@/app/lib/role-permissions";
+import AdminPropertyMultiSelect from "@/app/admin/components/AdminPropertyMultiSelect";
 
 type AdminEditAdministratorModalProps = {
   open: boolean;
@@ -125,7 +126,8 @@ export default function AdminEditAdministratorModal({
   }
 
   const isPrimary = invitation.isPrimary;
-  const scopeIsOrganization = role === "organization_admin";
+  const isOrganizationAdmin = role === "organization_admin";
+  const isPropertyAdministrator = role === "property_administrator";
   const initialRole = invitation.isPrimary
     ? ("organization_admin" as const)
     : inviteRoleFromOrgRole(invitation.orgRole);
@@ -140,21 +142,26 @@ export default function AdminEditAdministratorModal({
     afterModules: moduleState,
   });
 
-  function toggleProperty(propertyId: number) {
-    setPropertyIds((current) =>
-      current.includes(propertyId)
-        ? current.filter((id) => id !== propertyId)
-        : [...current, propertyId]
-    );
-    setConfirmReduction(false);
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!invitation) return;
 
-    if (!scopeIsOrganization && propertyIds.length === 0) {
-      onError("Select at least one property.");
+    const payloadPropertyIds = isPrimary
+      ? [invitation.propertyId]
+      : isOrganizationAdmin
+        ? propertyIds
+        : propertyIds.slice(0, 1);
+
+    if (!isPrimary && payloadPropertyIds.length === 0) {
+      onError(
+        isPropertyAdministrator
+          ? "Select exactly one property."
+          : "Select at least one property."
+      );
+      return;
+    }
+    if (!isPrimary && isPropertyAdministrator && payloadPropertyIds.length !== 1) {
+      onError("Property Administrator must have exactly one property.");
       return;
     }
 
@@ -165,10 +172,6 @@ export default function AdminEditAdministratorModal({
 
     setSubmitting(true);
     onError("");
-
-    const payloadPropertyIds = scopeIsOrganization
-      ? [propertyIds[0] ?? invitation.propertyId]
-      : propertyIds;
 
     const response = await adminFetch(
       `/api/admin/organizations/${organizationId}/invitations/${invitation.id}`,
@@ -291,8 +294,12 @@ export default function AdminEditAdministratorModal({
                   <select
                     value={role}
                     onChange={(event) => {
-                      setRole(event.target.value as AdministratorInviteRole);
+                      const next = event.target.value as AdministratorInviteRole;
+                      setRole(next);
                       setConfirmReduction(false);
+                      if (next === "property_administrator" && propertyIds.length > 1) {
+                        setPropertyIds([propertyIds[0]]);
+                      }
                     }}
                   >
                     {ADMINISTRATOR_INVITE_ROLES.map((option) => (
@@ -311,15 +318,12 @@ export default function AdminEditAdministratorModal({
                 <div className="admin-portal__field">
                   <span>Scope</span>
                   <p className="admin-portal__static-value">
-                    {scopeIsOrganization
-                      ? "Entire organization"
-                      : "Selected property"}
+                    {isOrganizationAdmin
+                      ? propertyIds.length === 1
+                        ? "1 selected property"
+                        : `${Math.max(propertyIds.length, 0)} selected properties`
+                      : "Single property"}
                   </p>
-                  <span className="admin-portal__muted">
-                    {scopeIsOrganization
-                      ? "Includes every current property and any properties added later."
-                      : "Limited to the property assignments chosen below."}
-                  </span>
                 </div>
               </>
             )}
@@ -327,27 +331,44 @@ export default function AdminEditAdministratorModal({
 
           <section className="admin-portal__edit-section">
             <h4 className="admin-portal__edit-section-title">
-              {scopeIsOrganization || isPrimary ? "Home property" : "Property"}
+              {isPrimary
+                ? "Properties"
+                : isOrganizationAdmin
+                  ? "Assigned properties"
+                  : "Property"}
             </h4>
             {isPrimary ? (
               <>
-                <p className="admin-portal__static-value">
-                  {properties.find((property) => property.id === invitation.propertyId)
-                    ?.name ?? `Property #${invitation.propertyId}`}
-                </p>
+                <p className="admin-portal__static-value">All properties</p>
                 <span className="admin-portal__muted">
-                  This administrator can access all properties. Home property
-                  determines where they land after login.
+                  Primary Owner property access cannot be edited here.
                 </span>
               </>
-            ) : scopeIsOrganization ? (
+            ) : isOrganizationAdmin ? (
+              <>
+                <AdminPropertyMultiSelect
+                  properties={properties}
+                  value={propertyIds}
+                  onChange={(next) => {
+                    setPropertyIds(next);
+                    setConfirmReduction(false);
+                  }}
+                  disabled={submitting}
+                />
+                <span className="admin-portal__muted">
+                  This administrator will have access only to the selected properties.
+                  At least one property is required.
+                </span>
+              </>
+            ) : (
               <label className="admin-portal__field">
-                <span>Home property</span>
+                <span>Property</span>
                 <select
                   value={String(propertyIds[0] ?? invitation.propertyId)}
-                  onChange={(event) =>
-                    setPropertyIds([Number.parseInt(event.target.value, 10)])
-                  }
+                  onChange={(event) => {
+                    setPropertyIds([Number.parseInt(event.target.value, 10)]);
+                    setConfirmReduction(false);
+                  }}
                 >
                   {properties.map((property) => (
                     <option key={property.id} value={property.id}>
@@ -356,30 +377,9 @@ export default function AdminEditAdministratorModal({
                   ))}
                 </select>
                 <span className="admin-portal__muted">
-                  This administrator can access all properties. Home property
-                  determines where they land after login. Changing home property
-                  does not change organization-wide access.
+                  This administrator will only have access to this property.
                 </span>
               </label>
-            ) : (
-              <>
-                <div className="admin-portal__checkbox-grid">
-                  {properties.map((property) => (
-                    <label key={property.id} className="admin-portal__checkbox-field">
-                      <input
-                        type="checkbox"
-                        checked={propertyIds.includes(property.id)}
-                        onChange={() => toggleProperty(property.id)}
-                      />
-                      <span>{property.name}</span>
-                    </label>
-                  ))}
-                </div>
-                <span className="admin-portal__muted">
-                  This administrator will only have access to the selected
-                  property.
-                </span>
-              </>
             )}
           </section>
 

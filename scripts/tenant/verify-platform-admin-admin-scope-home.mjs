@@ -1,11 +1,11 @@
 /**
- * Platform admin — Role / Scope / Home property access verification.
+ * Platform admin — revised Role / Scope / property assignment verification.
  *
- * Confirms organization-wide access comes from org membership (including future
- * properties), home property only controls default landing, and property
- * administrators are blocked from unassigned properties.
+ * Organization Admin = selected properties only (user_properties).
+ * Primary Owner = entire organization (including future properties).
+ * Property Administrator = exactly one property.
  *
- * Requires: npm run dev (or SMOKE_BASE_URL) and SUPPRESS_AUTH_EMAILS=true.
+ * Requires: npm run dev + SUPPRESS_AUTH_EMAILS=true
  *
  * Usage: node scripts/tenant/verify-platform-admin-admin-scope-home.mjs
  */
@@ -105,6 +105,18 @@ async function inviteAdmin(authHeaders, orgId, body) {
   return res.json();
 }
 
+function allModules(enabled = true) {
+  return {
+    dashboard: enabled,
+    reports: enabled,
+    lost_found: enabled,
+    pass_on: enabled,
+    inspections: enabled,
+    maintenance: enabled,
+    settings: enabled,
+  };
+}
+
 async function main() {
   loadEnvLocal();
   assertAuthEmailsSuppressed();
@@ -120,16 +132,14 @@ async function main() {
   let failures = 0;
   const cleanup = [];
   let orgId = null;
-  let propertyA = null;
-  let propertyB = null;
-  let propertyC = null;
+  const propertyIds = [];
   let primaryUserId = null;
   let orgAdminUserId = null;
   let propAdminUserId = null;
   let primaryInviteId = null;
   let orgAdminInviteId = null;
 
-  pass("Scope / home property verification starting (" + BASE + ")");
+  pass("Revised scope / assignment verification starting (" + BASE + ")");
 
   const platformUserId = await findPlatformAdminUserId(admin);
   if (!platformUserId) {
@@ -159,20 +169,20 @@ async function main() {
       if (orgId) await admin.from("organizations").delete().eq("id", orgId);
     });
 
-    propertyA = await createProperty(authHeaders, orgId, "Home Property A");
-    propertyB = await createProperty(authHeaders, orgId, "Second Property B");
+    for (let i = 1; i <= 5; i += 1) {
+      propertyIds.push(await createProperty(authHeaders, orgId, `Hotel ${i}`));
+    }
     cleanup.unshift(async () => {
-      for (const id of [propertyA, propertyB, propertyC]) {
+      for (const id of propertyIds) {
         if (id) await admin.from("properties").delete().eq("id", id);
       }
     });
 
     const primaryInvitation = await inviteAdmin(authHeaders, orgId, {
-      propertyId: propertyA,
+      propertyId: propertyIds[0],
       email: PRIMARY_EMAIL,
       firstName: "Primary",
       lastName: "Owner",
-      jobTitle: "General Manager",
     });
     primaryInviteId = primaryInvitation.id;
     primaryUserId = await completeInvite(
@@ -182,8 +192,8 @@ async function main() {
     );
 
     const orgAdminInvitation = await inviteAdmin(authHeaders, orgId, {
-      propertyId: propertyA,
       role: "organization_admin",
+      propertyIds,
       email: ORG_ADMIN_EMAIL,
       firstName: "Org",
       lastName: "Admin",
@@ -196,8 +206,8 @@ async function main() {
     );
 
     const propAdminInvitation = await inviteAdmin(authHeaders, orgId, {
-      propertyId: propertyA,
       role: "property_administrator",
+      propertyIds: [propertyIds[0]],
       email: PROP_ADMIN_EMAIL,
       firstName: "Prop",
       lastName: "Admin",
@@ -211,17 +221,13 @@ async function main() {
     cleanup.unshift(async () => {
       await admin.from("organization_invitations").delete().eq("organization_id", orgId);
       await admin.from("team_members").delete().eq("organization_id", orgId);
-      await admin
-        .from("user_properties")
-        .delete()
-        .in("property_id", [propertyA, propertyB, propertyC].filter(Boolean));
+      await admin.from("user_properties").delete().in("property_id", propertyIds);
       await admin.from("organization_users").delete().eq("organization_id", orgId);
       for (const userId of [primaryUserId, orgAdminUserId, propAdminUserId]) {
         if (userId) await admin.auth.admin.deleteUser(userId);
       }
     });
 
-    // Card / API labels
     const detailRes = await fetch(`${BASE}/api/admin/organizations/${orgId}`, {
       headers: authHeaders,
     });
@@ -231,81 +237,76 @@ async function main() {
 
     failures +=
       primaryCard?.roleLabel === "Primary Owner" &&
-      primaryCard?.scopeLabel === "Entire organization" &&
-      primaryCard?.propertyName === "Home Property A"
-        ? pass("Primary Owner card shows Entire organization + home property name")
+      primaryCard?.scopeLabel === "Entire organization"
+        ? pass("Primary Owner card shows Entire organization scope")
+        : fail("Primary Owner card shows Entire organization scope");
+
+    failures +=
+      orgAdminCard?.orgRole === "org_admin" &&
+      orgAdminCard?.scopeLabel === "5 selected properties" &&
+      Array.isArray(orgAdminCard?.assignedPropertyIds) &&
+      orgAdminCard.assignedPropertyIds.length === 5
+        ? pass("Organization Admin card shows 5 selected properties")
         : fail(
-            "Primary Owner card shows Entire organization + home property name",
+            "Organization Admin card shows 5 selected properties",
             JSON.stringify({
-              roleLabel: primaryCard?.roleLabel,
-              scopeLabel: primaryCard?.scopeLabel,
-              propertyName: primaryCard?.propertyName,
+              scopeLabel: orgAdminCard?.scopeLabel,
+              assigned: orgAdminCard?.assignedPropertyIds,
             })
           );
 
-    failures +=
-      orgAdminCard?.roleLabel === "Organization Admin" &&
-      orgAdminCard?.scopeLabel === "Entire organization"
-        ? pass("Organization Admin card shows Entire organization scope")
-        : fail("Organization Admin card shows Entire organization scope");
-
-    // Org admin: access both existing properties without duplicated membership rows
-    const { count: orgAdminPropertyRows } = await admin
+    const { count: orgAdminRows } = await admin
       .from("user_properties")
       .select("id", { count: "exact", head: true })
       .eq("user_id", orgAdminUserId)
       .eq("active", true);
     failures +=
-      orgAdminPropertyRows === 1
-        ? pass("Organization Admin keeps a single home user_properties row")
-        : fail(
-            "Organization Admin keeps a single home user_properties row",
-            `count=${orgAdminPropertyRows}`
-          );
+      orgAdminRows === 5
+        ? pass("Organization Admin has five active user_properties rows")
+        : fail("Organization Admin has five active user_properties rows", `count=${orgAdminRows}`);
 
     const orgAdminToken = await getAccessToken(admin, orgAdminUserId);
-    const dashA = await fetch(`${BASE}/api/dashboard`, {
+    let orgAdminOk = 0;
+    for (const id of propertyIds) {
+      const dash = await fetch(`${BASE}/api/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${orgAdminToken}`,
+          "x-one-eyrie-property-id": String(id),
+        },
+      });
+      if (dash.status === 200) orgAdminOk += 1;
+    }
+    failures +=
+      orgAdminOk === 5
+        ? pass("Organization Admin assigned to 5 properties can access only those 5")
+        : fail(
+            "Organization Admin assigned to 5 properties can access only those 5",
+            `ok=${orgAdminOk}`
+          );
+
+    const propertySix = await createProperty(authHeaders, orgId, "Hotel 6 Unassigned");
+    propertyIds.push(propertySix);
+    const dashUnassigned = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${orgAdminToken}`,
-        "x-one-eyrie-property-id": String(propertyA),
-      },
-    });
-    const dashB = await fetch(`${BASE}/api/dashboard`, {
-      headers: {
-        Authorization: `Bearer ${orgAdminToken}`,
-        "x-one-eyrie-property-id": String(propertyB),
+        "x-one-eyrie-property-id": String(propertySix),
       },
     });
     failures +=
-      dashA.status === 200 && dashB.status === 200
-        ? pass("Organization Admin can access two existing properties")
+      dashUnassigned.status === 403
+        ? pass("Organization Admin receives 403 for an unassigned property")
         : fail(
-            "Organization Admin can access two existing properties",
-            `A=${dashA.status} B=${dashB.status}`
+            "Organization Admin receives 403 for an unassigned property",
+            `got ${dashUnassigned.status}`
+          );
+    failures +=
+      dashUnassigned.status === 403
+        ? pass("Newly created properties are not automatically assigned to Organization Admin")
+        : fail(
+            "Newly created properties are not automatically assigned to Organization Admin"
           );
 
-    // Home property controls default landing only
-    const ctxDefault = await fetch(`${BASE}/api/tenant/context`, {
-      headers: { Authorization: `Bearer ${orgAdminToken}` },
-    });
-    if (ctxDefault.status === 200) {
-      const body = await ctxDefault.json();
-      failures +=
-        body.activeProperty?.id === propertyA
-          ? pass("Organization Admin home property controls initial landing")
-          : fail(
-              "Organization Admin home property controls initial landing",
-              `active=${body.activeProperty?.id}`
-            );
-    } else {
-      failures += fail(
-        "Organization Admin home property controls initial landing",
-        `got ${ctxDefault.status}`
-      );
-    }
-
-    // Change home property A -> B; still org-wide; landing becomes B
-    const homeChange = await fetch(
+    const addSixth = await fetch(
       `${BASE}/api/admin/organizations/${orgId}/invitations/${orgAdminInviteId}`,
       {
         method: "PATCH",
@@ -315,145 +316,119 @@ async function main() {
           lastName: "Admin",
           jobTitle: "Administrator",
           role: "organization_admin",
-          propertyIds: [propertyB],
-          modulePermissions: {
-            dashboard: true,
-            reports: true,
-            lost_found: true,
-            pass_on: true,
-            inspections: true,
-            maintenance: true,
-            settings: true,
-          },
+          propertyIds: propertyIds.slice(0, 6),
+          modulePermissions: allModules(true),
           confirmAccessReduction: false,
         }),
       }
     );
-    if (homeChange.status !== 200) {
-      const body = await homeChange.text();
-      failures += fail(
-        "Organization Admin home property can change without scope reduction",
-        `got ${homeChange.status}: ${body}`
-      );
-    } else {
-      failures += pass(
-        "Organization Admin home property can change without scope reduction"
-      );
-    }
+    failures +=
+      addSixth.status === 200
+        ? pass("Adding a sixth property grants access")
+        : fail("Adding a sixth property grants access", `got ${addSixth.status}`);
 
-    const dashAAfterHome = await fetch(`${BASE}/api/dashboard`, {
+    const dashSixth = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${orgAdminToken}`,
-        "x-one-eyrie-property-id": String(propertyA),
+        "x-one-eyrie-property-id": String(propertySix),
       },
     });
     failures +=
-      dashAAfterHome.status === 200
-        ? pass("Changing home property does not remove organization-wide access")
-        : fail(
-            "Changing home property does not remove organization-wide access",
-            `got ${dashAAfterHome.status}`
-          );
+      dashSixth.status === 200
+        ? pass("Sixth property access works after assignment")
+        : fail("Sixth property access works after assignment", `got ${dashSixth.status}`);
 
-    const ctxAfterHome = await fetch(`${BASE}/api/tenant/context`, {
-      headers: { Authorization: `Bearer ${orgAdminToken}` },
-    });
-    if (ctxAfterHome.status === 200) {
-      const body = await ctxAfterHome.json();
-      failures +=
-        body.activeProperty?.id === propertyB
-          ? pass("Updated home property becomes the default landing property")
-          : fail(
-              "Updated home property becomes the default landing property",
-              `active=${body.activeProperty?.id}`
-            );
-    } else {
-      failures += fail(
-        "Updated home property becomes the default landing property",
-        `got ${ctxAfterHome.status}`
-      );
-    }
-
-    // Future property automatically accessible to org admin (no new membership required)
-    propertyC = await createProperty(authHeaders, orgId, "Future Property C");
-    const { count: orgAdminRowsAfterC } = await admin
-      .from("user_properties")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", orgAdminUserId)
-      .eq("active", true);
+    const removeSixth = await fetch(
+      `${BASE}/api/admin/organizations/${orgId}/invitations/${orgAdminInviteId}`,
+      {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify({
+          firstName: "Org",
+          lastName: "Admin",
+          jobTitle: "Administrator",
+          role: "organization_admin",
+          propertyIds: propertyIds.slice(0, 5),
+          modulePermissions: allModules(true),
+          confirmAccessReduction: true,
+        }),
+      }
+    );
     failures +=
-      orgAdminRowsAfterC === 1
-        ? pass("New property does not duplicate Organization Admin user_properties rows")
+      removeSixth.status === 200
+        ? pass("Removing one property assignment succeeds with confirmation")
         : fail(
-            "New property does not duplicate Organization Admin user_properties rows",
-            `count=${orgAdminRowsAfterC}`
+            "Removing one property assignment succeeds with confirmation",
+            `got ${removeSixth.status}`
           );
 
-    const dashC = await fetch(`${BASE}/api/dashboard`, {
+    const dashSixthRemoved = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${orgAdminToken}`,
-        "x-one-eyrie-property-id": String(propertyC),
+        "x-one-eyrie-property-id": String(propertySix),
       },
     });
     failures +=
-      dashC.status === 200
-        ? pass("Organization Admin automatically accesses a newly created property")
-        : fail(
-            "Organization Admin automatically accesses a newly created property",
-            `got ${dashC.status}`
-          );
+      dashSixthRemoved.status === 403
+        ? pass("Removing one property revokes access")
+        : fail("Removing one property revokes access", `got ${dashSixthRemoved.status}`);
 
-    // Primary Owner remains org-wide regardless of home (still A)
     const primaryToken = await getAccessToken(admin, primaryUserId);
-    const primaryDashC = await fetch(`${BASE}/api/dashboard`, {
+    let primaryOk = 0;
+    for (const id of propertyIds) {
+      const dash = await fetch(`${BASE}/api/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${primaryToken}`,
+          "x-one-eyrie-property-id": String(id),
+        },
+      });
+      if (dash.status === 200) primaryOk += 1;
+    }
+    failures +=
+      primaryOk === propertyIds.length
+        ? pass("Primary Owner can access all properties")
+        : fail("Primary Owner can access all properties", `ok=${primaryOk}`);
+
+    const propertySeven = await createProperty(authHeaders, orgId, "Hotel 7 Future");
+    propertyIds.push(propertySeven);
+    const primaryFuture = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${primaryToken}`,
-        "x-one-eyrie-property-id": String(propertyC),
+        "x-one-eyrie-property-id": String(propertySeven),
       },
     });
     failures +=
-      primaryDashC.status === 200
-        ? pass("Primary Owner remains organization-wide regardless of home property")
+      primaryFuture.status === 200
+        ? pass("Primary Owner continues to access newly created properties automatically")
         : fail(
-            "Primary Owner remains organization-wide regardless of home property",
-            `got ${primaryDashC.status}`
+            "Primary Owner continues to access newly created properties automatically",
+            `got ${primaryFuture.status}`
           );
 
-    // Property Administrator: A OK, B and C 403
     const propToken = await getAccessToken(admin, propAdminUserId);
-    const propDashA = await fetch(`${BASE}/api/dashboard`, {
+    const propDash0 = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${propToken}`,
-        "x-one-eyrie-property-id": String(propertyA),
+        "x-one-eyrie-property-id": String(propertyIds[0]),
       },
     });
-    const propDashB = await fetch(`${BASE}/api/dashboard`, {
+    const propDash1 = await fetch(`${BASE}/api/dashboard`, {
       headers: {
         Authorization: `Bearer ${propToken}`,
-        "x-one-eyrie-property-id": String(propertyB),
-      },
-    });
-    const propDashC = await fetch(`${BASE}/api/dashboard`, {
-      headers: {
-        Authorization: `Bearer ${propToken}`,
-        "x-one-eyrie-property-id": String(propertyC),
+        "x-one-eyrie-property-id": String(propertyIds[1]),
       },
     });
     failures +=
-      propDashA.status === 200
-        ? pass("Property Administrator can access assigned property")
-        : fail("Property Administrator can access assigned property", `got ${propDashA.status}`);
-    failures +=
-      propDashB.status === 403 && propDashC.status === 403
-        ? pass("Property Administrator receives 403 for every unassigned property")
+      propDash0.status === 200 && propDash1.status === 403
+        ? pass("Property Administrator can access exactly one property")
         : fail(
-            "Property Administrator receives 403 for every unassigned property",
-            `B=${propDashB.status} C=${propDashC.status}`
+            "Property Administrator can access exactly one property",
+            `0=${propDash0.status} 1=${propDash1.status}`
           );
   } catch (error) {
     if (!(error instanceof Error && error.message === "abort")) {
       failures += fail(
-        "Scope / home property verification",
+        "Revised scope verification",
         error instanceof Error ? error.message : "unknown error"
       );
     }

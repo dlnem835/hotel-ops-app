@@ -9,6 +9,7 @@ import type {
 } from "@/app/lib/platform-admin/types";
 import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
 import {
+  administratorPropertiesDisplay,
   administratorPropertyFieldLabel,
   isOrgWideRole,
 } from "@/app/lib/platform-admin/roles";
@@ -175,21 +176,18 @@ export default function AdminAdministratorsTable({
     return <span className="admin-portal__muted">—</span>;
   }
 
-  const propertyName = (invitation: AdminOrganizationInvitation) => {
-    if (
-      !isOrgWideRole(invitation.orgRole) &&
-      invitation.assignedPropertyIds.length > 1
-    ) {
-      const names = invitation.assignedPropertyIds
-        .map(
-          (id) =>
-            properties.find((property) => property.id === id)?.name ??
-            `Property #${id}`
-        )
-        .join(", ");
-      return names;
+  const propertyNames = (invitation: AdminOrganizationInvitation) => {
+    if (isOrgWideRole(invitation.orgRole)) {
+      return [];
     }
-    return invitation.propertyName ?? `Property #${invitation.propertyId}`;
+    return invitation.assignedPropertyIds.map(
+      (id) =>
+        properties.find((property) => property.id === id)?.name ??
+        (id === invitation.propertyId
+          ? invitation.propertyName
+          : null) ??
+        `Property #${id}`
+    );
   };
 
   return (
@@ -228,7 +226,12 @@ export default function AdminAdministratorsTable({
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>{administratorPropertyFieldLabel(invitation.orgRole)}</dt>
-                <dd>{propertyName(invitation)}</dd>
+                <dd>
+                  {administratorPropertiesDisplay({
+                    orgRole: invitation.orgRole,
+                    propertyNames: propertyNames(invitation),
+                  })}
+                </dd>
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Sent</dt>

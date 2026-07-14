@@ -7,6 +7,7 @@ import type { AdminOrganizationInvitation } from "@/app/lib/platform-admin/types
 import {
   administratorRoleLabel,
   administratorScopeLabel,
+  normalizePropertyIdList,
   resolveInviteRoles,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
@@ -16,7 +17,7 @@ import { inviteUserOrGenerateLink } from "@/app/lib/platform-admin/server/auth-e
 const INVITATION_TTL_DAYS = 7;
 
 export type CreateAdministratorInvitationInput = {
-  propertyId: number;
+  propertyIds: number[];
   email: string;
   firstName: string;
   lastName: string;
@@ -27,6 +28,22 @@ export type CreateAdministratorInvitationInput = {
 /** Operational job title fallback when the inviter leaves the field blank. */
 const DEFAULT_JOB_TITLE = "Administrator";
 const JOB_TITLE_MAX_LENGTH = 80;
+
+let assignedPropertyIdsColumnSupported: boolean | null = null;
+
+async function supportsAssignedPropertyIdsColumn(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  if (assignedPropertyIdsColumnSupported != null) {
+    return assignedPropertyIdsColumnSupported;
+  }
+  const { error } = await supabase
+    .from("organization_invitations")
+    .select("assigned_property_ids")
+    .limit(1);
+  assignedPropertyIdsColumnSupported = !error;
+  return assignedPropertyIdsColumnSupported;
+}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -47,22 +64,28 @@ function resolveInviteRedirectUrl(): string {
 function parseCreateAdministratorInvitationInput(
   body: Record<string, unknown>
 ): CreateAdministratorInvitationInput {
-  const propertyId = Number.parseInt(String(body.propertyId ?? ""), 10);
+  const fromArray = normalizePropertyIdList(body.propertyIds ?? body.property_ids);
+  const single = Number.parseInt(String(body.propertyId ?? body.property_id ?? ""), 10);
+  const propertyIds =
+    fromArray.length > 0
+      ? fromArray
+      : Number.isInteger(single) && single > 0
+        ? [single]
+        : [];
+
   const email = normalizeEmail(String(body.email ?? ""));
   const firstName = String(body.firstName ?? body.first_name ?? "").trim();
   const lastName = String(body.lastName ?? body.last_name ?? "").trim();
   const rawRole = String(body.role ?? "property_administrator");
   const role: AdministratorInviteRole =
     rawRole === "organization_admin" ? "organization_admin" : "property_administrator";
-  // Operational job title is optional and independent of permissions. Blank
-  // falls back to "Administrator"; it never influences access.
   const jobTitle =
     String(body.jobTitle ?? body.job_title ?? "")
       .trim()
       .slice(0, JOB_TITLE_MAX_LENGTH) || DEFAULT_JOB_TITLE;
 
-  if (!Number.isInteger(propertyId) || propertyId <= 0) {
-    throw new PlatformAdminRequestError(400, "Property id is required");
+  if (propertyIds.length === 0) {
+    throw new PlatformAdminRequestError(400, "At least one property is required");
   }
   if (!email || !isValidEmail(email)) {
     throw new PlatformAdminRequestError(400, "Valid email is required");
@@ -74,7 +97,7 @@ function parseCreateAdministratorInvitationInput(
     throw new PlatformAdminRequestError(400, "Last name is required");
   }
 
-  return { propertyId, email, firstName, lastName, role, jobTitle };
+  return { propertyIds, email, firstName, lastName, role, jobTitle };
 }
 
 type InvitationSelectRow = {
@@ -93,10 +116,11 @@ type InvitationSelectRow = {
   expires_at: string | null;
   created_at: string;
   accepted_at: string | null;
+  assigned_property_ids?: number[] | null;
   properties?: { name?: string } | null;
 };
 
-const INVITATION_SELECT =
+const INVITATION_SELECT_BASE =
   "id, organization_id, property_id, email, first_name, last_name, job_title, status, is_primary, org_role, property_role, auth_user_id, expires_at, created_at, accepted_at, properties(name)";
 
 function isExpiredPending(row: InvitationSelectRow, now: number): boolean {
@@ -107,13 +131,32 @@ function isExpiredPending(row: InvitationSelectRow, now: number): boolean {
   );
 }
 
+function coerceAssignedPropertyIds(
+  row: InvitationSelectRow,
+  metadataIds: number[] | null
+): number[] {
+  const fromColumn = normalizePropertyIdList(row.assigned_property_ids ?? []);
+  if (fromColumn.length > 0) {
+    return fromColumn;
+  }
+  if (metadataIds && metadataIds.length > 0) {
+    return metadataIds;
+  }
+  return [row.property_id];
+}
+
 export async function fetchOrganizationInvitations(
   supabase: SupabaseClient,
   organizationId: number
 ): Promise<AdminOrganizationInvitation[]> {
+  const includeAssigned = await supportsAssignedPropertyIdsColumn(supabase);
+  const select = includeAssigned
+    ? `${INVITATION_SELECT_BASE}, assigned_property_ids`
+    : INVITATION_SELECT_BASE;
+
   const { data, error } = await supabase
     .from("organization_invitations")
-    .select(INVITATION_SELECT)
+    .select(select)
     .eq("organization_id", organizationId)
     .order("is_primary", { ascending: false })
     .order("created_at", { ascending: false });
@@ -125,8 +168,6 @@ export async function fetchOrganizationInvitations(
   const rows = (data ?? []) as unknown as InvitationSelectRow[];
   const now = Date.now();
 
-  // Lazily flip overdue pending invitations to 'expired' so status is truthful
-  // without a background job. Only touches rows that just crossed their TTL.
   const newlyExpired = rows.filter((row) => isExpiredPending(row, now));
   if (newlyExpired.length > 0) {
     const ids = newlyExpired.map((row) => row.id);
@@ -139,8 +180,6 @@ export async function fetchOrganizationInvitations(
     }
   }
 
-  // Derive membership active state for accepted administrators from
-  // organization_users (the access gate). Disabled/removed admins read inactive.
   const acceptedAuthUserIds = Array.from(
     new Set(
       rows
@@ -152,6 +191,7 @@ export async function fetchOrganizationInvitations(
   const activeByUserId = new Map<string, boolean>();
   const propertyIdsByUserId = new Map<string, number[]>();
   const modulePermissionsByUserId = new Map<string, Record<string, boolean>>();
+  const pendingMetadataByUserId = new Map<string, number[]>();
 
   if (acceptedAuthUserIds.length > 0) {
     const { data: memberships, error: membershipError } = await supabase
@@ -213,6 +253,31 @@ export async function fetchOrganizationInvitations(
     }
   }
 
+  // Pending invitations may carry multi-property selections in auth metadata
+  // when the assigned_property_ids column has not been applied yet.
+  const pendingAuthUserIds = Array.from(
+    new Set(
+      rows
+        .filter(
+          (row) =>
+            (row.status === "pending" || row.status === "expired") &&
+            row.auth_user_id &&
+            !includeAssigned
+        )
+        .map((row) => row.auth_user_id as string)
+    )
+  );
+  for (const userId of pendingAuthUserIds) {
+    const { data: authUser, error: authError } =
+      await supabase.auth.admin.getUserById(userId);
+    if (authError || !authUser.user) continue;
+    const raw = authUser.user.user_metadata?.oe_assigned_property_ids;
+    const ids = normalizePropertyIdList(raw);
+    if (ids.length > 0) {
+      pendingMetadataByUserId.set(userId, ids);
+    }
+  }
+
   return rows.map((row) => {
     const isPrimary = Boolean(row.is_primary);
     const orgRole = String(row.org_role ?? "org_member");
@@ -222,10 +287,18 @@ export async function fetchOrganizationInvitations(
       row.status === "accepted" && authUserId
         ? activeByUserId.get(authUserId) ?? true
         : null;
-    const assignedPropertyIds =
-      row.status === "accepted" && authUserId
-        ? propertyIdsByUserId.get(authUserId) ?? [row.property_id]
-        : [row.property_id];
+
+    let assignedPropertyIds: number[];
+    if (row.status === "accepted" && authUserId) {
+      assignedPropertyIds =
+        propertyIdsByUserId.get(authUserId) ??
+        coerceAssignedPropertyIds(row, null);
+    } else {
+      assignedPropertyIds = coerceAssignedPropertyIds(
+        row,
+        authUserId ? pendingMetadataByUserId.get(authUserId) ?? null : null
+      );
+    }
 
     return {
       id: String(row.id),
@@ -333,18 +406,49 @@ export async function createAdministratorInvitation(
     );
   }
 
-  const { data: property, error: propertyError } = await supabase
+  // The first administrator for an organization becomes the Primary Owner.
+  const hasPrimary = await organizationHasPrimaryAdministrator(supabase, organizationId);
+  const isPrimary = !hasPrimary;
+  const { orgRole, propertyRole } = isPrimary
+    ? { orgRole: "org_owner" as const, propertyRole: "property_admin" as const }
+    : resolveInviteRoles(input.role);
+
+  if (!isPrimary && input.role === "property_administrator" && input.propertyIds.length !== 1) {
+    throw new PlatformAdminRequestError(
+      400,
+      "Property Administrator must be assigned to exactly one property"
+    );
+  }
+  if (!isPrimary && input.role === "organization_admin" && input.propertyIds.length < 1) {
+    throw new PlatformAdminRequestError(
+      400,
+      "Organization Admin must be assigned to at least one property"
+    );
+  }
+
+  // Primary Owner is org-wide; only one landing property is stored for team_members.
+  const propertyIds = isPrimary ? [input.propertyIds[0]] : input.propertyIds;
+  const homePropertyId = propertyIds[0];
+
+  const { data: orgProperties, error: orgPropertiesError } = await supabase
     .from("properties")
     .select("id, name, organization_id, active")
-    .eq("id", input.propertyId)
-    .maybeSingle();
+    .eq("organization_id", organizationId)
+    .in("id", propertyIds);
 
-  if (propertyError) {
-    throw new Error(propertyError.message);
+  if (orgPropertiesError) {
+    throw new Error(orgPropertiesError.message);
   }
-  if (!property || property.organization_id !== organizationId) {
-    throw new PlatformAdminRequestError(404, "Property not found for organization");
+  if ((orgProperties ?? []).length !== propertyIds.length) {
+    throw new PlatformAdminRequestError(
+      404,
+      "One or more properties were not found for this organization"
+    );
   }
+
+  const property =
+    (orgProperties ?? []).find((row) => Number(row.id) === homePropertyId) ??
+    (orgProperties ?? [])[0];
 
   // Reject re-inviting someone who is already an accepted administrator here.
   const { data: existingAccepted, error: existingAcceptedError } = await supabase
@@ -365,38 +469,34 @@ export async function createAdministratorInvitation(
     );
   }
 
-  // The first administrator for an organization becomes the Primary Owner.
-  const hasPrimary = await organizationHasPrimaryAdministrator(supabase, organizationId);
-  const isPrimary = !hasPrimary;
-  const { orgRole, propertyRole } = isPrimary
-    ? { orgRole: "org_owner", propertyRole: "property_admin" }
-    : resolveInviteRoles(input.role);
-  // Operational job title is descriptive only. Access is governed entirely by
-  // is_administrator + membership roles (org_role / property_role) + module
-  // permissions — never by this title. The Primary/Org-Admin/Property-Admin
-  // distinction is carried by org_role + is_primary in the platform-admin portal.
   const jobTitle = input.jobTitle;
 
   const expiresAt = new Date(
     Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000
   ).toISOString();
 
+  const includeAssigned = await supportsAssignedPropertyIdsColumn(supabase);
+  const insertPayload: Record<string, unknown> = {
+    organization_id: organizationId,
+    property_id: homePropertyId,
+    email: input.email,
+    first_name: input.firstName,
+    last_name: input.lastName,
+    org_role: orgRole,
+    property_role: propertyRole,
+    job_title: jobTitle,
+    status: "pending",
+    is_primary: isPrimary,
+    invited_by: actorUserId,
+    expires_at: expiresAt,
+  };
+  if (includeAssigned) {
+    insertPayload.assigned_property_ids = propertyIds;
+  }
+
   const { data: invitation, error: insertError } = await supabase
     .from("organization_invitations")
-    .insert({
-      organization_id: organizationId,
-      property_id: input.propertyId,
-      email: input.email,
-      first_name: input.firstName,
-      last_name: input.lastName,
-      org_role: orgRole,
-      property_role: propertyRole,
-      job_title: jobTitle,
-      status: "pending",
-      is_primary: isPrimary,
-      invited_by: actorUserId,
-      expires_at: expiresAt,
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
 
@@ -414,6 +514,7 @@ export async function createAdministratorInvitation(
 
   const inviteMetadata = {
     oe_invitation_id: invitationId,
+    oe_assigned_property_ids: propertyIds,
     first_name: input.firstName,
     last_name: input.lastName,
     job_title: jobTitle,
@@ -488,6 +589,12 @@ export async function createAdministratorInvitation(
     authUserId = inviteData.user?.id ?? null;
   }
 
+  if (authUserId) {
+    await supabase.auth.admin.updateUserById(authUserId, {
+      user_metadata: inviteMetadata,
+    });
+  }
+
   const { error: updateError } = await supabase
     .from("organization_invitations")
     .update({
@@ -507,13 +614,14 @@ export async function createAdministratorInvitation(
     targetType: "organization_invitation",
     targetId: invitationId,
     organizationId,
-    propertyId: input.propertyId,
+    propertyId: homePropertyId,
     metadata: {
       email: input.email,
       firstName: input.firstName,
       lastName: input.lastName,
       organizationName: organization.name,
       propertyName: property.name,
+      propertyIds,
       orgRole,
       propertyRole,
       jobTitle,

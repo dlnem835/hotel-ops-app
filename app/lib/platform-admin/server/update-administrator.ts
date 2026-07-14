@@ -509,7 +509,6 @@ export async function updateAdministrator(
   let afterPropertyRole = String(invitation.property_role);
   let afterPropertyIds = [...input.propertyIds];
   let afterModules = cappedModules;
-  const homePropertyId = input.propertyIds[0];
 
   if (isPrimary) {
     // Primary Owner may only change name + job title. Role/scope/modules stay.
@@ -525,7 +524,8 @@ export async function updateAdministrator(
         "The Primary Owner cannot be changed to property-only scope. Transfer Primary Owner first."
       );
     }
-    if (!arraysEqualSorted(input.propertyIds, afterPropertyIds)) {
+    if (!arraysEqualSorted(input.propertyIds, [invitation.property_id]) &&
+        !arraysEqualSorted(input.propertyIds, afterPropertyIds)) {
       throw new PlatformAdminRequestError(
         409,
         "The Primary Owner property assignments cannot be changed in this workflow."
@@ -541,11 +541,19 @@ export async function updateAdministrator(
     const resolved = resolveInviteRoles(input.role);
     afterOrgRole = resolved.orgRole;
     afterPropertyRole = resolved.propertyRole;
+    afterPropertyIds = [...input.propertyIds];
 
-    if (input.role === "organization_admin") {
-      // Home property becomes the default membership row; org-wide access is
-      // resolved at runtime for every active property.
-      afterPropertyIds = [homePropertyId];
+    if (input.role === "property_administrator" && afterPropertyIds.length !== 1) {
+      throw new PlatformAdminRequestError(
+        400,
+        "Property Administrator must be assigned to exactly one property"
+      );
+    }
+    if (input.role === "organization_admin" && afterPropertyIds.length < 1) {
+      throw new PlatformAdminRequestError(
+        400,
+        "Organization Admin must keep at least one assigned property"
+      );
     }
   }
 
@@ -554,9 +562,7 @@ export async function updateAdministrator(
     beforeOrgRole,
     afterOrgRole,
     beforePropertyIds,
-    afterPropertyIds: isOrgWideRole(afterOrgRole)
-      ? orgPropertyIds
-      : afterPropertyIds,
+    afterPropertyIds,
     beforeModules,
     afterModules,
   });
@@ -581,16 +587,10 @@ export async function updateAdministrator(
   if (!isPrimary && beforeOrgRole !== afterOrgRole) {
     changed.orgRole = { from: beforeOrgRole, to: afterOrgRole };
   }
-  if (
-    !isPrimary &&
-    !arraysEqualSorted(
-      beforePropertyIds,
-      isOrgWideRole(afterOrgRole) ? [homePropertyId] : afterPropertyIds
-    )
-  ) {
+  if (!isPrimary && !arraysEqualSorted(beforePropertyIds, afterPropertyIds)) {
     changed.propertyIds = {
       from: beforePropertyIds,
-      to: isOrgWideRole(afterOrgRole) ? [homePropertyId] : afterPropertyIds,
+      to: afterPropertyIds,
     };
   }
   const moduleChanges = permissionsDiff(beforeModules, afterModules);
@@ -611,21 +611,32 @@ export async function updateAdministrator(
   const timestamp = new Date().toISOString();
   const effectiveHomeId = isPrimary
     ? invitation.property_id
-    : homePropertyId;
+    : afterPropertyIds[0];
 
   try {
+    const invitationUpdate: Record<string, unknown> = {
+      first_name: input.firstName,
+      last_name: input.lastName,
+      job_title: input.jobTitle,
+      property_id: effectiveHomeId,
+      org_role: afterOrgRole,
+      property_role: afterPropertyRole,
+      updated_at: timestamp,
+    };
+
+    const { error: assignedColumnProbe } = await supabase
+      .from("organization_invitations")
+      .select("assigned_property_ids")
+      .limit(1);
+    if (!assignedColumnProbe) {
+      invitationUpdate.assigned_property_ids = isPrimary
+        ? [effectiveHomeId]
+        : afterPropertyIds;
+    }
+
     const { error: invitationError } = await supabase
       .from("organization_invitations")
-      .update({
-        first_name: input.firstName,
-        last_name: input.lastName,
-        job_title: input.jobTitle,
-        property_id: effectiveHomeId,
-        org_role: afterOrgRole,
-        property_role: afterPropertyRole,
-        // Never clear or toggle is_primary here.
-        updated_at: timestamp,
-      })
+      .update(invitationUpdate)
       .eq("id", invitation.id)
       .eq("organization_id", organizationId)
       .eq("status", "accepted");
