@@ -99,6 +99,19 @@ export function administratorRoleLabel(input: {
 }
 
 /** Human label for the scope an administrator can reach. */
-export function administratorScopeLabel(orgRole: string): string {
-  return isOrgWideRole(orgRole) ? "Entire organization" : "Assigned property";
+export function administratorScopeLabel(
+  orgRole: string,
+  assignedPropertyCount = 1
+): string {
+  if (isOrgWideRole(orgRole)) {
+    return "Entire organization";
+  }
+  return assignedPropertyCount > 1 ? "Selected properties" : "Assigned property";
+}
+
+/** Maps a stored org_role back to the invite/edit role choice (non-primary). */
+export function inviteRoleFromOrgRole(orgRole: string): AdministratorInviteRole {
+  return orgRole === ORG_ROLE.organizationAdmin
+    ? "organization_admin"
+    : "property_administrator";
 }

@@ -118,6 +118,8 @@ export default function AdminOrganizationDetailPage() {
         <AdminAdministratorsTable
           organizationId={organization.id}
           invitations={organization.invitations}
+          properties={organization.properties}
+          modules={organization.modules}
           onChanged={() => {
             setActionError(null);
             void loadOrganization();

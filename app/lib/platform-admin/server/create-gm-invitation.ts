@@ -84,6 +84,7 @@ type InvitationSelectRow = {
   email: string;
   first_name: string;
   last_name: string;
+  job_title: string | null;
   status: string;
   is_primary: boolean | null;
   org_role: string | null;
@@ -96,7 +97,7 @@ type InvitationSelectRow = {
 };
 
 const INVITATION_SELECT =
-  "id, organization_id, property_id, email, first_name, last_name, status, is_primary, org_role, property_role, auth_user_id, expires_at, created_at, accepted_at, properties(name)";
+  "id, organization_id, property_id, email, first_name, last_name, job_title, status, is_primary, org_role, property_role, auth_user_id, expires_at, created_at, accepted_at, properties(name)";
 
 function isExpiredPending(row: InvitationSelectRow, now: number): boolean {
   return (
@@ -149,6 +150,9 @@ export async function fetchOrganizationInvitations(
   );
 
   const activeByUserId = new Map<string, boolean>();
+  const propertyIdsByUserId = new Map<string, number[]>();
+  const modulePermissionsByUserId = new Map<string, Record<string, boolean>>();
+
   if (acceptedAuthUserIds.length > 0) {
     const { data: memberships, error: membershipError } = await supabase
       .from("organization_users")
@@ -162,16 +166,66 @@ export async function fetchOrganizationInvitations(
     for (const membership of memberships ?? []) {
       activeByUserId.set(String(membership.user_id), Boolean(membership.active));
     }
+
+    const { data: orgProperties, error: orgPropertiesError } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("organization_id", organizationId);
+
+    if (orgPropertiesError) {
+      throw new Error(orgPropertiesError.message);
+    }
+
+    const orgPropertyIds = (orgProperties ?? []).map((row) => Number(row.id));
+    if (orgPropertyIds.length > 0) {
+      const { data: propertyMemberships, error: propertyMembershipError } =
+        await supabase
+          .from("user_properties")
+          .select("user_id, property_id, active, module_permissions, is_default")
+          .in("user_id", acceptedAuthUserIds)
+          .in("property_id", orgPropertyIds)
+          .eq("active", true);
+
+      if (propertyMembershipError) {
+        throw new Error(propertyMembershipError.message);
+      }
+
+      for (const membership of propertyMemberships ?? []) {
+        const userId = String(membership.user_id);
+        const propertyId = Number(membership.property_id);
+        const current = propertyIdsByUserId.get(userId) ?? [];
+        current.push(propertyId);
+        propertyIdsByUserId.set(userId, current);
+
+        if (
+          !modulePermissionsByUserId.has(userId) ||
+          Boolean(membership.is_default)
+        ) {
+          const raw = membership.module_permissions;
+          if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+            modulePermissionsByUserId.set(
+              userId,
+              raw as Record<string, boolean>
+            );
+          }
+        }
+      }
+    }
   }
 
   return rows.map((row) => {
     const isPrimary = Boolean(row.is_primary);
     const orgRole = String(row.org_role ?? "org_member");
     const propertyRole = String(row.property_role ?? "property_admin");
+    const authUserId = row.auth_user_id ?? null;
     const active =
-      row.status === "accepted" && row.auth_user_id
-        ? activeByUserId.get(row.auth_user_id) ?? true
+      row.status === "accepted" && authUserId
+        ? activeByUserId.get(authUserId) ?? true
         : null;
+    const assignedPropertyIds =
+      row.status === "accepted" && authUserId
+        ? propertyIdsByUserId.get(authUserId) ?? [row.property_id]
+        : [row.property_id];
 
     return {
       id: String(row.id),
@@ -181,14 +235,20 @@ export async function fetchOrganizationInvitations(
       email: String(row.email),
       firstName: String(row.first_name),
       lastName: String(row.last_name),
+      jobTitle: String(row.job_title ?? "Administrator"),
       status: String(row.status),
       isPrimary,
       orgRole,
       propertyRole,
       roleLabel: administratorRoleLabel({ isPrimary, orgRole }),
-      scopeLabel: administratorScopeLabel(orgRole),
+      scopeLabel: administratorScopeLabel(orgRole, assignedPropertyIds.length),
+      assignedPropertyIds,
+      modulePermissions:
+        row.status === "accepted" && authUserId
+          ? modulePermissionsByUserId.get(authUserId) ?? null
+          : null,
       active,
-      authUserId: row.auth_user_id ?? null,
+      authUserId,
       expiresAt: row.expires_at ?? null,
       createdAt: String(row.created_at),
       acceptedAt: row.accepted_at ? String(row.accepted_at) : null,

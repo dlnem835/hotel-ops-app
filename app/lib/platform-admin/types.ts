@@ -70,12 +70,17 @@ export type AdminOrganizationInvitation = {
   email: string;
   firstName: string;
   lastName: string;
+  jobTitle: string;
   status: string;
   isPrimary: boolean;
   orgRole: string;
   propertyRole: string;
   roleLabel: string;
   scopeLabel: string;
+  /** Active property assignments for accepted admins (home for pending). */
+  assignedPropertyIds: number[];
+  /** Module permissions for accepted admins; null when not yet accepted. */
+  modulePermissions: Record<string, boolean> | null;
   /** Membership active flag for accepted admins; null when not yet accepted. */
   active: boolean | null;
   authUserId: string | null;

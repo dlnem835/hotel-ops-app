@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
-import type { AdminOrganizationInvitation } from "@/app/lib/platform-admin/types";
+import type {
+  AdminOrganizationInvitation,
+  AdminOrganizationModule,
+  AdminPropertySummary,
+} from "@/app/lib/platform-admin/types";
 import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
 import AdminStatusBadge from "./AdminStatusBadge";
 import AdminConfirmNameModal from "./AdminConfirmNameModal";
+import AdminEditAdministratorModal from "./AdminEditAdministratorModal";
 
 type AdminAdministratorsTableProps = {
   organizationId: number;
   invitations: AdminOrganizationInvitation[];
+  properties: AdminPropertySummary[];
+  modules: AdminOrganizationModule[];
   onChanged: () => void;
   onError: (message: string) => void;
 };
@@ -36,11 +43,14 @@ function displayStatus(invitation: AdminOrganizationInvitation): string {
 export default function AdminAdministratorsTable({
   organizationId,
   invitations,
+  properties,
+  modules,
   onChanged,
   onError,
 }: AdminAdministratorsTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
+  const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [confirmValue, setConfirmValue] = useState("");
 
   if (invitations.length === 0) {
@@ -80,6 +90,14 @@ export default function AdminAdministratorsTable({
 
     return (
       <div className="admin-portal__row-actions">
+        <button
+          type="button"
+          className="admin-portal__button admin-portal__button--compact"
+          disabled={busy}
+          onClick={() => setEditTarget(invitation)}
+        >
+          Edit
+        </button>
         <button
           type="button"
           className="admin-portal__button admin-portal__button--compact"
@@ -137,8 +155,8 @@ export default function AdminAdministratorsTable({
           <button
             type="button"
             className="admin-portal__button admin-portal__button--compact"
-            disabled={busy}
             onClick={() => void runAction(invitation, "cancel")}
+            disabled={busy}
           >
             Cancel Invite
           </button>
@@ -153,8 +171,12 @@ export default function AdminAdministratorsTable({
     return <span className="admin-portal__muted">—</span>;
   }
 
-  const propertyName = (invitation: AdminOrganizationInvitation) =>
-    invitation.propertyName ?? `Property #${invitation.propertyId}`;
+  const propertyName = (invitation: AdminOrganizationInvitation) => {
+    if (invitation.assignedPropertyIds.length > 1) {
+      return `${invitation.assignedPropertyIds.length} properties`;
+    }
+    return invitation.propertyName ?? `Property #${invitation.propertyId}`;
+  };
 
   return (
     <>
@@ -177,6 +199,10 @@ export default function AdminAdministratorsTable({
               <div className="admin-portal__admin-card-field">
                 <dt>Email</dt>
                 <dd className="admin-portal__admin-card-email">{invitation.email}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
+                <dt>Job title</dt>
+                <dd>{invitation.jobTitle || "Administrator"}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Property</dt>
@@ -203,6 +229,20 @@ export default function AdminAdministratorsTable({
           </article>
         ))}
       </div>
+
+      <AdminEditAdministratorModal
+        open={editTarget !== null}
+        organizationId={organizationId}
+        invitation={editTarget}
+        properties={properties}
+        modules={modules}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => {
+          setEditTarget(null);
+          onChanged();
+        }}
+        onError={onError}
+      />
 
       <AdminConfirmNameModal
         open={removeTarget !== null}

@@ -9,6 +9,10 @@ import {
   manageAdministratorInvitation,
   type AdministratorInvitationAction,
 } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
+import {
+  parseUpdateAdministratorInput,
+  updateAdministrator,
+} from "@/app/lib/platform-admin/server/update-administrator";
 
 type RouteContext = {
   params: Promise<{ id: string; invitationId: string }>;
@@ -45,6 +49,35 @@ export async function POST(request: Request, context: RouteContext) {
       organizationId,
       invitationId,
       action
+    );
+
+    return NextResponse.json({ invitation });
+  } catch (error) {
+    return platformAdminErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const { supabase, user } = await resolvePlatformAdminRequest(request);
+    const { id, invitationId } = await context.params;
+    const organizationId = parseOrganizationId(id);
+
+    if (organizationId == null) {
+      throw new PlatformAdminRequestError(400, "Invalid organization id");
+    }
+    if (!invitationId) {
+      throw new PlatformAdminRequestError(400, "Invalid invitation id");
+    }
+
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const input = parseUpdateAdministratorInput(body);
+    const invitation = await updateAdministrator(
+      supabase,
+      user.id,
+      organizationId,
+      invitationId,
+      input
     );
 
     return NextResponse.json({ invitation });
