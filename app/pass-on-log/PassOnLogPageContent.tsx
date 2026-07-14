@@ -1303,64 +1303,64 @@ function dateHeader(dateString: string) {
                   <span className="pass-on-draft-card__hint">
                     Only you can see this until posted
                   </span>
-                </div>
-
-                <div className="one-eyrie-form-grid--pass-on" style={formStyle}>
-                  <input
-                    value={draftSubject}
-                    onChange={(e) => setDraftSubject(e.target.value)}
-                    placeholder="Subject"
-                    className="one-eyrie-field"
-                    style={inputStyle}
-                    disabled={draftFieldsLocked}
-                  />
-
-                  <select
-                    value={draftPriority}
-                    onChange={(e) => setDraftPriority(e.target.value)}
-                    className="one-eyrie-field"
-                    style={inputStyle}
-                    disabled={draftFieldsLocked}
-                  >
-                    <option>Normal</option>
-                    <option>Important</option>
-                    <option>Urgent</option>
-                  </select>
-
-                  <div className="one-eyrie-form-grid--pass-on__actions">
-                    <div style={dateInputWrap} className="pass-on-date-wrap">
-                      <button
-                        type="button"
-                        style={calendarButton}
-                        onClick={() => draftDateInputRef.current?.showPicker?.()}
-                        disabled={draftFieldsLocked}
-                      >
-                        <Calendar size={17} />
-                      </button>
-
-                      <input
-                        ref={draftDateInputRef}
-                        type="date"
-                        value={draftEntryDate}
-                        onChange={(e) => setDraftEntryDate(e.target.value)}
-                        style={dateInput}
-                        disabled={draftFieldsLocked}
-                      />
-                    </div>
                   </div>
 
-                  <textarea
+                <div className="one-eyrie-form-grid--pass-on" style={formStyle}>
+                    <input
+                    value={draftSubject}
+                    onChange={(e) => setDraftSubject(e.target.value)}
+                      placeholder="Subject"
+                      className="one-eyrie-field"
+                      style={inputStyle}
+                    disabled={draftFieldsLocked}
+                    />
+
+                    <select
+                    value={draftPriority}
+                    onChange={(e) => setDraftPriority(e.target.value)}
+                      className="one-eyrie-field"
+                      style={inputStyle}
+                    disabled={draftFieldsLocked}
+                    >
+                      <option>Normal</option>
+                      <option>Important</option>
+                      <option>Urgent</option>
+                    </select>
+
+                    <div className="one-eyrie-form-grid--pass-on__actions">
+                      <div style={dateInputWrap} className="pass-on-date-wrap">
+                        <button
+                          type="button"
+                          style={calendarButton}
+                        onClick={() => draftDateInputRef.current?.showPicker?.()}
+                        disabled={draftFieldsLocked}
+                        >
+                          <Calendar size={17} />
+                        </button>
+
+                        <input
+                        ref={draftDateInputRef}
+                          type="date"
+                        value={draftEntryDate}
+                        onChange={(e) => setDraftEntryDate(e.target.value)}
+                          style={dateInput}
+                        disabled={draftFieldsLocked}
+                        />
+                      </div>
+                    </div>
+
+                    <textarea
                     value={draftMessage}
                     onChange={(e) => setDraftMessage(e.target.value)}
-                    placeholder="Write pass-on note..."
-                    className="one-eyrie-field one-eyrie-form-grid--pass-on__message"
-                    style={{
-                      ...inputStyle,
-                      gridColumn: "1 / -1",
-                      minHeight: "110px",
-                      resize: "vertical",
-                      boxSizing: "border-box",
-                    }}
+                      placeholder="Write pass-on note..."
+                      className="one-eyrie-field one-eyrie-form-grid--pass-on__message"
+                      style={{
+                        ...inputStyle,
+                        gridColumn: "1 / -1",
+                        minHeight: "110px",
+                        resize: "vertical",
+                        boxSizing: "border-box",
+                      }}
                     disabled={draftFieldsLocked}
                   />
 
@@ -1424,9 +1424,9 @@ function dateHeader(dateString: string) {
                               >
                                 {draftStatusText}
                               </span>
-                            </div>
+                </div>
                           ) : null}
-                        </div>
+              </div>
                       </div>
 
                       <div className="pass-on-draft-card__actions-publish">
@@ -1549,36 +1549,36 @@ function dateHeader(dateString: string) {
 
             <div style={rowIcons}>
               {isAuthorMatch(entry.author) ? (
-                <button
-                  type="button"
-                  className="one-eyrie-icon-btn"
-                  style={iconButton}
-                  onClick={() => {
-                    if (editingEntryId === entry.id) {
-                      setEditingEntryId(null);
-                      setEditingMessage("");
-                    } else {
+              <button
+                type="button"
+                className="one-eyrie-icon-btn"
+                style={iconButton}
+                onClick={() => {
+  if (editingEntryId === entry.id) {
+    setEditingEntryId(null);
+    setEditingMessage("");
+  } else {
                       setEditingReplyId(null);
                       setEditingReplyMessage("");
-                      setEditingEntryId(entry.id);
-                      setEditingMessage(entry.message || "");
+    setEditingEntryId(entry.id);
+    setEditingMessage(entry.message || "");
                       expandPassOnEntry(entry.id);
-                    }
-                  }}
-                >
-                  <Edit2 size={14} />
-                </button>
+  }
+  }}
+>
+  <Edit2 size={14} />
+</button>
               ) : null}
 
               {canDeletePassOnContent(entry.author) ? (
-                <button
-                  type="button"
-                  className="one-eyrie-icon-btn"
-                  onClick={() => deleteEntry(entry.id)}
-                  style={iconButton}
-                >
-                  <Trash2 size={14} />
-                </button>
+              <button
+                type="button"
+                className="one-eyrie-icon-btn"
+                onClick={() => deleteEntry(entry.id)}
+                style={iconButton}
+              >
+                <Trash2 size={14} />
+              </button>
               ) : null}
             </div>
           </div>
@@ -1664,10 +1664,10 @@ function dateHeader(dateString: string) {
               {entry.pass_on_log_replies?.length > 0 && (
                 <div style={{ marginTop: "8px" }}>
                   {entry.pass_on_log_replies.map((reply: any) => (
-                    <div
-                      key={reply.id}
-                      className="reply-preview-box"
-                      style={replyPreviewBox}
+                      <div
+  key={reply.id}
+  className="reply-preview-box"
+  style={replyPreviewBox}
                     >
                       {editingReplyId === reply.id ? (
                         <div style={{ width: "100%" }}>
@@ -1708,8 +1708,8 @@ function dateHeader(dateString: string) {
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div>
-                              <strong>{displayAuthor(reply.reply_author)}:</strong>{" "}
-                              {reply.reply_message}
+                      <strong>{displayAuthor(reply.reply_author)}:</strong>{" "}
+                      {reply.reply_message}
                             </div>
                             {reply.edited_at ? (
                               <div className="one-eyrie-updated-timestamp">
@@ -1760,35 +1760,35 @@ function dateHeader(dateString: string) {
                       )}
                     </div>
                   ))}
-                </div>
+                </div> 
               )}
-              <div className="reply-input-wrap" style={replyInputWrap}>
-                <textarea
+  <div className="reply-input-wrap" style={replyInputWrap}>
+    <textarea
                   ref={(el) => {
                     replyInputRefs.current[entry.id] = el;
                   }}
-                  value={replyMessages[entry.id] || ""}
-                  onChange={(e) =>
-                    setReplyMessages((prev) => ({
-                      ...prev,
-                      [entry.id]: e.target.value,
-                    }))
-                  }
-                  placeholder="Write a reply..."
+  value={replyMessages[entry.id] || ""}
+  onChange={(e) =>
+    setReplyMessages((prev) => ({
+      ...prev,
+      [entry.id]: e.target.value,
+    }))
+  }
+  placeholder="Write a reply..."
                   className="one-eyrie-field pass-on-reply-textarea"
-                  style={replyTextarea}
-                />
+  style={replyTextarea}
+/>
 
-                <button
-                  type="button"
-                  onClick={() => addInlineReply(entry.id)}
+  <button
+    type="button"
+    onClick={() => addInlineReply(entry.id)}
                   className="plus-submit pass-on-send-reply-btn"
-                  style={replySendButton}
-                >
+    style={replySendButton}
+  >
                   <Send size={14} strokeWidth={2.25} aria-hidden />
-                  Send Reply
-                </button>
-              </div>
+    Send Reply
+  </button>
+</div>
 
 {entry.pass_on_log_views?.length > 0 && (
   <div className="pass-on-viewed-by-row" style={viewedByRow}>
