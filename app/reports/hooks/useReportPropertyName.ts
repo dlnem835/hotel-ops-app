@@ -1,40 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchReportPropertyName } from "@/app/reports/lib/report-property";
-
-let cachedPropertyName = "";
-let propertyNamePromise: Promise<string> | null = null;
-
-function loadReportPropertyName(): Promise<string> {
-  if (cachedPropertyName) {
-    return Promise.resolve(cachedPropertyName);
-  }
-
-  if (!propertyNamePromise) {
-    propertyNamePromise = fetchReportPropertyName().then((name) => {
-      cachedPropertyName = name;
-      propertyNamePromise = null;
-      return name;
-    });
-  }
-
-  return propertyNamePromise;
-}
+import {
+  clearReportPropertyNameCache,
+  loadReportPropertyNameCached,
+} from "@/app/reports/lib/report-property";
+import { usePropertyContext } from "@/app/components/TenantContextProviders";
 
 export function useReportPropertyName() {
-  const [propertyName, setPropertyName] = useState(cachedPropertyName);
-  const [loading, setLoading] = useState(!cachedPropertyName);
+  const { propertyId } = usePropertyContext();
+  const [propertyName, setPropertyName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    clearReportPropertyNameCache();
+    setPropertyName("");
+    setLoading(true);
 
     async function loadPropertyName() {
-      if (!cachedPropertyName) {
-        setLoading(true);
-      }
-
-      const name = await loadReportPropertyName();
+      const name = await loadReportPropertyNameCached();
       if (!cancelled) {
         setPropertyName(name);
         setLoading(false);
@@ -46,7 +31,7 @@ export function useReportPropertyName() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [propertyId]);
 
   return { propertyName, loading };
 }

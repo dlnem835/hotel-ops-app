@@ -16,21 +16,32 @@ import {
   persistActivePropertyId,
   readStoredActivePropertyId,
 } from "@/app/lib/tenant/active-property-storage";
+import { clearReportPropertyNameCache } from "@/app/reports/lib/report-property";
 import type {
+  TenantActiveProperty,
   TenantContextResponse,
   TenantOrganizationSummary,
   TenantPropertySummary,
 } from "@/app/lib/tenant/types";
 import { supabase } from "@/app/supabaseClient";
 
+const SWITCH_ERROR_MESSAGE =
+  "We couldn’t switch properties. Please try again.";
+
 type TenantContextInternalValue = {
   context: TenantContextResponse | null;
   loading: boolean;
+  switching: boolean;
+  switchError: string | null;
   error: string | null;
+  clearSwitchError: () => void;
   refresh: (requestedPropertyId?: number | null) => Promise<void>;
+  switchActiveProperty: (propertyId: number) => Promise<void>;
 };
 
-const TenantContextInternal = createContext<TenantContextInternalValue | null>(null);
+const TenantContextInternal = createContext<TenantContextInternalValue | null>(
+  null
+);
 
 export function useTenantContextInternal() {
   const value = useContext(TenantContextInternal);
@@ -43,7 +54,9 @@ export function useTenantContextInternal() {
 async function loadTenantContext(
   requestedPropertyId?: number | null
 ): Promise<TenantContextResponse | null> {
-  const session = (await waitForInitialAuthSession()) ?? (await supabase.auth.getSession()).data.session;
+  const session =
+    (await waitForInitialAuthSession()) ??
+    (await supabase.auth.getSession()).data.session;
   if (!session?.access_token) {
     return null;
   }
@@ -51,10 +64,33 @@ async function loadTenantContext(
   return fetchTenantContext(session.access_token, requestedPropertyId);
 }
 
-export function TenantContextInternalProvider({ children }: { children: ReactNode }) {
+function toActiveProperty(
+  property: TenantPropertySummary
+): TenantActiveProperty {
+  return {
+    id: property.id,
+    name: property.name,
+    brand: property.brand,
+    timezone: property.timezone,
+    organizationId: property.organizationId,
+    role: property.role,
+  };
+}
+
+export function TenantContextInternalProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [context, setContext] = useState<TenantContextResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const clearSwitchError = useCallback(() => {
+    setSwitchError(null);
+  }, []);
 
   const refresh = useCallback(async (requestedPropertyId?: number | null) => {
     setLoading(true);
@@ -72,7 +108,9 @@ export function TenantContextInternalProvider({ children }: { children: ReactNod
       persistActivePropertyId(nextContext.activeProperty.id);
     } catch (loadError) {
       const message =
-        loadError instanceof Error ? loadError.message : "Unable to load tenant context";
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load tenant context";
       setError(message);
       setContext(null);
     } finally {
@@ -80,13 +118,67 @@ export function TenantContextInternalProvider({ children }: { children: ReactNod
     }
   }, []);
 
+  const switchActiveProperty = useCallback(async (propertyId: number) => {
+    const previousContext = context;
+    const previousPropertyId = previousContext?.activeProperty.id ?? null;
+
+    if (previousPropertyId === propertyId) {
+      return;
+    }
+
+    if (switching) {
+      return;
+    }
+
+    const targetSummary = previousContext?.properties.find(
+      (property) => property.id === propertyId
+    );
+    if (!previousContext || !targetSummary) {
+      setSwitchError(SWITCH_ERROR_MESSAGE);
+      return;
+    }
+
+    setSwitching(true);
+    setSwitchError(null);
+    clearReportPropertyNameCache();
+
+    // Persist before any refetch so tenantFetch attaches the new property id.
+    persistActivePropertyId(propertyId);
+
+    // Optimistic selector update; remount key follows activeProperty.id.
+    setContext({
+      ...previousContext,
+      activeProperty: toActiveProperty(targetSummary),
+    });
+
+    try {
+      const nextContext = await loadTenantContext(propertyId);
+      if (!nextContext || nextContext.activeProperty.id !== propertyId) {
+        throw new Error("Unauthorized or missing property context");
+      }
+
+      clearReportPropertyNameCache();
+      setContext(nextContext);
+      persistActivePropertyId(nextContext.activeProperty.id);
+    } catch {
+      if (previousPropertyId != null) {
+        persistActivePropertyId(previousPropertyId);
+      } else {
+        clearStoredActivePropertyId();
+      }
+      setContext(previousContext);
+      setSwitchError(SWITCH_ERROR_MESSAGE);
+    } finally {
+      setSwitching(false);
+    }
+  }, [context, switching]);
+
   useEffect(() => {
     let mounted = true;
 
     async function bootstrap() {
       const storedPropertyId = readStoredActivePropertyId();
       await refresh(storedPropertyId);
-
       if (!mounted) return;
     }
 
@@ -96,8 +188,11 @@ export function TenantContextInternalProvider({ children }: { children: ReactNod
       if (!session) {
         setContext(null);
         setError(null);
+        setSwitchError(null);
+        setSwitching(false);
         setLoading(false);
         clearStoredActivePropertyId();
+        clearReportPropertyNameCache();
         return;
       }
 
@@ -115,14 +210,29 @@ export function TenantContextInternalProvider({ children }: { children: ReactNod
     () => ({
       context,
       loading,
+      switching,
+      switchError,
       error,
+      clearSwitchError,
       refresh,
+      switchActiveProperty,
     }),
-    [context, loading, error, refresh]
+    [
+      context,
+      loading,
+      switching,
+      switchError,
+      error,
+      clearSwitchError,
+      refresh,
+      switchActiveProperty,
+    ]
   );
 
   return (
-    <TenantContextInternal.Provider value={value}>{children}</TenantContextInternal.Provider>
+    <TenantContextInternal.Provider value={value}>
+      {children}
+    </TenantContextInternal.Provider>
   );
 }
 
@@ -144,7 +254,11 @@ export function useOrganizationContext() {
   return useContext(OrganizationContext);
 }
 
-export function OrganizationContextProvider({ children }: { children: ReactNode }) {
+export function OrganizationContextProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const { context, loading, error } = useTenantContextInternal();
 
   const value = useMemo<OrganizationContextValue>(
@@ -157,7 +271,11 @@ export function OrganizationContextProvider({ children }: { children: ReactNode 
     [context, loading, error]
   );
 
-  return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
+  return (
+    <OrganizationContext.Provider value={value}>
+      {children}
+    </OrganizationContext.Provider>
+  );
 }
 
 type PropertyContextValue = {
@@ -166,7 +284,10 @@ type PropertyContextValue = {
   propertyId: number | null;
   organizationId: number | null;
   loading: boolean;
+  switching: boolean;
+  switchError: string | null;
   error: string | null;
+  clearSwitchError: () => void;
   setActivePropertyId: (propertyId: number) => Promise<void>;
 };
 
@@ -176,7 +297,10 @@ const PropertyContext = createContext<PropertyContextValue>({
   propertyId: null,
   organizationId: null,
   loading: true,
+  switching: false,
+  switchError: null,
   error: null,
+  clearSwitchError: () => {},
   setActivePropertyId: async () => {},
 });
 
@@ -185,15 +309,15 @@ export function usePropertyContext() {
 }
 
 export function PropertyContextProvider({ children }: { children: ReactNode }) {
-  const { context, loading, error, refresh } = useTenantContextInternal();
-
-  const setActivePropertyId = useCallback(
-    async (propertyId: number) => {
-      persistActivePropertyId(propertyId);
-      await refresh(propertyId);
-    },
-    [refresh]
-  );
+  const {
+    context,
+    loading,
+    switching,
+    switchError,
+    error,
+    clearSwitchError,
+    switchActiveProperty,
+  } = useTenantContextInternal();
 
   const value = useMemo<PropertyContextValue>(
     () => ({
@@ -202,11 +326,24 @@ export function PropertyContextProvider({ children }: { children: ReactNode }) {
       propertyId: context?.activeProperty?.id ?? null,
       organizationId: context?.activeProperty?.organizationId ?? null,
       loading,
+      switching,
+      switchError,
       error,
-      setActivePropertyId,
+      clearSwitchError,
+      setActivePropertyId: switchActiveProperty,
     }),
-    [context, loading, error, setActivePropertyId]
+    [
+      context,
+      loading,
+      switching,
+      switchError,
+      error,
+      clearSwitchError,
+      switchActiveProperty,
+    ]
   );
 
-  return <PropertyContext.Provider value={value}>{children}</PropertyContext.Provider>;
+  return (
+    <PropertyContext.Provider value={value}>{children}</PropertyContext.Provider>
+  );
 }

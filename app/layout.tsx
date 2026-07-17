@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ONE_EYRIE_BRAND } from "./lib/one-eyrie-brand";
 import InactivityGuard from "./components/InactivityGuard";
 import OneEyrieThemeBootstrap from "./components/OneEyrieThemeBootstrap";
+import PropertyScopeRoot from "./components/PropertyScopeRoot";
 import RoleAccessProvider from "./components/RoleAccessProvider";
 import RoleRouteGuard from "./components/RoleRouteGuard";
 import TenantContextProviders from "./components/TenantContextProvidersRoot";
@@ -69,8 +70,10 @@ export default function RootLayout({
         <RoleAccessProvider>
           <TenantContextProviders>
             <ThemeProvider>
-              {children}
-              <RoleRouteGuard />
+              <PropertyScopeRoot>
+                {children}
+                <RoleRouteGuard />
+              </PropertyScopeRoot>
             </ThemeProvider>
           </TenantContextProviders>
         </RoleAccessProvider>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import OneEyriePlaceholderIcon from "@/app/components/OneEyriePlaceholderIcon";
+import OneEyriePropertySelector from "@/app/components/OneEyriePropertySelector";
 import OneEyrieUserProfileMenu from "@/app/components/OneEyrieUserProfileMenu";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import type { MobileModuleKey } from "@/app/lib/role-permissions";
@@ -74,6 +75,7 @@ export default function MobileHomeScreen() {
         <OneEyriePlaceholderIcon className="one-eyrie-placeholder-icon--mobile" />
         <h1 className="one-eyrie-mobile-heading">Field Operations</h1>
         <p className="one-eyrie-mobile-subheading">Choose a module to get started.</p>
+        <OneEyriePropertySelector variant="mobile" />
       </header>
 
       <nav className="one-eyrie-mobile-menu" aria-label="Field operations modules">
