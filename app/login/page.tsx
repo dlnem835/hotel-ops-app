@@ -222,6 +222,15 @@ export default function LoginPage() {
         >
           Sign In
         </button>
+
+        <p style={{ marginTop: 16, marginBottom: 0, textAlign: "center" }}>
+          <a
+            href="/forgot-password"
+            style={{ color: "#C8A96A", textDecoration: "none", fontSize: 14 }}
+          >
+            Forgot password?
+          </a>
+        </p>
       </form>
     </main>
   );

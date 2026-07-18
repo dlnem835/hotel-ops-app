@@ -8,6 +8,7 @@ import {
   inviteUserOrGenerateLink,
   sendPasswordResetOrGenerateLink,
 } from "@/app/lib/platform-admin/server/auth-email-dispatch";
+import { resolvePasswordResetRedirectUrl } from "@/app/lib/email/auth-email-config";
 import type {
   AdminOrganizationInvitation,
   PlatformAdminRecord,
@@ -94,10 +95,6 @@ function resolveSiteUrl(): string {
 
 function resolveInviteRedirectUrl(): string {
   return `${resolveSiteUrl()}/auth/callback`;
-}
-
-function resolvePasswordResetRedirectUrl(): string {
-  return `${resolveSiteUrl()}/login`;
 }
 
 function administratorDisplayName(invitation: ManageInvitationRow): string {
@@ -710,7 +707,10 @@ export async function manageAdministratorInvitation(
       const { error: resetError } = await sendPasswordResetOrGenerateLink(
         supabase,
         normalizeEmail(invitation.email),
-        { redirectTo: resolvePasswordResetRedirectUrl() }
+        {
+          redirectTo: resolvePasswordResetRedirectUrl(),
+          recipientName: `${invitation.first_name} ${invitation.last_name}`.trim(),
+        }
       );
       if (resetError) {
         throw new PlatformAdminRequestError(

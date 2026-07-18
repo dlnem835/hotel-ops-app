@@ -1,20 +1,20 @@
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { ONE_EYRIE_LOGO_STACKED_PATH } from "@/app/lib/one-eyrie-brand";
+import { resolveAppUrl } from "@/app/lib/email/auth-email-config";
 
 /** Public stacked logo used in transactional emails. */
 export const EMAIL_LOGO_PATH = ONE_EYRIE_LOGO_STACKED_PATH;
 
-export const EMAIL_SUPPORT_ADDRESS = "support@oneeyrie.com";
+export const EMAIL_SUPPORT_ADDRESS =
+  (process.env.SUPPORT_EMAIL ?? "").trim() || "support@oneeyrie.com";
 
-export const EMAIL_FROM_DEFAULT = "One Eyrie <support@oneeyrie.com>";
+export const EMAIL_FROM_DEFAULT =
+  (process.env.AUTH_EMAIL_FROM ?? "").trim() ||
+  "One Eyrie <noreply@oneeyrie.com>";
 
 /** Absolute site origin for email asset links (logo, CTAs). */
 export function getEmailSiteOrigin(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SMOKE_BASE_URL ||
-    "https://app.oneeyrie.com";
-  return raw.replace(/\/$/, "");
+  return resolveAppUrl();
 }
 
 export function getEmailLogoUrl(): string {

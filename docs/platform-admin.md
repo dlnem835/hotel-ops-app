@@ -286,15 +286,13 @@ Disable/Remove are enforced at the tenant data layer (`resolveTenantContextForUs
 requires active memberships; removed users have no remaining org/property rows).
 
 **Auth-email suppression (dev/test only).** Invite, resend, and password-reset
-sends go through `app/lib/platform-admin/server/auth-email-dispatch.ts`. When
-`SUPPRESS_AUTH_EMAILS` is truthy the flows use Supabase `generateLink` (which
-returns the action link without dispatching an email), so verification scripts
-never create bounced-email traffic. It defaults to false and is unconditionally
-ignored in production (`NODE_ENV=production` always sends real emails).
-Verification scripts (`verify-platform-admin-stage-f`,
-`verify-invited-account-setup`) refuse to run unless suppression is enabled and
-use non-deliverable `@oneeyrie-test.invalid` addresses;
-`scripts/tenant/cleanup-test-users.mjs` removes previously-created test artifacts.
+flows go through `app/lib/platform-admin/server/auth-email-dispatch.ts`. When
+`SUPPRESS_AUTH_EMAILS` is truthy the flows generate Supabase action links without
+dispatching email (and log `Auth email suppressed in development`). It defaults
+to false and is unconditionally ignored in production (`NODE_ENV=production`).
+Password-reset emails (forgot-password + admin Send Password Reset) use
+`generateLink` + Resend branded HTML — never `resetPasswordForEmail` (avoids
+dual sends). Invitations still use Supabase Auth mailer when not suppressed.
 
 ### Job title (descriptive only)
 

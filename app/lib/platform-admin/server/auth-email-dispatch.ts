@@ -1,25 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dispatchPasswordResetEmail } from "@/app/lib/email/dispatch-password-reset";
+import { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
+import { recipientDomainForLog } from "@/app/lib/email/auth-email-config";
 
-/**
- * Whether transactional auth emails (invite / resend / password reset) should be
- * suppressed.
- *
- * This is STRICTLY a development / automated-testing aid. When enabled, the
- * invite and recovery flows generate the Supabase action link via
- * `generateLink` WITHOUT dispatching an email, so verification scripts can
- * exercise the full invitation lifecycle without creating bounced-email traffic.
- *
- * Production fail-safe: suppression is unconditionally ignored whenever
- * `NODE_ENV === "production"`, so live deployments always send real emails
- * regardless of the flag. It defaults to disabled (real emails) everywhere else.
- */
-export function authEmailsSuppressed(): boolean {
-  // Never suppress in production, even if the flag is mistakenly set.
-  if (process.env.NODE_ENV === "production") return false;
-
-  const raw = (process.env.SUPPRESS_AUTH_EMAILS ?? "").trim().toLowerCase();
-  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
-}
+export { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
 
 /** Normalized result mirroring the shape callers rely on from inviteUserByEmail. */
 export type AuthUserDispatchResult = {
@@ -33,6 +17,9 @@ export type AuthUserDispatchResult = {
  * sending an email. Both paths create the auth user when it does not yet exist
  * and return a benign "already registered" error otherwise, so callers can keep
  * their existing fallback handling unchanged.
+ *
+ * Note: Invitation emails still use Supabase Auth mailer when not suppressed.
+ * Password-reset uses Resend + branded templates separately.
  */
 export async function inviteUserOrGenerateLink(
   supabase: SupabaseClient,
@@ -40,6 +27,10 @@ export async function inviteUserOrGenerateLink(
   options: { redirectTo: string; data: Record<string, unknown> }
 ): Promise<AuthUserDispatchResult> {
   if (authEmailsSuppressed()) {
+    console.info("Auth email suppressed in development", {
+      domain: recipientDomainForLog(email),
+      kind: "invitation",
+    });
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "invite",
       email,
@@ -62,26 +53,24 @@ export async function inviteUserOrGenerateLink(
 }
 
 /**
- * Sends a password-reset email, or — when suppression is enabled — generates the
- * recovery action link via `generateLink` (type "recovery") WITHOUT sending an
- * email.
+ * Sends a branded password-reset email via Resend using a Supabase recovery
+ * `generateLink`. Does NOT call `resetPasswordForEmail` (avoids dual send).
  */
 export async function sendPasswordResetOrGenerateLink(
   supabase: SupabaseClient,
   email: string,
-  options: { redirectTo: string }
-): Promise<{ error: { message: string } | null }> {
-  if (authEmailsSuppressed()) {
-    const { error } = await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: { redirectTo: options.redirectTo },
-    });
-    return { error: error ? { message: error.message } : null };
+  options: { redirectTo?: string; recipientName?: string | null } = {}
+): Promise<{ error: { message: string } | null; messageId?: string | null }> {
+  const result = await dispatchPasswordResetEmail(supabase, email, {
+    redirectTo: options.redirectTo,
+    recipientName: options.recipientName,
+  });
+
+  // Admin / internal callers: treat config/send failures as errors.
+  // Suppression with a generated link is success (intentional no-send).
+  if (result.error) {
+    return { error: result.error, messageId: result.messageId };
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: options.redirectTo,
-  });
-  return { error: error ? { message: error.message } : null };
+  return { error: null, messageId: result.messageId };
 }
