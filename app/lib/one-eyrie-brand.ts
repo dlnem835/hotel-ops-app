@@ -13,9 +13,13 @@ function versioned(path: string) {
   return `${path}?v=${ICON_VERSION}`;
 }
 
+/** Stacked logo for marketing surfaces and transactional emails. */
+export const ONE_EYRIE_LOGO_STACKED_PATH = "/one-eyrie-logo-stacked.png";
+
 export const ONE_EYRIE_BRAND = {
   alt: "One Eyrie",
   placeholderIcon: ONE_EYRIE_PLACEHOLDER_ICON_PATH,
+  logoStacked: ONE_EYRIE_LOGO_STACKED_PATH,
   icons: {
     favicon: versioned("/favicon.ico"),
     icon192: versioned("/icon-192.png"),
