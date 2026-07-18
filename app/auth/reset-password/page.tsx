@@ -1,109 +1,150 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { AuthError, EmailOtpType } from "@supabase/supabase-js";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
-type PageState = "loading" | "ready" | "invalid" | "success";
+type PageState = "loading" | "confirm" | "ready" | "invalid" | "success";
 
-function readRecoveryParams(): { tokenHash: string | null; type: EmailOtpType | null } {
-  if (typeof window === "undefined") {
-    return { tokenHash: null, type: null };
-  }
+type PendingRecovery = {
+  tokenHash: string;
+  type: EmailOtpType;
+};
+
+function readRecoveryParams(): PendingRecovery | null {
+  if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
   const tokenHash = params.get("token_hash")?.trim() || null;
-  const rawType = params.get("type")?.trim() || null;
-  if (!tokenHash) {
-    return { tokenHash: null, type: null };
-  }
-  const type = (rawType || "recovery") as EmailOtpType;
-  if (type !== "recovery") {
-    return { tokenHash, type: null };
-  }
-  return { tokenHash, type };
+  const rawType = (params.get("type")?.trim() || "recovery") as EmailOtpType;
+  if (!tokenHash) return null;
+  if (rawType !== "recovery") return null;
+  return { tokenHash, type: rawType };
 }
 
 function clearRecoveryParamsFromUrl(): void {
   if (typeof window === "undefined") return;
   const url = new URL(window.location.href);
+  if (!url.searchParams.has("token_hash") && !url.searchParams.has("type")) {
+    return;
+  }
   url.searchParams.delete("token_hash");
   url.searchParams.delete("type");
   window.history.replaceState({}, "", `${url.pathname}${url.hash}`);
 }
 
+function logVerifyOtpError(error: AuthError): void {
+  console.error("[auth-reset] verifyOtp failed", {
+    message: error.message,
+    status: error.status,
+    code: (error as AuthError & { code?: string }).code ?? null,
+    name: error.name,
+  });
+}
+
 export default function ResetPasswordPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
+  const [pending, setPending] = useState<PendingRecovery | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const verifyInFlightRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     let recoveryDetected = false;
+    let unsubscribe: (() => void) | undefined;
 
-    async function establishRecoverySession() {
-      const { tokenHash, type } = readRecoveryParams();
+    const fromLink = readRecoveryParams();
+    if (fromLink) {
+      // Do NOT call verifyOtp on mount. Auto-verify is consumed by React Strict
+      // Mode remounts and by email-security prefetchers that execute page JS.
+      setPending(fromLink);
+      setPageState("confirm");
+      return () => {
+        mounted = false;
+      };
+    }
 
-      if (tokenHash && type) {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type,
-        });
-        clearRecoveryParamsFromUrl();
-        if (!mounted) return;
-        if (verifyError) {
-          setPageState("invalid");
-          return;
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      if (event === "PASSWORD_RECOVERY") {
         recoveryDetected = true;
         setPageState("ready");
         return;
       }
 
-      // Legacy recovery links that established a session via Supabase verify redirect.
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
-        if (!mounted) return;
-
-        if (event === "PASSWORD_RECOVERY") {
+      if (event === "INITIAL_SESSION") {
+        if (session) {
           recoveryDetected = true;
           setPageState("ready");
-          return;
+        } else {
+          window.setTimeout(() => {
+            if (!mounted || recoveryDetected) return;
+            setPageState("invalid");
+          }, 2500);
         }
-
-        if (event === "INITIAL_SESSION") {
-          if (session) {
-            recoveryDetected = true;
-            setPageState("ready");
-          } else {
-            window.setTimeout(() => {
-              if (!mounted || recoveryDetected) return;
-              setPageState("invalid");
-            }, 2500);
-          }
-        }
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-
-    let cleanup: (() => void) | undefined;
-    void establishRecoverySession().then((fn) => {
-      cleanup = fn;
+      }
     });
+    unsubscribe = () => subscription.unsubscribe();
 
     return () => {
       mounted = false;
-      cleanup?.();
+      unsubscribe?.();
     };
   }, []);
+
+  async function handleConfirmRecovery() {
+    if (!pending || verifyInFlightRef.current) return;
+    verifyInFlightRef.current = true;
+    setVerifying(true);
+    setError(null);
+
+    console.info("[auth-reset] verifyOtp starting", {
+      type: pending.type,
+      tokenHashPresent: Boolean(pending.tokenHash),
+      tokenHashLength: pending.tokenHash.length,
+      queryKeys: Array.from(
+        new URLSearchParams(window.location.search).keys()
+      ),
+    });
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: pending.tokenHash,
+      type: pending.type,
+    });
+
+    if (verifyError) {
+      logVerifyOtpError(verifyError);
+      setPageState("invalid");
+      setVerifying(false);
+      verifyInFlightRef.current = false;
+      return;
+    }
+
+    console.info("[auth-reset] verifyOtp succeeded", {
+      sessionPresent: Boolean(data.session),
+      userPresent: Boolean(data.user),
+    });
+
+    clearRecoveryParamsFromUrl();
+    setPending(null);
+    setPageState("ready");
+    setVerifying(false);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -140,7 +181,24 @@ export default function ResetPasswordPage() {
         <p style={{ color: ONE_EYRIE.gold, marginTop: 0 }}>Reset password</p>
 
         {pageState === "loading" ? (
-          <p style={{ color: ONE_EYRIE.textMuted }}>Verifying reset link…</p>
+          <p style={{ color: ONE_EYRIE.textMuted }}>Checking reset link…</p>
+        ) : null}
+
+        {pageState === "confirm" ? (
+          <div>
+            <p style={{ color: ONE_EYRIE.textMuted, lineHeight: 1.5, marginTop: 0 }}>
+              Click below to continue resetting your One Eyrie password. This
+              confirms the request and opens the password form.
+            </p>
+            <button
+              type="button"
+              disabled={verifying || !pending}
+              style={buttonStyle}
+              onClick={() => void handleConfirmRecovery()}
+            >
+              {verifying ? "Verifying…" : "Continue to reset password"}
+            </button>
+          </div>
         ) : null}
 
         {pageState === "invalid" ? (
