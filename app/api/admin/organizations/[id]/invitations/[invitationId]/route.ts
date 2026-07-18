@@ -47,6 +47,18 @@ export async function POST(request: Request, context: RouteContext) {
       typeof body.confirmName === "string" ? body.confirmName : undefined;
     const newEmail = typeof body.newEmail === "string" ? body.newEmail : undefined;
 
+    if (action === "change_email") {
+      console.info("[platform-admin] change_email request", {
+        organizationId,
+        invitationId,
+        actorRole: platformAdmin.role,
+        newEmailDomain:
+          typeof newEmail === "string" && newEmail.includes("@")
+            ? newEmail.trim().toLowerCase().split("@")[1]
+            : null,
+      });
+    }
+
     const result = await manageAdministratorInvitation(
       supabase,
       user.id,
@@ -56,11 +68,41 @@ export async function POST(request: Request, context: RouteContext) {
       { platformAdmin, confirmName, newEmail }
     );
 
+    if (action === "change_email") {
+      const payload = {
+        success: true as const,
+        email: result.email ?? null,
+        invitation: result.invitation,
+        message: result.message ?? null,
+      };
+      console.info("[platform-admin] change_email response", {
+        organizationId,
+        invitationId,
+        status: 200,
+        success: true,
+        emailDomain:
+          result.email && result.email.includes("@")
+            ? result.email.split("@")[1]
+            : null,
+      });
+      return NextResponse.json(payload);
+    }
+
     return NextResponse.json({
       invitation: result.invitation,
       ...(result.message ? { message: result.message } : {}),
     });
   } catch (error) {
+    if (error instanceof PlatformAdminRequestError) {
+      console.error("[platform-admin] invitation action failed", {
+        status: error.status,
+        message: error.message,
+      });
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
+    }
     return platformAdminErrorResponse(error);
   }
 }

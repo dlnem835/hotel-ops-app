@@ -440,6 +440,20 @@
   font-size: 13px;
 }
 
+.admin-portal__toast {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(200, 169, 106, 0.45);
+  background: rgba(28, 28, 30, 0.96);
+  color: #e8d5a8;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
 .admin-portal__back-link {
   display: inline-block;
   margin-bottom: 16px;

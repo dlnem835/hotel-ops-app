@@ -25,29 +25,42 @@ export default function AdminOrganizationDetailPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadOrganization() {
+  async function loadOrganization(options?: { soft?: boolean }) {
     const organizationId = params.id;
     if (!organizationId) return;
 
-    setLoading(true);
-    setError(null);
+    const soft = Boolean(options?.soft);
+    if (!soft) {
+      setLoading(true);
+      setError(null);
+    }
 
     const response = await adminFetch(`/api/admin/organizations/${organizationId}`);
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(body?.error ?? `Request failed (${response.status})`);
-      setLoading(false);
+      if (!soft) {
+        setError(body?.error ?? `Request failed (${response.status})`);
+        setLoading(false);
+      }
       return;
     }
 
     const body = (await response.json()) as AdminOrganizationDetail;
     setOrganization(body);
-    setLoading(false);
+    if (!soft) {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     void loadOrganization();
   }, [params.id]);
+
+  useEffect(() => {
+    if (!actionSuccess) return;
+    const timer = window.setTimeout(() => setActionSuccess(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [actionSuccess]);
 
   if (loading) {
     return <AdminLoadingState label="Loading organization…" />;
@@ -62,6 +75,12 @@ export default function AdminOrganizationDetailPage() {
       <Link href="/admin/organizations" className="admin-portal__back-link">
         ← Organizations
       </Link>
+
+      {actionSuccess ? (
+        <div className="admin-portal__toast" role="status">
+          {actionSuccess}
+        </div>
+      ) : null}
 
       <section className="admin-portal__card">
         <h2 className="admin-portal__section-title">{organization.name}</h2>
@@ -96,11 +115,6 @@ export default function AdminOrganizationDetailPage() {
       </section>
 
       {actionError ? <AdminErrorState message={actionError} /> : null}
-      {actionSuccess ? (
-        <section className="admin-portal__card">
-          <p className="admin-portal__muted">{actionSuccess}</p>
-        </section>
-      ) : null}
 
       <AdminOrganizationLifecycleActions
         organization={organization}
@@ -117,7 +131,7 @@ export default function AdminOrganizationDetailPage() {
           onInvitationCreated={() => {
             setActionError(null);
             setActionSuccess(null);
-            void loadOrganization();
+            void loadOrganization({ soft: true });
           }}
           onError={(message) => {
             setActionSuccess(null);
@@ -136,15 +150,28 @@ export default function AdminOrganizationDetailPage() {
           modules={organization.modules}
           onChanged={() => {
             setActionError(null);
-            void loadOrganization();
+            void loadOrganization({ soft: true });
           }}
           onError={(message) => {
             setActionSuccess(null);
             setActionError(message);
           }}
-          onSuccess={(message) => {
+          onSuccess={(message, details) => {
             setActionError(null);
             setActionSuccess(message);
+            if (details) {
+              setOrganization((current) => {
+                if (!current) return current;
+                return {
+                  ...current,
+                  invitations: current.invitations.map((invitation) =>
+                    invitation.id === details.invitationId
+                      ? { ...invitation, email: details.email }
+                      : invitation
+                  ),
+                };
+              });
+            }
           }}
         />
       </section>

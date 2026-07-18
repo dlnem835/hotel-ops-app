@@ -7,6 +7,7 @@ type AdminChangeEmailModalProps = {
   open: boolean;
   invitation: AdminOrganizationInvitation | null;
   submitting?: boolean;
+  error?: string | null;
   onCancel: () => void;
   onConfirm: (newEmail: string) => void;
 };
@@ -17,6 +18,7 @@ export default function AdminChangeEmailModal({
   open,
   invitation,
   submitting = false,
+  error = null,
   onCancel,
   onConfirm,
 }: AdminChangeEmailModalProps) {
@@ -41,8 +43,8 @@ export default function AdminChangeEmailModal({
   const emailValid = EMAIL_PATTERN.test(normalizedNew);
   const emailChanged = normalizedNew !== currentEmail;
   const emailsMatch = normalizedNew === normalizedConfirm;
-  const canContinue = emailValid && emailChanged;
-  const canSubmit = canContinue && emailsMatch && !submitting;
+  const canContinue = emailValid && emailChanged && emailsMatch && !submitting;
+  const canSubmit = emailValid && emailChanged && emailsMatch && !submitting;
 
   function handleContinue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,12 +54,18 @@ export default function AdminChangeEmailModal({
 
   function handleConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
     onConfirm(normalizedNew);
   }
 
   return (
-    <div className="admin-portal__modal-overlay" role="presentation" onClick={onCancel}>
+    <div
+      className="admin-portal__modal-overlay"
+      role="presentation"
+      onClick={() => {
+        if (!submitting) onCancel();
+      }}
+    >
       <div
         className="admin-portal__modal"
         role="dialog"
@@ -90,6 +98,8 @@ export default function AdminChangeEmailModal({
           ) : null}
         </dl>
 
+        {error ? <p className="admin-portal__confirm-warning">{error}</p> : null}
+
         {step === "edit" ? (
           <form className="admin-portal__form" onSubmit={handleContinue}>
             <label className="admin-portal__field">
@@ -101,6 +111,7 @@ export default function AdminChangeEmailModal({
                 autoComplete="off"
                 autoFocus
                 required
+                disabled={submitting}
               />
             </label>
             <label className="admin-portal__field">
@@ -111,6 +122,7 @@ export default function AdminChangeEmailModal({
                 onChange={(event) => setConfirmEmail(event.target.value)}
                 autoComplete="off"
                 required
+                disabled={submitting}
               />
             </label>
             {confirmEmail && !emailsMatch ? (
@@ -128,7 +140,7 @@ export default function AdminChangeEmailModal({
               <button
                 type="submit"
                 className="admin-portal__button admin-portal__button--primary"
-                disabled={!canContinue || !emailsMatch || submitting}
+                disabled={!canContinue}
               >
                 Continue
               </button>
@@ -163,7 +175,7 @@ export default function AdminChangeEmailModal({
                 className="admin-portal__button admin-portal__button--primary"
                 disabled={!canSubmit}
               >
-                {submitting ? "Saving…" : "Confirm change"}
+                {submitting ? "Changing email…" : "Confirm change"}
               </button>
             </div>
           </form>

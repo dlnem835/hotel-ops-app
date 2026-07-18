@@ -27,7 +27,10 @@ type AdminAdministratorsTableProps = {
   modules: AdminOrganizationModule[];
   onChanged: () => void;
   onError: (message: string) => void;
-  onSuccess?: (message: string) => void;
+  onSuccess?: (
+    message: string,
+    details?: { invitationId: string; email: string }
+  ) => void;
 };
 
 function formatDate(value: string | null) {
@@ -68,6 +71,8 @@ export default function AdminAdministratorsTable({
   const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [changeEmailTarget, setChangeEmailTarget] =
     useState<AdminOrganizationInvitation | null>(null);
+  const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
+  const [changeEmailSubmitting, setChangeEmailSubmitting] = useState(false);
   const [confirmValue, setConfirmValue] = useState("");
   const [canUseOwnerActions, setCanUseOwnerActions] = useState(false);
   const [openMoreMenuId, setOpenMoreMenuId] = useState<string | null>(null);
@@ -265,7 +270,10 @@ export default function AdminAdministratorsTable({
             type="button"
             className="admin-portal__button admin-portal__button--compact"
             disabled={busy}
-            onClick={() => setChangeEmailTarget(invitation)}
+            onClick={() => {
+              setChangeEmailError(null);
+              setChangeEmailTarget(invitation);
+            }}
           >
             Change Email
           </button>
@@ -309,7 +317,10 @@ export default function AdminAdministratorsTable({
               type="button"
               className="admin-portal__button admin-portal__button--compact"
               disabled={busy}
-              onClick={() => setChangeEmailTarget(invitation)}
+              onClick={() => {
+              setChangeEmailError(null);
+              setChangeEmailTarget(invitation);
+            }}
             >
               Change Email
             </button>
@@ -405,41 +416,81 @@ export default function AdminAdministratorsTable({
       <AdminChangeEmailModal
         open={changeEmailTarget !== null}
         invitation={changeEmailTarget}
-        submitting={busyId === changeEmailTarget?.id}
+        submitting={changeEmailSubmitting}
+        error={changeEmailError}
         onCancel={() => {
-          if (busyId === changeEmailTarget?.id) return;
+          if (changeEmailSubmitting) return;
+          setChangeEmailError(null);
           setChangeEmailTarget(null);
         }}
         onConfirm={(newEmail) => {
-          if (!changeEmailTarget) return;
+          if (!changeEmailTarget || changeEmailSubmitting) return;
           const target = changeEmailTarget;
+          const requestUrl = `/api/admin/organizations/${organizationId}/invitations/${target.id}`;
+
           void (async () => {
-            setBusyId(target.id);
+            setChangeEmailSubmitting(true);
+            setChangeEmailError(null);
             onError("");
-            const response = await adminFetch(
-              `/api/admin/organizations/${organizationId}/invitations/${target.id}`,
-              {
+
+            try {
+              const response = await adminFetch(requestUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "change_email", newEmail }),
-              }
-            );
-            setBusyId(null);
-            if (!response.ok) {
+                body: JSON.stringify({
+                  action: "change_email",
+                  newEmail,
+                }),
+              });
+
               const body = (await response.json().catch(() => null)) as {
+                success?: boolean;
+                email?: string | null;
+                message?: string | null;
                 error?: string;
+                invitation?: AdminOrganizationInvitation | null;
               } | null;
-              onError(body?.error ?? `Action failed (${response.status})`);
-              return;
+
+              console.info("[platform-admin] change_email client response", {
+                url: requestUrl,
+                status: response.status,
+                success: body?.success ?? false,
+                emailDomain:
+                  body?.email && body.email.includes("@")
+                    ? body.email.split("@")[1]
+                    : null,
+              });
+
+              if (!response.ok || body?.success === false) {
+                const message =
+                  body?.error ?? `Action failed (${response.status})`;
+                setChangeEmailError(message);
+                onError(message);
+                return;
+              }
+
+              const updatedEmail = (body?.email ?? newEmail).trim().toLowerCase();
+              const successMessage =
+                body?.message ??
+                "Email updated. Future invitations and password resets will be sent to the new address.";
+
+              setChangeEmailTarget(null);
+              setChangeEmailError(null);
+              onSuccess?.(successMessage, {
+                invitationId: target.id,
+                email: updatedEmail,
+              });
+              onChanged();
+            } catch (error) {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : "Unexpected error while changing email";
+              setChangeEmailError(message);
+              onError(message);
+            } finally {
+              setChangeEmailSubmitting(false);
             }
-            const body = (await response.json().catch(() => null)) as {
-              message?: string;
-            } | null;
-            setChangeEmailTarget(null);
-            if (body?.message) {
-              onSuccess?.(body.message);
-            }
-            onChanged();
           })();
         }}
       />
