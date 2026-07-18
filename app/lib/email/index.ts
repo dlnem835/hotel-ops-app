@@ -26,7 +26,7 @@ export {
   type PasswordResetEmailContent,
   type PasswordResetEmailVariables,
 } from "@/app/lib/email/password-reset-email";
-export { dispatchPasswordResetEmail } from "@/app/lib/email/dispatch-password-reset";
+export { dispatchPasswordResetEmail, resolveAuthUserForContactEmail } from "@/app/lib/email/dispatch-password-reset";
 export { escapeHtml } from "@/app/lib/email/escape-html";
 export type {
   TransactionalEmailCta,

@@ -10,14 +10,21 @@ import { sendBrandedEmailViaResend } from "@/app/lib/email/send-branded-email";
 import { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
 
 export type DispatchPasswordResetResult = {
-  /** True when a recovery link was generated (user likely exists). */
   linkGenerated: boolean;
-  /** True when Resend accepted the message (or suppression skipped send intentionally). */
   emailDispatched: boolean;
-  /** Resend message id when sent. */
   messageId: string | null;
-  /** Internal error for logging / admin callers — never expose to public clients. */
   error: { message: string } | null;
+};
+
+export type DispatchPasswordResetInput = {
+  /** Linked Auth user id — authoritative identity for generateLink. */
+  authUserId: string;
+  /** Real contact email for Resend delivery (never used for Auth lookup). */
+  deliveryEmail: string;
+  recipientName?: string | null;
+  /** Safe correlation id for logs (invitation id, etc.). */
+  invitationId?: string | null;
+  redirectTo?: string;
 };
 
 function extractRecoveryActionLink(data: unknown): string | null {
@@ -37,40 +44,93 @@ function extractRecoveryActionLink(data: unknown): string | null {
   return null;
 }
 
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 /**
- * Generates a Supabase recovery link and sends the branded One Eyrie reset email
- * via Resend. Never returns the recovery URL to callers.
+ * Generates a recovery link for the linked Auth user, then sends the branded
+ * reset email to the separate contact/delivery address via Resend.
+ *
+ * Never logs Auth identity emails, recovery tokens, or full recovery URLs.
  */
 export async function dispatchPasswordResetEmail(
   supabase: SupabaseClient,
-  email: string,
-  options?: {
-    recipientName?: string | null;
-    redirectTo?: string;
-  }
+  input: DispatchPasswordResetInput
 ): Promise<DispatchPasswordResetResult> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const domain = recipientDomainForLog(normalizedEmail);
-  const redirectTo = options?.redirectTo ?? resolvePasswordResetRedirectUrl();
+  const authUserId = String(input.authUserId || "").trim();
+  const deliveryEmail = normalizeEmail(input.deliveryEmail);
+  const deliveryDomain = recipientDomainForLog(deliveryEmail);
+  const invitationId = input.invitationId ? String(input.invitationId) : null;
+  const redirectTo = input.redirectTo ?? resolvePasswordResetRedirectUrl();
 
-  if (!normalizedEmail || !normalizedEmail.includes("@")) {
+  const logBase = {
+    invitationId,
+    authUserIdPresent: Boolean(authUserId),
+    deliveryDomain,
+  };
+
+  if (!authUserId) {
+    console.error("[auth-email] Password reset missing auth_user_id", logBase);
     return {
       linkGenerated: false,
       emailDispatched: false,
       messageId: null,
-      error: { message: "Invalid email" },
+      error: { message: "No linked Auth user for this administrator" },
     };
   }
 
-  const { data, error: linkError } = await supabase.auth.admin.generateLink({
+  if (!deliveryEmail || !deliveryEmail.includes("@")) {
+    console.error("[auth-email] Password reset missing delivery email", logBase);
+    return {
+      linkGenerated: false,
+      emailDispatched: false,
+      messageId: null,
+      error: { message: "Invalid delivery email" },
+    };
+  }
+
+  const { data: authData, error: authLookupError } =
+    await supabase.auth.admin.getUserById(authUserId);
+
+  if (authLookupError || !authData?.user) {
+    console.error("[auth-email] Linked Auth user not found", {
+      ...logBase,
+      message: authLookupError?.message ?? "user missing",
+    });
+    return {
+      linkGenerated: false,
+      emailDispatched: false,
+      messageId: null,
+      error: { message: "Linked Auth user not found" },
+    };
+  }
+
+  const authIdentityEmail = (authData.user.email || "").trim();
+  if (!authIdentityEmail) {
+    console.error("[auth-email] Linked Auth user has no email identity", logBase);
+    return {
+      linkGenerated: false,
+      emailDispatched: false,
+      messageId: null,
+      error: { message: "Linked Auth user has no email identity" },
+    };
+  }
+
+  console.info("[auth-email] Linked Auth user resolved for password reset", {
+    ...logBase,
+    linkedAuthUserFound: true,
+  });
+
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
     type: "recovery",
-    email: normalizedEmail,
+    email: authIdentityEmail,
     options: { redirectTo },
   });
 
   if (linkError) {
     console.error("[auth-email] Supabase generateLink (recovery) failed", {
-      domain,
+      ...logBase,
       message: linkError.message,
     });
     return {
@@ -81,11 +141,9 @@ export async function dispatchPasswordResetEmail(
     };
   }
 
-  const actionLink = extractRecoveryActionLink(data);
+  const actionLink = extractRecoveryActionLink(linkData);
   if (!actionLink) {
-    console.error("[auth-email] Supabase generateLink returned no action_link", {
-      domain,
-    });
+    console.error("[auth-email] Supabase generateLink returned no action_link", logBase);
     return {
       linkGenerated: false,
       emailDispatched: false,
@@ -94,8 +152,16 @@ export async function dispatchPasswordResetEmail(
     };
   }
 
+  console.info("[auth-email] generateLink succeeded", {
+    ...logBase,
+    generateLinkSuccess: true,
+  });
+
   if (authEmailsSuppressed()) {
-    console.info("Auth email suppressed in development", { domain, kind: "password-reset" });
+    console.info("Auth email suppressed in development", {
+      ...logBase,
+      kind: "password-reset",
+    });
     return {
       linkGenerated: true,
       emailDispatched: false,
@@ -118,12 +184,12 @@ export async function dispatchPasswordResetEmail(
   }
 
   const emailContent = buildPasswordResetEmail({
-    recipient_name: options?.recipientName,
+    recipient_name: input.recipientName,
     reset_password_url: actionLink,
   });
 
   const sendResult = await sendBrandedEmailViaResend({
-    to: normalizedEmail,
+    to: deliveryEmail,
     subject: emailContent.subject,
     html: emailContent.html,
     text: emailContent.text,
@@ -131,6 +197,10 @@ export async function dispatchPasswordResetEmail(
   });
 
   if (!sendResult.ok) {
+    console.error("[auth-email] Resend send failed after generateLink", {
+      ...logBase,
+      message: sendResult.errorMessage,
+    });
     return {
       linkGenerated: true,
       emailDispatched: false,
@@ -139,10 +209,61 @@ export async function dispatchPasswordResetEmail(
     };
   }
 
+  console.info("[auth-email] Password reset email dispatched", {
+    ...logBase,
+    messageId: sendResult.messageId,
+  });
+
   return {
     linkGenerated: true,
     emailDispatched: true,
     messageId: sendResult.messageId,
     error: null,
+  };
+}
+
+/**
+ * Resolves a public contact email to a linked Auth user via accepted invitations.
+ * Returns null when no safe linkage exists (caller should still return generic success).
+ */
+export async function resolveAuthUserForContactEmail(
+  supabase: SupabaseClient,
+  contactEmail: string
+): Promise<{ authUserId: string; deliveryEmail: string; invitationId: string } | null> {
+  const email = normalizeEmail(contactEmail);
+  if (!email.includes("@")) return null;
+
+  const { data, error } = await supabase
+    .from("organization_invitations")
+    .select("id, email, auth_user_id, status, accepted_at, created_at")
+    .eq("email", email)
+    .eq("status", "accepted")
+    .not("auth_user_id", "is", null)
+    .order("accepted_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[auth-email] Contact→Auth lookup failed", {
+      deliveryDomain: recipientDomainForLog(email),
+      message: error.message,
+    });
+    return null;
+  }
+
+  if (!data?.auth_user_id) {
+    return null;
+  }
+
+  // Defense: ensure invitation contact email matches the submitted contact email.
+  if (normalizeEmail(String(data.email || "")) !== email) {
+    return null;
+  }
+
+  return {
+    authUserId: String(data.auth_user_id),
+    deliveryEmail: email,
+    invitationId: String(data.id),
   };
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { dispatchPasswordResetEmail } from "@/app/lib/email/dispatch-password-reset";
+import {
+  dispatchPasswordResetEmail,
+  resolveAuthUserForContactEmail,
+} from "@/app/lib/email/dispatch-password-reset";
 import { recipientDomainForLog } from "@/app/lib/email/auth-email-config";
 
 const GENERIC_SUCCESS = {
@@ -33,6 +36,8 @@ function isValidEmail(email: string): boolean {
 
 /**
  * Public forgot-password endpoint.
+ * Resolves contact email → linked Auth user via accepted invitations, then
+ * generates recovery for Auth identity and emails the contact address.
  * Always returns a generic success payload to prevent account enumeration.
  */
 export async function POST(request: Request) {
@@ -41,7 +46,6 @@ export async function POST(request: Request) {
     const email = normalizeEmail(body.email);
 
     if (!email || !isValidEmail(email)) {
-      // Still generic — do not reveal validation beyond a soft client check.
       return NextResponse.json(GENERIC_SUCCESS);
     }
 
@@ -50,11 +54,24 @@ export async function POST(request: Request) {
       return NextResponse.json(GENERIC_SUCCESS);
     }
 
-    const result = await dispatchPasswordResetEmail(supabase, email);
+    const resolved = await resolveAuthUserForContactEmail(supabase, email);
+    if (!resolved) {
+      console.info("[auth-email] Forgot-password: no linked Auth user for contact", {
+        deliveryDomain: recipientDomainForLog(email),
+      });
+      return NextResponse.json(GENERIC_SUCCESS);
+    }
+
+    const result = await dispatchPasswordResetEmail(supabase, {
+      authUserId: resolved.authUserId,
+      deliveryEmail: resolved.deliveryEmail,
+      invitationId: resolved.invitationId,
+    });
 
     if (result.error) {
       console.error("[auth-email] Forgot-password dispatch failed", {
-        domain: recipientDomainForLog(email),
+        invitationId: resolved.invitationId,
+        deliveryDomain: recipientDomainForLog(email),
         message: result.error.message,
       });
     }

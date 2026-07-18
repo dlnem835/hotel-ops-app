@@ -702,16 +702,18 @@ export async function manageAdministratorInvitation(
     case "send_password_reset": {
       assertAccepted(invitation, "sent a password reset to");
       if (!invitation.auth_user_id) {
-        throw new PlatformAdminRequestError(409, "Administrator has no linked account");
+        throw new PlatformAdminRequestError(
+          409,
+          "Administrator has no linked Auth account. Password reset cannot be sent."
+        );
       }
-      const { error: resetError } = await sendPasswordResetOrGenerateLink(
-        supabase,
-        normalizeEmail(invitation.email),
-        {
-          redirectTo: resolvePasswordResetRedirectUrl(),
-          recipientName: `${invitation.first_name} ${invitation.last_name}`.trim(),
-        }
-      );
+      const { error: resetError } = await sendPasswordResetOrGenerateLink(supabase, {
+        authUserId: invitation.auth_user_id,
+        deliveryEmail: normalizeEmail(invitation.email),
+        invitationId: String(invitation.id),
+        redirectTo: resolvePasswordResetRedirectUrl(),
+        recipientName: `${invitation.first_name} ${invitation.last_name}`.trim(),
+      });
       if (resetError) {
         throw new PlatformAdminRequestError(
           502,
