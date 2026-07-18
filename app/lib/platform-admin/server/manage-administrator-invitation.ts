@@ -22,7 +22,8 @@ export type AdministratorInvitationAction =
   | "disable"
   | "enable"
   | "remove"
-  | "send_password_reset";
+  | "send_password_reset"
+  | "change_email";
 
 export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] = [
   "resend",
@@ -31,6 +32,7 @@ export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] =
   "enable",
   "remove",
   "send_password_reset",
+  "change_email",
 ];
 
 type ManageInvitationRow = {
@@ -79,7 +81,19 @@ type RemoveMembershipSnapshot = {
 export type ManageAdministratorInvitationOptions = {
   platformAdmin: PlatformAdminRecord;
   confirmName?: string;
+  /** Required for `change_email` — normalized before use. */
+  newEmail?: string;
 };
+
+export type ManageAdministratorInvitationResult = {
+  invitation: AdminOrganizationInvitation | null;
+  message?: string;
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const CHANGE_EMAIL_SUCCESS_MESSAGE =
+  "Email updated. Future invitations and password resets will be sent to the new address.";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -225,7 +239,7 @@ function assertNotSelfTarget(
   }
 }
 
-function assertPlatformOwnerForRemove(platformAdmin: PlatformAdminRecord): void {
+function assertPlatformOwner(platformAdmin: PlatformAdminRecord): void {
   if (platformAdmin.role !== "platform_owner") {
     throw new PlatformAdminRequestError(
       403,
@@ -558,7 +572,8 @@ async function auditInvitation(
   supabase: SupabaseClient,
   actorUserId: string,
   action: string,
-  invitation: ManageInvitationRow
+  invitation: ManageInvitationRow,
+  metadataExtras?: Record<string, unknown>
 ): Promise<void> {
   await writeAdminAuditLog(supabase, {
     actorUserId,
@@ -572,8 +587,223 @@ async function auditInvitation(
       firstName: invitation.first_name,
       lastName: invitation.last_name,
       isPrimary: Boolean(invitation.is_primary),
+      ...metadataExtras,
     },
   });
+}
+
+async function findAuthUserIdByEmail(
+  supabase: SupabaseClient,
+  email: string
+): Promise<string | null> {
+  const normalizedEmail = normalizeEmail(email);
+
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+    const match = (data.users ?? []).find(
+      (user) => normalizeEmail(user.email ?? "") === normalizedEmail
+    );
+    if (match?.id) {
+      return match.id;
+    }
+    if ((data.users ?? []).length < 200) {
+      break;
+    }
+  }
+
+  return null;
+}
+
+async function assertEmailAvailableForChange(
+  supabase: SupabaseClient,
+  invitation: ManageInvitationRow,
+  newEmail: string
+): Promise<void> {
+  const { data: invitationConflicts, error: invitationConflictError } = await supabase
+    .from("organization_invitations")
+    .select("id, auth_user_id, status")
+    .eq("email", newEmail)
+    .in("status", ["pending", "accepted", "expired"]);
+
+  if (invitationConflictError) {
+    throw new Error(invitationConflictError.message);
+  }
+
+  const conflictingInvitation = (invitationConflicts ?? []).find((row) => {
+    if (row.id === invitation.id) return false;
+    if (
+      invitation.auth_user_id &&
+      row.auth_user_id &&
+      String(row.auth_user_id) === invitation.auth_user_id
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  if (conflictingInvitation) {
+    throw new PlatformAdminRequestError(
+      409,
+      "That email is already used by another administrator or invitation"
+    );
+  }
+
+  const { data: teamByEmail, error: teamByEmailError } = await supabase
+    .from("team_members")
+    .select("id, auth_user_id, email, auth_email")
+    .eq("email", newEmail);
+
+  if (teamByEmailError) {
+    throw new Error(teamByEmailError.message);
+  }
+
+  const { data: teamByAuthEmail, error: teamByAuthEmailError } = await supabase
+    .from("team_members")
+    .select("id, auth_user_id, email, auth_email")
+    .eq("auth_email", newEmail);
+
+  if (teamByAuthEmailError) {
+    throw new Error(teamByAuthEmailError.message);
+  }
+
+  const teamConflicts = [...(teamByEmail ?? []), ...(teamByAuthEmail ?? [])];
+  const seenMemberIds = new Set<string>();
+
+  const conflictingMember = teamConflicts.find((row) => {
+    const id = String(row.id);
+    if (seenMemberIds.has(id)) return false;
+    seenMemberIds.add(id);
+    if (!row.auth_user_id) return true;
+    if (invitation.auth_user_id && String(row.auth_user_id) === invitation.auth_user_id) {
+      return false;
+    }
+    return true;
+  });
+
+  if (conflictingMember) {
+    throw new PlatformAdminRequestError(
+      409,
+      "That email is already used by another team member account"
+    );
+  }
+
+  const existingAuthUserId = await findAuthUserIdByEmail(supabase, newEmail);
+  if (
+    existingAuthUserId &&
+    (!invitation.auth_user_id || existingAuthUserId !== invitation.auth_user_id)
+  ) {
+    throw new PlatformAdminRequestError(
+      409,
+      "That email is already registered to another Auth user"
+    );
+  }
+}
+
+/**
+ * Platform Owner testing helper: update Auth email + synced invitation /
+ * team_member contact fields without touching roles or memberships.
+ */
+async function changeAdministratorEmail(
+  supabase: SupabaseClient,
+  actorUserId: string,
+  invitation: ManageInvitationRow,
+  rawNewEmail: string | undefined
+): Promise<string> {
+  if (!rawNewEmail || !String(rawNewEmail).trim()) {
+    throw new PlatformAdminRequestError(400, "New email is required");
+  }
+
+  const newEmail = normalizeEmail(rawNewEmail);
+  const previousEmail = normalizeEmail(invitation.email);
+
+  if (!EMAIL_PATTERN.test(newEmail)) {
+    throw new PlatformAdminRequestError(400, "Enter a valid email address");
+  }
+  if (newEmail === previousEmail) {
+    throw new PlatformAdminRequestError(
+      400,
+      "New email must be different from the current email"
+    );
+  }
+  if (!invitation.auth_user_id) {
+    throw new PlatformAdminRequestError(
+      409,
+      "Administrator has no linked Auth account. Email cannot be changed."
+    );
+  }
+
+  await assertEmailAvailableForChange(supabase, invitation, newEmail);
+
+  const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+    invitation.auth_user_id,
+    {
+      email: newEmail,
+      email_confirm: true,
+    }
+  );
+
+  if (authUpdateError) {
+    const message = authUpdateError.message.toLowerCase();
+    if (
+      message.includes("already") ||
+      message.includes("registered") ||
+      message.includes("exists") ||
+      message.includes("unique") ||
+      message.includes("duplicate")
+    ) {
+      throw new PlatformAdminRequestError(
+        409,
+        "That email is already registered to another Auth user"
+      );
+    }
+    throw new PlatformAdminRequestError(
+      502,
+      `Failed to update Auth email: ${authUpdateError.message}`
+    );
+  }
+
+  // Sync every invitation row for this Auth user so contact email stays aligned.
+  const { error: invitationUpdateError } = await supabase
+    .from("organization_invitations")
+    .update({ email: newEmail })
+    .eq("auth_user_id", invitation.auth_user_id);
+
+  if (invitationUpdateError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Auth email updated, but invitation sync failed: ${invitationUpdateError.message}`
+    );
+  }
+
+  const { error: teamMemberUpdateError } = await supabase
+    .from("team_members")
+    .update({
+      email: newEmail,
+      auth_email: newEmail,
+    })
+    .eq("auth_user_id", invitation.auth_user_id);
+
+  if (teamMemberUpdateError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Auth email updated, but team member sync failed: ${teamMemberUpdateError.message}`
+    );
+  }
+
+  await auditInvitation(supabase, actorUserId, "administrator.email_changed", invitation, {
+    previousEmail,
+    newEmail,
+    authUserId: invitation.auth_user_id,
+    note: "Platform Owner testing helper — Auth + invitation/team_member emails synchronized",
+  });
+
+  return CHANGE_EMAIL_SUCCESS_MESSAGE;
 }
 
 export async function manageAdministratorInvitation(
@@ -583,9 +813,10 @@ export async function manageAdministratorInvitation(
   invitationId: string,
   action: AdministratorInvitationAction,
   options: ManageAdministratorInvitationOptions
-): Promise<AdminOrganizationInvitation | null> {
+): Promise<ManageAdministratorInvitationResult> {
   const invitation = await loadInvitation(supabase, organizationId, invitationId);
   const timestamp = new Date().toISOString();
+  let message: string | undefined;
 
   switch (action) {
     case "resend": {
@@ -685,7 +916,7 @@ export async function manageAdministratorInvitation(
     }
 
     case "remove": {
-      assertPlatformOwnerForRemove(options.platformAdmin);
+      assertPlatformOwner(options.platformAdmin);
       assertAccepted(invitation, "removed");
       assertNotPrimary(invitation, "removed");
       assertNotSelfTarget(invitation, actorUserId, "remove");
@@ -729,11 +960,35 @@ export async function manageAdministratorInvitation(
       break;
     }
 
+    case "change_email": {
+      assertPlatformOwner(options.platformAdmin);
+      if (
+        invitation.status !== "accepted" &&
+        invitation.status !== "pending" &&
+        invitation.status !== "expired"
+      ) {
+        throw new PlatformAdminRequestError(
+          409,
+          "Only pending or accepted administrators can have their email changed"
+        );
+      }
+      message = await changeAdministratorEmail(
+        supabase,
+        actorUserId,
+        invitation,
+        options.newEmail
+      );
+      break;
+    }
+
     default: {
       throw new PlatformAdminRequestError(400, "Unsupported action");
     }
   }
 
   const invitations = await fetchOrganizationInvitations(supabase, organizationId);
-  return invitations.find((row) => row.id === invitation.id) ?? null;
+  return {
+    invitation: invitations.find((row) => row.id === invitation.id) ?? null,
+    message,
+  };
 }

@@ -45,17 +45,21 @@ export async function POST(request: Request, context: RouteContext) {
 
     const confirmName =
       typeof body.confirmName === "string" ? body.confirmName : undefined;
+    const newEmail = typeof body.newEmail === "string" ? body.newEmail : undefined;
 
-    const invitation = await manageAdministratorInvitation(
+    const result = await manageAdministratorInvitation(
       supabase,
       user.id,
       organizationId,
       invitationId,
       action,
-      { platformAdmin, confirmName }
+      { platformAdmin, confirmName, newEmail }
     );
 
-    return NextResponse.json({ invitation });
+    return NextResponse.json({
+      invitation: result.invitation,
+      ...(result.message ? { message: result.message } : {}),
+    });
   } catch (error) {
     return platformAdminErrorResponse(error);
   }

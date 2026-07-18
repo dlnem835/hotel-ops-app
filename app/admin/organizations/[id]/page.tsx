@@ -22,6 +22,7 @@ export default function AdminOrganizationDetailPage() {
   const [organization, setOrganization] = useState<AdminOrganizationDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadOrganization() {
@@ -95,11 +96,19 @@ export default function AdminOrganizationDetailPage() {
       </section>
 
       {actionError ? <AdminErrorState message={actionError} /> : null}
+      {actionSuccess ? (
+        <section className="admin-portal__card">
+          <p className="admin-portal__muted">{actionSuccess}</p>
+        </section>
+      ) : null}
 
       <AdminOrganizationLifecycleActions
         organization={organization}
         onOrganizationUpdated={setOrganization}
-        onError={setActionError}
+        onError={(message) => {
+          setActionSuccess(null);
+          setActionError(message);
+        }}
       />
 
       {organization.canInviteAdministrator ? (
@@ -107,9 +116,13 @@ export default function AdminOrganizationDetailPage() {
           organization={organization}
           onInvitationCreated={() => {
             setActionError(null);
+            setActionSuccess(null);
             void loadOrganization();
           }}
-          onError={setActionError}
+          onError={(message) => {
+            setActionSuccess(null);
+            setActionError(message);
+          }}
         />
       ) : null}
 
@@ -125,7 +138,14 @@ export default function AdminOrganizationDetailPage() {
             setActionError(null);
             void loadOrganization();
           }}
-          onError={setActionError}
+          onError={(message) => {
+            setActionSuccess(null);
+            setActionError(message);
+          }}
+          onSuccess={(message) => {
+            setActionError(null);
+            setActionSuccess(message);
+          }}
         />
       </section>
 

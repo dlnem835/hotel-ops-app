@@ -17,6 +17,7 @@ import {
 import AdminStatusBadge from "./AdminStatusBadge";
 import AdminConfirmNameModal from "./AdminConfirmNameModal";
 import AdminEditAdministratorModal from "./AdminEditAdministratorModal";
+import AdminChangeEmailModal from "./AdminChangeEmailModal";
 
 type AdminAdministratorsTableProps = {
   organizationId: number;
@@ -26,6 +27,7 @@ type AdminAdministratorsTableProps = {
   modules: AdminOrganizationModule[];
   onChanged: () => void;
   onError: (message: string) => void;
+  onSuccess?: (message: string) => void;
 };
 
 function formatDate(value: string | null) {
@@ -59,12 +61,15 @@ export default function AdminAdministratorsTable({
   modules,
   onChanged,
   onError,
+  onSuccess,
 }: AdminAdministratorsTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
+  const [changeEmailTarget, setChangeEmailTarget] =
+    useState<AdminOrganizationInvitation | null>(null);
   const [confirmValue, setConfirmValue] = useState("");
-  const [canRemoveAdministrators, setCanRemoveAdministrators] = useState(false);
+  const [canUseOwnerActions, setCanUseOwnerActions] = useState(false);
   const [openMoreMenuId, setOpenMoreMenuId] = useState<string | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -75,7 +80,7 @@ export default function AdminAdministratorsTable({
       const response = await adminFetch("/api/admin/me");
       if (!mounted || !response.ok) return;
       const body = (await response.json()) as PlatformAdminMeResponse;
-      setCanRemoveAdministrators(body.role === "platform_owner");
+      setCanUseOwnerActions(body.role === "platform_owner");
     }
 
     void loadAdminRole();
@@ -137,6 +142,13 @@ export default function AdminAdministratorsTable({
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       onError(body?.error ?? `Action failed (${response.status})`);
       return;
+    }
+
+    const body = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+    if (body?.message) {
+      onSuccess?.(body.message);
     }
 
     onChanged();
@@ -205,7 +217,7 @@ export default function AdminAdministratorsTable({
             >
               {isDisabled ? "Enable" : "Disable"}
             </button>
-            {canRemoveAdministrators ? (
+            {canUseOwnerActions ? (
               <button
                 type="button"
                 role="menuitem"
@@ -248,6 +260,16 @@ export default function AdminAdministratorsTable({
         >
           Send Password Reset
         </button>
+        {canUseOwnerActions ? (
+          <button
+            type="button"
+            className="admin-portal__button admin-portal__button--compact"
+            disabled={busy}
+            onClick={() => setChangeEmailTarget(invitation)}
+          >
+            Change Email
+          </button>
+        ) : null}
         {isPrimary ? (
           <span className="admin-portal__muted admin-portal__row-actions-note">
             Transfer ownership required
@@ -282,6 +304,16 @@ export default function AdminAdministratorsTable({
           >
             Cancel Invite
           </button>
+          {canUseOwnerActions ? (
+            <button
+              type="button"
+              className="admin-portal__button admin-portal__button--compact"
+              disabled={busy}
+              onClick={() => setChangeEmailTarget(invitation)}
+            >
+              Change Email
+            </button>
+          ) : null}
         </div>
       );
     }
@@ -368,6 +400,48 @@ export default function AdminAdministratorsTable({
           onChanged();
         }}
         onError={onError}
+      />
+
+      <AdminChangeEmailModal
+        open={changeEmailTarget !== null}
+        invitation={changeEmailTarget}
+        submitting={busyId === changeEmailTarget?.id}
+        onCancel={() => {
+          if (busyId === changeEmailTarget?.id) return;
+          setChangeEmailTarget(null);
+        }}
+        onConfirm={(newEmail) => {
+          if (!changeEmailTarget) return;
+          const target = changeEmailTarget;
+          void (async () => {
+            setBusyId(target.id);
+            onError("");
+            const response = await adminFetch(
+              `/api/admin/organizations/${organizationId}/invitations/${target.id}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "change_email", newEmail }),
+              }
+            );
+            setBusyId(null);
+            if (!response.ok) {
+              const body = (await response.json().catch(() => null)) as {
+                error?: string;
+              } | null;
+              onError(body?.error ?? `Action failed (${response.status})`);
+              return;
+            }
+            const body = (await response.json().catch(() => null)) as {
+              message?: string;
+            } | null;
+            setChangeEmailTarget(null);
+            if (body?.message) {
+              onSuccess?.(body.message);
+            }
+            onChanged();
+          })();
+        }}
       />
 
       <AdminConfirmNameModal
