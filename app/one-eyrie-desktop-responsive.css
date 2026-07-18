@@ -440,43 +440,38 @@
   text-align: center;
 }
 
-/* Lost & Found — fixed columns; tighter Item → Status → Send Label workflow */
+/* Lost & Found — horizontal card rows; soft column hints (not a rigid grid) */
 .one-eyrie-lnf-table.one-eyrie-table--fit {
   table-layout: fixed;
   width: 100%;
-  min-width: 1020px;
+  min-width: 0;
 }
 
 .one-eyrie-lnf-table th,
 .one-eyrie-lnf-table td {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.one-eyrie-lnf-table .one-eyrie-table__cell--wrap,
+.one-eyrie-lnf-table .one-eyrie-table__cell--actions {
   overflow: visible;
   white-space: normal;
-  vertical-align: middle;
 }
 
 .one-eyrie-lnf-table .one-eyrie-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
 }
 
-.one-eyrie-lnf-table .col-delete { width: 32px; min-width: 32px; max-width: 32px; }
-.one-eyrie-lnf-table .col-guest { width: 100px; min-width: 100px; max-width: 100px; }
-.one-eyrie-lnf-table .col-location { width: 76px; min-width: 76px; max-width: 76px; }
-.one-eyrie-lnf-table .col-item {
-  width: 98px;
-  min-width: 98px;
-  max-width: 98px;
-}
+.one-eyrie-lnf-table .col-delete { width: 32px; }
+.one-eyrie-lnf-table .col-guest { width: 12%; }
+.one-eyrie-lnf-table .col-location { width: 14%; }
+.one-eyrie-lnf-table .col-item { width: 12%; }
 .one-eyrie-lnf-table .col-status {
   width: 156px;
-  min-width: 156px;
-  max-width: 156px;
-}
-
-.one-eyrie-lnf-table .col-item.one-eyrie-truncate {
-  max-width: 98px;
 }
 
 .one-eyrie-lnf-status-header,
@@ -557,15 +552,11 @@
   padding: 8px 12px;
 }
 
-.one-eyrie-lnf-table .col-send-label {
-  width: 186px;
-  min-width: 186px;
-  max-width: 186px;
-}
-.one-eyrie-lnf-table .col-date { width: 88px; min-width: 88px; max-width: 88px; white-space: nowrap; }
-.one-eyrie-lnf-table .col-comments { width: 168px; min-width: 168px; }
-.one-eyrie-lnf-table .col-label { width: 56px; min-width: 56px; max-width: 56px; }
-.one-eyrie-lnf-table .col-view { width: 40px; min-width: 40px; max-width: 40px; }
+.one-eyrie-lnf-table .col-send-label { width: 186px; }
+.one-eyrie-lnf-table .col-date { width: 88px; white-space: nowrap; }
+.one-eyrie-lnf-table .col-comments { width: 14%; }
+.one-eyrie-lnf-table .col-label { width: 56px; }
+.one-eyrie-lnf-table .col-view { width: 40px; }
 
 .one-eyrie-lnf-table .col-comments input {
   min-width: 0;
@@ -851,7 +842,7 @@
     background: transparent;
     border: 1px solid #2a2a2a;
     border-radius: 14px;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
     box-shadow: none;
     padding: 0 0 8px;
@@ -947,8 +938,14 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-location,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-location {
-    padding-left: 2px !important;
-    padding-right: 2px !important;
+    padding-left: 4px !important;
+    padding-right: 18px !important;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-item,
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-item {
+    padding-left: 6px !important;
+    padding-right: 8px !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td {
@@ -975,19 +972,12 @@
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-lnf-status-select-wrap {
     width: fit-content;
     max-width: 150px;
-    margin-left: -8px;
-  }
-
-  /* Item + Status read as one workflow — tight horizontal spacing */
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table .col-item,
-  .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-item {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    margin-left: 0;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table .col-status,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-status {
-    padding-left: 0 !important;
+    padding-left: 4px !important;
     padding-right: 0 !important;
   }
 

@@ -6,7 +6,6 @@ import {
   WorkOrderListFilters,
   WorkOrderPriorityFilter,
   WorkOrderSortOrder,
-  WorkOrderStatusFilter,
 } from "../lib/work-order-list-filters";
 
 const SORT_OPTIONS: { label: string; value: WorkOrderSortOrder }[] = [
@@ -19,14 +18,6 @@ const PRIORITY_OPTIONS: { label: string; value: WorkOrderPriorityFilter }[] = [
   { label: "Urgent", value: "Urgent" },
   { label: "Important", value: "Important" },
   { label: "Normal", value: "Normal" },
-];
-
-const STATUS_OPTIONS: { label: string; value: WorkOrderStatusFilter }[] = [
-  { label: "All", value: "All" },
-  { label: "Open", value: "Open" },
-  { label: "In Progress", value: "In Progress" },
-  { label: "Waiting on Parts", value: "Waiting on Parts" },
-  { label: "Completed", value: "Completed" },
 ];
 
 const filterMenuButton: CSSProperties = {
@@ -172,38 +163,6 @@ export default function WorkOrderFiltersButton({
             >
               {option.label}{" "}
               {filters.priorityFilter === option.value ? (
-                <Check size={14} style={{ marginLeft: "6px" }} />
-              ) : null}
-            </button>
-          ))}
-
-          <div
-            className="lnf-filter-menu__divider"
-            style={{ height: "1px", background: "#2A2A2A", margin: "14px 0" }}
-          />
-
-          <div
-            className="lnf-filter-menu__heading"
-            style={{
-              color: "#E5E7EB",
-              fontSize: "12px",
-              fontWeight: "bold",
-              marginBottom: "12px",
-            }}
-          >
-            Status
-          </div>
-
-          {STATUS_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => updateFilters({ statusFilter: option.value })}
-              className="one-eyrie-menu-item"
-              style={filterMenuButton}
-            >
-              {option.label}{" "}
-              {filters.statusFilter === option.value ? (
                 <Check size={14} style={{ marginLeft: "6px" }} />
               ) : null}
             </button>

@@ -206,7 +206,13 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-location,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-location {
-    padding-left: 2px !important;
+    padding-left: 4px !important;
+    padding-right: 18px !important;
+  }
+
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-item,
+  .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-item {
+    padding-left: 6px !important;
   }
 
   .one-eyrie-lost-found-page .lnf-status-pill--ready-ship.one-eyrie-lnf-status-select-wrap {

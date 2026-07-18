@@ -14,6 +14,7 @@ import LostFoundAddItemModal, {
   combineLostFoundLocation,
   type LostFoundAddItemFormData,
 } from "@/app/lost-and-found/components/LostFoundAddItemModal";
+import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -527,7 +528,9 @@ setTeamMembers(allTeamMembers || []);
       </thead>
 
       <tbody>
-        {displayItems.map((item) => (
+        {displayItems.map((item) => {
+          const locationDisplay = formatLostFoundLocationDisplay(item.room_number);
+          return (
           <tr
             key={item.id}
             className={
@@ -547,13 +550,25 @@ setTeamMembers(allTeamMembers || []);
   </button>
 </td>
 
-            <td className="col-guest one-eyrie-truncate" style={tdStyle} title={item.guest_last_name}>
+            <td
+              className="col-guest one-eyrie-truncate"
+              style={tdStyle}
+              title={item.guest_last_name || undefined}
+            >
               {item.guest_last_name}
             </td>
-            <td className="col-location one-eyrie-truncate" style={tdStyle} title={item.room_number}>
-              {item.room_number}
+            <td
+              className="col-location one-eyrie-truncate"
+              style={tdStyle}
+              title={locationDisplay || undefined}
+            >
+              {locationDisplay}
             </td>
-            <td className="col-item one-eyrie-truncate" style={tdStyle} title={item.item_name}>
+            <td
+              className="col-item one-eyrie-truncate"
+              style={tdStyle}
+              title={item.item_name || undefined}
+            >
               {item.item_name}
             </td>
 
@@ -630,7 +645,8 @@ setTeamMembers(allTeamMembers || []);
   </button>
 </td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
     </table>
   )}
