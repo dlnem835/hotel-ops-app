@@ -9,9 +9,16 @@ export {
 export {
   resolveAppUrl,
   resolveAuthEmailConfig,
+  resolveInviteRedirectUrl,
   resolvePasswordResetRedirectUrl,
   type AuthEmailConfig,
 } from "@/app/lib/email/auth-email-config";
+export {
+  buildFirstPartyAuthUrl,
+  buildInvitationAcceptUrl,
+  buildPasswordResetAcceptUrl,
+  extractHashedToken,
+} from "@/app/lib/email/auth-link";
 export { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
 export {
   INVITATION_EMAIL_SUBJECT,
@@ -27,6 +34,7 @@ export {
   type PasswordResetEmailVariables,
 } from "@/app/lib/email/password-reset-email";
 export { dispatchPasswordResetEmail, resolveAuthUserForContactEmail } from "@/app/lib/email/dispatch-password-reset";
+export { dispatchInvitationEmail } from "@/app/lib/email/dispatch-invitation-email";
 export { escapeHtml } from "@/app/lib/email/escape-html";
 export type {
   TransactionalEmailCta,

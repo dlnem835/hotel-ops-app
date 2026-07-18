@@ -8,7 +8,10 @@ import {
   inviteUserOrGenerateLink,
   sendPasswordResetOrGenerateLink,
 } from "@/app/lib/platform-admin/server/auth-email-dispatch";
-import { resolvePasswordResetRedirectUrl } from "@/app/lib/email/auth-email-config";
+import {
+  resolveInviteRedirectUrl,
+  resolvePasswordResetRedirectUrl,
+} from "@/app/lib/email/auth-email-config";
 import type {
   AdminOrganizationInvitation,
   PlatformAdminRecord,
@@ -107,20 +110,19 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function resolveSiteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SMOKE_BASE_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
-
-function resolveInviteRedirectUrl(): string {
-  return `${resolveSiteUrl()}/auth/callback`;
-}
-
 function administratorDisplayName(invitation: ManageInvitationRow): string {
   return `${invitation.first_name} ${invitation.last_name}`.trim();
+}
+
+function formatInvitationExpirationDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "7 days";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 async function loadInvitation(
@@ -869,6 +871,12 @@ export async function manageAdministratorInvitation(
         Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
 
+      const { data: organization } = await supabase
+        .from("organizations")
+        .select("name")
+        .eq("id", organizationId)
+        .maybeSingle();
+
       const { error: inviteError } = await inviteUserOrGenerateLink(
         supabase,
         normalizeEmail(invitation.email),
@@ -881,24 +889,19 @@ export async function manageAdministratorInvitation(
             job_title: invitation.job_title,
             is_administrator: true,
           },
+          recipientName: administratorDisplayName(invitation),
+          inviterName: "A One Eyrie administrator",
+          organizationName: organization?.name ?? null,
+          expirationDate: formatInvitationExpirationDate(expiresAt),
+          invitationId: invitation.id,
         }
       );
 
-      // A benign "already registered" simply means the account exists; the
-      // pending invitation remains valid, so we do not fail the resend.
       if (inviteError) {
-        const message = inviteError.message.toLowerCase();
-        const benign =
-          message.includes("already") ||
-          message.includes("registered") ||
-          message.includes("exists") ||
-          message.includes("rate limit");
-        if (!benign) {
-          throw new PlatformAdminRequestError(
-            502,
-            `Supabase invitation failed: ${inviteError.message}`
-          );
-        }
+        throw new PlatformAdminRequestError(
+          502,
+          `Invitation email failed: ${inviteError.message}`
+        );
       }
 
       const { error } = await supabase

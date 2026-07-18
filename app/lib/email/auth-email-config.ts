@@ -33,6 +33,10 @@ export function resolvePasswordResetRedirectUrl(): string {
   return `${resolveAppUrl()}/auth/reset-password`;
 }
 
+export function resolveInviteRedirectUrl(): string {
+  return `${resolveAppUrl()}/auth/callback`;
+}
+
 /**
  * Validates Resend + From + Support + App URL for branded auth emails.
  * Does not throw — callers decide how to respond to the client.
@@ -44,9 +48,10 @@ export function resolveAuthEmailConfig(): AuthEmailConfigResult {
   if (!resendApiKey) missing.push("RESEND_API_KEY");
 
   const from =
-    readEnv("AUTH_EMAIL_FROM") || "One Eyrie <noreply@oneeyrie.com>";
+    readEnv("AUTH_EMAIL_FROM") ||
+    "One Eyrie Support <support@oneeyrie.com>";
   if (!readEnv("AUTH_EMAIL_FROM")) {
-    // Prefer explicit env; still allow default but warn via missing if empty after default? No — default is fine.
+    // Prefer explicit env; still allow production-aligned default.
   }
   if (!from.includes("@")) missing.push("AUTH_EMAIL_FROM");
 

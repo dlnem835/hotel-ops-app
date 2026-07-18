@@ -1,58 +1,60 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dispatchInvitationEmail } from "@/app/lib/email/dispatch-invitation-email";
 import { dispatchPasswordResetEmail } from "@/app/lib/email/dispatch-password-reset";
-import { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
-import { recipientDomainForLog } from "@/app/lib/email/auth-email-config";
+import { resolveInviteRedirectUrl } from "@/app/lib/email/auth-email-config";
 
 export { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
 
-/** Normalized result mirroring the shape callers rely on from inviteUserByEmail. */
+/** Normalized result for invitation provisioning + optional Resend delivery. */
 export type AuthUserDispatchResult = {
   data: { user: { id: string } | null };
   error: { message: string } | null;
+  emailDispatched?: boolean;
+  messageId?: string | null;
+};
+
+export type InviteDispatchOptions = {
+  redirectTo?: string;
+  data: Record<string, unknown>;
+  recipientName?: string | null;
+  inviterName?: string | null;
+  organizationName?: string | null;
+  expirationDate?: string | null;
+  invitationId?: string | null;
 };
 
 /**
- * Invites a user by email, or — when auth-email suppression is enabled —
- * provisions the equivalent invite via `generateLink` (type "invite") WITHOUT
- * sending an email.
- *
- * Note: Invitation emails still use Supabase Auth mailer when not suppressed.
- * Password-reset uses Resend + branded templates separately.
+ * Provisions an invite/magic Auth link via admin.generateLink (never
+ * inviteUserByEmail) and sends the branded invitation through Resend.
+ * Does not send a duplicate Supabase Auth mailer email.
  */
 export async function inviteUserOrGenerateLink(
   supabase: SupabaseClient,
   email: string,
-  options: { redirectTo: string; data: Record<string, unknown> }
+  options: InviteDispatchOptions
 ): Promise<AuthUserDispatchResult> {
-  if (authEmailsSuppressed()) {
-    console.info("Auth email suppressed in development", {
-      domain: recipientDomainForLog(email),
-      kind: "invitation",
-    });
-    const { data, error } = await supabase.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { redirectTo: options.redirectTo, data: options.data },
-    });
-    return {
-      data: { user: data?.user ? { id: data.user.id } : null },
-      error: error ? { message: error.message } : null,
-    };
-  }
-
-  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    redirectTo: options.redirectTo,
-    data: options.data,
+  const result = await dispatchInvitationEmail(supabase, {
+    email,
+    recipientName: options.recipientName,
+    inviterName: options.inviterName,
+    organizationName: options.organizationName,
+    expirationDate: options.expirationDate,
+    invitationId: options.invitationId,
+    redirectTo: options.redirectTo ?? resolveInviteRedirectUrl(),
+    userMetadata: options.data,
   });
+
   return {
-    data: { user: data?.user ? { id: data.user.id } : null },
-    error: error ? { message: error.message } : null,
+    data: { user: result.userId ? { id: result.userId } : null },
+    error: result.error,
+    emailDispatched: result.emailDispatched,
+    messageId: result.messageId,
   };
 }
 
 /**
- * Sends a branded password-reset email via Resend.
- * Recovery link is generated for the linked Auth user; delivery goes to contact email.
+ * Sends a branded password-reset email via Resend with a first-party
+ * One Eyrie recovery URL (token_hash + verifyOtp on the reset page).
  */
 export async function sendPasswordResetOrGenerateLink(
   supabase: SupabaseClient,

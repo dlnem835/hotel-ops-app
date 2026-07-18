@@ -12,6 +12,7 @@ import {
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
 import { inviteUserOrGenerateLink } from "@/app/lib/platform-admin/server/auth-email-dispatch";
+import { resolveInviteRedirectUrl } from "@/app/lib/email/auth-email-config";
 
 /** How long a pending invitation stays valid before it is treated as expired. */
 const INVITATION_TTL_DAYS = 7;
@@ -49,16 +50,46 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function formatInvitationExpirationDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "7 days";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
-function resolveInviteRedirectUrl(): string {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SMOKE_BASE_URL ||
-    "http://localhost:3000";
-  return `${siteUrl.replace(/\/$/, "")}/auth/callback`;
+async function resolveInviterDisplayName(
+  supabase: SupabaseClient,
+  actorUserId: string
+): Promise<string> {
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("first_name, last_name")
+    .eq("user_id", actorUserId)
+    .maybeSingle();
+
+  const fromProfile = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim();
+  if (fromProfile) return fromProfile;
+
+  const { data: member } = await supabase
+    .from("team_members")
+    .select("first_name, last_name")
+    .eq("auth_user_id", actorUserId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const fromMember = `${member?.first_name ?? ""} ${member?.last_name ?? ""}`.trim();
+  if (fromMember) return fromMember;
+
+  return "A One Eyrie administrator";
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function parseCreateAdministratorInvitationInput(
@@ -550,6 +581,9 @@ export async function createAdministratorInvitation(
   }
 
   const invitationId = String(invitation.id);
+  const inviterName = await resolveInviterDisplayName(supabase, actorUserId);
+  const expirationDateLabel = formatInvitationExpirationDate(expiresAt);
+  const organizationName = organization.name;
 
   const inviteMetadata = {
     oe_invitation_id: invitationId,
@@ -562,18 +596,35 @@ export async function createAdministratorInvitation(
 
   let authUserId: string | null = null;
 
-  const { data: inviteData, error: inviteError } =
-    await inviteUserOrGenerateLink(supabase, input.email, {
+  async function sendBrandedInvite(): Promise<{
+    userId: string | null;
+    error: { message: string } | null;
+  }> {
+    const result = await inviteUserOrGenerateLink(supabase, input.email, {
       redirectTo: resolveInviteRedirectUrl(),
       data: inviteMetadata,
+      recipientName: `${input.firstName} ${input.lastName}`.trim(),
+      inviterName,
+      organizationName,
+      expirationDate: expirationDateLabel,
+      invitationId,
     });
+    return {
+      userId: result.data.user?.id ?? null,
+      error: result.error,
+    };
+  }
 
-  if (inviteError) {
-    const message = inviteError.message.toLowerCase();
+  let inviteResult = await sendBrandedInvite();
+
+  if (inviteResult.error) {
+    const message = inviteResult.error.message.toLowerCase();
     const canCreateFallback =
       message.includes("rate limit") || message.includes("invalid");
     const alreadyRegistered =
-      message.includes("already") || message.includes("registered") || message.includes("exists");
+      message.includes("already") ||
+      message.includes("registered") ||
+      message.includes("exists");
 
     if (canCreateFallback) {
       const { data: createdUser, error: createUserError } =
@@ -591,8 +642,8 @@ export async function createAdministratorInvitation(
         );
       }
       authUserId = createdUser.user?.id ?? null;
+      inviteResult = await sendBrandedInvite();
     } else if (alreadyRegistered) {
-      // Re-invite of an existing account (e.g. a previously removed admin).
       const existingAuthUserId = await findExistingAuthUserIdForEmail(
         supabase,
         organizationId,
@@ -602,7 +653,7 @@ export async function createAdministratorInvitation(
         await supabase.from("organization_invitations").delete().eq("id", invitationId);
         throw new PlatformAdminRequestError(
           502,
-          `Supabase invitation failed: ${inviteError.message}`
+          `Supabase invitation failed: ${inviteResult.error.message}`
         );
       }
       const { error: updateMetaError } = await supabase.auth.admin.updateUserById(
@@ -617,16 +668,25 @@ export async function createAdministratorInvitation(
         );
       }
       authUserId = existingAuthUserId;
+      inviteResult = await sendBrandedInvite();
     } else {
       await supabase.from("organization_invitations").delete().eq("id", invitationId);
       throw new PlatformAdminRequestError(
         502,
-        `Supabase invitation failed: ${inviteError.message}`
+        `Invitation email failed: ${inviteResult.error.message}`
       );
     }
-  } else {
-    authUserId = inviteData.user?.id ?? null;
   }
+
+  if (inviteResult.error) {
+    await supabase.from("organization_invitations").delete().eq("id", invitationId);
+    throw new PlatformAdminRequestError(
+      502,
+      `Invitation email failed: ${inviteResult.error.message}`
+    );
+  }
+
+  authUserId = inviteResult.userId ?? authUserId;
 
   if (authUserId) {
     await supabase.auth.admin.updateUserById(authUserId, {
@@ -665,6 +725,7 @@ export async function createAdministratorInvitation(
       propertyRole,
       jobTitle,
       isPrimary,
+      delivery: "resend",
     },
   });
 

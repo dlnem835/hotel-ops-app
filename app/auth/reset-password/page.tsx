@@ -2,11 +2,37 @@
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
 type PageState = "loading" | "ready" | "invalid" | "success";
+
+function readRecoveryParams(): { tokenHash: string | null; type: EmailOtpType | null } {
+  if (typeof window === "undefined") {
+    return { tokenHash: null, type: null };
+  }
+  const params = new URLSearchParams(window.location.search);
+  const tokenHash = params.get("token_hash")?.trim() || null;
+  const rawType = params.get("type")?.trim() || null;
+  if (!tokenHash) {
+    return { tokenHash: null, type: null };
+  }
+  const type = (rawType || "recovery") as EmailOtpType;
+  if (type !== "recovery") {
+    return { tokenHash, type: null };
+  }
+  return { tokenHash, type };
+}
+
+function clearRecoveryParamsFromUrl(): void {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("token_hash");
+  url.searchParams.delete("type");
+  window.history.replaceState({}, "", `${url.pathname}${url.hash}`);
+}
 
 export default function ResetPasswordPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
@@ -19,34 +45,63 @@ export default function ResetPasswordPage() {
     let mounted = true;
     let recoveryDetected = false;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
+    async function establishRecoverySession() {
+      const { tokenHash, type } = readRecoveryParams();
 
-      if (event === "PASSWORD_RECOVERY") {
+      if (tokenHash && type) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type,
+        });
+        clearRecoveryParamsFromUrl();
+        if (!mounted) return;
+        if (verifyError) {
+          setPageState("invalid");
+          return;
+        }
         recoveryDetected = true;
         setPageState("ready");
         return;
       }
 
-      if (event === "INITIAL_SESSION") {
-        if (session) {
-          // Hash/code exchange may establish a session before PASSWORD_RECOVERY fires.
+      // Legacy recovery links that established a session via Supabase verify redirect.
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!mounted) return;
+
+        if (event === "PASSWORD_RECOVERY") {
           recoveryDetected = true;
           setPageState("ready");
-        } else {
-          window.setTimeout(() => {
-            if (!mounted || recoveryDetected) return;
-            setPageState("invalid");
-          }, 2500);
+          return;
         }
-      }
+
+        if (event === "INITIAL_SESSION") {
+          if (session) {
+            recoveryDetected = true;
+            setPageState("ready");
+          } else {
+            window.setTimeout(() => {
+              if (!mounted || recoveryDetected) return;
+              setPageState("invalid");
+            }, 2500);
+          }
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+
+    let cleanup: (() => void) | undefined;
+    void establishRecoverySession().then((fn) => {
+      cleanup = fn;
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      cleanup?.();
     };
   }, []);
 
@@ -68,7 +123,9 @@ export default function ResetPasswordPage() {
     setSubmitting(false);
 
     if (updateError) {
-      setError(updateError.message || "Unable to update password. The link may have expired.");
+      setError(
+        updateError.message || "Unable to update password. The link may have expired."
+      );
       return;
     }
 

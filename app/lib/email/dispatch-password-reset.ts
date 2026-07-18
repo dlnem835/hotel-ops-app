@@ -5,6 +5,10 @@ import {
   resolveAuthEmailConfig,
   resolvePasswordResetRedirectUrl,
 } from "@/app/lib/email/auth-email-config";
+import {
+  buildPasswordResetAcceptUrl,
+  extractHashedToken,
+} from "@/app/lib/email/auth-link";
 import { buildPasswordResetEmail } from "@/app/lib/email/password-reset-email";
 import { sendBrandedEmailViaResend } from "@/app/lib/email/send-branded-email";
 import { authEmailsSuppressed } from "@/app/lib/platform-admin/server/auth-email-suppress";
@@ -27,32 +31,15 @@ export type DispatchPasswordResetInput = {
   redirectTo?: string;
 };
 
-function extractRecoveryActionLink(data: unknown): string | null {
-  if (!data || typeof data !== "object") return null;
-  const root = data as Record<string, unknown>;
-  const properties = root.properties;
-  if (properties && typeof properties === "object") {
-    const actionLink = (properties as Record<string, unknown>).action_link;
-    if (typeof actionLink === "string" && actionLink.trim()) {
-      return actionLink.trim();
-    }
-  }
-  const direct = root.action_link;
-  if (typeof direct === "string" && direct.trim()) {
-    return direct.trim();
-  }
-  return null;
-}
-
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
 /**
- * Generates a recovery link for the linked Auth user, then sends the branded
- * reset email to the separate contact/delivery address via Resend.
+ * Generates a recovery hashed_token for the linked Auth user, then sends a
+ * branded reset email with a first-party One Eyrie URL (never *.supabase.co).
  *
- * Never logs Auth identity emails, recovery tokens, or full recovery URLs.
+ * Never logs Auth identity emails, recovery tokens, token hashes, or full URLs.
  */
 export async function dispatchPasswordResetEmail(
   supabase: SupabaseClient,
@@ -141,20 +128,23 @@ export async function dispatchPasswordResetEmail(
     };
   }
 
-  const actionLink = extractRecoveryActionLink(linkData);
-  if (!actionLink) {
-    console.error("[auth-email] Supabase generateLink returned no action_link", logBase);
+  const hashedToken = extractHashedToken(linkData);
+  if (!hashedToken) {
+    console.error("[auth-email] Supabase generateLink returned no hashed_token", logBase);
     return {
       linkGenerated: false,
       emailDispatched: false,
       messageId: null,
-      error: { message: "Recovery link missing from Supabase response" },
+      error: { message: "Recovery token missing from Supabase response" },
     };
   }
+
+  const resetUrl = buildPasswordResetAcceptUrl(hashedToken);
 
   console.info("[auth-email] generateLink succeeded", {
     ...logBase,
     generateLinkSuccess: true,
+    firstPartyResetUrl: true,
   });
 
   if (authEmailsSuppressed()) {
@@ -185,7 +175,7 @@ export async function dispatchPasswordResetEmail(
 
   const emailContent = buildPasswordResetEmail({
     recipient_name: input.recipientName,
-    reset_password_url: actionLink,
+    reset_password_url: resetUrl,
   });
 
   const sendResult = await sendBrandedEmailViaResend({
@@ -256,7 +246,6 @@ export async function resolveAuthUserForContactEmail(
     return null;
   }
 
-  // Defense: ensure invitation contact email matches the submitted contact email.
   if (normalizeEmail(String(data.email || "")) !== email) {
     return null;
   }

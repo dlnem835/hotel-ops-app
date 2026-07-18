@@ -10,7 +10,7 @@ export const EMAIL_SUPPORT_ADDRESS =
 
 export const EMAIL_FROM_DEFAULT =
   (process.env.AUTH_EMAIL_FROM ?? "").trim() ||
-  "One Eyrie <noreply@oneeyrie.com>";
+  "One Eyrie Support <support@oneeyrie.com>";
 
 /** Absolute site origin for email asset links (logo, CTAs). */
 export function getEmailSiteOrigin(): string {
