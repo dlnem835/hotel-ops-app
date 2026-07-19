@@ -68,6 +68,8 @@ export default function AdminAdministratorsTable({
 }: AdminAdministratorsTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
+  const [deleteAuthTarget, setDeleteAuthTarget] =
+    useState<AdminOrganizationInvitation | null>(null);
   const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [changeEmailTarget, setChangeEmailTarget] =
     useState<AdminOrganizationInvitation | null>(null);
@@ -333,10 +335,63 @@ export default function AdminAdministratorsTable({
       return renderAcceptedActions(invitation, busy);
     }
 
+    if (
+      status === "revoked" &&
+      canUseOwnerActions &&
+      invitation.authUserId &&
+      !invitation.isPrimary
+    ) {
+      return (
+        <div className="admin-portal__row-actions">
+          <div
+            className="admin-portal__more-actions"
+            ref={
+              openMoreMenuId === invitation.id ? moreMenuRef : undefined
+            }
+          >
+            <button
+              type="button"
+              className="admin-portal__button admin-portal__button--compact"
+              disabled={busy}
+              aria-expanded={openMoreMenuId === invitation.id}
+              aria-haspopup="menu"
+              onClick={() =>
+                setOpenMoreMenuId((current) =>
+                  current === invitation.id ? null : invitation.id
+                )
+              }
+            >
+              More actions
+            </button>
+            {openMoreMenuId === invitation.id ? (
+              <div className="admin-portal__more-actions-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="admin-portal__more-actions-item admin-portal__more-actions-item--danger"
+                  disabled={busy}
+                  onClick={() => {
+                    setOpenMoreMenuId(null);
+                    setConfirmValue("");
+                    setDeleteAuthTarget(invitation);
+                  }}
+                >
+                  Permanently Delete Test Account
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
     return <span className="admin-portal__muted">—</span>;
   }
 
   const removeConfirmName = removeTarget ? administratorFullName(removeTarget) : "";
+  const deleteAuthConfirmEmail = deleteAuthTarget
+    ? deleteAuthTarget.email.trim().toLowerCase()
+    : "";
 
   return (
     <>
@@ -539,6 +594,64 @@ export default function AdminAdministratorsTable({
             const confirmName = confirmValue.trim();
             setRemoveTarget(null);
             void runAction(target, "remove", { confirmName });
+          }
+        }}
+      />
+
+      <AdminConfirmNameModal
+        open={deleteAuthTarget !== null}
+        title="Permanently Delete Test Account"
+        description={
+          deleteAuthTarget
+            ? `Delete the Supabase Auth account for ${administratorFullName(deleteAuthTarget)} so this email can be invited again.`
+            : ""
+        }
+        organizationName={deleteAuthConfirmEmail}
+        confirmLabel="Permanently Delete Account"
+        confirmPromptLabel={
+          deleteAuthTarget
+            ? `Type ${deleteAuthConfirmEmail} to confirm`
+            : "Type the administrator email to confirm"
+        }
+        details={
+          deleteAuthTarget
+            ? [
+                {
+                  label: "Name",
+                  value: administratorFullName(deleteAuthTarget),
+                },
+                {
+                  label: "Email",
+                  value: deleteAuthTarget.email,
+                },
+                {
+                  label: "Former role",
+                  value: deleteAuthTarget.roleLabel,
+                },
+                {
+                  label: "Organization",
+                  value: organizationName,
+                },
+                {
+                  label: "Former properties",
+                  value: affectedPropertiesLabel(deleteAuthTarget),
+                },
+              ]
+            : undefined
+        }
+        warningNote="This deletes the Supabase authentication account and allows this email address to be invited again. Operational history will remain preserved."
+        submitting={busyId === deleteAuthTarget?.id}
+        confirmName={confirmValue}
+        onConfirmNameChange={setConfirmValue}
+        onCancel={() => setDeleteAuthTarget(null)}
+        onConfirm={() => {
+          if (deleteAuthTarget) {
+            const target = deleteAuthTarget;
+            const confirmEmail = confirmValue.trim();
+            setDeleteAuthTarget(null);
+            void runAction(target, "permanently_delete_auth_account", {
+              confirmEmail,
+            });
           }
         }}
       />

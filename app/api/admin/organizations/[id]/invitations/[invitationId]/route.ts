@@ -46,6 +46,8 @@ export async function POST(request: Request, context: RouteContext) {
     const confirmName =
       typeof body.confirmName === "string" ? body.confirmName : undefined;
     const newEmail = typeof body.newEmail === "string" ? body.newEmail : undefined;
+    const confirmEmail =
+      typeof body.confirmEmail === "string" ? body.confirmEmail : undefined;
 
     if (action === "change_email") {
       console.info("[platform-admin] change_email request", {
@@ -65,7 +67,7 @@ export async function POST(request: Request, context: RouteContext) {
       organizationId,
       invitationId,
       action,
-      { platformAdmin, confirmName, newEmail }
+      { platformAdmin, confirmName, newEmail, confirmEmail }
     );
 
     if (action === "change_email") {

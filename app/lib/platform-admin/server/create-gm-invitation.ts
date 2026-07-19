@@ -309,7 +309,15 @@ export async function fetchOrganizationInvitations(
     }
   }
 
-  return rows.map((row) => {
+  return rows
+    .filter((row) => {
+      // Hide Auth-purged revoked rows (auth_user_id cleared after permanent delete).
+      if (String(row.status) === "revoked" && !row.auth_user_id) {
+        return false;
+      }
+      return true;
+    })
+    .map((row) => {
     const isPrimary = Boolean(row.is_primary);
     const orgRole = String(row.org_role ?? "org_member");
     const propertyRole = String(row.property_role ?? "property_admin");

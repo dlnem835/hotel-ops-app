@@ -26,7 +26,8 @@ export type AdministratorInvitationAction =
   | "enable"
   | "remove"
   | "send_password_reset"
-  | "change_email";
+  | "change_email"
+  | "permanently_delete_auth_account";
 
 export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] = [
   "resend",
@@ -36,6 +37,7 @@ export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] =
   "remove",
   "send_password_reset",
   "change_email",
+  "permanently_delete_auth_account",
 ];
 
 type ManageInvitationRow = {
@@ -86,6 +88,8 @@ export type ManageAdministratorInvitationOptions = {
   confirmName?: string;
   /** Required for `change_email` — normalized before use. */
   newEmail?: string;
+  /** Required for `permanently_delete_auth_account` — must match invitation email. */
+  confirmEmail?: string;
 };
 
 export type ManageAdministratorInvitationResult = {
@@ -99,6 +103,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CHANGE_EMAIL_SUCCESS_MESSAGE =
   "Email updated. Future invitations and password resets will be sent to the new address.";
+
+const PERMANENT_DELETE_SUCCESS_MESSAGE =
+  "Authentication account deleted. This email can now be invited again.";
 
 function emailDomainForAudit(email: string): string {
   const at = email.lastIndexOf("@");
@@ -851,6 +858,342 @@ async function changeAdministratorEmail(
   return { message: CHANGE_EMAIL_SUCCESS_MESSAGE, email: newEmail };
 }
 
+type PermanentDeleteBlocker = {
+  kind: string;
+  detail: string;
+};
+
+async function collectPermanentDeleteBlockers(
+  supabase: SupabaseClient,
+  authUserId: string
+): Promise<PermanentDeleteBlocker[]> {
+  const blockers: PermanentDeleteBlocker[] = [];
+
+  const { data: platformAdminRow, error: platformAdminError } = await supabase
+    .from("platform_admins")
+    .select("id, role, active")
+    .eq("user_id", authUserId)
+    .maybeSingle();
+
+  if (platformAdminError) {
+    throw new Error(platformAdminError.message);
+  }
+  if (platformAdminRow) {
+    blockers.push({
+      kind: "platform_admin",
+      detail: `Remove platform administrator access (${platformAdminRow.role}${
+        platformAdminRow.active ? "" : ", inactive"
+      }) before deleting this Auth account`,
+    });
+  }
+
+  const { data: activeOrgRows, error: activeOrgError } = await supabase
+    .from("organization_users")
+    .select("organization_id, role, active")
+    .eq("user_id", authUserId)
+    .eq("active", true);
+
+  if (activeOrgError) {
+    throw new Error(activeOrgError.message);
+  }
+
+  for (const row of activeOrgRows ?? []) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", row.organization_id)
+      .maybeSingle();
+    const orgName = org?.name ? String(org.name) : `Organization #${row.organization_id}`;
+    blockers.push({
+      kind: "organization_membership",
+      detail: `Remove active organization membership in ${orgName} (role: ${row.role})`,
+    });
+  }
+
+  const { data: activePropertyRows, error: activePropertyError } = await supabase
+    .from("user_properties")
+    .select("property_id, role, active")
+    .eq("user_id", authUserId)
+    .eq("active", true);
+
+  if (activePropertyError) {
+    throw new Error(activePropertyError.message);
+  }
+
+  for (const row of activePropertyRows ?? []) {
+    const { data: property } = await supabase
+      .from("properties")
+      .select("name")
+      .eq("id", row.property_id)
+      .maybeSingle();
+    const propertyName = property?.name
+      ? String(property.name)
+      : `Property #${row.property_id}`;
+    blockers.push({
+      kind: "property_membership",
+      detail: `Remove active property membership on ${propertyName} (role: ${row.role})`,
+    });
+  }
+
+  return blockers;
+}
+
+/**
+ * Platform Owner testing helper: delete the Supabase Auth user for a revoked
+ * administrator so the email can be invited again. Preserves operational history
+ * and remaps RESTRICT FKs instead of deleting audit/invitation history.
+ */
+async function permanentlyDeleteTestAuthAccount(
+  supabase: SupabaseClient,
+  actorUserId: string,
+  organizationId: number,
+  invitation: ManageInvitationRow,
+  platformAdmin: PlatformAdminRecord,
+  confirmEmail: string | undefined
+): Promise<string> {
+  assertPlatformOwner(platformAdmin);
+
+  if (invitation.status !== "revoked") {
+    throw new PlatformAdminRequestError(
+      409,
+      "Only revoked administrators can have their Auth account permanently deleted. Remove the administrator first."
+    );
+  }
+  if (invitation.is_primary) {
+    throw new PlatformAdminRequestError(
+      409,
+      "The Primary Owner Auth account cannot be permanently deleted"
+    );
+  }
+  if (!invitation.auth_user_id) {
+    throw new PlatformAdminRequestError(
+      409,
+      "This administrator has no linked Auth account to delete"
+    );
+  }
+
+  const expectedEmail = normalizeEmail(invitation.email);
+  const typedEmail = normalizeEmail(confirmEmail ?? "");
+  if (!typedEmail) {
+    throw new PlatformAdminRequestError(
+      400,
+      "Email confirmation is required"
+    );
+  }
+  if (typedEmail !== expectedEmail) {
+    throw new PlatformAdminRequestError(
+      400,
+      "Email confirmation does not match"
+    );
+  }
+
+  const authUserId = invitation.auth_user_id;
+
+  if (authUserId === actorUserId) {
+    throw new PlatformAdminRequestError(
+      403,
+      "You cannot permanently delete your own Auth account through this workflow"
+    );
+  }
+
+  const blockers = await collectPermanentDeleteBlockers(supabase, authUserId);
+  if (blockers.length > 0) {
+    throw new PlatformAdminRequestError(
+      409,
+      `Cannot permanently delete Auth account. Resolve first: ${blockers
+        .map((row) => row.detail)
+        .join("; ")}`
+    );
+  }
+
+  const { data: authData, error: authLookupError } =
+    await supabase.auth.admin.getUserById(authUserId);
+  if (authLookupError || !authData?.user) {
+    throw new PlatformAdminRequestError(
+      409,
+      "Linked Auth user was not found. It may already have been deleted."
+    );
+  }
+
+  const timestamp = new Date().toISOString();
+  const formerEmail = normalizeEmail(authData.user.email ?? invitation.email);
+
+  // Cancel leftover pending invites for this email so a fresh invite is clean.
+  const { error: pendingCancelError } = await supabase
+    .from("organization_invitations")
+    .update({ status: "cancelled", updated_at: timestamp })
+    .eq("email", expectedEmail)
+    .in("status", ["pending", "expired"]);
+
+  if (pendingCancelError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to clear pending invitations: ${pendingCancelError.message}`
+    );
+  }
+
+  // Inactive membership leftovers (active ones already blocked above).
+  const { error: orgUserCleanupError } = await supabase
+    .from("organization_users")
+    .delete()
+    .eq("user_id", authUserId);
+  if (orgUserCleanupError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to clear organization memberships: ${orgUserCleanupError.message}`
+    );
+  }
+
+  const { error: propertyCleanupError } = await supabase
+    .from("user_properties")
+    .delete()
+    .eq("user_id", authUserId);
+  if (propertyCleanupError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to clear property memberships: ${propertyCleanupError.message}`
+    );
+  }
+
+  // Preserve team_members rows for operational history (inspections, etc.).
+  // Clear Auth linkage so a fresh invite can create a new login-capable row.
+  const { error: teamCleanupError } = await supabase
+    .from("team_members")
+    .update({
+      status: "Inactive",
+      can_login: false,
+      auth_user_id: null,
+      auth_email: null,
+    })
+    .eq("auth_user_id", authUserId);
+  if (teamCleanupError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to archive team member login links: ${teamCleanupError.message}`
+    );
+  }
+
+  // View receipts only — safe to clear so Auth delete is not blocked.
+  await supabase.from("pass_on_log_views").delete().eq("auth_user_id", authUserId);
+
+  // Profiles cascade on auth delete; explicit delete keeps order predictable.
+  const { error: profileCleanupError } = await supabase
+    .from("user_profiles")
+    .delete()
+    .eq("user_id", authUserId);
+  if (profileCleanupError && !/does not exist/i.test(profileCleanupError.message)) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to clear user profile: ${profileCleanupError.message}`
+    );
+  }
+
+  // RESTRICT FKs: remap to the deleting Platform Owner (preserve row history).
+  const { error: invitedByRemapError } = await supabase
+    .from("organization_invitations")
+    .update({ invited_by: actorUserId })
+    .eq("invited_by", authUserId);
+  if (invitedByRemapError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to reassign invitation invited_by references: ${invitedByRemapError.message}`
+    );
+  }
+
+  const { error: auditRemapError } = await supabase
+    .from("admin_audit_log")
+    .update({ actor_user_id: actorUserId })
+    .eq("actor_user_id", authUserId);
+  if (auditRemapError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Failed to reassign audit log actor references: ${auditRemapError.message}`
+    );
+  }
+
+  const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
+    authUserId
+  );
+  if (deleteUserError) {
+    throw new PlatformAdminRequestError(
+      502,
+      `Supabase Auth deleteUser failed: ${deleteUserError.message}`
+    );
+  }
+
+  const { data: stillExists, error: recheckError } =
+    await supabase.auth.admin.getUserById(authUserId);
+  if (!recheckError && stillExists?.user) {
+    throw new PlatformAdminRequestError(
+      500,
+      "Auth user still exists after deleteUser"
+    );
+  }
+
+  // Confirm the email itself is free for a fresh invite (not a different Auth user).
+  for (let page = 1; page <= 10; page += 1) {
+    const { data: listed, error: listError } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (listError) {
+      throw new PlatformAdminRequestError(
+        500,
+        `Auth deleted, but email reuse check failed: ${listError.message}`
+      );
+    }
+    const emailStillPresent = (listed.users ?? []).some(
+      (user) => normalizeEmail(user.email ?? "") === expectedEmail
+    );
+    if (emailStillPresent) {
+      throw new PlatformAdminRequestError(
+        500,
+        "Auth user id was deleted, but an Auth account still exists for this email"
+      );
+    }
+    if ((listed.users ?? []).length < 200) {
+      break;
+    }
+  }
+
+  // Mark this invitation as purged for list filtering (auth_user_id SET NULL by FK).
+  const { error: invitationMarkError } = await supabase
+    .from("organization_invitations")
+    .update({
+      status: "revoked",
+      auth_user_id: null,
+      updated_at: timestamp,
+    })
+    .eq("id", invitation.id);
+  if (invitationMarkError) {
+    throw new PlatformAdminRequestError(
+      500,
+      `Auth deleted, but invitation mark failed: ${invitationMarkError.message}`
+    );
+  }
+
+  await writeAdminAuditLog(supabase, {
+    actorUserId,
+    action: "administrator.auth_account_permanently_deleted",
+    targetType: "organization_invitation",
+    targetId: invitation.id,
+    organizationId,
+    propertyId: invitation.property_id,
+    metadata: {
+      formerName: administratorDisplayName(invitation),
+      formerEmail: expectedEmail,
+      formerAuthEmailDomain: emailDomainForAudit(formerEmail),
+      formerAuthUserId: authUserId,
+      formerOrgRole: invitation.org_role,
+      deletedBy: actorUserId,
+      deletedAt: timestamp,
+      note: "Test Auth account deleted for email reuse. Operational history preserved. Audit/invited_by FKs remapped to deleting Platform Owner.",
+    },
+  });
+
+  return PERMANENT_DELETE_SUCCESS_MESSAGE;
+}
+
 export async function manageAdministratorInvitation(
   supabase: SupabaseClient,
   actorUserId: string,
@@ -1029,6 +1372,18 @@ export async function manageAdministratorInvitation(
       );
       message = changeResult.message;
       email = changeResult.email;
+      break;
+    }
+
+    case "permanently_delete_auth_account": {
+      message = await permanentlyDeleteTestAuthAccount(
+        supabase,
+        actorUserId,
+        organizationId,
+        invitation,
+        options.platformAdmin,
+        options.confirmEmail
+      );
       break;
     }
 
