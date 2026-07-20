@@ -13,12 +13,14 @@ type AdminOrganizationLifecycleActionsProps = {
   organization: AdminOrganizationDetail;
   onOrganizationUpdated: (organization: AdminOrganizationDetail) => void;
   onError: (message: string) => void;
+  onSuccess?: (message: string) => void;
 };
 
 export default function AdminOrganizationLifecycleActions({
   organization,
   onOrganizationUpdated,
   onError,
+  onSuccess,
 }: AdminOrganizationLifecycleActionsProps) {
   const router = useRouter();
   const [adminRole, setAdminRole] = useState<PlatformAdminMeResponse["role"] | null>(null);
@@ -66,6 +68,7 @@ export default function AdminOrganizationLifecycleActions({
 
     const updated = (await response.json()) as AdminOrganizationDetail;
     onOrganizationUpdated(updated);
+    onSuccess?.("Organization suspended successfully.");
     setActionLoading(false);
   }
 
@@ -87,6 +90,7 @@ export default function AdminOrganizationLifecycleActions({
 
     const updated = (await response.json()) as AdminOrganizationDetail;
     onOrganizationUpdated(updated);
+    onSuccess?.("Organization reactivated successfully.");
     setActionLoading(false);
   }
 

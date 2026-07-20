@@ -4,6 +4,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "@/app/lib/tenant/server/authenticate-request";
 import { resolveTenantContextForUser } from "@/app/lib/tenant/server/resolve-tenant-context";
 import { isAccountSetupIncomplete } from "@/app/lib/account-setup/server/account-setup-state";
+import { isHotelAccountDisabled } from "@/app/lib/platform-admin/server/hotel-account-disabled";
 import { ONE_EYRIE_PROPERTY_HEADER } from "@/app/lib/tenant/server/tenant-headers";
 import type { TenantContextResponse } from "@/app/lib/tenant/types";
 
@@ -84,6 +85,10 @@ export async function resolveTenantRequest(request: Request): Promise<TenantApiC
   const serviceClient = getServiceClient();
   if (await isAccountSetupIncomplete(user.id, serviceClient)) {
     throw new TenantRequestError(403, "Account setup incomplete");
+  }
+
+  if (await isHotelAccountDisabled(serviceClient, user.id)) {
+    throw new TenantRequestError(403, "Account disabled");
   }
 
   const requestedPropertyId = readRequestedPropertyId(request);

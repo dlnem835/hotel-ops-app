@@ -21,6 +21,7 @@ export type InviteDispatchOptions = {
   organizationName?: string | null;
   expirationDate?: string | null;
   invitationId?: string | null;
+  recommendDesktop?: boolean;
 };
 
 /**
@@ -42,6 +43,7 @@ export async function inviteUserOrGenerateLink(
     invitationId: options.invitationId,
     redirectTo: options.redirectTo ?? resolveInviteRedirectUrl(),
     userMetadata: options.data,
+    recommendDesktop: options.recommendDesktop,
   });
 
   return {

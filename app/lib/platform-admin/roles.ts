@@ -1,9 +1,15 @@
 /**
  * Canonical membership roles for organizations and properties.
  *
+ * Authorization model (selected):
+ *   B — one organization-admin authorization role with descriptive job titles.
+ *
  *   org_owner  -> Primary Owner           (org-wide: every current + future property)
- *   org_admin  -> Organization Admin      (org-wide: every current + future property)
- *   org_member -> Property Administrator  (exactly one property via user_properties)
+ *   org_admin  -> Organization Admin      (org-wide; titles like Corporate Administrator,
+ *                 Regional Director, Area Manager are descriptive only)
+ *   org_member -> Property Administrator  (exactly one property; title often General Manager)
+ *
+ * Job title never grants access. Scope comes only from org_role + user_properties.
  */
 
 export type OrgRole = "org_owner" | "org_admin" | "org_member" | "org_billing";
@@ -140,6 +146,55 @@ export function inviteRoleFromOrgRole(orgRole: string): AdministratorInviteRole 
     ? "organization_admin"
     : "property_administrator";
 }
+
+/**
+ * Organization-page administrators: Primary Owner and org-wide admins.
+ * Property Administrators / GMs belong on property pages only.
+ */
+export function isOrganizationLevelAdministrator(input: {
+  isPrimary: boolean;
+  orgRole: string;
+}): boolean {
+  return input.isPrimary || isOrgWideRole(input.orgRole);
+}
+
+/**
+ * Property-page administrators: property-scoped invitations that cover this
+ * property. Org-wide roles are excluded so a 200-property org does not list
+ * every GM on the organization page.
+ */
+export function invitationBelongsOnPropertyPage(
+  invitation: {
+    isPrimary: boolean;
+    orgRole: string;
+    propertyId: number;
+    assignedPropertyIds: number[];
+  },
+  propertyId: number
+): boolean {
+  if (isOrganizationLevelAdministrator(invitation)) {
+    return false;
+  }
+  if (invitation.assignedPropertyIds.includes(propertyId)) {
+    return true;
+  }
+  return invitation.propertyId === propertyId;
+}
+
+/** Suggested job titles for organization-level invitations (descriptive only). */
+export const ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS = [
+  "Corporate Administrator",
+  "Regional Director",
+  "Area Manager",
+  "Organization Administrator",
+] as const;
+
+/** Suggested job titles for property-level invitations (descriptive only). */
+export const PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS = [
+  "General Manager",
+  "Assistant General Manager",
+  "Property Administrator",
+] as const;
 
 /** Normalize a list of positive property ids (deduped, insertion order preserved). */
 export function normalizePropertyIdList(raw: unknown): number[] {

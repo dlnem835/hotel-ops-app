@@ -95,6 +95,25 @@ export default function LoginPage() {
       return;
     }
 
+    // Disabled hotel accounts may still hold a JWT after membership deactivation.
+    // Refuse login when tenant APIs report the account disabled.
+    const tenantResponse = await fetch("/api/tenant/context", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    if (tenantResponse.status === 403) {
+      const body = (await tenantResponse.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (body?.error === "Account disabled") {
+        await supabase.auth.signOut();
+        submittingRef.current = false;
+        setAuthDebug("Login failed: This account has been disabled.");
+        return;
+      }
+    }
+
     const target = await resolvePostAuthTarget();
     setAuthDebug(`Session created, redirecting… → ${target}`);
     window.location.assign(target);

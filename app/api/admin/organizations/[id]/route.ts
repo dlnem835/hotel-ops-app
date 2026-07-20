@@ -6,6 +6,7 @@ import {
 } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
 import { fetchAdminOrganizationDetail } from "@/app/lib/platform-admin/server/admin-organizations";
 import { deleteTestAdminOrganization } from "@/app/lib/platform-admin/server/organization-lifecycle";
+import { updateAdminOrganization } from "@/app/lib/platform-admin/server/update-organization";
 
 function parseOrganizationId(value: string): number | null {
   const parsed = Number.parseInt(value, 10);
@@ -30,6 +31,31 @@ export async function GET(request: Request, context: RouteContext) {
     if (!organization) {
       throw new PlatformAdminRequestError(404, "Organization not found");
     }
+
+    return NextResponse.json(organization);
+  } catch (error) {
+    return platformAdminErrorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const { supabase, user, platformAdmin } = await resolvePlatformAdminRequest(request);
+    const { id } = await context.params;
+    const organizationId = parseOrganizationId(id);
+
+    if (organizationId == null) {
+      throw new PlatformAdminRequestError(400, "Invalid organization id");
+    }
+
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const organization = await updateAdminOrganization(
+      supabase,
+      user.id,
+      platformAdmin,
+      organizationId,
+      body
+    );
 
     return NextResponse.json(organization);
   } catch (error) {

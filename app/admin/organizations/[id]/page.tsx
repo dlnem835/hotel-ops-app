@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import { isOrganizationLevelAdministrator } from "@/app/lib/platform-admin/roles";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
@@ -11,6 +12,7 @@ import AdminInviteAdministratorForm from "../../components/AdminInviteAdministra
 import AdminAdministratorsTable from "../../components/AdminAdministratorsTable";
 import AdminModuleControls from "../../components/AdminModuleControls";
 import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
+import AdminEditOrganizationModal from "../../components/AdminEditOrganizationModal";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 
 function formatDate(value: string) {
@@ -24,6 +26,7 @@ export default function AdminOrganizationDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   async function loadOrganization(options?: { soft?: boolean }) {
     const organizationId = params.id;
@@ -62,6 +65,13 @@ export default function AdminOrganizationDetailPage() {
     return () => window.clearTimeout(timer);
   }, [actionSuccess]);
 
+  const organizationAdministrators = useMemo(() => {
+    if (!organization) return [];
+    return organization.invitations.filter((invitation) =>
+      isOrganizationLevelAdministrator(invitation)
+    );
+  }, [organization]);
+
   if (loading) {
     return <AdminLoadingState label="Loading organization…" />;
   }
@@ -83,7 +93,16 @@ export default function AdminOrganizationDetailPage() {
       ) : null}
 
       <section className="admin-portal__card">
-        <h2 className="admin-portal__section-title">{organization.name}</h2>
+        <div className="admin-portal__section-header">
+          <h2 className="admin-portal__section-title">{organization.name}</h2>
+          <button
+            type="button"
+            className="admin-portal__button admin-portal__button--primary"
+            onClick={() => setEditOpen(true)}
+          >
+            Edit Organization
+          </button>
+        </div>
         <dl className="admin-portal__meta-grid">
           <div className="admin-portal__meta-item">
             <dt>Slug</dt>
@@ -119,6 +138,10 @@ export default function AdminOrganizationDetailPage() {
       <AdminOrganizationLifecycleActions
         organization={organization}
         onOrganizationUpdated={setOrganization}
+        onSuccess={(message) => {
+          setActionError(null);
+          setActionSuccess(message);
+        }}
         onError={(message) => {
           setActionSuccess(null);
           setActionError(message);
@@ -128,6 +151,7 @@ export default function AdminOrganizationDetailPage() {
       {organization.canInviteAdministrator ? (
         <AdminInviteAdministratorForm
           organization={organization}
+          scope="organization"
           onInvitationCreated={() => {
             setActionError(null);
             void loadOrganization({ soft: true });
@@ -144,13 +168,18 @@ export default function AdminOrganizationDetailPage() {
       ) : null}
 
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Property Administrators</h3>
+        <h3 className="admin-portal__section-title">Administrators</h3>
+        <p className="admin-portal__muted">
+          Primary Owner and organization-wide administrators. Property General
+          Managers are managed on each property page.
+        </p>
         <AdminAdministratorsTable
           organizationId={organization.id}
           organizationName={organization.name}
-          invitations={organization.invitations}
+          invitations={organizationAdministrators}
           properties={organization.properties}
           modules={organization.modules}
+          emptyLabel="No organization-level administrators yet."
           onChanged={() => {
             setActionError(null);
             void loadOrganization({ soft: true });
@@ -246,6 +275,22 @@ export default function AdminOrganizationDetailPage() {
           </div>
         )}
       </section>
+
+      <AdminEditOrganizationModal
+        open={editOpen}
+        organization={organization}
+        onClose={() => setEditOpen(false)}
+        onSaved={(updated, message) => {
+          setOrganization(updated);
+          setEditOpen(false);
+          setActionError(null);
+          setActionSuccess(message);
+        }}
+        onError={(message) => {
+          setActionSuccess(null);
+          setActionError(message);
+        }}
+      />
     </div>
   );
 }

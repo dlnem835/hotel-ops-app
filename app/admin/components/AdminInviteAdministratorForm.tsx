@@ -1,9 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import {
   ADMINISTRATOR_INVITE_ROLES,
+  ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
+  PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
 import type {
@@ -13,6 +15,9 @@ import type {
 
 type AdminInviteAdministratorFormProps = {
   organization: AdminOrganizationDetail;
+  /** organization = org-wide invites; property = GM / property admin for one property. */
+  scope?: "organization" | "property";
+  lockedPropertyId?: number;
   onInvitationCreated: (invitation: AdminOrganizationInvitation) => void;
   onError: (message: string) => void;
   onSuccess?: (message: string) => void;
@@ -20,10 +25,14 @@ type AdminInviteAdministratorFormProps = {
 
 export default function AdminInviteAdministratorForm({
   organization,
+  scope = "organization",
+  lockedPropertyId,
   onInvitationCreated,
   onError,
   onSuccess,
 }: AdminInviteAdministratorFormProps) {
+  const isPropertyScope = scope === "property";
+
   const hasPrimary = organization.invitations.some(
     (invitation) =>
       invitation.isPrimary &&
@@ -31,9 +40,14 @@ export default function AdminInviteAdministratorForm({
   );
 
   const defaultPropertyId =
-    organization.properties.length === 1 ? organization.properties[0].id : null;
+    lockedPropertyId ??
+    (organization.properties.length === 1 ? organization.properties[0].id : null);
 
-  const [role, setRole] = useState<AdministratorInviteRole>("organization_admin");
+  const initialRole: AdministratorInviteRole = isPropertyScope
+    ? "property_administrator"
+    : "organization_admin";
+
+  const [role, setRole] = useState<AdministratorInviteRole>(initialRole);
   const [propertyId, setPropertyId] = useState(
     defaultPropertyId != null ? String(defaultPropertyId) : ""
   );
@@ -43,22 +57,48 @@ export default function AdminInviteAdministratorForm({
   const [jobTitle, setJobTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const isOrgAdminInvite = hasPrimary && role === "organization_admin";
-  const isPropertyAdminInvite = hasPrimary && role === "property_administrator";
-  const isOrgWideInvite = !hasPrimary || isOrgAdminInvite;
+  const effectiveRole: AdministratorInviteRole = isPropertyScope
+    ? "property_administrator"
+    : !hasPrimary
+      ? "organization_admin"
+      : role;
+
+  const isOrgAdminInvite = hasPrimary && effectiveRole === "organization_admin";
+  const isPropertyAdminInvite =
+    isPropertyScope || (hasPrimary && effectiveRole === "property_administrator");
+  const isOrgWideInvite = !isPropertyScope && (!hasPrimary || isOrgAdminInvite);
+
   const resolvedPropertyIds = isOrgWideInvite
     ? defaultPropertyId != null
       ? [defaultPropertyId]
       : propertyId
         ? [Number.parseInt(propertyId, 10)]
         : []
-    : propertyId
-      ? [Number.parseInt(propertyId, 10)]
-      : [];
+    : lockedPropertyId != null
+      ? [lockedPropertyId]
+      : propertyId
+        ? [Number.parseInt(propertyId, 10)]
+        : [];
 
   const canSubmit =
     resolvedPropertyIds.length > 0 &&
     (!isPropertyAdminInvite || resolvedPropertyIds.length === 1);
+
+  const jobTitleSuggestions = useMemo(
+    () =>
+      isPropertyScope || isPropertyAdminInvite
+        ? PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS
+        : ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
+    [isPropertyScope, isPropertyAdminInvite]
+  );
+
+  const roleOptions = isPropertyScope
+    ? ADMINISTRATOR_INVITE_ROLES.filter(
+        (option) => option.value === "property_administrator"
+      )
+    : ADMINISTRATOR_INVITE_ROLES.filter(
+        (option) => option.value === "organization_admin"
+      );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,7 +120,7 @@ export default function AdminInviteAdministratorForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          role,
+          role: effectiveRole,
           propertyIds: resolvedPropertyIds,
           propertyId: resolvedPropertyIds[0],
           firstName: firstName.trim(),
@@ -108,17 +148,31 @@ export default function AdminInviteAdministratorForm({
     setSubmitting(false);
   }
 
+  const sectionTitle = isPropertyScope
+    ? "Invite Property Administrator"
+    : "Invite Administrator";
+
   return (
     <section className="admin-portal__card">
-      <h3 className="admin-portal__section-title">Invite Administrator</h3>
+      <h3 className="admin-portal__section-title">{sectionTitle}</h3>
       <p className="admin-portal__muted">
-        {hasPrimary
-          ? "Sends a Supabase invitation email. Additional administrators can be invited at any time — no new organization required."
-          : "The first administrator becomes the Primary Owner for this organization. They sign in with their real email address and complete first-login setup."}
+        {isPropertyScope
+          ? "Invites a General Manager or other property-scoped administrator for this property only."
+          : hasPrimary
+            ? "Sends a Supabase invitation email for an organization-wide administrator. Property General Managers are invited from each property page."
+            : "The first administrator becomes the Primary Owner for this organization. They sign in with their real email address and complete first-login setup."}
       </p>
 
       <form className="admin-portal__form" onSubmit={handleSubmit}>
-        {hasPrimary ? (
+        {isPropertyScope ? (
+          <div className="admin-portal__field">
+            <span>Role</span>
+            <p className="admin-portal__static-value">Property Administrator</p>
+            <span className="admin-portal__muted">
+              Scope is limited to this property. Job title is descriptive only.
+            </span>
+          </div>
+        ) : hasPrimary ? (
           <label className="admin-portal__field">
             <span>Role</span>
             <select
@@ -127,15 +181,16 @@ export default function AdminInviteAdministratorForm({
                 const next = event.target.value as AdministratorInviteRole;
                 setRole(next);
               }}
+              disabled={roleOptions.length <= 1}
             >
-              {ADMINISTRATOR_INVITE_ROLES.map((option) => (
+              {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
             <span className="admin-portal__muted">
-              {ADMINISTRATOR_INVITE_ROLES.find((option) => option.value === role)?.description}
+              {roleOptions.find((option) => option.value === role)?.description}
             </span>
           </label>
         ) : (
@@ -186,6 +241,17 @@ export default function AdminInviteAdministratorForm({
                 </span>
               </label>
             ) : null}
+          </div>
+        ) : lockedPropertyId != null ? (
+          <div className="admin-portal__field">
+            <span>Property</span>
+            <p className="admin-portal__static-value">
+              {organization.properties.find((row) => row.id === lockedPropertyId)
+                ?.name ?? `Property #${lockedPropertyId}`}
+            </p>
+            <span className="admin-portal__muted">
+              This administrator will only have access to this property.
+            </span>
           </div>
         ) : (
           <label className="admin-portal__field">
@@ -247,15 +313,15 @@ export default function AdminInviteAdministratorForm({
             value={jobTitle}
             onChange={(event) => setJobTitle(event.target.value)}
             list="admin-job-title-suggestions"
-            placeholder="Administrator"
+            placeholder={
+              isPropertyScope ? "General Manager" : "Corporate Administrator"
+            }
             maxLength={80}
           />
           <datalist id="admin-job-title-suggestions">
-            <option value="General Manager" />
-            <option value="Assistant General Manager" />
-            <option value="Area General Manager" />
-            <option value="Regional Director" />
-            <option value="Corporate Administrator" />
+            {jobTitleSuggestions.map((title) => (
+              <option key={title} value={title} />
+            ))}
           </datalist>
           <span className="admin-portal__muted">
             Descriptive only — access is set by role and permissions. Defaults to

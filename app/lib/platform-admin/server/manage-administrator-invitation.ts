@@ -16,6 +16,7 @@ import type {
   AdminOrganizationInvitation,
   PlatformAdminRecord,
 } from "@/app/lib/platform-admin/types";
+import { transferPrimaryOwnership } from "@/app/lib/platform-admin/server/transfer-primary-ownership";
 
 const INVITATION_TTL_DAYS = 7;
 
@@ -27,7 +28,9 @@ export type AdministratorInvitationAction =
   | "remove"
   | "send_password_reset"
   | "change_email"
-  | "permanently_delete_auth_account";
+  | "permanently_delete_auth_account"
+  | "dismiss_revoked_invitation"
+  | "transfer_primary_ownership";
 
 export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] = [
   "resend",
@@ -38,6 +41,8 @@ export const ADMINISTRATOR_INVITATION_ACTIONS: AdministratorInvitationAction[] =
   "send_password_reset",
   "change_email",
   "permanently_delete_auth_account",
+  "dismiss_revoked_invitation",
+  "transfer_primary_ownership",
 ];
 
 type ManageInvitationRow = {
@@ -90,6 +95,10 @@ export type ManageAdministratorInvitationOptions = {
   newEmail?: string;
   /** Required for `permanently_delete_auth_account` — must match invitation email. */
   confirmEmail?: string;
+  /** Required for `transfer_primary_ownership` — successor invitation id. */
+  successorInvitationId?: string;
+  /** Required for `transfer_primary_ownership` — must equal TRANSFER OWNERSHIP. */
+  confirmPhrase?: string;
 };
 
 export type ManageAdministratorInvitationResult = {
@@ -118,6 +127,8 @@ const ACTION_SUCCESS_MESSAGES: Partial<
   send_password_reset: "Password reset email sent successfully.",
   change_email: CHANGE_EMAIL_SUCCESS_MESSAGE,
   permanently_delete_auth_account: PERMANENT_DELETE_SUCCESS_MESSAGE,
+  dismiss_revoked_invitation: "Revoked invitation dismissed successfully.",
+  transfer_primary_ownership: "Primary ownership transferred successfully.",
 };
 
 function emailDomainForAudit(email: string): string {
@@ -226,6 +237,46 @@ async function setMembershipActive(
 
   if (teamMemberError) {
     throw new Error(teamMemberError.message);
+  }
+
+  // Auth ban only when the user has no remaining active org memberships and is
+  // not an active platform admin — preserves Platform Owner portal access.
+  const { data: remainingActive, error: remainingError } = await supabase
+    .from("organization_users")
+    .select("id")
+    .eq("user_id", authUserId)
+    .eq("active", true)
+    .limit(1);
+
+  if (remainingError) {
+    throw new Error(remainingError.message);
+  }
+
+  const { data: platformAdminRow, error: platformAdminError } = await supabase
+    .from("platform_admins")
+    .select("id")
+    .eq("user_id", authUserId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (platformAdminError) {
+    throw new Error(platformAdminError.message);
+  }
+
+  const shouldBanAuth =
+    !active && (remainingActive ?? []).length === 0 && !platformAdminRow;
+  const shouldUnbanAuth = active;
+
+  if (shouldBanAuth || shouldUnbanAuth) {
+    const { error: banError } = await supabase.auth.admin.updateUserById(
+      authUserId,
+      {
+        ban_duration: shouldBanAuth ? "876000h" : "none",
+      }
+    );
+    if (banError) {
+      throw new Error(banError.message);
+    }
   }
 }
 
@@ -1013,9 +1064,9 @@ async function permanentlyDeleteTestAuthAccount(
   if (blockers.length > 0) {
     throw new PlatformAdminRequestError(
       409,
-      `Cannot permanently delete Auth account. Resolve first: ${blockers
+      `Cannot permanently delete Auth account because it is still active elsewhere. ${blockers
         .map((row) => row.detail)
-        .join("; ")}`
+        .join("; ")}. Transfer or remove that access first, or use Dismiss revoked invitation to hide this card without deleting Auth.`
     );
   }
 
@@ -1207,6 +1258,75 @@ async function permanentlyDeleteTestAuthAccount(
   return PERMANENT_DELETE_SUCCESS_MESSAGE;
 }
 
+/**
+ * Hide a revoked invitation card without deleting the Auth user.
+ * Use when the same Auth account is still Primary Owner / admin in another org.
+ */
+async function dismissRevokedInvitation(
+  supabase: SupabaseClient,
+  actorUserId: string,
+  organizationId: number,
+  invitation: ManageInvitationRow,
+  platformAdmin: PlatformAdminRecord,
+  confirmEmail: string | undefined
+): Promise<string> {
+  assertPlatformOwner(platformAdmin);
+
+  if (invitation.status !== "revoked") {
+    throw new PlatformAdminRequestError(
+      409,
+      "Only revoked invitations can be dismissed"
+    );
+  }
+  if (invitation.is_primary) {
+    throw new PlatformAdminRequestError(
+      409,
+      "Primary Owner invitations cannot be dismissed this way"
+    );
+  }
+
+  const expectedEmail = normalizeEmail(invitation.email);
+  const typedEmail = normalizeEmail(confirmEmail ?? "");
+  if (!typedEmail) {
+    throw new PlatformAdminRequestError(400, "Email confirmation is required");
+  }
+  if (typedEmail !== expectedEmail) {
+    throw new PlatformAdminRequestError(400, "Email confirmation does not match");
+  }
+
+  const timestamp = new Date().toISOString();
+  const { error } = await supabase
+    .from("organization_invitations")
+    .update({
+      auth_user_id: null,
+      updated_at: timestamp,
+    })
+    .eq("id", invitation.id)
+    .eq("organization_id", organizationId)
+    .eq("status", "revoked");
+
+  if (error) {
+    throw new PlatformAdminRequestError(500, error.message);
+  }
+
+  await writeAdminAuditLog(supabase, {
+    actorUserId,
+    action: "administrator.revoked_invitation_dismissed",
+    targetType: "organization_invitation",
+    targetId: invitation.id,
+    organizationId,
+    propertyId: invitation.property_id,
+    metadata: {
+      email: expectedEmail,
+      formerAuthUserId: invitation.auth_user_id,
+      formerName: administratorDisplayName(invitation),
+      note: "Revoked invitation hidden for this organization. Auth account was not deleted.",
+    },
+  });
+
+  return "Revoked invitation dismissed successfully.";
+}
+
 export async function manageAdministratorInvitation(
   supabase: SupabaseClient,
   actorUserId: string,
@@ -1250,6 +1370,8 @@ export async function manageAdministratorInvitation(
           organizationName: organization?.name ?? null,
           expirationDate: formatInvitationExpirationDate(expiresAt),
           invitationId: invitation.id,
+          recommendDesktop:
+            Boolean(invitation.is_primary) || invitation.org_role === "org_admin",
         }
       );
 
@@ -1397,6 +1519,44 @@ export async function manageAdministratorInvitation(
         options.platformAdmin,
         options.confirmEmail
       );
+      break;
+    }
+
+    case "dismiss_revoked_invitation": {
+      message = await dismissRevokedInvitation(
+        supabase,
+        actorUserId,
+        organizationId,
+        invitation,
+        options.platformAdmin,
+        options.confirmEmail
+      );
+      break;
+    }
+
+    case "transfer_primary_ownership": {
+      assertPlatformOwner(options.platformAdmin);
+      if (!invitation.is_primary || invitation.status !== "accepted") {
+        throw new PlatformAdminRequestError(
+          409,
+          "Primary ownership can only be transferred from the current accepted Primary Owner"
+        );
+      }
+      if (!options.successorInvitationId) {
+        throw new PlatformAdminRequestError(
+          400,
+          "Successor administrator is required"
+        );
+      }
+      const transferResult = await transferPrimaryOwnership(
+        supabase,
+        actorUserId,
+        options.platformAdmin,
+        organizationId,
+        options.successorInvitationId,
+        options.confirmPhrase
+      );
+      message = transferResult.message;
       break;
     }
 

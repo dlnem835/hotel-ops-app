@@ -48,6 +48,12 @@ export async function POST(request: Request, context: RouteContext) {
     const newEmail = typeof body.newEmail === "string" ? body.newEmail : undefined;
     const confirmEmail =
       typeof body.confirmEmail === "string" ? body.confirmEmail : undefined;
+    const successorInvitationId =
+      typeof body.successorInvitationId === "string"
+        ? body.successorInvitationId
+        : undefined;
+    const confirmPhrase =
+      typeof body.confirmPhrase === "string" ? body.confirmPhrase : undefined;
 
     if (action === "change_email") {
       console.info("[platform-admin] change_email request", {
@@ -67,7 +73,14 @@ export async function POST(request: Request, context: RouteContext) {
       organizationId,
       invitationId,
       action,
-      { platformAdmin, confirmName, newEmail, confirmEmail }
+      {
+        platformAdmin,
+        confirmName,
+        newEmail,
+        confirmEmail,
+        successorInvitationId,
+        confirmPhrase,
+      }
     );
 
     if (action === "change_email") {

@@ -146,7 +146,7 @@ export default function AdminEditAdministratorModal({
 
   const usernameDisplay = invitation.username?.trim()
     ? invitation.username
-    : "Not yet created";
+    : "Not yet created — account setup incomplete";
 
   const dirty =
     firstName.trim() !== invitation.firstName ||

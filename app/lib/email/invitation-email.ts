@@ -16,6 +16,11 @@ export type InvitationEmailVariables = {
   /** Human-readable expiry, e.g. "April 24, 2026". Falls back to "7 days". */
   expiration_date?: string | null;
   current_year?: number;
+  /**
+   * When true, include a short note that desktop is better for administrative
+   * setup (org-wide administrator invitations only).
+   */
+  recommendDesktop?: boolean;
 };
 
 export type InvitationEmailContent = {
@@ -81,9 +86,16 @@ export function buildInvitationEmail(
       <strong style="color:${T.text};">One Eyrie</strong>,
       the hotel operations platform designed to simplify hotel operations across one or multiple properties.
     </p>
-    <p style="margin:0;">
+    <p style="margin:0${variables.recommendDesktop ? " 0 16px" : ""};">
       ${access.html}
-    </p>`;
+    </p>
+    ${
+      variables.recommendDesktop
+        ? `<p style="margin:0;font-size:14px;line-height:1.55;color:${T.textSubtle};">
+      For the full administrative experience, open this invitation on a computer. Mobile access is optimized for field operations.
+    </p>`
+        : ""
+    }`;
 
   const belowCtaHtml = `
     <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${T.textSubtle};">
@@ -117,6 +129,12 @@ export function buildInvitationEmail(
     `${inviterName} has invited you to join One Eyrie, the hotel operations platform designed to simplify hotel operations across one or multiple properties.`,
     "",
     access.text,
+    ...(variables.recommendDesktop
+      ? [
+          "",
+          "For the full administrative experience, open this invitation on a computer. Mobile access is optimized for field operations.",
+        ]
+      : []),
     "",
     `Accept Invitation: ${acceptUrl}`,
     "",

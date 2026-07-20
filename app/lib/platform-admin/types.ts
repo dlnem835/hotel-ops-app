@@ -116,7 +116,25 @@ export type AdminPropertyDetail = AdminPropertySummary & {
   onboarding?: AdminOnboardingStatus;
   onboardingLabel?: string;
   areaCount?: number;
+  /** Property-scoped administrators only (not org-wide). */
+  invitations?: AdminOrganizationInvitation[];
+  modules?: AdminOrganizationModule[];
+  canInviteAdministrator?: boolean;
 };
+
+export type TransferOwnershipSuccessor = {
+  invitationId: string;
+  authUserId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string | null;
+  roleLabel: string;
+  jobTitle: string;
+  status: string;
+};
+
+export const TRANSFER_OWNERSHIP_CONFIRM_PHRASE = "TRANSFER OWNERSHIP";
 
 export type AdminDashboardResponse = {
   organizationCount: number;

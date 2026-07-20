@@ -32,6 +32,8 @@ export type InvitationDispatchInput = {
   invitationId?: string | null;
   redirectTo?: string;
   userMetadata: Record<string, unknown>;
+  /** Org-wide / Primary Owner invites tip recipients toward desktop. */
+  recommendDesktop?: boolean;
 };
 
 function normalizeEmail(value: string): string {
@@ -227,6 +229,7 @@ export async function dispatchInvitationEmail(
     organization_name: input.organizationName,
     accept_invitation_url: acceptUrl,
     expiration_date: input.expirationDate,
+    recommendDesktop: Boolean(input.recommendDesktop),
   });
 
   const sendResult = await sendBrandedEmailViaResend({

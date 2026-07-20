@@ -18,6 +18,7 @@ import AdminStatusBadge from "./AdminStatusBadge";
 import AdminConfirmNameModal from "./AdminConfirmNameModal";
 import AdminEditAdministratorModal from "./AdminEditAdministratorModal";
 import AdminChangeEmailModal from "./AdminChangeEmailModal";
+import AdminTransferOwnershipModal from "./AdminTransferOwnershipModal";
 
 type AdminAdministratorsTableProps = {
   organizationId: number;
@@ -31,6 +32,7 @@ type AdminAdministratorsTableProps = {
     message: string,
     details?: { invitationId: string; email: string }
   ) => void;
+  emptyLabel?: string;
 };
 
 function formatDate(value: string | null) {
@@ -65,13 +67,18 @@ export default function AdminAdministratorsTable({
   onChanged,
   onError,
   onSuccess,
+  emptyLabel = "No administrators yet.",
 }: AdminAdministratorsTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [deleteAuthTarget, setDeleteAuthTarget] =
     useState<AdminOrganizationInvitation | null>(null);
+  const [dismissTarget, setDismissTarget] =
+    useState<AdminOrganizationInvitation | null>(null);
   const [editTarget, setEditTarget] = useState<AdminOrganizationInvitation | null>(null);
   const [changeEmailTarget, setChangeEmailTarget] =
+    useState<AdminOrganizationInvitation | null>(null);
+  const [transferTarget, setTransferTarget] =
     useState<AdminOrganizationInvitation | null>(null);
   const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
   const [changeEmailSubmitting, setChangeEmailSubmitting] = useState(false);
@@ -123,7 +130,7 @@ export default function AdminAdministratorsTable({
   }, [openMoreMenuId]);
 
   if (invitations.length === 0) {
-    return <p className="admin-portal__muted">No administrators yet.</p>;
+    return <p className="admin-portal__muted">{emptyLabel}</p>;
   }
 
   async function runAction(
@@ -162,6 +169,7 @@ export default function AdminAdministratorsTable({
       remove: "Administrator removed successfully.",
       send_password_reset: "Password reset email sent successfully.",
       permanently_delete_auth_account: "Authentication account deleted successfully.",
+      dismiss_revoked_invitation: "Revoked invitation dismissed successfully.",
     };
     onSuccess?.(body?.message ?? fallbackMessages[action] ?? "Action completed successfully.");
 
@@ -288,9 +296,49 @@ export default function AdminAdministratorsTable({
           </button>
         ) : null}
         {isPrimary ? (
-          <span className="admin-portal__muted admin-portal__row-actions-note">
-            Transfer ownership required
-          </span>
+          canUseOwnerActions ? (
+            <div
+              className="admin-portal__more-actions"
+              ref={
+                openMoreMenuId === invitation.id ? moreMenuRef : undefined
+              }
+            >
+              <button
+                type="button"
+                className="admin-portal__button admin-portal__button--compact"
+                disabled={busy}
+                aria-expanded={openMoreMenuId === invitation.id}
+                aria-haspopup="menu"
+                onClick={() =>
+                  setOpenMoreMenuId((current) =>
+                    current === invitation.id ? null : invitation.id
+                  )
+                }
+              >
+                More actions
+              </button>
+              {openMoreMenuId === invitation.id ? (
+                <div className="admin-portal__more-actions-menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="admin-portal__more-actions-item"
+                    disabled={busy}
+                    onClick={() => {
+                      setOpenMoreMenuId(null);
+                      setTransferTarget(invitation);
+                    }}
+                  >
+                    Transfer Primary Ownership
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <span className="admin-portal__muted admin-portal__row-actions-note">
+              Transfer ownership required to remove
+            </span>
+          )
         ) : (
           renderMoreActions(invitation, busy, isDisabled)
         )}
@@ -375,6 +423,19 @@ export default function AdminAdministratorsTable({
                 <button
                   type="button"
                   role="menuitem"
+                  className="admin-portal__more-actions-item"
+                  disabled={busy}
+                  onClick={() => {
+                    setOpenMoreMenuId(null);
+                    setConfirmValue("");
+                    setDismissTarget(invitation);
+                  }}
+                >
+                  Dismiss revoked invitation
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
                   className="admin-portal__more-actions-item admin-portal__more-actions-item--danger"
                   disabled={busy}
                   onClick={() => {
@@ -398,6 +459,9 @@ export default function AdminAdministratorsTable({
   const removeConfirmName = removeTarget ? administratorFullName(removeTarget) : "";
   const deleteAuthConfirmEmail = deleteAuthTarget
     ? deleteAuthTarget.email.trim().toLowerCase()
+    : "";
+  const dismissConfirmEmail = dismissTarget
+    ? dismissTarget.email.trim().toLowerCase()
     : "";
 
   return (
@@ -424,7 +488,11 @@ export default function AdminAdministratorsTable({
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Username</dt>
-                <dd>{invitation.username?.trim() || "Not yet created"}</dd>
+                <dd>
+                  {invitation.username?.trim()
+                    ? invitation.username
+                    : "Not yet created — account setup incomplete"}
+                </dd>
               </div>
               <div className="admin-portal__admin-card-field">
                 <dt>Job title</dt>
@@ -667,6 +735,72 @@ export default function AdminAdministratorsTable({
               confirmEmail,
             });
           }
+        }}
+      />
+
+      <AdminConfirmNameModal
+        open={dismissTarget !== null}
+        title="Dismiss revoked invitation"
+        description={
+          dismissTarget
+            ? `Hide the revoked invitation for ${administratorFullName(dismissTarget)} from this organization. The Auth account is not deleted — use this when the same email is still an administrator in another organization.`
+            : ""
+        }
+        organizationName={dismissConfirmEmail}
+        confirmLabel="Dismiss invitation"
+        confirmPromptLabel={
+          dismissTarget
+            ? `Type ${dismissConfirmEmail} to confirm`
+            : "Type the administrator email to confirm"
+        }
+        details={
+          dismissTarget
+            ? [
+                {
+                  label: "Name",
+                  value: administratorFullName(dismissTarget),
+                },
+                {
+                  label: "Email",
+                  value: dismissTarget.email,
+                },
+                {
+                  label: "Organization",
+                  value: organizationName,
+                },
+              ]
+            : undefined
+        }
+        warningNote="This only removes the revoked card from this organization. Login for other organizations is unchanged."
+        submitting={busyId === dismissTarget?.id}
+        confirmName={confirmValue}
+        onConfirmNameChange={setConfirmValue}
+        onCancel={() => setDismissTarget(null)}
+        onConfirm={() => {
+          if (dismissTarget) {
+            const target = dismissTarget;
+            const confirmEmail = confirmValue.trim();
+            setDismissTarget(null);
+            void runAction(target, "dismiss_revoked_invitation", {
+              confirmEmail,
+            });
+          }
+        }}
+      />
+
+      <AdminTransferOwnershipModal
+        open={transferTarget !== null}
+        organizationId={organizationId}
+        primaryInvitation={transferTarget}
+        onClose={() => {
+          if (busyId) return;
+          setTransferTarget(null);
+        }}
+        onError={onError}
+        onTransferred={(message) => {
+          setTransferTarget(null);
+          onSuccess?.(message);
+          onChanged();
         }}
       />
     </>

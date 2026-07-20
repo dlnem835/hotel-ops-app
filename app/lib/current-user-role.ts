@@ -20,7 +20,7 @@ export async function fetchTeamMemberAccess(): Promise<UserAccessProfile | null>
 
   const { data, error } = await supabase
     .from("team_members")
-    .select("job_title, role, is_administrator, module_permissions")
+    .select("job_title, role, is_administrator, module_permissions, can_login, status")
     .eq("auth_user_id", session.user.id)
     .maybeSingle();
 
@@ -32,7 +32,15 @@ export async function fetchTeamMemberAccess(): Promise<UserAccessProfile | null>
     return null;
   }
 
-  const row = data as TeamMemberAccessRow;
+  const row = data as TeamMemberAccessRow & {
+    can_login?: boolean | null;
+    status?: string | null;
+  };
+
+  if (row.can_login === false || row.status === "Inactive") {
+    return null;
+  }
+
   return buildUserAccessProfile({
     jobTitle: row.job_title,
     legacyRole: row.role,

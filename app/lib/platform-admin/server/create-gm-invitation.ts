@@ -62,29 +62,11 @@ function formatInvitationExpirationDate(iso: string): string {
 }
 
 async function resolveInviterDisplayName(
-  supabase: SupabaseClient,
-  actorUserId: string
+  _supabase: SupabaseClient,
+  _actorUserId: string
 ): Promise<string> {
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("first_name, last_name")
-    .eq("user_id", actorUserId)
-    .maybeSingle();
-
-  const fromProfile = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim();
-  if (fromProfile) return fromProfile;
-
-  const { data: member } = await supabase
-    .from("team_members")
-    .select("first_name, last_name")
-    .eq("auth_user_id", actorUserId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const fromMember = `${member?.first_name ?? ""} ${member?.last_name ?? ""}`.trim();
-  if (fromMember) return fromMember;
-
+  // Do not personalize invitation emails with the Platform Owner's name
+  // (e.g. Douglas Nemeth). Keep a stable product identity.
   return "A One Eyrie administrator";
 }
 
@@ -674,6 +656,7 @@ export async function createAdministratorInvitation(
       organizationName,
       expirationDate: expirationDateLabel,
       invitationId,
+      recommendDesktop: isPrimary || orgRole === "org_admin",
     });
     return {
       userId: result.data.user?.id ?? null,

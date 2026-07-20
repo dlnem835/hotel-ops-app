@@ -6,6 +6,7 @@ import type {
   AdminPropertyDetail,
   AdminPropertySummary,
 } from "@/app/lib/platform-admin/types";
+import { invitationBelongsOnPropertyPage } from "@/app/lib/platform-admin/roles";
 import {
   buildOrganizationOnboarding,
   formatOnboardingSummary,
@@ -15,6 +16,7 @@ import {
   canInviteAdministrator,
   fetchOrganizationInvitations,
 } from "@/app/lib/platform-admin/server/create-gm-invitation";
+import { ORGANIZATION_STATUS_ACTIVE } from "@/app/lib/platform-admin/server/organization-constants";
 
 type OrganizationRow = {
   id: number;
@@ -258,6 +260,29 @@ export async function fetchAdminPropertyDetail(
   }
 
   detail.areaCount = areaCount ?? 0;
+
+  const allInvitations = await fetchOrganizationInvitations(
+    supabase,
+    property.organization_id
+  );
+  detail.invitations = allInvitations.filter((invitation) =>
+    invitationBelongsOnPropertyPage(invitation, propertyId)
+  );
+
+  const { data: modules, error: modulesError } = await supabase
+    .from("organization_modules")
+    .select("module_key, enabled")
+    .eq("organization_id", property.organization_id);
+
+  if (modulesError) {
+    throw new Error(modulesError.message);
+  }
+  detail.modules = (modules ?? []).map((row) => ({
+    moduleKey: String(row.module_key),
+    enabled: Boolean(row.enabled),
+  }));
+  detail.canInviteAdministrator =
+    organization?.status === ORGANIZATION_STATUS_ACTIVE && Boolean(property.active);
 
   return detail;
 }

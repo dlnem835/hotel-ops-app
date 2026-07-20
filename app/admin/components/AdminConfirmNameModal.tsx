@@ -47,7 +47,8 @@ export default function AdminConfirmNameModal({
     return null;
   }
 
-  const nameMatches = confirmName.trim() === organizationName;
+  const nameMatches =
+    confirmName.trim().toLowerCase() === organizationName.trim().toLowerCase();
   const promptLabel =
     confirmPromptLabel ?? `Type ${organizationName} to confirm`;
 
