@@ -120,9 +120,9 @@ export async function resolveTenantContextForUser(
       .filter((id): id is number => typeof id === "number")
   );
 
-  // Org-wide roles (Primary Owner only) administer EVERY active property in
-  // their organization — including properties added later — without needing an
-  // explicit user_properties row per property. Organization Admins and Property
+  // Org-wide roles (Primary Owner + Organization Admin) administer EVERY
+  // active property in their organization — including properties added later —
+  // without needing an explicit user_properties row per property. Property
   // Administrators only reach their explicit user_properties rows.
   const orgWideOrgIds = new Set(
     organizationUsers

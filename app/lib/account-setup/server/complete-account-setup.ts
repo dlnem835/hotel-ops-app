@@ -3,8 +3,6 @@ import {
   normalizeUsername,
   validateUsername,
 } from "@/app/lib/account-setup/username";
-import type { OneEyrieTheme } from "@/app/lib/one-eyrie-theme";
-import { isLightModeAllowedForUser } from "@/app/lib/theme/server/light-mode-access";
 
 export class AccountSetupError extends Error {
   status: number;
@@ -20,13 +18,11 @@ export type AccountSetupInput = {
   firstName: string;
   lastName: string;
   username: string;
-  appearance: OneEyrieTheme;
 };
 
 export type AccountSetupResult = {
   completed: true;
   username: string;
-  appearance: OneEyrieTheme;
 };
 
 /** Internal login identity format. Never surfaced to the user directly. */
@@ -34,18 +30,8 @@ function usernameToAuthEmail(normalizedUsername: string): string {
   return `${normalizedUsername}@oneeyrie.local`;
 }
 
-function parseAppearance(value: unknown, userId: string): OneEyrieTheme {
-  const requested = value === "light" ? "light" : "dark";
-  // Light Mode is authorized server-side by UUID only — coerce others to Dark.
-  if (requested === "light" && !isLightModeAllowedForUser(userId)) {
-    return "dark";
-  }
-  return requested;
-}
-
 export function parseAccountSetupInput(
-  body: Record<string, unknown>,
-  userId: string
+  body: Record<string, unknown>
 ): AccountSetupInput {
   const firstName = String(body.firstName ?? body.first_name ?? "").trim();
   const lastName = String(body.lastName ?? body.last_name ?? "").trim();
@@ -67,7 +53,6 @@ export function parseAccountSetupInput(
     firstName,
     lastName,
     username: usernameResult.normalized,
-    appearance: parseAppearance(body.appearance, userId),
   };
 }
 
@@ -79,6 +64,9 @@ export function parseAccountSetupInput(
  * Here we canonicalize the login identity to `<username>@oneeyrie.local` (keeping
  * username login compatible with existing staff), persist profile fields, and
  * flip the durable onboarding flag to complete.
+ *
+ * Appearance is intentionally not part of setup — existing
+ * `appearance_preference` rows are left unchanged.
  */
 export async function completeAccountSetup(
   supabase: SupabaseClient,
@@ -86,13 +74,6 @@ export async function completeAccountSetup(
   input: AccountSetupInput
 ): Promise<AccountSetupResult> {
   const normalizedUsername = normalizeUsername(input.username);
-
-  // Defense-in-depth: re-enforce Light Mode authorization at the write, even if
-  // the input was constructed without going through parseAccountSetupInput.
-  const appearance: OneEyrieTheme =
-    input.appearance === "light" && isLightModeAllowedForUser(user.id)
-      ? "light"
-      : "dark";
 
   const { data: existing, error: existingError } = await supabase
     .from("user_profiles")
@@ -134,6 +115,7 @@ export async function completeAccountSetup(
 
   const timestamp = new Date().toISOString();
 
+  // Do not write appearance_preference — preserve invite-time / existing value.
   const { error: profileError } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
@@ -141,7 +123,6 @@ export async function completeAccountSetup(
       last_name: input.lastName,
       username: normalizedUsername,
       username_normalized: normalizedUsername,
-      appearance_preference: appearance,
       account_setup_completed: true,
       updated_at: timestamp,
     },
@@ -172,6 +153,5 @@ export async function completeAccountSetup(
   return {
     completed: true,
     username: normalizedUsername,
-    appearance,
   };
 }

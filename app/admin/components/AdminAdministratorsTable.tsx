@@ -154,9 +154,16 @@ export default function AdminAdministratorsTable({
     const body = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
-    if (body?.message) {
-      onSuccess?.(body.message);
-    }
+    const fallbackMessages: Partial<Record<AdministratorInvitationAction, string>> = {
+      resend: "Invitation resent successfully.",
+      cancel: "Invitation cancelled successfully.",
+      disable: "Administrator disabled successfully.",
+      enable: "Administrator enabled successfully.",
+      remove: "Administrator removed successfully.",
+      send_password_reset: "Password reset email sent successfully.",
+      permanently_delete_auth_account: "Authentication account deleted successfully.",
+    };
+    onSuccess?.(body?.message ?? fallbackMessages[action] ?? "Action completed successfully.");
 
     onChanged();
   }
@@ -416,6 +423,10 @@ export default function AdminAdministratorsTable({
                 <dd className="admin-portal__admin-card-email">{invitation.email}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
+                <dt>Username</dt>
+                <dd>{invitation.username?.trim() || "Not yet created"}</dd>
+              </div>
+              <div className="admin-portal__admin-card-field">
                 <dt>Job title</dt>
                 <dd>{invitation.jobTitle || "Administrator"}</dd>
               </div>
@@ -463,9 +474,12 @@ export default function AdminAdministratorsTable({
         onClose={() => setEditTarget(null)}
         onSaved={() => {
           setEditTarget(null);
+          onSuccess?.("Administrator saved successfully.");
           onChanged();
         }}
-        onError={onError}
+        onError={(message) => {
+          onError(message);
+        }}
       />
 
       <AdminChangeEmailModal

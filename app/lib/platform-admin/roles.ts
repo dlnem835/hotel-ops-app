@@ -1,9 +1,9 @@
 /**
  * Canonical membership roles for organizations and properties.
  *
- *   org_owner  -> Primary Owner      (org-wide: every current + future property)
- *   org_admin  -> Organization Admin (selected properties via user_properties)
- *   org_member -> Property Admin     (exactly one property via user_properties)
+ *   org_owner  -> Primary Owner           (org-wide: every current + future property)
+ *   org_admin  -> Organization Admin      (org-wide: every current + future property)
+ *   org_member -> Property Administrator  (exactly one property via user_properties)
  */
 
 export type OrgRole = "org_owner" | "org_admin" | "org_member" | "org_billing";
@@ -27,12 +27,12 @@ export const PROPERTY_ROLE = {
 } as const;
 
 /**
- * Only the Primary Owner receives every current and future property through
- * organization membership. Organization Admins and Property Administrators must
- * have explicit user_properties rows.
+ * Primary Owner and Organization Admin administer every active property in
+ * their organization (including properties added later) through organization
+ * membership. Property Administrators require explicit user_properties rows.
  */
 export function isOrgWideRole(role: string | null | undefined): boolean {
-  return role === ORG_ROLE.primaryOwner;
+  return role === ORG_ROLE.primaryOwner || role === ORG_ROLE.organizationAdmin;
 }
 
 export const ORG_ROLE_LABELS: Record<string, string> = {
@@ -67,7 +67,7 @@ export const ADMINISTRATOR_INVITE_ROLES: {
     value: "organization_admin",
     label: "Organization Admin",
     description:
-      "Scope is selected properties — one or many. New properties are not added automatically.",
+      "Entire organization — every current property and any properties added later.",
   },
   {
     value: "property_administrator",
@@ -104,15 +104,10 @@ export function administratorRoleLabel(input: {
 /** Human label for the scope an administrator can reach. */
 export function administratorScopeLabel(
   orgRole: string,
-  assignedPropertyCount = 1
+  _assignedPropertyCount = 1
 ): string {
   if (isOrgWideRole(orgRole)) {
     return "Entire organization";
-  }
-  if (orgRole === ORG_ROLE.organizationAdmin) {
-    return assignedPropertyCount === 1
-      ? "1 selected property"
-      : `${assignedPropertyCount} selected properties`;
   }
   return "Single property";
 }
@@ -121,9 +116,6 @@ export function administratorScopeLabel(
 export function administratorPropertyFieldLabel(orgRole: string): string {
   if (isOrgWideRole(orgRole)) {
     return "Properties";
-  }
-  if (orgRole === ORG_ROLE.organizationAdmin) {
-    return "Assigned properties";
   }
   return "Property";
 }

@@ -747,6 +747,42 @@
   border: 1px solid #3a352e;
   border-radius: 12px;
   padding: 24px;
+  outline: none;
+}
+
+.admin-portal__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.admin-portal__modal-header .admin-portal__section-title {
+  margin: 0;
+  flex: 1;
+}
+
+.admin-portal__modal-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #3a352e;
+  border-radius: 8px;
+  background: transparent;
+  color: #c8a96a;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-portal__modal-close:hover:not(:disabled) {
+  background: rgba(200, 169, 106, 0.12);
+}
+
+.admin-portal__modal-close:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .admin-portal__modal--wide {

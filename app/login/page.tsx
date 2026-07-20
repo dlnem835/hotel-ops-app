@@ -15,44 +15,11 @@ import { resolveStaffLoginEmail } from "@/app/lib/login-email";
 import {
   captureLoginReturnFromUrl,
   consumeExplicitLoginRedirect,
-  DESKTOP_LOGIN_DEFAULT,
 } from "@/app/lib/login-return";
-import { fetchTeamMemberAccess } from "@/app/lib/current-user-role";
-import {
-  canAccessPath,
-  getDefaultDesktopHome,
-  getDefaultMobileHome,
-  isMobileAppPath,
-  isPlatformAdminAppPath,
-} from "@/app/lib/role-permissions";
+import { resolveAuthenticatedAppHome } from "@/app/lib/resolve-app-home";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
-
-async function resolvePostLoginTarget(): Promise<string> {
-  const explicitTarget = consumeExplicitLoginRedirect();
-
-  if (explicitTarget && isPlatformAdminAppPath(explicitTarget)) {
-    return explicitTarget;
-  }
-
-  const explicitMobileTarget = explicitTarget;
-  const access = await fetchTeamMemberAccess();
-
-  if (!access) {
-    return explicitMobileTarget ?? DESKTOP_LOGIN_DEFAULT;
-  }
-
-  const { permissions } = access;
-
-  if (explicitMobileTarget && canAccessPath(permissions, explicitMobileTarget)) {
-    return explicitMobileTarget;
-  }
-
-  return explicitMobileTarget && isMobileAppPath(explicitMobileTarget)
-    ? getDefaultMobileHome(permissions)
-    : getDefaultDesktopHome(permissions);
-}
 
 /**
  * Completes any pending invitation, then routes based on account-setup state.
@@ -67,7 +34,9 @@ async function resolvePostAuthTarget(): Promise<string> {
     return ACCOUNT_SETUP_PATH;
   }
 
-  return resolvePostLoginTarget();
+  return resolveAuthenticatedAppHome({
+    explicitTarget: consumeExplicitLoginRedirect(),
+  });
 }
 
 export default function LoginPage() {

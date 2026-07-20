@@ -8,12 +8,7 @@ import {
   validatePassword,
   validateUsername,
 } from "@/app/lib/account-setup/username";
-import { fetchLightModeAccess } from "@/app/lib/theme/light-mode-client";
-import {
-  applyThemeToDocument,
-  persistTheme,
-  type OneEyrieTheme,
-} from "@/app/lib/one-eyrie-theme";
+import { resolveAuthenticatedAppHome } from "@/app/lib/resolve-app-home";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { supabase } from "@/app/supabaseClient";
@@ -25,11 +20,9 @@ export default function OnboardingAccountPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [appearance, setAppearance] = useState<OneEyrieTheme>("dark");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const submittingRef = useRef(false);
-  const [lightModeAllowed, setLightModeAllowed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -43,14 +36,12 @@ export default function OnboardingAccountPage() {
         return;
       }
 
-      const [state, lightAllowed] = await Promise.all([
-        fetchAccountSetupState(),
-        fetchLightModeAccess(),
-      ]);
+      const state = await fetchAccountSetupState();
       if (!mounted) return;
 
       if (state?.accountSetupComplete) {
-        window.location.replace("/");
+        const home = await resolveAuthenticatedAppHome();
+        window.location.replace(home);
         return;
       }
 
@@ -58,7 +49,6 @@ export default function OnboardingAccountPage() {
         setFirstName(state.firstName ?? "");
         setLastName(state.lastName ?? "");
       }
-      setLightModeAllowed(lightAllowed);
       setReady(true);
     }
 
@@ -96,9 +86,6 @@ export default function OnboardingAccountPage() {
       return;
     }
 
-    const chosenAppearance: OneEyrieTheme =
-      appearance === "light" && lightModeAllowed ? "light" : "dark";
-
     submittingRef.current = true;
     setStatus("Saving your account…");
 
@@ -126,7 +113,6 @@ export default function OnboardingAccountPage() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         username: usernameResult.normalized,
-        appearance: chosenAppearance,
       }),
     });
 
@@ -140,12 +126,9 @@ export default function OnboardingAccountPage() {
       return;
     }
 
-    // Apply the selected appearance immediately, then hard-navigate so all
-    // providers (role access, tenant context, theme) refresh from scratch.
-    persistTheme(chosenAppearance);
-    applyThemeToDocument(chosenAppearance);
     setStatus("Account ready. Redirecting…");
-    window.location.assign("/");
+    const home = await resolveAuthenticatedAppHome();
+    window.location.assign(home);
   }
 
   if (!ready) {
@@ -164,7 +147,7 @@ export default function OnboardingAccountPage() {
           Finish setting up your account
         </h1>
         <p style={{ color: ONE_EYRIE.textMuted, marginTop: 0, fontSize: 14 }}>
-          Choose your username, password, and appearance to continue.
+          Choose your username and password to continue.
         </p>
 
         {error ? (
@@ -231,28 +214,6 @@ export default function OnboardingAccountPage() {
           />
         </label>
 
-        <fieldset style={{ border: "none", padding: 0, margin: "4px 0 12px" }}>
-          <legend style={labelStyle}>Appearance</legend>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              onClick={() => setAppearance("dark")}
-              style={appearanceOptionStyle(appearance === "dark")}
-            >
-              Dark
-            </button>
-            {lightModeAllowed ? (
-              <button
-                type="button"
-                onClick={() => setAppearance("light")}
-                style={appearanceOptionStyle(appearance === "light")}
-              >
-                Light
-              </button>
-            ) : null}
-          </div>
-        </fieldset>
-
         <button type="submit" style={submitStyle}>
           Complete setup
         </button>
@@ -314,19 +275,6 @@ const submitStyle: React.CSSProperties = {
   cursor: "pointer",
   marginTop: "4px",
 };
-
-function appearanceOptionStyle(active: boolean): React.CSSProperties {
-  return {
-    flex: 1,
-    padding: "12px",
-    borderRadius: "10px",
-    border: `1px solid ${active ? ONE_EYRIE.gold : ONE_EYRIE.borderInput}`,
-    background: active ? "rgba(200,169,106,0.15)" : ONE_EYRIE.surfaceInset,
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-  };
-}
 
 function noticeStyle(border: string, background: string): React.CSSProperties {
   return {

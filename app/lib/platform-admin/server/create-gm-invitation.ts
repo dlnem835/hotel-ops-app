@@ -223,6 +223,55 @@ export async function fetchOrganizationInvitations(
   const propertyIdsByUserId = new Map<string, number[]>();
   const modulePermissionsByUserId = new Map<string, Record<string, boolean>>();
   const pendingMetadataByUserId = new Map<string, number[]>();
+  const usernameByUserId = new Map<string, string>();
+
+  const authUserIdsForUsername = Array.from(
+    new Set(
+      rows
+        .map((row) => row.auth_user_id)
+        .filter((id): id is string => Boolean(id))
+        .map(String)
+    )
+  );
+
+  if (authUserIdsForUsername.length > 0) {
+    const { data: profiles, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("user_id, username")
+      .in("user_id", authUserIdsForUsername);
+
+    if (profileError && !/does not exist/i.test(profileError.message)) {
+      throw new Error(profileError.message);
+    }
+
+    for (const profile of profiles ?? []) {
+      const username = String(profile.username ?? "").trim();
+      if (username) {
+        usernameByUserId.set(String(profile.user_id), username);
+      }
+    }
+
+    const missingUsernameIds = authUserIdsForUsername.filter(
+      (id) => !usernameByUserId.has(id)
+    );
+    if (missingUsernameIds.length > 0) {
+      const { data: teamRows, error: teamError } = await supabase
+        .from("team_members")
+        .select("auth_user_id, username")
+        .in("auth_user_id", missingUsernameIds);
+
+      if (teamError) {
+        throw new Error(teamError.message);
+      }
+      for (const row of teamRows ?? []) {
+        const username = String(row.username ?? "").trim();
+        const userId = String(row.auth_user_id ?? "");
+        if (userId && username && !usernameByUserId.has(userId)) {
+          usernameByUserId.set(userId, username);
+        }
+      }
+    }
+  }
 
   if (acceptedAuthUserIds.length > 0) {
     const { data: memberships, error: membershipError } = await supabase
@@ -361,6 +410,7 @@ export async function fetchOrganizationInvitations(
           : null,
       active,
       authUserId,
+      username: authUserId ? usernameByUserId.get(authUserId) ?? null : null,
       expiresAt: row.expires_at ?? null,
       createdAt: String(row.created_at),
       acceptedAt: row.accepted_at ? String(row.accepted_at) : null,
@@ -497,15 +547,23 @@ export async function createAdministratorInvitation(
       "Property Administrator must be assigned to exactly one property"
     );
   }
-  if (!isPrimary && input.role === "organization_admin" && input.propertyIds.length < 1) {
+  if (
+    !isPrimary &&
+    input.role === "organization_admin" &&
+    input.propertyIds.length < 1
+  ) {
     throw new PlatformAdminRequestError(
       400,
-      "Organization Admin must be assigned to at least one property"
+      "Organization Admin must have a default landing property"
     );
   }
 
-  // Primary Owner is org-wide; only one landing property is stored for team_members.
-  const propertyIds = isPrimary ? [input.propertyIds[0]] : input.propertyIds;
+  // Primary Owner and Organization Admin are org-wide; only one landing
+  // property is stored for team_members / user_properties home.
+  const propertyIds =
+    isPrimary || input.role === "organization_admin"
+      ? [input.propertyIds[0]]
+      : input.propertyIds;
   const homePropertyId = propertyIds[0];
 
   const { data: orgProperties, error: orgPropertiesError } = await supabase

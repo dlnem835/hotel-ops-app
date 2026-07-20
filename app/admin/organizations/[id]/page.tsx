@@ -130,8 +130,11 @@ export default function AdminOrganizationDetailPage() {
           organization={organization}
           onInvitationCreated={() => {
             setActionError(null);
-            setActionSuccess(null);
             void loadOrganization({ soft: true });
+          }}
+          onSuccess={(message) => {
+            setActionError(null);
+            setActionSuccess(message);
           }}
           onError={(message) => {
             setActionSuccess(null);

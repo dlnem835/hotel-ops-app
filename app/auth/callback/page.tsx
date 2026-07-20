@@ -8,6 +8,7 @@ import {
   ACCOUNT_SETUP_PATH,
   fetchAccountSetupState,
 } from "@/app/lib/account-setup/account-setup-client";
+import { resolveAuthenticatedAppHome } from "@/app/lib/resolve-app-home";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { supabase } from "@/app/supabaseClient";
@@ -95,7 +96,8 @@ export default function AuthCallbackPage() {
       }
 
       setMessage("Redirecting…");
-      window.location.replace("/");
+      const home = await resolveAuthenticatedAppHome();
+      window.location.replace(home);
     }
 
     void run();

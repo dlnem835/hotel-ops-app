@@ -140,11 +140,27 @@ export async function syncUserMemberships(
   } = params;
   const active = params.active ?? true;
 
+  // Never demote an invitation-provisioned Primary Owner via Settings sync.
+  let orgRole = resolveOrgMembershipRole(isAdministrator);
+  const { data: existingOrgUser, error: existingOrgError } = await supabase
+    .from("organization_users")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", authUserId)
+    .maybeSingle();
+
+  if (existingOrgError) {
+    throw new Error(existingOrgError.message);
+  }
+  if (existingOrgUser?.role === "org_owner") {
+    orgRole = "org_owner";
+  }
+
   const { error: orgError } = await supabase.from("organization_users").upsert(
     {
       organization_id: organizationId,
       user_id: authUserId,
-      role: resolveOrgMembershipRole(isAdministrator),
+      role: orgRole,
       active,
       updated_at: new Date().toISOString(),
     },

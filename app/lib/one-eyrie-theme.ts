@@ -26,15 +26,35 @@ export function isOneEyrieTheme(value: string | null | undefined): value is OneE
   return value === "dark" || value === "light";
 }
 
+/**
+ * Reads an explicitly saved theme. When none is saved, prefers the OS/browser
+ * color scheme when available, otherwise the app default (Dark). Callers must
+ * still run `resolveEffectiveTheme` so Light Mode stays authorization-gated.
+ */
 export function readStoredTheme(): OneEyrieTheme {
   if (typeof window === "undefined") return ONE_EYRIE_DEFAULT_THEME;
 
   try {
     const stored = window.localStorage.getItem(ONE_EYRIE_THEME_STORAGE_KEY);
-    return isOneEyrieTheme(stored) ? stored : ONE_EYRIE_DEFAULT_THEME;
+    if (isOneEyrieTheme(stored)) {
+      return stored;
+    }
   } catch {
-    return ONE_EYRIE_DEFAULT_THEME;
+    // Fall through to OS / default.
   }
+
+  try {
+    if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+      return "light";
+    }
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+  } catch {
+    // Ignore matchMedia failures.
+  }
+
+  return ONE_EYRIE_DEFAULT_THEME;
 }
 
 export function persistTheme(theme: OneEyrieTheme): void {

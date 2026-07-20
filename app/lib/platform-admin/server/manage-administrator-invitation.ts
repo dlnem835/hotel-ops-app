@@ -102,10 +102,23 @@ export type ManageAdministratorInvitationResult = {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CHANGE_EMAIL_SUCCESS_MESSAGE =
-  "Email updated. Future invitations and password resets will be sent to the new address.";
+  "Email address changed successfully.";
 
 const PERMANENT_DELETE_SUCCESS_MESSAGE =
-  "Authentication account deleted. This email can now be invited again.";
+  "Authentication account deleted successfully.";
+
+const ACTION_SUCCESS_MESSAGES: Partial<
+  Record<AdministratorInvitationAction, string>
+> = {
+  resend: "Invitation resent successfully.",
+  cancel: "Invitation cancelled successfully.",
+  disable: "Administrator disabled successfully.",
+  enable: "Administrator enabled successfully.",
+  remove: "Administrator removed successfully.",
+  send_password_reset: "Password reset email sent successfully.",
+  change_email: CHANGE_EMAIL_SUCCESS_MESSAGE,
+  permanently_delete_auth_account: PERMANENT_DELETE_SUCCESS_MESSAGE,
+};
 
 function emailDomainForAudit(email: string): string {
   const at = email.lastIndexOf("@");
@@ -1395,7 +1408,7 @@ export async function manageAdministratorInvitation(
   const invitations = await fetchOrganizationInvitations(supabase, organizationId);
   return {
     invitation: invitations.find((row) => row.id === invitation.id) ?? null,
-    message,
+    message: message ?? ACTION_SUCCESS_MESSAGES[action],
     email,
   };
 }

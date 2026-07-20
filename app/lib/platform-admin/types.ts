@@ -84,6 +84,8 @@ export type AdminOrganizationInvitation = {
   /** Membership active flag for accepted admins; null when not yet accepted. */
   active: boolean | null;
   authUserId: string | null;
+  /** Login username from user_profiles / team_members; null until first-login setup. */
+  username: string | null;
   expiresAt: string | null;
   createdAt: string;
   acceptedAt: string | null;

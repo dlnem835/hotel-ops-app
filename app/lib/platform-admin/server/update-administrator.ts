@@ -552,7 +552,7 @@ export async function updateAdministrator(
     if (input.role === "organization_admin" && afterPropertyIds.length < 1) {
       throw new PlatformAdminRequestError(
         400,
-        "Organization Admin must keep at least one assigned property"
+        "Organization Admin must have a default landing property"
       );
     }
   }

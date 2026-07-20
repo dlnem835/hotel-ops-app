@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const input = parseAccountSetupInput(body, user.id);
+    const input = parseAccountSetupInput(body);
 
     const supabase = getServiceClient();
     const result = await completeAccountSetup(supabase, user, input);

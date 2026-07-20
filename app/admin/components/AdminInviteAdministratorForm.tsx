@@ -2,26 +2,27 @@
 
 import { FormEvent, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
-import type {
-  AdminOrganizationDetail,
-  AdminOrganizationInvitation,
-} from "@/app/lib/platform-admin/types";
 import {
   ADMINISTRATOR_INVITE_ROLES,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
-import AdminPropertyMultiSelect from "@/app/admin/components/AdminPropertyMultiSelect";
+import type {
+  AdminOrganizationDetail,
+  AdminOrganizationInvitation,
+} from "@/app/lib/platform-admin/types";
 
 type AdminInviteAdministratorFormProps = {
   organization: AdminOrganizationDetail;
   onInvitationCreated: (invitation: AdminOrganizationInvitation) => void;
   onError: (message: string) => void;
+  onSuccess?: (message: string) => void;
 };
 
 export default function AdminInviteAdministratorForm({
   organization,
   onInvitationCreated,
   onError,
+  onSuccess,
 }: AdminInviteAdministratorFormProps) {
   const hasPrimary = organization.invitations.some(
     (invitation) =>
@@ -33,9 +34,6 @@ export default function AdminInviteAdministratorForm({
     organization.properties.length === 1 ? organization.properties[0].id : null;
 
   const [role, setRole] = useState<AdministratorInviteRole>("organization_admin");
-  const [propertyIds, setPropertyIds] = useState<number[]>(
-    defaultPropertyId != null ? [defaultPropertyId] : []
-  );
   const [propertyId, setPropertyId] = useState(
     defaultPropertyId != null ? String(defaultPropertyId) : ""
   );
@@ -47,17 +45,16 @@ export default function AdminInviteAdministratorForm({
 
   const isOrgAdminInvite = hasPrimary && role === "organization_admin";
   const isPropertyAdminInvite = hasPrimary && role === "property_administrator";
-  const resolvedPropertyIds = !hasPrimary
+  const isOrgWideInvite = !hasPrimary || isOrgAdminInvite;
+  const resolvedPropertyIds = isOrgWideInvite
     ? defaultPropertyId != null
       ? [defaultPropertyId]
       : propertyId
         ? [Number.parseInt(propertyId, 10)]
         : []
-    : isOrgAdminInvite
-      ? propertyIds
-      : propertyId
-        ? [Number.parseInt(propertyId, 10)]
-        : [];
+    : propertyId
+      ? [Number.parseInt(propertyId, 10)]
+      : [];
 
   const canSubmit =
     resolvedPropertyIds.length > 0 &&
@@ -69,7 +66,7 @@ export default function AdminInviteAdministratorForm({
       onError(
         isPropertyAdminInvite
           ? "Select exactly one property."
-          : "Select at least one property."
+          : "Select a default landing property."
       );
       return;
     }
@@ -103,6 +100,7 @@ export default function AdminInviteAdministratorForm({
 
     const invitation = (await response.json()) as AdminOrganizationInvitation;
     onInvitationCreated(invitation);
+    onSuccess?.("Invitation sent successfully.");
     setFirstName("");
     setLastName("");
     setEmail("");
@@ -128,17 +126,6 @@ export default function AdminInviteAdministratorForm({
               onChange={(event) => {
                 const next = event.target.value as AdministratorInviteRole;
                 setRole(next);
-                if (next === "property_administrator") {
-                  setPropertyId(
-                    propertyIds[0] != null
-                      ? String(propertyIds[0])
-                      : defaultPropertyId != null
-                        ? String(defaultPropertyId)
-                        : ""
-                  );
-                } else if (propertyId) {
-                  setPropertyIds([Number.parseInt(propertyId, 10)]);
-                }
               }}
             >
               {ADMINISTRATOR_INVITE_ROLES.map((option) => (
@@ -164,26 +151,16 @@ export default function AdminInviteAdministratorForm({
         <div className="admin-portal__field">
           <span>Scope</span>
           <p className="admin-portal__static-value">
-            {!hasPrimary
-              ? "Entire organization"
-              : isOrgAdminInvite
-                ? propertyIds.length === 0
-                  ? "Selected properties"
-                  : propertyIds.length === 1
-                    ? "1 selected property"
-                    : `${propertyIds.length} selected properties`
-                : "Single property"}
+            {isOrgWideInvite ? "Entire organization" : "Single property"}
           </p>
           <span className="admin-portal__muted">
-            {!hasPrimary
+            {isOrgWideInvite
               ? "Includes every current property and any properties added later."
-              : isOrgAdminInvite
-                ? "New properties are not assigned automatically."
-                : "Limited to the single property chosen below."}
+              : "Limited to the single property chosen below."}
           </span>
         </div>
 
-        {!hasPrimary ? (
+        {isOrgWideInvite ? (
           <div className="admin-portal__field">
             <span>Properties</span>
             <p className="admin-portal__static-value">All properties</p>
@@ -194,6 +171,7 @@ export default function AdminInviteAdministratorForm({
                   value={propertyId}
                   onChange={(event) => setPropertyId(event.target.value)}
                   required
+                  disabled={submitting}
                 >
                   <option value="">Select landing property</option>
                   {organization.properties.map((property) => (
@@ -203,24 +181,11 @@ export default function AdminInviteAdministratorForm({
                   ))}
                 </select>
                 <span className="admin-portal__muted">
-                  Primary Owner accesses all properties. This only sets where they
-                  land after login.
+                  Org-wide administrators access all properties. This only sets
+                  where they land after login.
                 </span>
               </label>
             ) : null}
-          </div>
-        ) : isOrgAdminInvite ? (
-          <div className="admin-portal__field">
-            <span>Assigned properties</span>
-            <AdminPropertyMultiSelect
-              properties={organization.properties}
-              value={propertyIds}
-              onChange={setPropertyIds}
-              disabled={submitting}
-            />
-            <span className="admin-portal__muted">
-              This administrator will have access only to the selected properties.
-            </span>
           </div>
         ) : (
           <label className="admin-portal__field">
@@ -229,6 +194,7 @@ export default function AdminInviteAdministratorForm({
               value={propertyId}
               onChange={(event) => setPropertyId(event.target.value)}
               required
+              disabled={submitting}
             >
               <option value="">Select property</option>
               {organization.properties.map((property) => (
