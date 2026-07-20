@@ -120,13 +120,33 @@ export async function resolveTenantContextForUser(
       .filter((id): id is number => typeof id === "number")
   );
 
+  // Legacy pre-multi-property accounts (and Platform Owners who also hold a
+  // hotel membership) were often stamped as org_member with a single
+  // user_properties row. Active platform admins with hotel membership get
+  // org-wide property access for those orgs without demoting Primary Owner.
+  const { data: platformAdminRow, error: platformAdminError } = await supabase
+    .from("platform_admins")
+    .select("id, role, active")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (platformAdminError) {
+    throw new Error(platformAdminError.message);
+  }
+
+  const platformAdminGetsOrgWide = Boolean(platformAdminRow);
+
   // Org-wide roles (Primary Owner + Organization Admin) administer EVERY
   // active property in their organization — including properties added later —
   // without needing an explicit user_properties row per property. Property
   // Administrators only reach their explicit user_properties rows.
+  // Active Platform Owners/Admins with hotel membership are also org-wide.
   const orgWideOrgIds = new Set(
     organizationUsers
-      .filter((row) => isOrgWideRole(row.role))
+      .filter(
+        (row) => isOrgWideRole(row.role) || platformAdminGetsOrgWide
+      )
       .map((row) => row.organizations?.id ?? row.organization_id)
       .filter((id): id is number => typeof id === "number")
   );
