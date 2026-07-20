@@ -5,11 +5,14 @@
  *   B — one organization-admin authorization role with descriptive job titles.
  *
  *   org_owner  -> Primary Owner           (org-wide: every current + future property)
- *   org_admin  -> Organization Admin      (org-wide; titles like Corporate Administrator,
- *                 Regional Director, Area Manager are descriptive only)
- *   org_member -> Property Administrator  (exactly one property; title often General Manager)
+ *   org_admin  -> Organization Admin      (Access Scope: Entire Organization;
+ *                 titles like Corporate Administrator, VP Operations are descriptive)
+ *   org_member -> Property Administrator  (Access Scope: Selected Properties —
+ *                 one or more hotels via user_properties; titles like Regional
+ *                 Director, Area Manager, General Manager are descriptive)
  *
  * Job title never grants access. Scope comes only from org_role + user_properties.
+ * UI presents "Organization Leadership" / "Property Leadership"; auth roles are unchanged.
  */
 
 export type OrgRole = "org_owner" | "org_admin" | "org_member" | "org_billing";
@@ -35,7 +38,7 @@ export const PROPERTY_ROLE = {
 /**
  * Primary Owner and Organization Admin administer every active property in
  * their organization (including properties added later) through organization
- * membership. Property Administrators require explicit user_properties rows.
+ * membership. Selected-property leaders require explicit user_properties rows.
  */
 export function isOrgWideRole(role: string | null | undefined): boolean {
   return role === ORG_ROLE.primaryOwner || role === ORG_ROLE.organizationAdmin;
@@ -43,7 +46,7 @@ export function isOrgWideRole(role: string | null | undefined): boolean {
 
 export const ORG_ROLE_LABELS: Record<string, string> = {
   org_owner: "Primary Owner",
-  org_admin: "Organization Admin",
+  org_admin: "Organization Administrator",
   org_member: "Property Administrator",
   org_billing: "Billing",
 };
@@ -64,6 +67,11 @@ export type AdministratorInviteRole =
   | "organization_admin"
   | "property_administrator";
 
+/** UI Access Scope for organization leadership invitations. */
+export type AdministratorAccessScope =
+  | "entire_organization"
+  | "selected_properties";
+
 export const ADMINISTRATOR_INVITE_ROLES: {
   value: AdministratorInviteRole;
   label: string;
@@ -71,16 +79,32 @@ export const ADMINISTRATOR_INVITE_ROLES: {
 }[] = [
   {
     value: "organization_admin",
-    label: "Organization Admin",
+    label: "Organization Administrator",
     description:
       "Entire organization — every current property and any properties added later.",
   },
   {
     value: "property_administrator",
     label: "Property Administrator",
-    description: "Scope is a single property.",
+    description: "Selected properties only — explicit hotel assignments.",
   },
 ];
+
+export function accessScopeFromInviteRole(
+  role: AdministratorInviteRole
+): AdministratorAccessScope {
+  return role === "organization_admin"
+    ? "entire_organization"
+    : "selected_properties";
+}
+
+export function inviteRoleFromAccessScope(
+  scope: AdministratorAccessScope
+): AdministratorInviteRole {
+  return scope === "entire_organization"
+    ? "organization_admin"
+    : "property_administrator";
+}
 
 /** Maps an invite role choice to the stored (org_role, property_role) pair. */
 export function resolveInviteRoles(role: AdministratorInviteRole): {
@@ -93,7 +117,7 @@ export function resolveInviteRoles(role: AdministratorInviteRole): {
   return { orgRole: "org_member", propertyRole: "property_admin" };
 }
 
-/** Human label for an administrator row, accounting for the Primary designation. */
+/** Authorization label (internal role), accounting for Primary designation. */
 export function administratorRoleLabel(input: {
   isPrimary: boolean;
   orgRole: string;
@@ -107,15 +131,37 @@ export function administratorRoleLabel(input: {
   return ORG_ROLE_LABELS[input.orgRole] ?? "Administrator";
 }
 
-/** Human label for the scope an administrator can reach. */
+/**
+ * Visible leadership role for cards and lists — prefers descriptive job title.
+ * Primary Owner keeps its protected designation.
+ */
+export function administratorVisibleRoleLabel(input: {
+  isPrimary: boolean;
+  orgRole: string;
+  jobTitle?: string | null;
+}): string {
+  if (input.isPrimary) {
+    return ORG_ROLE_LABELS.org_owner;
+  }
+  const title = input.jobTitle?.trim();
+  if (title) {
+    return title;
+  }
+  return administratorRoleLabel(input);
+}
+
+/** Human label for Access Scope on cards and forms. */
 export function administratorScopeLabel(
   orgRole: string,
-  _assignedPropertyCount = 1
+  assignedPropertyCount = 1
 ): string {
   if (isOrgWideRole(orgRole)) {
-    return "Entire organization";
+    return "Entire Organization";
   }
-  return "Single property";
+  if (assignedPropertyCount > 1) {
+    return "Selected Properties";
+  }
+  return "Selected Properties";
 }
 
 /** Card / form label for the property field. */
@@ -123,7 +169,7 @@ export function administratorPropertyFieldLabel(orgRole: string): string {
   if (isOrgWideRole(orgRole)) {
     return "Properties";
   }
-  return "Property";
+  return "Properties";
 }
 
 /** Display value for the properties field on administrator cards. */
@@ -147,21 +193,33 @@ export function inviteRoleFromOrgRole(orgRole: string): AdministratorInviteRole 
     : "property_administrator";
 }
 
+export function accessScopeFromOrgRole(orgRole: string): AdministratorAccessScope {
+  return isOrgWideRole(orgRole) ? "entire_organization" : "selected_properties";
+}
+
 /**
- * Organization-page administrators: Primary Owner and org-wide admins.
- * Property Administrators / GMs belong on property pages only.
+ * Organization Leadership list: Primary Owner, org-wide admins, and multi-hotel
+ * selected-property leaders (Regional / Area). Single-hotel property leaders
+ * belong on property pages only.
  */
 export function isOrganizationLevelAdministrator(input: {
   isPrimary: boolean;
   orgRole: string;
+  assignedPropertyIds?: number[];
 }): boolean {
-  return input.isPrimary || isOrgWideRole(input.orgRole);
+  if (input.isPrimary || isOrgWideRole(input.orgRole)) {
+    return true;
+  }
+  if (input.orgRole === ORG_ROLE.member) {
+    return (input.assignedPropertyIds?.length ?? 0) > 1;
+  }
+  return false;
 }
 
 /**
- * Property-page administrators: property-scoped invitations that cover this
- * property. Org-wide roles are excluded so a 200-property org does not list
- * every GM on the organization page.
+ * Property Leadership: single-hotel leaders for this property.
+ * Organization Leadership (org-wide or multi-hotel) is excluded so large orgs
+ * do not list every Regional Director on every property page.
  */
 export function invitationBelongsOnPropertyPage(
   invitation: {
@@ -186,6 +244,7 @@ export const ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS = [
   "Corporate Administrator",
   "Regional Director",
   "Area Manager",
+  "VP Operations",
   "Organization Administrator",
 ] as const;
 
@@ -193,7 +252,10 @@ export const ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS = [
 export const PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS = [
   "General Manager",
   "Assistant General Manager",
-  "Property Administrator",
+  "Assistant GM",
+  "Director of Engineering",
+  "Executive Housekeeper",
+  "Operations Manager",
 ] as const;
 
 /** Normalize a list of positive property ids (deduped, insertion order preserved). */

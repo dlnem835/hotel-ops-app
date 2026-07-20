@@ -168,10 +168,10 @@ export default function AdminOrganizationDetailPage() {
       ) : null}
 
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Administrators</h3>
+        <h3 className="admin-portal__section-title">Organization Leadership</h3>
         <p className="admin-portal__muted">
-          Primary Owner and organization-wide administrators. Property General
-          Managers are managed on each property page.
+          Primary Owner and corporate or regional leaders. Hotel General Managers
+          and other property leaders are managed on each property page.
         </p>
         <AdminAdministratorsTable
           organizationId={organization.id}
@@ -179,7 +179,7 @@ export default function AdminOrganizationDetailPage() {
           invitations={organizationAdministrators}
           properties={organization.properties}
           modules={organization.modules}
-          emptyLabel="No organization-level administrators yet."
+          emptyLabel="No organization leadership yet."
           onChanged={() => {
             setActionError(null);
             void loadOrganization({ soft: true });

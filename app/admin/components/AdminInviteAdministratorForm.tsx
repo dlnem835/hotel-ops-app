@@ -3,19 +3,21 @@
 import { FormEvent, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import {
-  ADMINISTRATOR_INVITE_ROLES,
   ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
   PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS,
+  inviteRoleFromAccessScope,
+  type AdministratorAccessScope,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
 import type {
   AdminOrganizationDetail,
   AdminOrganizationInvitation,
 } from "@/app/lib/platform-admin/types";
+import AdminPropertyMultiSelect from "./AdminPropertyMultiSelect";
 
 type AdminInviteAdministratorFormProps = {
   organization: AdminOrganizationDetail;
-  /** organization = org-wide invites; property = GM / property admin for one property. */
+  /** organization = Corporate Leadership; property = Property Leadership. */
   scope?: "organization" | "property";
   lockedPropertyId?: number;
   onInvitationCreated: (invitation: AdminOrganizationInvitation) => void;
@@ -43,13 +45,13 @@ export default function AdminInviteAdministratorForm({
     lockedPropertyId ??
     (organization.properties.length === 1 ? organization.properties[0].id : null);
 
-  const initialRole: AdministratorInviteRole = isPropertyScope
-    ? "property_administrator"
-    : "organization_admin";
-
-  const [role, setRole] = useState<AdministratorInviteRole>(initialRole);
-  const [propertyId, setPropertyId] = useState(
+  const [accessScope, setAccessScope] =
+    useState<AdministratorAccessScope>("entire_organization");
+  const [landingPropertyId, setLandingPropertyId] = useState(
     defaultPropertyId != null ? String(defaultPropertyId) : ""
+  );
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>(
+    lockedPropertyId != null ? [lockedPropertyId] : []
   );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -57,56 +59,47 @@ export default function AdminInviteAdministratorForm({
   const [jobTitle, setJobTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const effectiveRole: AdministratorInviteRole = isPropertyScope
-    ? "property_administrator"
+  const effectiveAccessScope: AdministratorAccessScope = isPropertyScope
+    ? "selected_properties"
     : !hasPrimary
-      ? "organization_admin"
-      : role;
+      ? "entire_organization"
+      : accessScope;
 
-  const isOrgAdminInvite = hasPrimary && effectiveRole === "organization_admin";
-  const isPropertyAdminInvite =
-    isPropertyScope || (hasPrimary && effectiveRole === "property_administrator");
-  const isOrgWideInvite = !isPropertyScope && (!hasPrimary || isOrgAdminInvite);
+  const effectiveRole: AdministratorInviteRole = inviteRoleFromAccessScope(
+    effectiveAccessScope
+  );
 
-  const resolvedPropertyIds = isOrgWideInvite
-    ? defaultPropertyId != null
-      ? [defaultPropertyId]
-      : propertyId
-        ? [Number.parseInt(propertyId, 10)]
-        : []
-    : lockedPropertyId != null
+  const isEntireOrganization = effectiveAccessScope === "entire_organization";
+
+  const resolvedPropertyIds = isPropertyScope
+    ? lockedPropertyId != null
       ? [lockedPropertyId]
-      : propertyId
-        ? [Number.parseInt(propertyId, 10)]
-        : [];
+      : []
+    : isEntireOrganization
+      ? defaultPropertyId != null
+        ? [defaultPropertyId]
+        : landingPropertyId
+          ? [Number.parseInt(landingPropertyId, 10)]
+          : []
+      : selectedPropertyIds;
 
-  const canSubmit =
-    resolvedPropertyIds.length > 0 &&
-    (!isPropertyAdminInvite || resolvedPropertyIds.length === 1);
+  const canSubmit = resolvedPropertyIds.length > 0;
 
   const jobTitleSuggestions = useMemo(
     () =>
-      isPropertyScope || isPropertyAdminInvite
+      isPropertyScope
         ? PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS
         : ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
-    [isPropertyScope, isPropertyAdminInvite]
+    [isPropertyScope]
   );
-
-  const roleOptions = isPropertyScope
-    ? ADMINISTRATOR_INVITE_ROLES.filter(
-        (option) => option.value === "property_administrator"
-      )
-    : ADMINISTRATOR_INVITE_ROLES.filter(
-        (option) => option.value === "organization_admin"
-      );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
       onError(
-        isPropertyAdminInvite
-          ? "Select exactly one property."
-          : "Select a default landing property."
+        isEntireOrganization
+          ? "Select a default landing property."
+          : "Select at least one property."
       );
       return;
     }
@@ -145,77 +138,124 @@ export default function AdminInviteAdministratorForm({
     setLastName("");
     setEmail("");
     setJobTitle("");
+    if (!isPropertyScope && !isEntireOrganization) {
+      setSelectedPropertyIds([]);
+    }
     setSubmitting(false);
   }
 
   const sectionTitle = isPropertyScope
-    ? "Invite Property Administrator"
-    : "Invite Administrator";
+    ? "Invite Property Leader"
+    : "Invite Organization Leader";
+
+  const submitLabel = isPropertyScope
+    ? "Invite Property Leader"
+    : "Invite Organization Leader";
 
   return (
     <section className="admin-portal__card">
       <h3 className="admin-portal__section-title">{sectionTitle}</h3>
       <p className="admin-portal__muted">
         {isPropertyScope
-          ? "Invites a General Manager or other property-scoped administrator for this property only."
+          ? "Invite leadership assigned only to this hotel — for example a General Manager, Assistant GM, or department head. Authorization remains property-scoped."
           : hasPrimary
-            ? "Sends a Supabase invitation email for an organization-wide administrator. Property General Managers are invited from each property page."
-            : "The first administrator becomes the Primary Owner for this organization. They sign in with their real email address and complete first-login setup."}
+            ? "Invite corporate or regional leadership for this organization. Job title is descriptive; Access Scope controls which hotels they can reach."
+            : "The first leader becomes the Primary Owner for this organization. They sign in with their real email address and complete first-login setup."}
       </p>
 
       <form className="admin-portal__form" onSubmit={handleSubmit}>
         {isPropertyScope ? (
           <div className="admin-portal__field">
-            <span>Role</span>
+            <span>Authorization</span>
             <p className="admin-portal__static-value">Property Administrator</p>
             <span className="admin-portal__muted">
-              Scope is limited to this property. Job title is descriptive only.
+              Fixed for property invitations. Use Job title for the visible hotel role.
             </span>
           </div>
         ) : hasPrimary ? (
-          <label className="admin-portal__field">
-            <span>Role</span>
-            <select
-              value={role}
-              onChange={(event) => {
-                const next = event.target.value as AdministratorInviteRole;
-                setRole(next);
-              }}
-              disabled={roleOptions.length <= 1}
-            >
-              {roleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="admin-portal__field">
+            <span>Authorization</span>
+            <p className="admin-portal__static-value">Organization Administrator</p>
             <span className="admin-portal__muted">
-              {roleOptions.find((option) => option.value === role)?.description}
+              One authorization role for corporate leadership. Access Scope below
+              chooses entire organization or selected hotels.
             </span>
-          </label>
+          </div>
         ) : (
           <div className="admin-portal__field">
-            <span>Role</span>
+            <span>Authorization</span>
             <p className="admin-portal__static-value">Primary Owner</p>
             <span className="admin-portal__muted">
-              Assigned automatically to the first administrator for this organization.
+              Assigned automatically to the first leader for this organization.
             </span>
           </div>
         )}
 
-        <div className="admin-portal__field">
-          <span>Scope</span>
-          <p className="admin-portal__static-value">
-            {isOrgWideInvite ? "Entire organization" : "Single property"}
-          </p>
-          <span className="admin-portal__muted">
-            {isOrgWideInvite
-              ? "Includes every current property and any properties added later."
-              : "Limited to the single property chosen below."}
-          </span>
-        </div>
+        {isPropertyScope ? (
+          <div className="admin-portal__field">
+            <span>Access Scope</span>
+            <p className="admin-portal__static-value">This property only</p>
+          </div>
+        ) : hasPrimary ? (
+          <fieldset className="admin-portal__field">
+            <legend>Access Scope</legend>
+            <div className="admin-portal__checkbox-grid">
+              <label className="admin-portal__checkbox-field">
+                <input
+                  type="radio"
+                  name="access-scope"
+                  checked={accessScope === "entire_organization"}
+                  onChange={() => setAccessScope("entire_organization")}
+                  disabled={submitting}
+                />
+                <span>
+                  <strong>Entire Organization</strong>
+                  <br />
+                  <span className="admin-portal__muted">
+                    Every current hotel and any properties added later.
+                  </span>
+                </span>
+              </label>
+              <label className="admin-portal__checkbox-field">
+                <input
+                  type="radio"
+                  name="access-scope"
+                  checked={accessScope === "selected_properties"}
+                  onChange={() => setAccessScope("selected_properties")}
+                  disabled={submitting}
+                />
+                <span>
+                  <strong>Selected Properties</strong>
+                  <br />
+                  <span className="admin-portal__muted">
+                    Only the hotels you assign — typical for Regional Directors
+                    and Area Managers.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        ) : (
+          <div className="admin-portal__field">
+            <span>Access Scope</span>
+            <p className="admin-portal__static-value">Entire Organization</p>
+            <span className="admin-portal__muted">
+              Includes every current property and any properties added later.
+            </span>
+          </div>
+        )}
 
-        {isOrgWideInvite ? (
+        {isPropertyScope && lockedPropertyId != null ? (
+          <div className="admin-portal__field">
+            <span>Property</span>
+            <p className="admin-portal__static-value">
+              {organization.properties.find((row) => row.id === lockedPropertyId)
+                ?.name ?? `Property #${lockedPropertyId}`}
+            </p>
+          </div>
+        ) : null}
+
+        {!isPropertyScope && isEntireOrganization ? (
           <div className="admin-portal__field">
             <span>Properties</span>
             <p className="admin-portal__static-value">All properties</p>
@@ -223,8 +263,8 @@ export default function AdminInviteAdministratorForm({
               <label className="admin-portal__field">
                 <span>Default landing property</span>
                 <select
-                  value={propertyId}
-                  onChange={(event) => setPropertyId(event.target.value)}
+                  value={landingPropertyId}
+                  onChange={(event) => setLandingPropertyId(event.target.value)}
                   required
                   disabled={submitting}
                 >
@@ -236,44 +276,28 @@ export default function AdminInviteAdministratorForm({
                   ))}
                 </select>
                 <span className="admin-portal__muted">
-                  Org-wide administrators access all properties. This only sets
-                  where they land after login.
+                  They can switch among all organization properties. This only
+                  sets where they land after login.
                 </span>
               </label>
             ) : null}
           </div>
-        ) : lockedPropertyId != null ? (
+        ) : null}
+
+        {!isPropertyScope && hasPrimary && !isEntireOrganization ? (
           <div className="admin-portal__field">
-            <span>Property</span>
-            <p className="admin-portal__static-value">
-              {organization.properties.find((row) => row.id === lockedPropertyId)
-                ?.name ?? `Property #${lockedPropertyId}`}
-            </p>
+            <span>Selected properties</span>
+            <AdminPropertyMultiSelect
+              properties={organization.properties}
+              value={selectedPropertyIds}
+              onChange={setSelectedPropertyIds}
+              disabled={submitting}
+            />
             <span className="admin-portal__muted">
-              This administrator will only have access to this property.
+              Search and select the hotels this leader oversees.
             </span>
           </div>
-        ) : (
-          <label className="admin-portal__field">
-            <span>Property</span>
-            <select
-              value={propertyId}
-              onChange={(event) => setPropertyId(event.target.value)}
-              required
-              disabled={submitting}
-            >
-              <option value="">Select property</option>
-              {organization.properties.map((property) => (
-                <option key={property.id} value={property.id}>
-                  {property.name}
-                </option>
-              ))}
-            </select>
-            <span className="admin-portal__muted">
-              This administrator will only have access to this property.
-            </span>
-          </label>
-        )}
+        ) : null}
 
         <label className="admin-portal__field">
           <span>First name</span>
@@ -307,7 +331,7 @@ export default function AdminInviteAdministratorForm({
         </label>
 
         <label className="admin-portal__field">
-          <span>Job title (optional)</span>
+          <span>Job title {isPropertyScope ? "" : "(optional)"}</span>
           <input
             type="text"
             value={jobTitle}
@@ -317,6 +341,7 @@ export default function AdminInviteAdministratorForm({
               isPropertyScope ? "General Manager" : "Corporate Administrator"
             }
             maxLength={80}
+            required={isPropertyScope}
           />
           <datalist id="admin-job-title-suggestions">
             {jobTitleSuggestions.map((title) => (
@@ -324,8 +349,9 @@ export default function AdminInviteAdministratorForm({
             ))}
           </datalist>
           <span className="admin-portal__muted">
-            Descriptive only — access is set by role and permissions. Defaults to
-            &ldquo;Administrator&rdquo; if left blank.
+            {isPropertyScope
+              ? "Shown as their visible role on this hotel (General Manager, Executive Housekeeper, etc.)."
+              : "Descriptive title such as Corporate Administrator, Regional Director, or Area Manager."}
           </span>
         </label>
 
@@ -335,7 +361,7 @@ export default function AdminInviteAdministratorForm({
             className="admin-portal__button admin-portal__button--primary"
             disabled={submitting || !canSubmit}
           >
-            {submitting ? "Sending invitation…" : "Invite Administrator"}
+            {submitting ? "Sending invitation…" : submitLabel}
           </button>
         </div>
       </form>

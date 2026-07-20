@@ -3,8 +3,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import {
-  ADMINISTRATOR_INVITE_ROLES,
+  ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
+  PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS,
+  accessScopeFromOrgRole,
+  inviteRoleFromAccessScope,
   inviteRoleFromOrgRole,
+  type AdministratorAccessScope,
   type AdministratorInviteRole,
 } from "@/app/lib/platform-admin/roles";
 import type {
@@ -20,6 +24,7 @@ import {
   type ModulePermissions,
 } from "@/app/lib/role-permissions";
 import AdminModalFrame from "./AdminModalFrame";
+import AdminPropertyMultiSelect from "./AdminPropertyMultiSelect";
 
 type AdminEditAdministratorModalProps = {
   open: boolean;
@@ -94,7 +99,8 @@ export default function AdminEditAdministratorModal({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-  const [role, setRole] = useState<AdministratorInviteRole>("organization_admin");
+  const [accessScope, setAccessScope] =
+    useState<AdministratorAccessScope>("entire_organization");
   const [propertyIds, setPropertyIds] = useState<number[]>([]);
   const [moduleState, setModuleState] = useState<ModulePermissions>(
     createEmptyPermissions()
@@ -108,10 +114,10 @@ export default function AdminEditAdministratorModal({
     setFirstName(invitation.firstName);
     setLastName(invitation.lastName);
     setJobTitle(invitation.jobTitle || "Administrator");
-    setRole(
+    setAccessScope(
       invitation.isPrimary
-        ? "organization_admin"
-        : inviteRoleFromOrgRole(invitation.orgRole)
+        ? "entire_organization"
+        : accessScopeFromOrgRole(invitation.orgRole)
     );
     setPropertyIds(
       invitation.assignedPropertyIds.length > 0
@@ -128,8 +134,8 @@ export default function AdminEditAdministratorModal({
   }
 
   const isPrimary = invitation.isPrimary;
-  const isOrganizationAdmin = role === "organization_admin";
-  const isPropertyAdministrator = role === "property_administrator";
+  const role = inviteRoleFromAccessScope(accessScope);
+  const isEntireOrganization = accessScope === "entire_organization";
   const initialRole = invitation.isPrimary
     ? ("organization_admin" as const)
     : inviteRoleFromOrgRole(invitation.orgRole);
@@ -155,12 +161,18 @@ export default function AdminEditAdministratorModal({
       (invitation.jobTitle || "Administrator") ||
     (!isPrimary && role !== inviteRoleFromOrgRole(invitation.orgRole)) ||
     (!isPrimary &&
-      JSON.stringify(propertyIds) !==
+      JSON.stringify([...propertyIds].sort((a, b) => a - b)) !==
         JSON.stringify(
-          invitation.assignedPropertyIds.length > 0
-            ? invitation.assignedPropertyIds
-            : [invitation.propertyId]
+          [
+            ...(invitation.assignedPropertyIds.length > 0
+              ? invitation.assignedPropertyIds
+              : [invitation.propertyId]),
+          ].sort((a, b) => a - b)
         ));
+
+  const jobTitleSuggestions = isEntireOrganization
+    ? ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS
+    : PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS;
 
   function requestClose() {
     if (submitting) return;
@@ -179,20 +191,14 @@ export default function AdminEditAdministratorModal({
 
     const payloadPropertyIds = isPrimary
       ? [invitation.propertyId]
-      : isOrganizationAdmin
+      : isEntireOrganization
         ? [propertyIds[0] ?? invitation.propertyId]
-        : propertyIds.slice(0, 1);
+        : propertyIds;
 
     if (!isPrimary && payloadPropertyIds.length === 0) {
-      const message = isPropertyAdministrator
-        ? "Select exactly one property."
-        : "Select a default landing property.";
-      setLocalError(message);
-      onError(message);
-      return;
-    }
-    if (!isPrimary && isPropertyAdministrator && payloadPropertyIds.length !== 1) {
-      const message = "Property Administrator must have exactly one property.";
+      const message = isEntireOrganization
+        ? "Select a default landing property."
+        : "Select at least one property.";
       setLocalError(message);
       onError(message);
       return;
@@ -243,7 +249,7 @@ export default function AdminEditAdministratorModal({
   return (
     <AdminModalFrame
       open={open}
-      title="Edit Administrator"
+      title="Edit Leader"
       titleId="admin-edit-administrator-title"
       wide
       lockClose={submitting}
@@ -252,8 +258,8 @@ export default function AdminEditAdministratorModal({
     >
       <p className="admin-portal__muted">
         {isPrimary
-          ? "Primary Owner name and job title can be edited. Role, scope, and Primary Owner status are protected until Transfer Primary Owner exists."
-          : "Update profile, role, property access, and module permissions. Email cannot be changed here."}
+          ? "Primary Owner name and job title can be edited. Access Scope and Primary Owner status change only through Transfer Primary Ownership."
+          : "Update profile, Access Scope, property assignments, and module permissions. Email cannot be changed here."}
       </p>
 
       {localError ? (
@@ -263,20 +269,20 @@ export default function AdminEditAdministratorModal({
       <form className="admin-portal__form" onSubmit={handleSubmit}>
         <section className="admin-portal__edit-section">
           <h4 className="admin-portal__edit-section-title">Profile</h4>
-          <label className="admin-portal__field">
+          <div className="admin-portal__field">
             <span>Email</span>
-            <input type="email" value={invitation.email} disabled readOnly />
+            <p className="admin-portal__static-value">{invitation.email}</p>
             <span className="admin-portal__muted">
               Use Change Email (Platform Owner) to update the delivery address.
             </span>
-          </label>
-          <label className="admin-portal__field">
+          </div>
+          <div className="admin-portal__field">
             <span>Username</span>
-            <input type="text" value={usernameDisplay} disabled readOnly />
+            <p className="admin-portal__static-value">{usernameDisplay}</p>
             <span className="admin-portal__muted">
               Login username created during account setup. Not the same as email.
             </span>
-          </label>
+          </div>
           <label className="admin-portal__field">
             <span>First name</span>
             <input
@@ -308,26 +314,27 @@ export default function AdminEditAdministratorModal({
               disabled={submitting}
             />
             <datalist id="admin-edit-job-title-suggestions">
-              <option value="General Manager" />
-              <option value="Assistant General Manager" />
-              <option value="Area General Manager" />
-              <option value="Regional Director" />
-              <option value="Corporate Administrator" />
+              {jobTitleSuggestions.map((title) => (
+                <option key={title} value={title} />
+              ))}
             </datalist>
+            <span className="admin-portal__muted">
+              Visible leadership title. Does not change authorization.
+            </span>
           </label>
         </section>
 
         <section className="admin-portal__edit-section">
-          <h4 className="admin-portal__edit-section-title">Role &amp; scope</h4>
+          <h4 className="admin-portal__edit-section-title">Authorization &amp; Access Scope</h4>
           {isPrimary ? (
             <>
               <div className="admin-portal__field">
-                <span>Role</span>
+                <span>Authorization</span>
                 <p className="admin-portal__static-value">Primary Owner</p>
               </div>
               <div className="admin-portal__field">
-                <span>Scope</span>
-                <p className="admin-portal__static-value">Entire organization</p>
+                <span>Access Scope</span>
+                <p className="admin-portal__static-value">Entire Organization</p>
                 <span className="admin-portal__muted">
                   Includes every current property and any properties added later.
                 </span>
@@ -335,56 +342,80 @@ export default function AdminEditAdministratorModal({
             </>
           ) : (
             <>
-              <label className="admin-portal__field">
-                <span>Administrator role</span>
-                <select
-                  value={role}
-                  onChange={(event) => {
-                    const next = event.target.value as AdministratorInviteRole;
-                    setRole(next);
-                    setConfirmReduction(false);
-                    if (next === "property_administrator" && propertyIds.length > 1) {
-                      setPropertyIds([propertyIds[0]]);
-                    }
-                  }}
-                  disabled={submitting}
-                >
-                  {ADMINISTRATOR_INVITE_ROLES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="admin-portal__muted">
-                  {
-                    ADMINISTRATOR_INVITE_ROLES.find((option) => option.value === role)
-                      ?.description
-                  }
-                </span>
-              </label>
               <div className="admin-portal__field">
-                <span>Scope</span>
+                <span>Authorization</span>
                 <p className="admin-portal__static-value">
-                  {isOrganizationAdmin ? "Entire organization" : "Single property"}
+                  {isEntireOrganization
+                    ? "Organization Administrator"
+                    : "Property Administrator"}
                 </p>
+                <span className="admin-portal__muted">
+                  Derived from Access Scope. Job title stays descriptive.
+                </span>
               </div>
+              <fieldset className="admin-portal__field">
+                <legend>Access Scope</legend>
+                <div className="admin-portal__checkbox-grid">
+                  <label className="admin-portal__checkbox-field">
+                    <input
+                      type="radio"
+                      name="edit-access-scope"
+                      checked={accessScope === "entire_organization"}
+                      onChange={() => {
+                        setAccessScope("entire_organization");
+                        setConfirmReduction(false);
+                        if (propertyIds.length === 0) {
+                          setPropertyIds([invitation.propertyId]);
+                        } else {
+                          setPropertyIds([propertyIds[0]]);
+                        }
+                      }}
+                      disabled={submitting}
+                    />
+                    <span>
+                      <strong>Entire Organization</strong>
+                      <br />
+                      <span className="admin-portal__muted">
+                        Every current hotel and properties added later.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="admin-portal__checkbox-field">
+                    <input
+                      type="radio"
+                      name="edit-access-scope"
+                      checked={accessScope === "selected_properties"}
+                      onChange={() => {
+                        setAccessScope("selected_properties");
+                        setConfirmReduction(false);
+                      }}
+                      disabled={submitting}
+                    />
+                    <span>
+                      <strong>Selected Properties</strong>
+                      <br />
+                      <span className="admin-portal__muted">
+                        Only assigned hotels.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
             </>
           )}
         </section>
 
         <section className="admin-portal__edit-section">
-          <h4 className="admin-portal__edit-section-title">
-            {isPrimary || isOrganizationAdmin ? "Properties" : "Property"}
-          </h4>
-          {isPrimary || isOrganizationAdmin ? (
+          <h4 className="admin-portal__edit-section-title">Properties</h4>
+          {isPrimary || isEntireOrganization ? (
             <>
               <p className="admin-portal__static-value">All properties</p>
               <span className="admin-portal__muted">
                 {isPrimary
                   ? "Primary Owner property access cannot be reduced here."
-                  : "Organization Admins access every active property in the organization, including properties added later."}
+                  : "Organization Administrators access every active property, including properties added later."}
               </span>
-              {isOrganizationAdmin && properties.length > 1 ? (
+              {!isPrimary && isEntireOrganization && properties.length > 1 ? (
                 <label className="admin-portal__field">
                   <span>Default landing property</span>
                   <select
@@ -405,26 +436,18 @@ export default function AdminEditAdministratorModal({
               ) : null}
             </>
           ) : (
-            <label className="admin-portal__field">
-              <span>Property</span>
-              <select
-                value={String(propertyIds[0] ?? invitation.propertyId)}
-                onChange={(event) => {
-                  setPropertyIds([Number.parseInt(event.target.value, 10)]);
+            <div className="admin-portal__field">
+              <span>Selected properties</span>
+              <AdminPropertyMultiSelect
+                properties={properties}
+                value={propertyIds}
+                onChange={(next) => {
+                  setPropertyIds(next);
                   setConfirmReduction(false);
                 }}
                 disabled={submitting}
-              >
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name}
-                  </option>
-                ))}
-              </select>
-              <span className="admin-portal__muted">
-                This administrator will only have access to this property.
-              </span>
-            </label>
+              />
+            </div>
           )}
         </section>
 
@@ -474,8 +497,8 @@ export default function AdminEditAdministratorModal({
               disabled={submitting}
             />
             <span>
-              I confirm this save reduces administrator access (role, property
-              scope, and/or modules).
+              I confirm this save reduces leader access (Access Scope, properties,
+              and/or modules).
             </span>
           </label>
         ) : null}

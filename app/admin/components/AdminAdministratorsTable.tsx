@@ -12,6 +12,7 @@ import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/ser
 import {
   administratorPropertiesDisplay,
   administratorPropertyFieldLabel,
+  administratorVisibleRoleLabel,
   isOrgWideRole,
 } from "@/app/lib/platform-admin/roles";
 import AdminStatusBadge from "./AdminStatusBadge";
@@ -475,7 +476,7 @@ export default function AdminAdministratorsTable({
                   {invitation.firstName} {invitation.lastName}
                 </span>
                 <span className="admin-portal__admin-card-role">
-                  {invitation.roleLabel}
+                  {administratorVisibleRoleLabel(invitation)}
                 </span>
               </div>
               <AdminStatusBadge status={displayStatus(invitation)} />
@@ -495,15 +496,15 @@ export default function AdminAdministratorsTable({
                 </dd>
               </div>
               <div className="admin-portal__admin-card-field">
-                <dt>Job title</dt>
-                <dd>{invitation.jobTitle || "Administrator"}</dd>
+                <dt>Role</dt>
+                <dd>{administratorVisibleRoleLabel(invitation)}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
-                <dt>Role</dt>
+                <dt>Authorization</dt>
                 <dd>{invitation.roleLabel}</dd>
               </div>
               <div className="admin-portal__admin-card-field">
-                <dt>Scope</dt>
+                <dt>Access Scope</dt>
                 <dd>{invitation.scopeLabel}</dd>
               </div>
               <div className="admin-portal__admin-card-field">

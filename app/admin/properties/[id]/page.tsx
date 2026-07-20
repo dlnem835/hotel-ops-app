@@ -242,9 +242,10 @@ export default function AdminPropertyDetailPage() {
       ) : null}
 
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Property Administrators</h3>
+        <h3 className="admin-portal__section-title">Property Leadership</h3>
         <p className="admin-portal__muted">
-          General Managers and other administrators scoped to this property only.
+          Leadership assigned only to this hotel — General Managers and other
+          on-property leaders.
         </p>
         <AdminAdministratorsTable
           organizationId={property.organizationId}
@@ -265,7 +266,7 @@ export default function AdminPropertyDetailPage() {
             },
           ]}
           modules={modules}
-          emptyLabel="No property administrators yet."
+          emptyLabel="No property leadership yet."
           onChanged={() => {
             setActionError(null);
             void loadProperty({ soft: true });

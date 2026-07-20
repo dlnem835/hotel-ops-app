@@ -543,16 +543,16 @@ export async function updateAdministrator(
     afterPropertyRole = resolved.propertyRole;
     afterPropertyIds = [...input.propertyIds];
 
-    if (input.role === "property_administrator" && afterPropertyIds.length !== 1) {
+    if (input.role === "property_administrator" && afterPropertyIds.length < 1) {
       throw new PlatformAdminRequestError(
         400,
-        "Property Administrator must be assigned to exactly one property"
+        "Selected Properties access requires at least one property"
       );
     }
     if (input.role === "organization_admin" && afterPropertyIds.length < 1) {
       throw new PlatformAdminRequestError(
         400,
-        "Organization Admin must have a default landing property"
+        "Entire Organization access requires a default landing property"
       );
     }
   }

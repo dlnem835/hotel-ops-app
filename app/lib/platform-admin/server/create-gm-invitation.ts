@@ -523,10 +523,10 @@ export async function createAdministratorInvitation(
     ? { orgRole: "org_owner" as const, propertyRole: "property_admin" as const }
     : resolveInviteRoles(input.role);
 
-  if (!isPrimary && input.role === "property_administrator" && input.propertyIds.length !== 1) {
+  if (!isPrimary && input.role === "property_administrator" && input.propertyIds.length < 1) {
     throw new PlatformAdminRequestError(
       400,
-      "Property Administrator must be assigned to exactly one property"
+      "Selected Properties access requires at least one property"
     );
   }
   if (
@@ -536,12 +536,13 @@ export async function createAdministratorInvitation(
   ) {
     throw new PlatformAdminRequestError(
       400,
-      "Organization Admin must have a default landing property"
+      "Entire Organization access requires a default landing property"
     );
   }
 
   // Primary Owner and Organization Admin are org-wide; only one landing
   // property is stored for team_members / user_properties home.
+  // Selected Properties leaders keep every chosen property id.
   const propertyIds =
     isPrimary || input.role === "organization_admin"
       ? [input.propertyIds[0]]
@@ -656,7 +657,10 @@ export async function createAdministratorInvitation(
       organizationName,
       expirationDate: expirationDateLabel,
       invitationId,
-      recommendDesktop: isPrimary || orgRole === "org_admin",
+      recommendDesktop:
+        isPrimary ||
+        orgRole === "org_admin" ||
+        propertyIds.length > 1,
     });
     return {
       userId: result.data.user?.id ?? null,
