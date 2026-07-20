@@ -8,7 +8,7 @@ import { isOrganizationLevelAdministrator } from "@/app/lib/platform-admin/roles
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
-import AdminInviteAdministratorForm from "../../components/AdminInviteAdministratorForm";
+import AdminInviteLeaderModal from "../../components/AdminInviteLeaderModal";
 import AdminAdministratorsTable from "../../components/AdminAdministratorsTable";
 import AdminModuleControls from "../../components/AdminModuleControls";
 import AdminOrganizationLifecycleActions from "../../components/AdminOrganizationLifecycleActions";
@@ -27,6 +27,7 @@ export default function AdminOrganizationDetailPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   async function loadOrganization(options?: { soft?: boolean }) {
     const organizationId = params.id;
@@ -148,27 +149,19 @@ export default function AdminOrganizationDetailPage() {
         }}
       />
 
-      {organization.canInviteAdministrator ? (
-        <AdminInviteAdministratorForm
-          organization={organization}
-          scope="organization"
-          onInvitationCreated={() => {
-            setActionError(null);
-            void loadOrganization({ soft: true });
-          }}
-          onSuccess={(message) => {
-            setActionError(null);
-            setActionSuccess(message);
-          }}
-          onError={(message) => {
-            setActionSuccess(null);
-            setActionError(message);
-          }}
-        />
-      ) : null}
-
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Organization Leadership</h3>
+        <div className="admin-portal__section-header">
+          <h3 className="admin-portal__section-title">Organization Leadership</h3>
+          {organization.canInviteAdministrator ? (
+            <button
+              type="button"
+              className="admin-portal__button admin-portal__button--primary"
+              onClick={() => setInviteOpen(true)}
+            >
+              Add Organization Leader
+            </button>
+          ) : null}
+        </div>
         <p className="admin-portal__muted">
           Primary Owner and corporate or regional leaders. Hotel General Managers
           and other property leaders are managed on each property page.
@@ -179,7 +172,23 @@ export default function AdminOrganizationDetailPage() {
           invitations={organizationAdministrators}
           properties={organization.properties}
           modules={organization.modules}
-          emptyLabel="No organization leadership yet."
+          emptyLabel="No organization leaders have been added."
+          emptyContent={
+            <div className="admin-portal__empty-state">
+              <p className="admin-portal__muted">
+                No organization leaders have been added.
+              </p>
+              {organization.canInviteAdministrator ? (
+                <button
+                  type="button"
+                  className="admin-portal__button admin-portal__button--primary"
+                  onClick={() => setInviteOpen(true)}
+                >
+                  Add Organization Leader
+                </button>
+              ) : null}
+            </div>
+          }
           onChanged={() => {
             setActionError(null);
             void loadOrganization({ soft: true });
@@ -207,6 +216,25 @@ export default function AdminOrganizationDetailPage() {
           }}
         />
       </section>
+
+      <AdminInviteLeaderModal
+        open={inviteOpen}
+        organization={organization}
+        scope="organization"
+        onClose={() => setInviteOpen(false)}
+        onInvitationCreated={() => {
+          setActionError(null);
+          void loadOrganization({ soft: true });
+        }}
+        onSuccess={(message) => {
+          setActionError(null);
+          setActionSuccess(message);
+        }}
+        onError={(message) => {
+          setActionSuccess(null);
+          setActionError(message);
+        }}
+      />
 
       <section className="admin-portal__card">
         <h3 className="admin-portal__section-title">Onboarding status</h3>

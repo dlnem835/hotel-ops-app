@@ -487,6 +487,17 @@
   margin-bottom: 0;
 }
 
+.admin-portal__empty-state {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding: 8px 0 4px;
+}
+
+.admin-portal__empty-state .admin-portal__muted {
+  margin: 0;
+}
+
 .admin-portal__form {
   display: grid;
   gap: 16px;

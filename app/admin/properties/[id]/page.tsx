@@ -11,7 +11,7 @@ import type {
 import AdminErrorState from "../../components/AdminErrorState";
 import AdminLoadingState from "../../components/AdminLoadingState";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
-import AdminInviteAdministratorForm from "../../components/AdminInviteAdministratorForm";
+import AdminInviteLeaderModal from "../../components/AdminInviteLeaderModal";
 import AdminAdministratorsTable from "../../components/AdminAdministratorsTable";
 
 function formatDate(value: string) {
@@ -25,6 +25,7 @@ export default function AdminPropertyDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   async function loadProperty(options?: { soft?: boolean }) {
     const propertyId = params.id;
@@ -221,28 +222,19 @@ export default function AdminPropertyDetailPage() {
 
       {actionError ? <AdminErrorState message={actionError} /> : null}
 
-      {property.canInviteAdministrator && inviteOrganization ? (
-        <AdminInviteAdministratorForm
-          organization={inviteOrganization}
-          scope="property"
-          lockedPropertyId={property.id}
-          onInvitationCreated={() => {
-            setActionError(null);
-            void loadProperty({ soft: true });
-          }}
-          onSuccess={(message) => {
-            setActionError(null);
-            setActionSuccess(message);
-          }}
-          onError={(message) => {
-            setActionSuccess(null);
-            setActionError(message);
-          }}
-        />
-      ) : null}
-
       <section className="admin-portal__card">
-        <h3 className="admin-portal__section-title">Property Leadership</h3>
+        <div className="admin-portal__section-header">
+          <h3 className="admin-portal__section-title">Property Leadership</h3>
+          {property.canInviteAdministrator ? (
+            <button
+              type="button"
+              className="admin-portal__button admin-portal__button--primary"
+              onClick={() => setInviteOpen(true)}
+            >
+              Add Property Leader
+            </button>
+          ) : null}
+        </div>
         <p className="admin-portal__muted">
           Leadership assigned only to this hotel — General Managers and other
           on-property leaders.
@@ -266,7 +258,23 @@ export default function AdminPropertyDetailPage() {
             },
           ]}
           modules={modules}
-          emptyLabel="No property leadership yet."
+          emptyLabel="No property leaders have been added."
+          emptyContent={
+            <div className="admin-portal__empty-state">
+              <p className="admin-portal__muted">
+                No property leaders have been added.
+              </p>
+              {property.canInviteAdministrator ? (
+                <button
+                  type="button"
+                  className="admin-portal__button admin-portal__button--primary"
+                  onClick={() => setInviteOpen(true)}
+                >
+                  Add Property Leader
+                </button>
+              ) : null}
+            </div>
+          }
           onChanged={() => {
             setActionError(null);
             void loadProperty({ soft: true });
@@ -294,6 +302,28 @@ export default function AdminPropertyDetailPage() {
           }}
         />
       </section>
+
+      {inviteOrganization ? (
+        <AdminInviteLeaderModal
+          open={inviteOpen}
+          organization={inviteOrganization}
+          scope="property"
+          lockedPropertyId={property.id}
+          onClose={() => setInviteOpen(false)}
+          onInvitationCreated={() => {
+            setActionError(null);
+            void loadProperty({ soft: true });
+          }}
+          onSuccess={(message) => {
+            setActionError(null);
+            setActionSuccess(message);
+          }}
+          onError={(message) => {
+            setActionSuccess(null);
+            setActionError(message);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

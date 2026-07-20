@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type {
   AdminOrganizationInvitation,
@@ -34,6 +34,8 @@ type AdminAdministratorsTableProps = {
     details?: { invitationId: string; email: string }
   ) => void;
   emptyLabel?: string;
+  /** Optional empty-state UI (e.g. message + Add button). */
+  emptyContent?: ReactNode;
 };
 
 function formatDate(value: string | null) {
@@ -69,6 +71,7 @@ export default function AdminAdministratorsTable({
   onError,
   onSuccess,
   emptyLabel = "No administrators yet.",
+  emptyContent,
 }: AdminAdministratorsTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AdminOrganizationInvitation | null>(null);
@@ -131,6 +134,9 @@ export default function AdminAdministratorsTable({
   }, [openMoreMenuId]);
 
   if (invitations.length === 0) {
+    if (emptyContent) {
+      return <>{emptyContent}</>;
+    }
     return <p className="admin-portal__muted">{emptyLabel}</p>;
   }
 
