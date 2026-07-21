@@ -17,7 +17,6 @@ import type { AdministratorInvitationAction } from "@/app/lib/platform-admin/ser
 import {
   administratorPropertiesDisplay,
   administratorPropertyFieldLabel,
-  administratorVisibleRoleLabel,
   isOrgWideRole,
 } from "@/app/lib/platform-admin/roles";
 import AdminStatusBadge from "./AdminStatusBadge";
@@ -120,6 +119,8 @@ export default function AdminAdministratorsTable({
         canPermanentlyDeleteAuth: owner,
         canDismissRevoked: owner,
         canEditLegalIdentity: owner,
+        // Any Platform Admin (owner or not) may manage the entitlement checkbox.
+        canManageOrgAdminEntitlement: true,
       });
     }
 
@@ -508,7 +509,7 @@ export default function AdminAdministratorsTable({
                   {invitation.firstName} {invitation.lastName}
                 </span>
                 <span className="admin-portal__admin-card-role">
-                  {administratorVisibleRoleLabel(invitation)}
+                  {invitation.jobTitle?.trim() || "Team member"}
                 </span>
               </div>
               <AdminStatusBadge status={displayStatus(invitation)} />
@@ -528,13 +529,15 @@ export default function AdminAdministratorsTable({
                 </dd>
               </div>
               <div className="admin-portal__admin-card-field">
-                <dt>Role</dt>
-                <dd>{administratorVisibleRoleLabel(invitation)}</dd>
+                <dt>Job title</dt>
+                <dd>{invitation.jobTitle?.trim() || "—"}</dd>
               </div>
-              <div className="admin-portal__admin-card-field">
-                <dt>Authorization</dt>
-                <dd>{invitation.roleLabel}</dd>
-              </div>
+              {capabilities.canManageOrgAdminEntitlement ? (
+                <div className="admin-portal__admin-card-field">
+                  <dt>Admin Portal</dt>
+                  <dd>{invitation.orgAdminPortalAccess ? "Yes" : "No"}</dd>
+                </div>
+              ) : null}
               <div className="admin-portal__admin-card-field">
                 <dt>Access Scope</dt>
                 <dd>{invitation.scopeLabel}</dd>

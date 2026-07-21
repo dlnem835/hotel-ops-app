@@ -452,7 +452,13 @@ export async function updateAdministrator(
   actorUserId: string,
   organizationId: number,
   invitationId: string,
-  input: UpdateAdministratorInput
+  input: UpdateAdministratorInput,
+  /**
+   * One Eyrie-only Organization Administration entitlement. `undefined` leaves it
+   * unchanged. Only the Platform Admin route supplies this; the customer route
+   * never does (and rejects the field before reaching here).
+   */
+  orgAdminPortalAccess?: boolean
 ): Promise<AdminOrganizationInvitation> {
   const invitation = await loadInvitation(supabase, organizationId, invitationId);
 
@@ -504,6 +510,28 @@ export async function updateAdministrator(
   const beforePropertyIds = currentActivePropertyIds(snapshot);
   const beforeModules = currentModulePermissions(snapshot);
   const beforeOrgRole = String(invitation.org_role);
+
+  // Organization Administration entitlement (platform-only, independent of role).
+  const authUserIdForAccess = invitation.auth_user_id as string;
+  let orgAdminAccessSupported = true;
+  let beforeOrgAdminAccess = false;
+  {
+    const { data: accessRow, error: accessError } = await supabase
+      .from("organization_users")
+      .select("org_admin_portal_access")
+      .eq("organization_id", organizationId)
+      .eq("user_id", authUserIdForAccess)
+      .maybeSingle();
+    if (accessError) {
+      orgAdminAccessSupported = false;
+    } else {
+      beforeOrgAdminAccess = Boolean(accessRow?.org_admin_portal_access);
+    }
+  }
+  const afterOrgAdminAccess =
+    orgAdminPortalAccess === undefined ? beforeOrgAdminAccess : orgAdminPortalAccess;
+  const orgAdminAccessChanged =
+    orgAdminAccessSupported && afterOrgAdminAccess !== beforeOrgAdminAccess;
 
   let afterOrgRole = beforeOrgRole;
   let afterPropertyRole = String(invitation.property_role);
@@ -597,6 +625,12 @@ export async function updateAdministrator(
   if (Object.keys(moduleChanges).length > 0) {
     changed.modulePermissions = moduleChanges;
   }
+  if (orgAdminAccessChanged) {
+    changed.orgAdminPortalAccess = {
+      from: beforeOrgAdminAccess,
+      to: afterOrgAdminAccess,
+    };
+  }
 
   if (Object.keys(changed).length === 0) {
     const invitations = await fetchOrganizationInvitations(supabase, organizationId);
@@ -633,6 +667,9 @@ export async function updateAdministrator(
         ? [effectiveHomeId]
         : afterPropertyIds;
     }
+    if (orgAdminAccessChanged) {
+      invitationUpdate.org_admin_portal_access = afterOrgAdminAccess;
+    }
 
     const { error: invitationError } = await supabase
       .from("organization_invitations")
@@ -649,6 +686,9 @@ export async function updateAdministrator(
       .from("organization_users")
       .update({
         role: afterOrgRole,
+        ...(orgAdminAccessChanged
+          ? { org_admin_portal_access: afterOrgAdminAccess }
+          : {}),
         updated_at: timestamp,
       })
       .eq("organization_id", organizationId)

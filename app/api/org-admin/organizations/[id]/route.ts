@@ -5,7 +5,7 @@ import {
   resolveOrganizationAdminRequest,
 } from "@/app/lib/org-admin/server/resolve-organization-admin-request";
 import { fetchAdminOrganizationDetail } from "@/app/lib/platform-admin/server/admin-organizations";
-import { updateOrganizationProfileAsOrgAdmin } from "@/app/lib/org-admin/server/update-organization-profile";
+import { scopeOrganizationDetailToProperties } from "@/app/lib/org-admin/server/scope-organization-detail";
 
 function parseOrganizationId(value: string): number | null {
   const parsed = Number.parseInt(value, 10);
@@ -24,22 +24,30 @@ export async function GET(request: Request, context: RouteContext) {
       throw new OrganizationAdminRequestError(400, "Invalid organization id");
     }
 
-    const { supabase } = await resolveOrganizationAdminRequest(
-      request,
-      organizationId
-    );
+    const { supabase, orgWide, assignedPropertyIds } =
+      await resolveOrganizationAdminRequest(request, organizationId);
 
     const organization = await fetchAdminOrganizationDetail(supabase, organizationId);
     if (!organization) {
       throw new OrganizationAdminRequestError(404, "Organization not found");
     }
 
-    return NextResponse.json(organization);
+    return NextResponse.json(
+      orgWide
+        ? organization
+        : scopeOrganizationDetailToProperties(organization, assignedPropertyIds)
+    );
   } catch (error) {
     return organizationAdminErrorResponse(error);
   }
 }
 
+/**
+ * Organization profile editing is a One Eyrie Platform Administration function
+ * (billing/contract/licensing integrity). Customer Admin Portal users may VIEW
+ * the organization summary but never edit it — this route rejects all writes.
+ * Edits are performed only via the internal /admin portal (/api/admin/*).
+ */
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
@@ -48,20 +56,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       throw new OrganizationAdminRequestError(400, "Invalid organization id");
     }
 
-    const { supabase, user } = await resolveOrganizationAdminRequest(
-      request,
-      organizationId
-    );
+    // Still require a valid Admin Portal session so we don't leak the boundary
+    // to unauthenticated callers, then refuse the edit.
+    await resolveOrganizationAdminRequest(request, organizationId);
 
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const organization = await updateOrganizationProfileAsOrgAdmin(
-      supabase,
-      user.id,
-      organizationId,
-      body
+    throw new OrganizationAdminRequestError(
+      403,
+      "Organization details are managed by One Eyrie and cannot be edited here"
     );
-
-    return NextResponse.json(organization);
   } catch (error) {
     return organizationAdminErrorResponse(error);
   }

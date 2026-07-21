@@ -32,7 +32,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
-export default function OrganizationPropertyLeadershipPage() {
+export default function AdminPortalPropertyLeadershipPage() {
   const params = useParams<{ id: string }>();
   const [property, setProperty] = useState<AdminPropertyDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,6 +158,7 @@ export default function OrganizationPropertyLeadershipPage() {
           propertyRole: "property_admin",
           roleLabel: "Primary Owner",
           scopeLabel: "Entire organization",
+          orgAdminPortalAccess: true,
           assignedPropertyIds: [],
           modulePermissions: null,
           active: true,
@@ -180,8 +181,8 @@ export default function OrganizationPropertyLeadershipPage() {
       return (
         <div className="admin-portal__card">
           <p className="admin-portal__error">{error ?? "Property not found"}</p>
-          <Link href="/settings/organization" className="admin-portal__link">
-            ← Back to Organization
+          <Link href="/admin-portal" className="admin-portal__link">
+            ← Back to Admin Portal
           </Link>
         </div>
       );
@@ -196,7 +197,7 @@ export default function OrganizationPropertyLeadershipPage() {
         capabilities={ORGANIZATION_ADMIN_CAPABILITIES}
       >
         <div className="admin-portal__stack">
-          <Link href="/settings/organization" className="admin-portal__back-link">
+          <Link href="/admin-portal" className="admin-portal__back-link">
             ← {property.organizationName ?? "Organization"}
           </Link>
 
@@ -357,7 +358,7 @@ export default function OrganizationPropertyLeadershipPage() {
 
   return (
     <div style={APP_SHELL} className={APP_SHELL_CLASS}>
-      <OneEyrieSidebar active="Settings" />
+      <OneEyrieSidebar active="Admin Portal" />
       <main
         style={MAIN_CONTENT}
         className={`${MAIN_CONTENT_CLASS} one-eyrie-settings-page`}

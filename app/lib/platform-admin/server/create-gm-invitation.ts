@@ -24,6 +24,18 @@ export type CreateAdministratorInvitationInput = {
   lastName: string;
   role: AdministratorInviteRole;
   jobTitle: string;
+  /**
+   * Organization Administration entitlement to grant on acceptance. Only honored
+   * when the caller is authorized to manage it (Platform Admin). Customer-facing
+   * callers never set this — it defaults to false.
+   */
+  orgAdminPortalAccess: boolean;
+};
+
+/** Options controlling privileged, One Eyrie-only fields during invite creation. */
+export type CreateAdministratorInvitationOptions = {
+  /** When false (default), the Organization Administration entitlement is ignored. */
+  allowOrgAdminEntitlement?: boolean;
 };
 
 /** Operational job title fallback when the inviter leaves the field blank. */
@@ -44,6 +56,22 @@ async function supportsAssignedPropertyIdsColumn(
     .limit(1);
   assignedPropertyIdsColumnSupported = !error;
   return assignedPropertyIdsColumnSupported;
+}
+
+let orgAdminAccessColumnSupported: boolean | null = null;
+
+async function supportsOrgAdminAccessColumn(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  if (orgAdminAccessColumnSupported != null) {
+    return orgAdminAccessColumnSupported;
+  }
+  const { error } = await supabase
+    .from("organization_invitations")
+    .select("org_admin_portal_access")
+    .limit(1);
+  orgAdminAccessColumnSupported = !error;
+  return orgAdminAccessColumnSupported;
 }
 
 function normalizeEmail(email: string): string {
@@ -75,7 +103,8 @@ function isValidEmail(email: string): boolean {
 }
 
 function parseCreateAdministratorInvitationInput(
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  options?: CreateAdministratorInvitationOptions
 ): CreateAdministratorInvitationInput {
   const fromArray = normalizePropertyIdList(body.propertyIds ?? body.property_ids);
   const single = Number.parseInt(String(body.propertyId ?? body.property_id ?? ""), 10);
@@ -110,7 +139,21 @@ function parseCreateAdministratorInvitationInput(
     throw new PlatformAdminRequestError(400, "Last name is required");
   }
 
-  return { propertyIds, email, firstName, lastName, role, jobTitle };
+  // Organization Administration is a One Eyrie-only entitlement. Only honor it
+  // when the caller is authorized; otherwise it is ignored and defaults to false.
+  const orgAdminPortalAccess = options?.allowOrgAdminEntitlement
+    ? Boolean(body.orgAdminPortalAccess ?? body.org_admin_portal_access ?? false)
+    : false;
+
+  return {
+    propertyIds,
+    email,
+    firstName,
+    lastName,
+    role,
+    jobTitle,
+    orgAdminPortalAccess,
+  };
 }
 
 type InvitationSelectRow = {
@@ -130,6 +173,7 @@ type InvitationSelectRow = {
   created_at: string;
   accepted_at: string | null;
   assigned_property_ids?: number[] | null;
+  org_admin_portal_access?: boolean | null;
   properties?: { name?: string } | null;
 };
 
@@ -163,9 +207,14 @@ export async function fetchOrganizationInvitations(
   organizationId: number
 ): Promise<AdminOrganizationInvitation[]> {
   const includeAssigned = await supportsAssignedPropertyIdsColumn(supabase);
-  const select = includeAssigned
-    ? `${INVITATION_SELECT_BASE}, assigned_property_ids`
-    : INVITATION_SELECT_BASE;
+  const includeOrgAdminAccess = await supportsOrgAdminAccessColumn(supabase);
+  const select = [
+    INVITATION_SELECT_BASE,
+    includeAssigned ? "assigned_property_ids" : null,
+    includeOrgAdminAccess ? "org_admin_portal_access" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const { data, error } = await supabase
     .from("organization_invitations")
@@ -202,6 +251,7 @@ export async function fetchOrganizationInvitations(
   );
 
   const activeByUserId = new Map<string, boolean>();
+  const orgAdminAccessByUserId = new Map<string, boolean>();
   const propertyIdsByUserId = new Map<string, number[]>();
   const modulePermissionsByUserId = new Map<string, Record<string, boolean>>();
   const pendingMetadataByUserId = new Map<string, number[]>();
@@ -256,17 +306,28 @@ export async function fetchOrganizationInvitations(
   }
 
   if (acceptedAuthUserIds.length > 0) {
+    const membershipSelect = includeOrgAdminAccess
+      ? "user_id, active, org_admin_portal_access"
+      : "user_id, active";
     const { data: memberships, error: membershipError } = await supabase
       .from("organization_users")
-      .select("user_id, active")
+      .select(membershipSelect)
       .eq("organization_id", organizationId)
       .in("user_id", acceptedAuthUserIds);
 
     if (membershipError) {
       throw new Error(membershipError.message);
     }
-    for (const membership of memberships ?? []) {
-      activeByUserId.set(String(membership.user_id), Boolean(membership.active));
+    const membershipRows = (memberships ?? []) as unknown as Record<
+      string,
+      unknown
+    >[];
+    for (const row of membershipRows) {
+      activeByUserId.set(String(row.user_id), Boolean(row.active));
+      orgAdminAccessByUserId.set(
+        String(row.user_id),
+        Boolean(row.org_admin_portal_access)
+      );
     }
 
     const { data: orgProperties, error: orgPropertiesError } = await supabase
@@ -358,6 +419,12 @@ export async function fetchOrganizationInvitations(
         ? activeByUserId.get(authUserId) ?? true
         : null;
 
+    const orgAdminPortalAccess =
+      row.status === "accepted" && authUserId
+        ? orgAdminAccessByUserId.get(authUserId) ??
+          Boolean(row.org_admin_portal_access)
+        : Boolean(row.org_admin_portal_access);
+
     let assignedPropertyIds: number[];
     if (row.status === "accepted" && authUserId) {
       assignedPropertyIds =
@@ -385,6 +452,7 @@ export async function fetchOrganizationInvitations(
       propertyRole,
       roleLabel: administratorRoleLabel({ isPrimary, orgRole }),
       scopeLabel: administratorScopeLabel(orgRole, assignedPropertyIds.length),
+      orgAdminPortalAccess,
       assignedPropertyIds,
       modulePermissions:
         row.status === "accepted" && authUserId
@@ -493,9 +561,10 @@ export async function createAdministratorInvitation(
   supabase: SupabaseClient,
   actorUserId: string,
   organizationId: number,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  options?: CreateAdministratorInvitationOptions
 ): Promise<AdminOrganizationInvitation> {
-  const input = parseCreateAdministratorInvitationInput(body);
+  const input = parseCreateAdministratorInvitationInput(body, options);
 
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
@@ -595,6 +664,7 @@ export async function createAdministratorInvitation(
   ).toISOString();
 
   const includeAssigned = await supportsAssignedPropertyIdsColumn(supabase);
+  const includeOrgAdminAccess = await supportsOrgAdminAccessColumn(supabase);
   const insertPayload: Record<string, unknown> = {
     organization_id: organizationId,
     property_id: homePropertyId,
@@ -611,6 +681,9 @@ export async function createAdministratorInvitation(
   };
   if (includeAssigned) {
     insertPayload.assigned_property_ids = propertyIds;
+  }
+  if (includeOrgAdminAccess) {
+    insertPayload.org_admin_portal_access = input.orgAdminPortalAccess;
   }
 
   const { data: invitation, error: insertError } = await supabase
@@ -778,6 +851,7 @@ export async function createAdministratorInvitation(
       propertyRole,
       jobTitle,
       isPrimary,
+      orgAdminPortalAccess: input.orgAdminPortalAccess,
       delivery: "resend",
     },
   });

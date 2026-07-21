@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "@/app/lib/tenant/server/authenticate-request";
-import { isOrgWideRole } from "@/app/lib/platform-admin/roles";
+import { resolveOrgAdminMembership } from "@/app/lib/org-admin/server/org-admin-entitlement";
 
 /**
  * Customer Organization Administration guard.
  *
  * Authorizes a request for the customer-facing portal (/settings/organization).
- * Access requires an ACTIVE org-wide membership (Primary Owner `org_owner` OR
- * Organization Admin `org_admin`) in the TARGET organization. Platform admin
- * status is neither required nor consulted here — this is intentionally the
- * customer authorization layer, kept separate from `/api/admin/*`.
+ * Access requires the explicit `org_admin_portal_access` entitlement on an
+ * ACTIVE membership in the TARGET organization — NOT merely an org-wide role.
+ * Platform admin status is neither required nor consulted here; this is
+ * intentionally the customer authorization layer, kept separate from
+ * `/api/admin/*`.
+ *
+ * The guard also returns the caller's Access Scope (orgWide + assignedPropertyIds)
+ * so routes can limit selected-properties administrators to their assigned hotels.
  *
  * This never allows provisioning (create/delete org or property), suspension,
  * module toggles, permanent Auth deletion, or ownership transfer — those remain
@@ -32,8 +36,12 @@ export type OrganizationAdminContext = {
   user: User;
   supabase: SupabaseClient;
   organizationId: number;
-  /** Org-wide role held by the caller: "org_owner" or "org_admin". */
+  /** Internal role held by the caller (org_owner / org_admin / org_member). */
   orgRole: string;
+  /** True when the caller administers every current + future property. */
+  orgWide: boolean;
+  /** Active property ids the caller may reach (empty + orgWide = all). */
+  assignedPropertyIds: number[];
 };
 
 function getServiceClient(): SupabaseClient {
@@ -70,19 +78,13 @@ export async function resolveOrganizationAdminRequest(
 
   const supabase = getServiceClient();
 
-  const { data, error } = await supabase
-    .from("organization_users")
-    .select("role, active")
-    .eq("user_id", user.id)
-    .eq("organization_id", organizationId)
-    .eq("active", true)
-    .maybeSingle();
+  const membership = await resolveOrgAdminMembership(
+    supabase,
+    user.id,
+    organizationId
+  );
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!data || !isOrgWideRole(data.role)) {
+  if (!membership) {
     throw new OrganizationAdminRequestError(
       403,
       "Forbidden — organization administrator access required"
@@ -93,7 +95,9 @@ export async function resolveOrganizationAdminRequest(
     user,
     supabase,
     organizationId,
-    orgRole: data.role as string,
+    orgRole: membership.orgRole,
+    orgWide: membership.orgWide,
+    assignedPropertyIds: membership.assignedPropertyIds,
   };
 }
 
@@ -129,19 +133,22 @@ export async function resolveOrganizationAdminRequestForProperty(
   }
 
   const organizationId = property.organization_id as number;
-  const { data: membership, error: membershipError } = await supabase
-    .from("organization_users")
-    .select("role, active")
-    .eq("user_id", user.id)
-    .eq("organization_id", organizationId)
-    .eq("active", true)
-    .maybeSingle();
+  const membership = await resolveOrgAdminMembership(
+    supabase,
+    user.id,
+    organizationId
+  );
 
-  if (membershipError) {
-    throw new Error(membershipError.message);
-  }
-  if (!membership || !isOrgWideRole(membership.role)) {
+  if (!membership) {
     // Do not disclose existence of properties in other organizations.
+    throw new OrganizationAdminRequestError(404, "Property not found");
+  }
+
+  // Selected-properties administrators may only reach their assigned hotels.
+  if (
+    !membership.orgWide &&
+    !membership.assignedPropertyIds.includes(propertyId)
+  ) {
     throw new OrganizationAdminRequestError(404, "Property not found");
   }
 
@@ -149,7 +156,9 @@ export async function resolveOrganizationAdminRequestForProperty(
     user,
     supabase,
     organizationId,
-    orgRole: membership.role as string,
+    orgRole: membership.orgRole,
+    orgWide: membership.orgWide,
+    assignedPropertyIds: membership.assignedPropertyIds,
     propertyId,
   };
 }
@@ -174,6 +183,63 @@ export async function assertPropertyInOrganization(
   }
   if (!data || data.organization_id !== organizationId) {
     throw new OrganizationAdminRequestError(404, "Property not found");
+  }
+}
+
+/**
+ * Ensures a selected-properties administrator may act on a specific invitation.
+ * Org-wide callers pass through. Scoped callers may only manage invitations that
+ * belong to one of their assigned properties, and never org-wide / Primary Owner
+ * leadership records (those sit above their remit). No-ops for org-wide callers.
+ */
+export async function assertInvitationWithinScope(
+  context: OrganizationAdminContext,
+  invitationId: string
+): Promise<void> {
+  if (context.orgWide) {
+    return;
+  }
+
+  const { data, error } = await context.supabase
+    .from("organization_invitations")
+    .select("id, organization_id, property_id, org_role, is_primary")
+    .eq("id", invitationId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data || Number(data.organization_id) !== context.organizationId) {
+    throw new OrganizationAdminRequestError(404, "Administrator not found");
+  }
+
+  const isOrgLevel =
+    Boolean(data.is_primary) ||
+    ["org_owner", "org_admin"].includes(String(data.org_role ?? ""));
+  const propertyId = data.property_id == null ? null : Number(data.property_id);
+
+  if (
+    isOrgLevel ||
+    propertyId == null ||
+    !context.assignedPropertyIds.includes(propertyId)
+  ) {
+    throw new OrganizationAdminRequestError(404, "Administrator not found");
+  }
+}
+
+/**
+ * Rejects customer attempts to set the One Eyrie-only Organization Administration
+ * entitlement, even if manually injected into the request payload. This is a hard
+ * server-side boundary — never rely on the client hiding the control.
+ */
+export function rejectOrgAdminEntitlementField(
+  body: Record<string, unknown>
+): void {
+  if ("orgAdminPortalAccess" in body || "org_admin_portal_access" in body) {
+    throw new OrganizationAdminRequestError(
+      403,
+      "Organization Administration access is managed by One Eyrie and cannot be changed here"
+    );
   }
 }
 

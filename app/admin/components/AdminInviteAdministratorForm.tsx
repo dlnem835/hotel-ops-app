@@ -42,9 +42,15 @@ export default function AdminInviteAdministratorForm({
   onCancel,
   onSubmittingChange,
 }: AdminInviteAdministratorFormProps) {
-  const { basePath } = useAdministrationApi();
+  const { basePath, capabilities } = useAdministrationApi();
   const isPropertyScope = scope === "property";
   const fieldListId = useId();
+  // Organization Administration is a One Eyrie-only entitlement. It is shown only
+  // in the Platform Admin portal (capabilities === null) or when a capability set
+  // explicitly allows it. Customers never see or set it.
+  const canManageEntitlement = capabilities
+    ? capabilities.canManageOrgAdminEntitlement
+    : true;
 
   const hasPrimary = organization.invitations.some(
     (invitation) =>
@@ -70,6 +76,7 @@ export default function AdminInviteAdministratorForm({
   const [jobTitle, setJobTitle] = useState(
     isPropertyScope ? "General Manager" : ""
   );
+  const [orgAdminPortalAccess, setOrgAdminPortalAccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -143,6 +150,7 @@ export default function AdminInviteAdministratorForm({
           lastName: lastName.trim(),
           email: email.trim(),
           jobTitle: jobTitle.trim(),
+          ...(canManageEntitlement ? { orgAdminPortalAccess } : {}),
         }),
       }
     );
@@ -163,6 +171,7 @@ export default function AdminInviteAdministratorForm({
     setLastName("");
     setEmail("");
     setJobTitle(isPropertyScope ? "General Manager" : "");
+    setOrgAdminPortalAccess(false);
     if (!isPropertyScope && !isEntireOrganization) {
       setSelectedPropertyIds([]);
     }
@@ -188,9 +197,9 @@ export default function AdminInviteAdministratorForm({
       ) : (
         <p className="admin-portal__muted">
           {isPropertyScope
-            ? "Invite leadership assigned only to this hotel. Authorization remains Property Administrator."
+            ? "Invite leadership assigned only to this hotel."
             : hasPrimary
-              ? "Job title is descriptive. Access Scope controls hotel reach. Authorization remains Organization Administrator."
+              ? "Job title is descriptive. Access Scope controls which hotels they can reach."
               : "The first leader becomes the Primary Owner for this organization."}
         </p>
       )}
@@ -200,34 +209,6 @@ export default function AdminInviteAdministratorForm({
       ) : null}
 
       <form className="admin-portal__form" onSubmit={(event) => void handleSubmit(event)}>
-        {isPropertyScope ? (
-          <div className="admin-portal__field">
-            <span>Authorization</span>
-            <p className="admin-portal__static-value">Property Administrator</p>
-            <span className="admin-portal__muted">
-              Internal authorization for this hotel. Job title below is the visible
-              leadership title, not the authorization role.
-            </span>
-          </div>
-        ) : hasPrimary ? (
-          <div className="admin-portal__field">
-            <span>Authorization</span>
-            <p className="admin-portal__static-value">Organization Administrator</p>
-            <span className="admin-portal__muted">
-              Internal authorization for corporate leadership. Job title is
-              descriptive only and is not the authorization role.
-            </span>
-          </div>
-        ) : (
-          <div className="admin-portal__field">
-            <span>Authorization</span>
-            <p className="admin-portal__static-value">Primary Owner</p>
-            <span className="admin-portal__muted">
-              Assigned automatically to the first leader for this organization.
-            </span>
-          </div>
-        )}
-
         {isPropertyScope ? (
           <div className="admin-portal__field">
             <span>Access Scope</span>
@@ -392,10 +373,33 @@ export default function AdminInviteAdministratorForm({
           </datalist>
           <span className="admin-portal__muted">
             {isPropertyScope
-              ? "Visible leadership title for this hotel (defaults to General Manager). Not the authorization role."
-              : "Descriptive title such as Corporate Administrator, Regional Director, or Area Manager. Not the authorization role."}
+              ? "Visible leadership title for this hotel (defaults to General Manager)."
+              : "Descriptive title such as Corporate Administrator, Regional Director, or Area Manager."}
           </span>
         </label>
+
+        {canManageEntitlement ? (
+          <fieldset className="admin-portal__field">
+            <legend>Admin Portal</legend>
+            <label className="admin-portal__checkbox-field">
+              <input
+                type="checkbox"
+                checked={orgAdminPortalAccess}
+                onChange={(event) => setOrgAdminPortalAccess(event.target.checked)}
+                disabled={submitting}
+              />
+              <span>
+                <strong>Grant Admin Portal access</strong>
+                <br />
+                <span className="admin-portal__muted">
+                  One Eyrie-controlled. Adds the Admin Portal to this user&apos;s
+                  navigation (/admin-portal) so they can administer their
+                  organization. Independent of Access Scope.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+        ) : null}
 
         <div className="admin-portal__form-actions">
           {onCancel ? (

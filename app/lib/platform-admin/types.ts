@@ -77,6 +77,11 @@ export type AdminOrganizationInvitation = {
   propertyRole: string;
   roleLabel: string;
   scopeLabel: string;
+  /**
+   * Organization Administration entitlement (One Eyrie-controlled): may open the
+   * customer /settings/organization portal. Independent of role and Access Scope.
+   */
+  orgAdminPortalAccess: boolean;
   /** Active property assignments for accepted admins (home for pending). */
   assignedPropertyIds: number[];
   /** Module permissions for accepted admins; null when not yet accepted. */

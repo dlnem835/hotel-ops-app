@@ -46,11 +46,13 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const body = (await request.json()) as Record<string, unknown>;
+    // Platform Admins may set the One Eyrie-only Organization Administration entitlement.
     const invitation = await createAdministratorInvitation(
       supabase,
       user.id,
       organizationId,
-      body
+      body,
+      { allowOrgAdminEntitlement: true }
     );
 
     return NextResponse.json(invitation, { status: 201 });

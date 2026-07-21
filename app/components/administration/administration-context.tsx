@@ -36,6 +36,11 @@ export type AdministrationCapabilities = {
    * status are always platform-only regardless of this flag. One Eyrie only.
    */
   canEditLegalIdentity: boolean;
+  /**
+   * Grant/revoke the Organization Administration entitlement (the checkbox in
+   * invite + edit flows). One Eyrie only — customers must never see or set it.
+   */
+  canManageOrgAdminEntitlement: boolean;
 };
 
 export type AdministrationApiValue = {
@@ -57,6 +62,7 @@ export const PLATFORM_OWNER_CAPABILITIES: AdministrationCapabilities = {
   canPermanentlyDeleteAuth: true,
   canDismissRevoked: true,
   canEditLegalIdentity: true,
+  canManageOrgAdminEntitlement: true,
 };
 
 /** No privileged actions (safe default). */
@@ -67,6 +73,7 @@ export const NO_ADMINISTRATION_CAPABILITIES: AdministrationCapabilities = {
   canPermanentlyDeleteAuth: false,
   canDismissRevoked: false,
   canEditLegalIdentity: false,
+  canManageOrgAdminEntitlement: false,
 };
 
 /**
@@ -81,6 +88,7 @@ export const ORGANIZATION_ADMIN_CAPABILITIES: AdministrationCapabilities = {
   canPermanentlyDeleteAuth: false,
   canDismissRevoked: false,
   canEditLegalIdentity: false,
+  canManageOrgAdminEntitlement: false,
 };
 
 const DEFAULT_ADMINISTRATION_API: AdministrationApiValue = {

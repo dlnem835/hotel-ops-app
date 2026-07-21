@@ -10,6 +10,7 @@ import {
 } from "react";
 import { fetchTeamMemberAccess } from "@/app/lib/current-user-role";
 import { fetchAccountSetupState } from "@/app/lib/account-setup/account-setup-client";
+import { fetchOrganizationAdministrationAccess } from "@/app/lib/org-admin/org-admin-access-client";
 import {
   getDesktopNavItemsForPermissions,
   getMobileModulesForPermissions,
@@ -25,6 +26,8 @@ type RoleAccessContextValue = {
   loading: boolean;
   /** null while unknown; true/false once resolved for the current session. */
   accountSetupComplete: boolean | null;
+  /** True when the user holds the Organization Administration entitlement. */
+  organizationAdministration: boolean;
   desktopNavItems: ReturnType<typeof getDesktopNavItemsForPermissions>;
   mobileModules: MobileModuleKey[];
 };
@@ -34,6 +37,7 @@ const RoleAccessContext = createContext<RoleAccessContextValue>({
   permissions: null,
   loading: true,
   accountSetupComplete: null,
+  organizationAdministration: false,
   desktopNavItems: [],
   mobileModules: [],
 });
@@ -48,20 +52,24 @@ export default function RoleAccessProvider({ children }: { children: ReactNode }
   const [accountSetupComplete, setAccountSetupComplete] = useState<boolean | null>(
     null
   );
+  const [organizationAdministration, setOrganizationAdministration] =
+    useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadAccess() {
-      const [nextAccess, setupState] = await Promise.all([
+      const [nextAccess, setupState, orgAdminAccess] = await Promise.all([
         fetchTeamMemberAccess(),
         fetchAccountSetupState(),
+        fetchOrganizationAdministrationAccess(),
       ]);
       if (!mounted) return;
       setAccess(nextAccess);
       setAccountSetupComplete(
         setupState ? setupState.accountSetupComplete : null
       );
+      setOrganizationAdministration(orgAdminAccess);
       setLoading(false);
     }
 
@@ -71,6 +79,7 @@ export default function RoleAccessProvider({ children }: { children: ReactNode }
       if (!session) {
         setAccess(null);
         setAccountSetupComplete(null);
+        setOrganizationAdministration(false);
         setLoading(false);
         return;
       }
@@ -90,10 +99,11 @@ export default function RoleAccessProvider({ children }: { children: ReactNode }
       permissions,
       loading,
       accountSetupComplete,
+      organizationAdministration,
       desktopNavItems: permissions ? getDesktopNavItemsForPermissions(permissions) : [],
       mobileModules: permissions ? getMobileModulesForPermissions(permissions) : [],
     };
-  }, [access, loading, accountSetupComplete]);
+  }, [access, loading, accountSetupComplete, organizationAdministration]);
 
   return (
     <RoleAccessContext.Provider value={value}>{children}</RoleAccessContext.Provider>

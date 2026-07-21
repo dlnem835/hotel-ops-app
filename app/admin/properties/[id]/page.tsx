@@ -126,6 +126,7 @@ export default function AdminPropertyDetailPage() {
           propertyRole: "property_admin",
           roleLabel: "Primary Owner",
           scopeLabel: "Entire organization",
+          orgAdminPortalAccess: true,
           assignedPropertyIds: [],
           modulePermissions: null,
           active: true,

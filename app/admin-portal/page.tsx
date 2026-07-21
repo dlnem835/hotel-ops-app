@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/app/supabaseClient";
-import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { orgAdminFetch } from "@/app/lib/org-admin/org-admin-fetch";
-import { isOrgWideRole, isOrganizationLevelAdministrator } from "@/app/lib/platform-admin/roles";
+import { isOrganizationLevelAdministrator } from "@/app/lib/platform-admin/roles";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
-import type { TenantContextResponse } from "@/app/lib/tenant/types";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import {
@@ -21,7 +19,6 @@ import {
   ORGANIZATION_ADMIN_CAPABILITIES,
   AdminAdministratorsTable,
   AdminInviteLeaderModal,
-  AdminEditOrganizationModal,
   AdminStatusBadge,
 } from "@/app/components/administration";
 import "@/app/admin/admin.css";
@@ -32,17 +29,15 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
-export default function OrganizationAdminPage() {
+export default function AdminPortalPage() {
   const [organization, setOrganization] = useState<AdminOrganizationDetail | null>(
     null
   );
-  const [orgRole, setOrgRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notAuthorized, setNotAuthorized] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [organizationId, setOrganizationId] = useState<number | null>(null);
 
@@ -84,27 +79,30 @@ export default function OrganizationAdminPage() {
         return;
       }
 
-      const contextResponse = await tenantFetch("/api/tenant/context");
+      // Access to the Admin Portal is governed by the explicit Admin Portal
+      // entitlement (One Eyrie-controlled), not by org role.
+      const accessResponse = await orgAdminFetch("/api/org-admin/access");
       if (!mounted) return;
 
-      if (!contextResponse.ok) {
+      if (!accessResponse.ok) {
         setError("Unable to load your organization.");
         setLoading(false);
         return;
       }
 
-      const context = (await contextResponse.json()) as TenantContextResponse;
-      const role = context.organization?.role ?? null;
-      setOrgRole(role);
+      const access = (await accessResponse.json()) as {
+        hasAccess?: boolean;
+        organizationId?: number | null;
+      };
 
-      if (!role || !isOrgWideRole(role)) {
+      if (!access.hasAccess || access.organizationId == null) {
         setNotAuthorized(true);
         setLoading(false);
         return;
       }
 
-      setOrganizationId(context.organization.id);
-      await loadOrganizationDetail(context.organization.id);
+      setOrganizationId(access.organizationId);
+      await loadOrganizationDetail(access.organizationId);
     }
 
     void init();
@@ -134,15 +132,11 @@ export default function OrganizationAdminPage() {
     if (notAuthorized) {
       return (
         <div className="admin-portal__card">
-          <h2 className="admin-portal__section-title">
-            Organization administration
-          </h2>
+          <h2 className="admin-portal__section-title">Admin Portal</h2>
           <p className="admin-portal__muted">
-            Organization administration is available to Primary Owners and
-            Organization Administrators. Your current role
-            {orgRole ? ` (${orgRole})` : ""} does not include organization-level
-            management. Contact your organization&apos;s Primary Owner if you need
-            access.
+            The Admin Portal is not enabled for your account. This access is
+            managed by One Eyrie. Contact your One Eyrie administrator if you need
+            it.
           </p>
           <Link href="/settings" className="admin-portal__link">
             ← Back to Settings
@@ -179,13 +173,6 @@ export default function OrganizationAdminPage() {
           <section className="admin-portal__card">
             <div className="admin-portal__section-header">
               <h2 className="admin-portal__section-title">{organization.name}</h2>
-              <button
-                type="button"
-                className="admin-portal__button admin-portal__button--primary"
-                onClick={() => setEditOpen(true)}
-              >
-                Edit Organization
-              </button>
             </div>
             <dl className="admin-portal__meta-grid">
               <div className="admin-portal__meta-item">
@@ -332,7 +319,7 @@ export default function OrganizationAdminPage() {
                         <td>{property.timezone}</td>
                         <td>
                           <Link
-                            href={`/settings/organization/properties/${property.id}`}
+                            href={`/admin-portal/properties/${property.id}`}
                             className="admin-portal__link"
                           >
                             Manage leadership →
@@ -345,22 +332,6 @@ export default function OrganizationAdminPage() {
               </div>
             )}
           </section>
-
-          <AdminEditOrganizationModal
-            open={editOpen}
-            organization={organization}
-            onClose={() => setEditOpen(false)}
-            onSaved={(updated, message) => {
-              setOrganization(updated);
-              setEditOpen(false);
-              setActionError(null);
-              setActionSuccess(message);
-            }}
-            onError={(message) => {
-              setActionSuccess(null);
-              setActionError(message);
-            }}
-          />
 
           <AdminInviteLeaderModal
             open={inviteOpen}
@@ -387,13 +358,13 @@ export default function OrganizationAdminPage() {
 
   return (
     <div style={APP_SHELL} className={APP_SHELL_CLASS}>
-      <OneEyrieSidebar active="Settings" />
+      <OneEyrieSidebar active="Admin Portal" />
       <main
         style={MAIN_CONTENT}
         className={`${MAIN_CONTENT_CLASS} one-eyrie-settings-page`}
       >
         <OneEyriePageHeader
-          title="Organization"
+          title="Admin Portal"
           subtitle="Manage your organization, leadership, and property teams"
         />
         {renderBody()}

@@ -2,9 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
-import { MODULE_PERMISSION_LABELS, type ModulePermissionKey } from "@/app/lib/role-permissions";
 import type { AdminOrganizationModule } from "@/app/lib/platform-admin/types";
-import { ORGANIZATION_MODULE_KEYS } from "@/app/lib/platform-admin/organization-module-keys";
+import {
+  ORGANIZATION_MODULE_KEYS,
+  ORGANIZATION_MODULE_LABELS,
+  type OrganizationModuleKey,
+} from "@/app/lib/platform-admin/organization-module-keys";
 
 type AdminModuleControlsProps = {
   organizationId: number;
@@ -14,7 +17,7 @@ type AdminModuleControlsProps = {
 };
 
 function buildModuleState(modules: AdminOrganizationModule[]) {
-  const state = {} as Record<ModulePermissionKey, boolean>;
+  const state = {} as Record<OrganizationModuleKey, boolean>;
 
   for (const moduleKey of ORGANIZATION_MODULE_KEYS) {
     const row = modules.find((module) => module.moduleKey === moduleKey);
@@ -89,7 +92,7 @@ export default function AdminModuleControls({
                   }))
                 }
               />
-              <span>{MODULE_PERMISSION_LABELS[moduleKey]}</span>
+              <span>{ORGANIZATION_MODULE_LABELS[moduleKey]}</span>
             </label>
           ))}
         </div>

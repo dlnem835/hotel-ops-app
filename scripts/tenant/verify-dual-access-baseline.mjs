@@ -8,8 +8,8 @@
  *                         (org_owner Primary Owner OR org_admin Organization Admin)
  *   3. Property access  — org-wide expansion still yields every active property
  *
- * Note: the customer Organization Administration portal (/settings/organization)
- * admits BOTH org_owner and org_admin. This account (dlnem360) is a BBL
+ * Note: the customer Admin Portal (/admin-portal) is gated by the explicit
+ * Admin Portal entitlement (org_admin_portal_access). This account (dlnem360) is a BBL
  * org_admin; BBL's Primary Owner is a separate account. Both layers are valid.
  *
  * This script makes NO writes. It only reports the current state so we can

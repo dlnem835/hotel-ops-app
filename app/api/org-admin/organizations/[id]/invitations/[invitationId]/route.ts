@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import {
+  assertInvitationWithinScope,
   organizationAdminErrorResponse,
   OrganizationAdminRequestError,
+  rejectOrgAdminEntitlementField,
   resolveOrganizationAdminRequest,
 } from "@/app/lib/org-admin/server/resolve-organization-admin-request";
 import { manageAdministratorInvitation } from "@/app/lib/platform-admin/server/manage-administrator-invitation";
@@ -34,10 +36,13 @@ export async function POST(request: Request, context: RouteContext) {
       throw new OrganizationAdminRequestError(400, "Invalid invitation id");
     }
 
-    const { supabase, user } = await resolveOrganizationAdminRequest(
+    const orgAdminContext = await resolveOrganizationAdminRequest(
       request,
       organizationId
     );
+    const { supabase, user } = orgAdminContext;
+    // Selected-properties admins may only manage invitations in their scope.
+    await assertInvitationWithinScope(orgAdminContext, invitationId);
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const action = String(body.action ?? "");
@@ -103,13 +108,20 @@ export async function PATCH(request: Request, context: RouteContext) {
       throw new OrganizationAdminRequestError(400, "Invalid invitation id");
     }
 
-    const { supabase, user } = await resolveOrganizationAdminRequest(
+    const orgAdminContext = await resolveOrganizationAdminRequest(
       request,
       organizationId
     );
+    const { supabase, user } = orgAdminContext;
+    // Selected-properties admins may only edit invitations in their scope.
+    await assertInvitationWithinScope(orgAdminContext, invitationId);
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    // Customers may never change the One Eyrie-only Organization Administration entitlement.
+    rejectOrgAdminEntitlementField(body);
     const input = parseUpdateAdministratorInput(body);
+    // updateAdministrator only mutates the entitlement when explicitly passed the
+    // orgAdminPortalAccess argument, which the customer path never provides.
     const invitation = await updateAdministrator(
       supabase,
       user.id,

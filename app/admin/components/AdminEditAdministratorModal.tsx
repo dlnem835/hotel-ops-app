@@ -24,6 +24,7 @@ import {
   normalizeModulePermissions,
   type ModulePermissions,
 } from "@/app/lib/role-permissions";
+import { ADMIN_PORTAL_MODULE_KEY } from "@/app/lib/platform-admin/organization-module-keys";
 import AdminModalFrame from "./AdminModalFrame";
 import AdminPropertyMultiSelect from "./AdminPropertyMultiSelect";
 
@@ -92,9 +93,16 @@ export default function AdminEditAdministratorModal({
   onSaved,
   onError,
 }: AdminEditAdministratorModalProps) {
-  const { basePath } = useAdministrationApi();
+  const { basePath, capabilities } = useAdministrationApi();
+  const canManageEntitlement = capabilities
+    ? capabilities.canManageOrgAdminEntitlement
+    : true;
   const enabledModules = useMemo(
-    () => modules.filter((module) => module.enabled),
+    () =>
+      modules.filter(
+        (module) =>
+          module.enabled && module.moduleKey !== ADMIN_PORTAL_MODULE_KEY
+      ),
     [modules]
   );
 
@@ -108,6 +116,7 @@ export default function AdminEditAdministratorModal({
     createEmptyPermissions()
   );
   const [confirmReduction, setConfirmReduction] = useState(false);
+  const [orgAdminPortalAccess, setOrgAdminPortalAccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -116,6 +125,7 @@ export default function AdminEditAdministratorModal({
     setFirstName(invitation.firstName);
     setLastName(invitation.lastName);
     setJobTitle(invitation.jobTitle || "Administrator");
+    setOrgAdminPortalAccess(Boolean(invitation.orgAdminPortalAccess));
     setAccessScope(
       invitation.isPrimary
         ? "entire_organization"
@@ -170,7 +180,9 @@ export default function AdminEditAdministratorModal({
               ? invitation.assignedPropertyIds
               : [invitation.propertyId]),
           ].sort((a, b) => a - b)
-        ));
+        )) ||
+    (canManageEntitlement &&
+      orgAdminPortalAccess !== Boolean(invitation.orgAdminPortalAccess));
 
   const jobTitleSuggestions = isEntireOrganization
     ? ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS
@@ -230,6 +242,7 @@ export default function AdminEditAdministratorModal({
           propertyIds: payloadPropertyIds,
           modulePermissions: moduleState,
           confirmAccessReduction: needsReductionConfirm && confirmReduction,
+          ...(canManageEntitlement ? { orgAdminPortalAccess } : {}),
         }),
       }
     );
@@ -327,13 +340,9 @@ export default function AdminEditAdministratorModal({
         </section>
 
         <section className="admin-portal__edit-section">
-          <h4 className="admin-portal__edit-section-title">Authorization &amp; Access Scope</h4>
+          <h4 className="admin-portal__edit-section-title">Access Scope</h4>
           {isPrimary ? (
             <>
-              <div className="admin-portal__field">
-                <span>Authorization</span>
-                <p className="admin-portal__static-value">Primary Owner</p>
-              </div>
               <div className="admin-portal__field">
                 <span>Access Scope</span>
                 <p className="admin-portal__static-value">Entire Organization</p>
@@ -344,17 +353,6 @@ export default function AdminEditAdministratorModal({
             </>
           ) : (
             <>
-              <div className="admin-portal__field">
-                <span>Authorization</span>
-                <p className="admin-portal__static-value">
-                  {isEntireOrganization
-                    ? "Organization Administrator"
-                    : "Property Administrator"}
-                </p>
-                <span className="admin-portal__muted">
-                  Derived from Access Scope. Job title stays descriptive.
-                </span>
-              </div>
               <fieldset className="admin-portal__field">
                 <legend>Access Scope</legend>
                 <div className="admin-portal__checkbox-grid">
@@ -406,6 +404,29 @@ export default function AdminEditAdministratorModal({
             </>
           )}
         </section>
+
+        {canManageEntitlement ? (
+          <section className="admin-portal__edit-section">
+            <h4 className="admin-portal__edit-section-title">Admin Portal</h4>
+            <label className="admin-portal__checkbox-field">
+              <input
+                type="checkbox"
+                checked={orgAdminPortalAccess}
+                onChange={(event) => setOrgAdminPortalAccess(event.target.checked)}
+                disabled={submitting}
+              />
+              <span>
+                <strong>Grant Admin Portal access</strong>
+                <br />
+                <span className="admin-portal__muted">
+                  One Eyrie-controlled. Adds the Admin Portal to this user&apos;s
+                  navigation (/admin-portal). Unchecking removes the Admin Portal
+                  and its sidebar item. Property access is unchanged.
+                </span>
+              </span>
+            </label>
+          </section>
+        ) : null}
 
         <section className="admin-portal__edit-section">
           <h4 className="admin-portal__edit-section-title">Properties</h4>

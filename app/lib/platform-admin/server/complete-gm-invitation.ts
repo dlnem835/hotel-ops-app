@@ -169,6 +169,23 @@ export async function completeGmInvitationForUser(
     invitation.organization_id
   );
   const modulePermissions = resolveGmModulePermissions(enabledModuleKeys);
+
+  // Transfer the intended Organization Administration entitlement from the
+  // invitation to the accepted membership. Read in isolation so the column being
+  // absent (pre-migration) does not disturb the invitation lookup/fallback above.
+  let orgAdminAccessSupported = false;
+  let orgAdminPortalAccess = false;
+  {
+    const { data: accessRow, error: accessError } = await supabase
+      .from("organization_invitations")
+      .select("org_admin_portal_access")
+      .eq("id", invitation.id)
+      .maybeSingle();
+    if (!accessError) {
+      orgAdminAccessSupported = true;
+      orgAdminPortalAccess = Boolean(accessRow?.org_admin_portal_access);
+    }
+  }
   const assignedPropertyIds = resolveAssignedPropertyIds(invitation, user);
   const homePropertyId = assignedPropertyIds[0] ?? invitation.property_id;
   const timestamp = new Date().toISOString();
@@ -230,6 +247,9 @@ export async function completeGmInvitationForUser(
       user_id: user.id,
       role: invitation.org_role,
       active: true,
+      ...(orgAdminAccessSupported
+        ? { org_admin_portal_access: orgAdminPortalAccess }
+        : {}),
       updated_at: timestamp,
     },
     { onConflict: "organization_id,user_id" }

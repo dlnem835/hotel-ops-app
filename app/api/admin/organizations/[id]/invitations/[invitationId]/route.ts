@@ -137,12 +137,18 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const input = parseUpdateAdministratorInput(body);
+    // Platform Admins may set the One Eyrie-only Organization Administration entitlement.
+    const orgAdminPortalAccess =
+      "orgAdminPortalAccess" in body || "org_admin_portal_access" in body
+        ? Boolean(body.orgAdminPortalAccess ?? body.org_admin_portal_access)
+        : undefined;
     const invitation = await updateAdministrator(
       supabase,
       user.id,
       organizationId,
       invitationId,
-      input
+      input,
+      orgAdminPortalAccess
     );
 
     return NextResponse.json({ invitation });
