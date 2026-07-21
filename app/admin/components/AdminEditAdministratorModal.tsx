@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import { useAdministrationApi } from "@/app/components/administration/administration-context";
 import {
   ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
   PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS,
@@ -91,6 +92,7 @@ export default function AdminEditAdministratorModal({
   onSaved,
   onError,
 }: AdminEditAdministratorModalProps) {
+  const { basePath } = useAdministrationApi();
   const enabledModules = useMemo(
     () => modules.filter((module) => module.enabled),
     [modules]
@@ -216,7 +218,7 @@ export default function AdminEditAdministratorModal({
     onError("");
 
     const response = await adminFetch(
-      `/api/admin/organizations/${organizationId}/invitations/${invitation.id}`,
+      `${basePath}/organizations/${organizationId}/invitations/${invitation.id}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

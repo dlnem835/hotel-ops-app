@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "migrate:003": "node scripts/migrate-003.cjs",
-    "icons:generate": "node scripts/generate-one-eyrie-icons.mjs"
+    "icons:generate": "node scripts/generate-one-eyrie-icons.mjs",
+    "verify:dual-access": "node scripts/tenant/verify-dual-access-baseline.mjs",
+    "verify:portal-separation": "node scripts/tenant/verify-portal-separation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

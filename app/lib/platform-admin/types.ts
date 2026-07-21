@@ -98,7 +98,22 @@ export type AdminOrganizationLifecycle = {
   deleteBlockers: string[];
 };
 
-export type AdminOrganizationDetail = AdminOrganizationSummary & {
+/**
+ * Operational profile fields owned by the customer Organization Admin.
+ * Legal identity (legal_name, slug, id, status) is One Eyrie-controlled and lives
+ * outside this shape (legalName is included on the detail for display/edit gating).
+ */
+export type OrganizationOperationalProfile = {
+  contactEmail: string | null;
+  contactPhone: string | null;
+  businessAddress: string | null;
+  contactName: string | null;
+};
+
+export type AdminOrganizationDetail = AdminOrganizationSummary &
+  OrganizationOperationalProfile & {
+  /** One Eyrie-controlled legal/company name; null means "use display name". */
+  legalName: string | null;
   properties: AdminPropertySummary[];
   modules: AdminOrganizationModule[];
   onboarding: AdminOnboardingStatus;

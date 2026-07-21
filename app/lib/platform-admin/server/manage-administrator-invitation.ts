@@ -88,8 +88,27 @@ type RemoveMembershipSnapshot = {
   teamMembers: TeamMemberSnapshot[];
 };
 
+/**
+ * Which privileged invitation actions the calling actor may perform. Platform
+ * Admin callers pass `platformAdmin` (capabilities derived from platform_owner);
+ * Organization Admin callers pass an explicit `actor` capability set.
+ */
+export type AdministratorActionCapabilities = {
+  canRemove: boolean;
+  canChangeEmail: boolean;
+  canTransferOwnership: boolean;
+  canPermanentlyDeleteAuth: boolean;
+  canDismissRevoked: boolean;
+};
+
 export type ManageAdministratorInvitationOptions = {
-  platformAdmin: PlatformAdminRecord;
+  /** Platform Admin actor. When set, capabilities derive from platform_owner. */
+  platformAdmin?: PlatformAdminRecord;
+  /**
+   * Non-platform actor capabilities (e.g. customer Organization Admin). Only
+   * consulted when `platformAdmin` is not provided.
+   */
+  actor?: AdministratorActionCapabilities;
   confirmName?: string;
   /** Required for `change_email` — normalized before use. */
   newEmail?: string;
@@ -327,6 +346,57 @@ function assertPlatformOwner(platformAdmin: PlatformAdminRecord): void {
       "Forbidden — platform owner access required"
     );
   }
+}
+
+/**
+ * Resolves the effective privileged-action capabilities for the caller.
+ * Platform Admin: every capability requires platform_owner (unchanged behavior).
+ * Non-platform actor: use the explicitly supplied capability set.
+ */
+function resolveActionCapabilities(
+  options: ManageAdministratorInvitationOptions
+): AdministratorActionCapabilities {
+  if (options.platformAdmin) {
+    const owner = options.platformAdmin.role === "platform_owner";
+    return {
+      canRemove: owner,
+      canChangeEmail: owner,
+      canTransferOwnership: owner,
+      canPermanentlyDeleteAuth: owner,
+      canDismissRevoked: owner,
+    };
+  }
+  return (
+    options.actor ?? {
+      canRemove: false,
+      canChangeEmail: false,
+      canTransferOwnership: false,
+      canPermanentlyDeleteAuth: false,
+      canDismissRevoked: false,
+    }
+  );
+}
+
+function assertActionAllowed(allowed: boolean): void {
+  if (!allowed) {
+    throw new PlatformAdminRequestError(
+      403,
+      "Forbidden — insufficient permissions for this action"
+    );
+  }
+}
+
+/** Actions that pass through to platform-owner-only sub-workflows need a record. */
+function requirePlatformAdmin(
+  options: ManageAdministratorInvitationOptions
+): PlatformAdminRecord {
+  if (!options.platformAdmin) {
+    throw new PlatformAdminRequestError(
+      403,
+      "Forbidden — platform administrator access required"
+    );
+  }
+  return options.platformAdmin;
 }
 
 /**
@@ -1336,6 +1406,7 @@ export async function manageAdministratorInvitation(
   options: ManageAdministratorInvitationOptions
 ): Promise<ManageAdministratorInvitationResult> {
   const invitation = await loadInvitation(supabase, organizationId, invitationId);
+  const capabilities = resolveActionCapabilities(options);
   const timestamp = new Date().toISOString();
   let message: string | undefined;
   let email: string | undefined;
@@ -1441,7 +1512,7 @@ export async function manageAdministratorInvitation(
     }
 
     case "remove": {
-      assertPlatformOwner(options.platformAdmin);
+      assertActionAllowed(capabilities.canRemove);
       assertAccepted(invitation, "removed");
       assertNotPrimary(invitation, "removed");
       assertNotSelfTarget(invitation, actorUserId, "remove");
@@ -1486,9 +1557,9 @@ export async function manageAdministratorInvitation(
     }
 
     case "change_email": {
-      // Platform Owner only. Primary Owner protection does NOT apply — email
-      // changes are allowed for primary and non-primary administrators.
-      assertPlatformOwner(options.platformAdmin);
+      // Primary Owner protection does NOT apply — email changes are allowed for
+      // primary and non-primary administrators by an authorized actor.
+      assertActionAllowed(capabilities.canChangeEmail);
       if (
         invitation.status !== "accepted" &&
         invitation.status !== "pending" &&
@@ -1511,31 +1582,34 @@ export async function manageAdministratorInvitation(
     }
 
     case "permanently_delete_auth_account": {
+      assertActionAllowed(capabilities.canPermanentlyDeleteAuth);
       message = await permanentlyDeleteTestAuthAccount(
         supabase,
         actorUserId,
         organizationId,
         invitation,
-        options.platformAdmin,
+        requirePlatformAdmin(options),
         options.confirmEmail
       );
       break;
     }
 
     case "dismiss_revoked_invitation": {
+      assertActionAllowed(capabilities.canDismissRevoked);
       message = await dismissRevokedInvitation(
         supabase,
         actorUserId,
         organizationId,
         invitation,
-        options.platformAdmin,
+        requirePlatformAdmin(options),
         options.confirmEmail
       );
       break;
     }
 
     case "transfer_primary_ownership": {
-      assertPlatformOwner(options.platformAdmin);
+      assertActionAllowed(capabilities.canTransferOwnership);
+      const transferPlatformAdmin = requirePlatformAdmin(options);
       if (!invitation.is_primary || invitation.status !== "accepted") {
         throw new PlatformAdminRequestError(
           409,
@@ -1551,7 +1625,7 @@ export async function manageAdministratorInvitation(
       const transferResult = await transferPrimaryOwnership(
         supabase,
         actorUserId,
-        options.platformAdmin,
+        transferPlatformAdmin,
         organizationId,
         options.successorInvitationId,
         options.confirmPhrase

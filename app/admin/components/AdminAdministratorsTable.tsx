@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import {
+  NO_ADMINISTRATION_CAPABILITIES,
+  useAdministrationApi,
+  type AdministrationCapabilities,
+} from "@/app/components/administration/administration-context";
 import type {
   AdminOrganizationInvitation,
   AdminOrganizationModule,
@@ -87,25 +92,42 @@ export default function AdminAdministratorsTable({
   const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
   const [changeEmailSubmitting, setChangeEmailSubmitting] = useState(false);
   const [confirmValue, setConfirmValue] = useState("");
-  const [canUseOwnerActions, setCanUseOwnerActions] = useState(false);
+  const { basePath, capabilities: injectedCapabilities } = useAdministrationApi();
+  const [derivedCapabilities, setDerivedCapabilities] =
+    useState<AdministrationCapabilities>(NO_ADMINISTRATION_CAPABILITIES);
+  const capabilities = injectedCapabilities ?? derivedCapabilities;
   const [openMoreMenuId, setOpenMoreMenuId] = useState<string | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    // When capabilities are supplied by the portal (e.g. Organization Admin),
+    // trust them and skip the platform-only /api/admin/me probe.
+    if (injectedCapabilities) return;
+
     let mounted = true;
 
     async function loadAdminRole() {
       const response = await adminFetch("/api/admin/me");
       if (!mounted || !response.ok) return;
       const body = (await response.json()) as PlatformAdminMeResponse;
-      setCanUseOwnerActions(body.role === "platform_owner");
+      const owner = body.role === "platform_owner";
+      // Platform default: Platform Owner unlocks every privileged action;
+      // other platform admins keep the reduced set (edit / reset / disable).
+      setDerivedCapabilities({
+        canRemove: owner,
+        canChangeEmail: owner,
+        canTransferOwnership: owner,
+        canPermanentlyDeleteAuth: owner,
+        canDismissRevoked: owner,
+        canEditLegalIdentity: owner,
+      });
     }
 
     void loadAdminRole();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [injectedCapabilities]);
 
   useEffect(() => {
     if (!openMoreMenuId) return;
@@ -149,7 +171,7 @@ export default function AdminAdministratorsTable({
     onError("");
 
     const response = await adminFetch(
-      `/api/admin/organizations/${organizationId}/invitations/${invitation.id}`,
+      `${basePath}/organizations/${organizationId}/invitations/${invitation.id}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,7 +268,7 @@ export default function AdminAdministratorsTable({
             >
               {isDisabled ? "Enable" : "Disable"}
             </button>
-            {canUseOwnerActions ? (
+            {capabilities.canRemove ? (
               <button
                 type="button"
                 role="menuitem"
@@ -289,7 +311,7 @@ export default function AdminAdministratorsTable({
         >
           Send Password Reset
         </button>
-        {canUseOwnerActions ? (
+        {capabilities.canChangeEmail ? (
           <button
             type="button"
             className="admin-portal__button admin-portal__button--compact"
@@ -303,7 +325,7 @@ export default function AdminAdministratorsTable({
           </button>
         ) : null}
         {isPrimary ? (
-          canUseOwnerActions ? (
+          capabilities.canTransferOwnership ? (
             <div
               className="admin-portal__more-actions"
               ref={
@@ -376,7 +398,7 @@ export default function AdminAdministratorsTable({
           >
             Cancel Invite
           </button>
-          {canUseOwnerActions ? (
+          {capabilities.canChangeEmail ? (
             <button
               type="button"
               className="admin-portal__button admin-portal__button--compact"
@@ -399,7 +421,7 @@ export default function AdminAdministratorsTable({
 
     if (
       status === "revoked" &&
-      canUseOwnerActions &&
+      (capabilities.canDismissRevoked || capabilities.canPermanentlyDeleteAuth) &&
       invitation.authUserId &&
       !invitation.isPrimary
     ) {
@@ -427,32 +449,36 @@ export default function AdminAdministratorsTable({
             </button>
             {openMoreMenuId === invitation.id ? (
               <div className="admin-portal__more-actions-menu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="admin-portal__more-actions-item"
-                  disabled={busy}
-                  onClick={() => {
-                    setOpenMoreMenuId(null);
-                    setConfirmValue("");
-                    setDismissTarget(invitation);
-                  }}
-                >
-                  Dismiss revoked invitation
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="admin-portal__more-actions-item admin-portal__more-actions-item--danger"
-                  disabled={busy}
-                  onClick={() => {
-                    setOpenMoreMenuId(null);
-                    setConfirmValue("");
-                    setDeleteAuthTarget(invitation);
-                  }}
-                >
-                  Permanently Delete Test Account
-                </button>
+                {capabilities.canDismissRevoked ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="admin-portal__more-actions-item"
+                    disabled={busy}
+                    onClick={() => {
+                      setOpenMoreMenuId(null);
+                      setConfirmValue("");
+                      setDismissTarget(invitation);
+                    }}
+                  >
+                    Dismiss revoked invitation
+                  </button>
+                ) : null}
+                {capabilities.canPermanentlyDeleteAuth ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="admin-portal__more-actions-item admin-portal__more-actions-item--danger"
+                    disabled={busy}
+                    onClick={() => {
+                      setOpenMoreMenuId(null);
+                      setConfirmValue("");
+                      setDeleteAuthTarget(invitation);
+                    }}
+                  >
+                    Permanently Delete Test Account
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -570,7 +596,7 @@ export default function AdminAdministratorsTable({
         onConfirm={(newEmail) => {
           if (!changeEmailTarget || changeEmailSubmitting) return;
           const target = changeEmailTarget;
-          const requestUrl = `/api/admin/organizations/${organizationId}/invitations/${target.id}`;
+          const requestUrl = `${basePath}/organizations/${organizationId}/invitations/${target.id}`;
 
           void (async () => {
             setChangeEmailSubmitting(true);

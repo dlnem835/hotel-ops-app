@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import React, { useEffect, useMemo, useState } from "react";
+import { isOrgWideRole } from "@/app/lib/platform-admin/roles";
+import type { TenantContextResponse } from "@/app/lib/tenant/types";
 import { FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
@@ -99,6 +102,18 @@ export default function SettingsPage() {
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const [teamMembers, setTeamMembers] = useState<AnyRecord[]>([]);
+  const [orgRole, setOrgRole] = useState<string | null>(null);
+
+  async function fetchOrganizationRole() {
+    try {
+      const response = await tenantFetch("/api/tenant/context");
+      if (!response.ok) return;
+      const context = (await response.json()) as TenantContextResponse;
+      setOrgRole(context.organization?.role ?? null);
+    } catch {
+      // Non-fatal: the Organization card simply stays hidden.
+    }
+  }
 
   async function fetchTeamMembers() {
     const response = await tenantFetch("/api/team-members");
@@ -124,6 +139,7 @@ useEffect(() => {
     }
 
     fetchTeamMembers();
+    fetchOrganizationRole();
   }
 
   checkAuth();
@@ -728,6 +744,20 @@ async function saveItem() {
 
         {activeSection === "home" ? (
           <div style={settingsList}>
+            {isOrgWideRole(orgRole) ? (
+              <Link href="/settings/organization" style={settingsCard} className="one-eyrie-settings-card">
+                <div style={cardIcon}>
+                  <ShieldCheck size={26} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={cardTitle}>Organization</div>
+                  <div style={cardSubtitle}>
+                    Manage organization details, leadership, and property teams.
+                  </div>
+                </div>
+                <ChevronRight size={22} color={gold} />
+              </Link>
+            ) : null}
             {settingsCards.map((card) => (
               <button
                 key={card.id}

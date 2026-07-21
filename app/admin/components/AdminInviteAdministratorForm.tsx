@@ -2,6 +2,7 @@
 
 import { FormEvent, useId, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import { useAdministrationApi } from "@/app/components/administration/administration-context";
 import {
   ORGANIZATION_ADMIN_JOB_TITLE_SUGGESTIONS,
   PROPERTY_ADMIN_JOB_TITLE_SUGGESTIONS,
@@ -41,6 +42,7 @@ export default function AdminInviteAdministratorForm({
   onCancel,
   onSubmittingChange,
 }: AdminInviteAdministratorFormProps) {
+  const { basePath } = useAdministrationApi();
   const isPropertyScope = scope === "property";
   const fieldListId = useId();
 
@@ -129,7 +131,7 @@ export default function AdminInviteAdministratorForm({
     onError("");
 
     const response = await adminFetch(
-      `/api/admin/organizations/${organization.id}/invitations`,
+      `${basePath}/organizations/${organization.id}/invitations`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

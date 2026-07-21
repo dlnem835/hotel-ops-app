@@ -27,6 +27,17 @@ type OrganizationRow = {
   updated_at: string;
 };
 
+type OrganizationProfileRow = OrganizationRow & {
+  legal_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  business_address: string | null;
+  contact_name: string | null;
+};
+
+const ORGANIZATION_DETAIL_COLUMNS =
+  "id, name, slug, status, created_at, updated_at, legal_name, contact_email, contact_phone, business_address, contact_name";
+
 type PropertyRow = {
   id: number;
   organization_id: number;
@@ -134,7 +145,7 @@ export async function fetchAdminOrganizationDetail(
 ): Promise<AdminOrganizationDetail | null> {
   const { data: organization, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, status, created_at, updated_at")
+    .select(ORGANIZATION_DETAIL_COLUMNS)
     .eq("id", organizationId)
     .maybeSingle();
 
@@ -186,7 +197,7 @@ export async function fetchAdminOrganizationDetail(
     propertyIds
   );
 
-  const orgRow = organization as OrganizationRow;
+  const orgRow = organization as OrganizationProfileRow;
   const lifecycle = await buildOrganizationLifecycle(supabase, orgRow);
   const invitations = await fetchOrganizationInvitations(supabase, organizationId);
   const canInviteAdmin = canInviteAdministrator({
@@ -196,6 +207,11 @@ export async function fetchAdminOrganizationDetail(
 
   return {
     ...mapOrganizationSummary(orgRow, propertyRows.length),
+    legalName: orgRow.legal_name ?? null,
+    contactEmail: orgRow.contact_email ?? null,
+    contactPhone: orgRow.contact_phone ?? null,
+    businessAddress: orgRow.business_address ?? null,
+    contactName: orgRow.contact_name ?? null,
     properties: propertyRows.map(mapPropertySummary),
     modules: (modules ?? []).map((row) => ({
       moduleKey: String(row.module_key),

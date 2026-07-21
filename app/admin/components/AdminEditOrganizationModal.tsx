@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import { useAdministrationApi } from "@/app/components/administration/administration-context";
 import type { AdminOrganizationDetail } from "@/app/lib/platform-admin/types";
 import AdminModalFrame from "./AdminModalFrame";
 
@@ -20,22 +21,61 @@ export default function AdminEditOrganizationModal({
   onSaved,
   onError,
 }: AdminEditOrganizationModalProps) {
+  const { basePath, capabilities } = useAdministrationApi();
+  // Null capabilities = platform default context (legal identity editable; the
+  // server still enforces platform_owner). Customer portal passes an explicit
+  // capability set with canEditLegalIdentity = false.
+  const canEditLegal = capabilities ? capabilities.canEditLegalIdentity : true;
+
   const [name, setName] = useState("");
+  const [legalName, setLegalName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [contactName, setContactName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !organization) return;
     setName(organization.name);
+    setLegalName(organization.legalName ?? "");
+    setContactEmail(organization.contactEmail ?? "");
+    setContactPhone(organization.contactPhone ?? "");
+    setBusinessAddress(organization.businessAddress ?? "");
+    setContactName(organization.contactName ?? "");
     setLocalError(null);
   }, [open, organization]);
+
+  const dirty = useMemo(() => {
+    if (!organization) return false;
+    const changed =
+      name.trim() !== organization.name ||
+      contactEmail.trim() !== (organization.contactEmail ?? "") ||
+      contactPhone.trim() !== (organization.contactPhone ?? "") ||
+      businessAddress.trim() !== (organization.businessAddress ?? "") ||
+      contactName.trim() !== (organization.contactName ?? "");
+    if (changed) return true;
+    if (canEditLegal && legalName.trim() !== (organization.legalName ?? "")) {
+      return true;
+    }
+    return false;
+  }, [
+    organization,
+    name,
+    legalName,
+    contactEmail,
+    contactPhone,
+    businessAddress,
+    contactName,
+    canEditLegal,
+  ]);
 
   if (!open || !organization) {
     return null;
   }
 
   const currentOrganization = organization;
-  const dirty = name.trim() !== currentOrganization.name;
 
   function requestClose() {
     if (submitting) return;
@@ -56,12 +96,23 @@ export default function AdminEditOrganizationModal({
     setLocalError(null);
     onError("");
 
+    const payload: Record<string, unknown> = {
+      name: name.trim(),
+      contactEmail: contactEmail.trim() || null,
+      contactPhone: contactPhone.trim() || null,
+      businessAddress: businessAddress.trim() || null,
+      contactName: contactName.trim() || null,
+    };
+    if (canEditLegal) {
+      payload.legalName = legalName.trim() || null;
+    }
+
     const response = await adminFetch(
-      `/api/admin/organizations/${currentOrganization.id}`,
+      `${basePath}/organizations/${currentOrganization.id}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify(payload),
       }
     );
 
@@ -89,8 +140,8 @@ export default function AdminEditOrganizationModal({
       onClose={requestClose}
     >
       <p className="admin-portal__muted">
-        Update organization profile fields supported by the current schema.
-        Suspend / reactivate remain separate protected actions.
+        Update the organization&apos;s operational profile. Legal identity, slug,
+        and status are managed by One Eyrie.
       </p>
 
       {localError ? (
@@ -99,7 +150,7 @@ export default function AdminEditOrganizationModal({
 
       <form className="admin-portal__form" onSubmit={handleSubmit}>
         <label className="admin-portal__field">
-          <span>Organization name</span>
+          <span>Display name</span>
           <input
             type="text"
             value={name}
@@ -109,12 +160,89 @@ export default function AdminEditOrganizationModal({
             disabled={submitting}
             autoFocus
           />
+          <span className="admin-portal__muted">
+            The name shown throughout the app.
+          </span>
         </label>
+
+        {canEditLegal ? (
+          <label className="admin-portal__field">
+            <span>Legal / company name</span>
+            <input
+              type="text"
+              value={legalName}
+              onChange={(event) => setLegalName(event.target.value)}
+              maxLength={200}
+              disabled={submitting}
+              placeholder="Registered legal entity name"
+            />
+            <span className="admin-portal__muted">
+              One Eyrie only — used for billing, contracts, and licensing.
+            </span>
+          </label>
+        ) : (
+          <div className="admin-portal__field">
+            <span>Legal / company name</span>
+            <p className="admin-portal__static-value">
+              {organization.legalName || organization.name}
+            </p>
+            <span className="admin-portal__muted">
+              Managed by One Eyrie to preserve billing and contract integrity.
+            </span>
+          </div>
+        )}
+
+        <label className="admin-portal__field">
+          <span>Contact email</span>
+          <input
+            type="email"
+            value={contactEmail}
+            onChange={(event) => setContactEmail(event.target.value)}
+            maxLength={254}
+            disabled={submitting}
+            placeholder="operations@example.com"
+          />
+        </label>
+
+        <label className="admin-portal__field">
+          <span>Contact phone</span>
+          <input
+            type="tel"
+            value={contactPhone}
+            onChange={(event) => setContactPhone(event.target.value)}
+            maxLength={40}
+            disabled={submitting}
+          />
+        </label>
+
+        <label className="admin-portal__field">
+          <span>Contact person</span>
+          <input
+            type="text"
+            value={contactName}
+            onChange={(event) => setContactName(event.target.value)}
+            maxLength={120}
+            disabled={submitting}
+            placeholder="Operations contact name"
+          />
+        </label>
+
+        <label className="admin-portal__field">
+          <span>Mailing / business address</span>
+          <textarea
+            value={businessAddress}
+            onChange={(event) => setBusinessAddress(event.target.value)}
+            maxLength={500}
+            rows={3}
+            disabled={submitting}
+          />
+        </label>
+
         <div className="admin-portal__field">
           <span>Slug</span>
           <p className="admin-portal__static-value">{organization.slug}</p>
           <span className="admin-portal__muted">
-            Slug updates automatically when the name changes (if available).
+            Internal identifier — managed by One Eyrie.
           </span>
         </div>
         <div className="admin-portal__field">
@@ -124,6 +252,7 @@ export default function AdminEditOrganizationModal({
             Use Suspend / Reactivate for status changes.
           </span>
         </div>
+
         <div className="admin-portal__form-actions">
           <button
             type="button"

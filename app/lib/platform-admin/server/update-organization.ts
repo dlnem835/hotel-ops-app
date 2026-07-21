@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeAdminAuditLog } from "@/app/lib/platform-admin/server/admin-audit-log";
 import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
 import { fetchAdminOrganizationDetail } from "@/app/lib/platform-admin/server/admin-organizations";
+import { normalizeOrganizationOperationalProfile } from "@/app/lib/platform-admin/server/organization-profile-fields";
 import {
   ORGANIZATION_STATUS_ACTIVE,
   ORGANIZATION_STATUS_SUSPENDED,
@@ -35,17 +36,29 @@ export async function updateAdminOrganization(
     );
   }
 
-  const name = String(body.name ?? "").trim();
-  if (!name) {
-    throw new PlatformAdminRequestError(400, "Organization name is required");
+  const normalized = normalizeOrganizationOperationalProfile(body, {
+    requireName: true,
+  });
+  if (!normalized.ok) {
+    throw new PlatformAdminRequestError(normalized.status, normalized.message);
   }
-  if (name.length > 120) {
-    throw new PlatformAdminRequestError(400, "Organization name is too long");
+  const name = normalized.patch.name as string;
+
+  // Legal identity — One Eyrie only. Editable exclusively on the platform path.
+  let legalName: string | null | undefined;
+  if ("legalName" in body) {
+    const raw = body.legalName == null ? "" : String(body.legalName).trim();
+    if (raw.length > 200) {
+      throw new PlatformAdminRequestError(400, "Legal name is too long");
+    }
+    legalName = raw.length > 0 ? raw : null;
   }
 
   const { data: existing, error: loadError } = await supabase
     .from("organizations")
-    .select("id, name, slug, status")
+    .select(
+      "id, name, slug, status, legal_name, contact_email, contact_phone, business_address, contact_name"
+    )
     .eq("id", organizationId)
     .maybeSingle();
 
@@ -68,13 +81,18 @@ export async function updateAdminOrganization(
   }
 
   const timestamp = new Date().toISOString();
+  const updatePayload: Record<string, unknown> = {
+    ...normalized.patch,
+    slug: nextSlug,
+    updated_at: timestamp,
+  };
+  if (legalName !== undefined) {
+    updatePayload.legal_name = legalName;
+  }
+
   const { error: updateError } = await supabase
     .from("organizations")
-    .update({
-      name,
-      slug: nextSlug,
-      updated_at: timestamp,
-    })
+    .update(updatePayload)
     .eq("id", organizationId);
 
   if (updateError) {
@@ -89,10 +107,14 @@ export async function updateAdminOrganization(
     organizationId,
     propertyId: null,
     metadata: {
+      actor: "platform_admin",
       fromName: existing.name,
       toName: name,
       fromSlug: existing.slug,
       toSlug: nextSlug,
+      ...(legalName !== undefined
+        ? { fromLegalName: existing.legal_name ?? null, toLegalName: legalName }
+        : {}),
       status: existing.status,
       note:
         existing.status === ORGANIZATION_STATUS_SUSPENDED

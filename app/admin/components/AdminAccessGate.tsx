@@ -31,7 +31,7 @@ export default function AdminAccessGate({ children }: AdminAccessGateProps) {
     async function verifyAccess() {
       const session = await waitForInitialAuthSession();
       if (!session) {
-        window.location.replace(adminLoginUrl());
+        window.location.replace(adminLoginUrl(pathname));
         return;
       }
 
@@ -50,7 +50,7 @@ export default function AdminAccessGate({ children }: AdminAccessGateProps) {
       }
 
       if (response.status === 401) {
-        window.location.replace(adminLoginUrl());
+        window.location.replace(adminLoginUrl(pathname));
         return;
       }
 

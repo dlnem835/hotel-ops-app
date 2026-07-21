@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import OneEyrieUserProfileMenu from "@/app/components/OneEyrieUserProfileMenu";
 
 type AdminHeaderProps = {
   role?: string | null;
@@ -16,6 +16,7 @@ export default function AdminHeader({ role }: AdminHeaderProps) {
           {role ? ` · ${role.replace("_", " ")}` : ""}
         </p>
       </div>
+      <OneEyrieUserProfileMenu variant="header" />
     </header>
   );
 }

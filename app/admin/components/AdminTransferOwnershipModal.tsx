@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
+import { useAdministrationApi } from "@/app/components/administration/administration-context";
 import { TRANSFER_OWNERSHIP_CONFIRM_PHRASE } from "@/app/lib/platform-admin/types";
 import type {
   AdminOrganizationInvitation,
@@ -26,6 +27,7 @@ export default function AdminTransferOwnershipModal({
   onTransferred,
   onError,
 }: AdminTransferOwnershipModalProps) {
+  const { basePath } = useAdministrationApi();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [successors, setSuccessors] = useState<TransferOwnershipSuccessor[]>([]);
   const [loadingSuccessors, setLoadingSuccessors] = useState(false);
@@ -44,7 +46,7 @@ export default function AdminTransferOwnershipModal({
 
     void (async () => {
       const response = await adminFetch(
-        `/api/admin/organizations/${organizationId}/ownership-successors`
+        `${basePath}/organizations/${organizationId}/ownership-successors`
       );
       setLoadingSuccessors(false);
       if (!response.ok) {
@@ -60,7 +62,7 @@ export default function AdminTransferOwnershipModal({
       };
       setSuccessors(body.successors ?? []);
     })();
-  }, [open, organizationId, primaryInvitation?.id]);
+  }, [open, organizationId, primaryInvitation?.id, basePath]);
 
   if (!open || !primaryInvitation) {
     return null;
@@ -79,7 +81,7 @@ export default function AdminTransferOwnershipModal({
     onError("");
 
     const response = await adminFetch(
-      `/api/admin/organizations/${organizationId}/invitations/${currentPrimary.id}`,
+      `${basePath}/organizations/${organizationId}/invitations/${currentPrimary.id}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

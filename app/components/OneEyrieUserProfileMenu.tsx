@@ -14,7 +14,7 @@ import {
 import type { UserMenuItem } from "@/app/components/user-menu/types";
 
 type OneEyrieUserProfileMenuProps = {
-  variant?: "sidebar" | "mobile";
+  variant?: "sidebar" | "mobile" | "header";
 };
 
 function buildMenuItems(

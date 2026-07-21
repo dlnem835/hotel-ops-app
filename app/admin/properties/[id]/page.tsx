@@ -74,6 +74,11 @@ export default function AdminPropertyDetailPage() {
       propertyCount: 1,
       createdAt: property.createdAt,
       updatedAt: property.updatedAt,
+      legalName: null,
+      contactEmail: null,
+      contactPhone: null,
+      businessAddress: null,
+      contactName: null,
       properties: [
         {
           id: property.id,
@@ -225,7 +230,7 @@ export default function AdminPropertyDetailPage() {
       <section className="admin-portal__card">
         <div className="admin-portal__section-header">
           <h3 className="admin-portal__section-title">Property Leadership</h3>
-          {property.canInviteAdministrator ? (
+          {property.canInviteAdministrator && invitations.length > 0 ? (
             <button
               type="button"
               className="admin-portal__button admin-portal__button--primary"
