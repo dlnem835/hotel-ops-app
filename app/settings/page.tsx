@@ -40,8 +40,6 @@ import {
   Plus,
   Wrench,
   Search,
-  Settings,
-  ShieldCheck,
   Trash2,
   Users,
   X,
@@ -52,11 +50,9 @@ import RoomsAreasSection from "./components/RoomsAreasSection";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
   buildUserAccessProfile,
-  buildSettingsRoleCatalog,
   createEmptyPermissions,
   draftFlagsToPermissions,
   getAdministratorPermissions,
-  getJobTitleDefaultAccessLabel,
   JOB_TITLE_OPTIONS,
   MODULE_PERMISSION_KEYS,
   MODULE_PERMISSION_LABELS,
@@ -74,13 +70,9 @@ type SectionId =
   | "team"
   | "roomsAreas"
   | "templates"
-  | "pmTemplates"
-  | "roles";
+  | "pmTemplates";
 
-type ModalType = Exclude<
-  SectionId,
-  "home" | "roomsAreas" | "templates" | "pmTemplates"
-> | null;
+type ModalType = "team" | null;
 
 type AnyRecord = {
   id: string | number;
@@ -131,9 +123,7 @@ useEffect(() => {
 }, []);
 
 
-  const [roles, setRoles] = useState<AnyRecord[]>(() => buildSettingsRoleCatalog());
-
-    const settingsCards = [
+  const settingsCards = [
     {
       id: "team" as SectionId,
       title: "Team Members",
@@ -160,28 +150,19 @@ useEffect(() => {
         "Preventive maintenance checklists, schedules, and area assignments.",
       icon: <Wrench size={26} />,
     },
-    {
-      id: "roles" as SectionId,
-      title: "Roles & Permissions",
-      subtitle: "Simple role access by job title.",
-      icon: <ShieldCheck size={26} />,
-    },
   ];
 
   const sectionTitle = settingsCards.find((card) => card.id === activeSection);
 
   const currentRows = useMemo(() => {
-    let rows: AnyRecord[] = [];
+    if (activeSection !== "team") return [];
 
-    if (activeSection === "team") rows = teamMembers;
-    if (activeSection === "roles") rows = roles;
+    if (!search.trim()) return teamMembers;
 
-    if (!search.trim()) return rows;
-
-    return rows.filter((item) =>
+    return teamMembers.filter((item) =>
       JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
     );
-  }, [activeSection, search, teamMembers, roles]);
+  }, [activeSection, search, teamMembers]);
 
   function openNew(type: ModalType) {
     setModalType(type);
@@ -251,7 +232,6 @@ useEffect(() => {
 
   function getEmptyDraft(type: ModalType): Record<string, string> {
     if (type === "team") {
-      
       return {
         firstName: "",
         lastName: "",
@@ -267,14 +247,6 @@ useEffect(() => {
           ...createEmptyPermissions(),
           pass_on: true,
         }),
-      };
-    }
-
-    if (type === "roles") {
-      return {
-        name: JOB_TITLE_OPTIONS[0],
-        access: getJobTitleDefaultAccessLabel(JOB_TITLE_OPTIONS[0]),
-        status: "Active",
       };
     }
 
@@ -335,46 +307,15 @@ async function saveItem() {
 
     await fetchTeamMembers();
     closeModal();
-    return;
   }
-
-  const newItem = {
-    ...draft,
-    id: editingId ?? Date.now(),
-  };
-
-  if (modalType === "roles") {
-    setRoles((prev) =>
-      editingId
-        ? prev.map((item) => (item.id === editingId ? newItem : item))
-        : [...prev, newItem]
-    );
-  }
-
-  closeModal();
 }
 
   function deleteItem(type: ModalType, id: string | number) {
-    if (!type) return;
-
-    if (type === "team") {
-      setTeamMembers((prev) => prev.filter((item) => item.id !== id));
-    }
-
-    if (type === "roles") {
-      setRoles((prev) => prev.filter((item) => item.id !== id));
-    }
+    if (type !== "team") return;
+    setTeamMembers((prev) => prev.filter((item) => item.id !== id));
   }
 
-  function getNewButtonLabel() {
-    if (activeSection === "team") return "New User";
-    if (activeSection === "roles") return "New Role";
-
-    return "New";
-  }
-
- function getName(item: AnyRecord) {
-  if (activeSection === "team") {
+  function getName(item: AnyRecord) {
     return (
       `${item.first_name || item.firstName || ""} ${
         item.last_name || item.lastName || ""
@@ -382,11 +323,8 @@ async function saveItem() {
     );
   }
 
-    return item.name || "Untitled";
-  }
-
   function renderTable() {
-    if (activeSection === "home") return null;
+    if (activeSection !== "team") return null;
 
     return (
       <div style={sectionPanel}>
@@ -400,7 +338,7 @@ async function saveItem() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${sectionTitle?.title.toLowerCase()}...`}
+              placeholder="Search team members..."
               className="one-eyrie-settings-search"
               style={searchInput}
             />
@@ -410,11 +348,11 @@ async function saveItem() {
             type="button"
             style={START_WORK_BUTTON}
             className="one-eyrie-btn one-eyrie-btn--start-work one-eyrie-btn--lg"
-            onClick={() => openNew(activeSection as ModalType)}
+            onClick={() => openNew("team")}
             {...forestHoverHandlers()}
           >
             <Plus size={16} />
-            {getNewButtonLabel()}
+            New User
           </button>
         </div>
 
@@ -437,27 +375,17 @@ async function saveItem() {
           >
             <div>
               <div style={rowTitle}>{getName(item)}</div>
-              {activeSection === "team" && (
-                <div style={rowSub}>{item.email || "No email"}</div>
-              )}
+              <div style={rowSub}>{item.email || "No email"}</div>
             </div>
 
             <div style={rowText}>
-              {activeSection === "team" && (
-                <>
-                  <div>{item.job_title || item.role || "—"}</div>
-                  {item.is_administrator ? (
-                    <div style={{ ...rowSub, color: gold }}>Administrator</div>
-                  ) : null}
-                </>
-              )}
-              {activeSection === "roles" && item.access}
+              <div>{item.job_title || item.role || "—"}</div>
+              {item.is_administrator ? (
+                <div style={{ ...rowSub, color: gold }}>Administrator</div>
+              ) : null}
             </div>
 
-            <div style={rowText}>
-              {activeSection === "team" && (item.username || "—")}
-              {activeSection === "roles" && "System"}
-            </div>
+            <div style={rowText}>{item.username || "—"}</div>
 
             <div>
               <span
@@ -475,7 +403,7 @@ async function saveItem() {
               <button
                 type="button"
                 style={iconButton}
-                onClick={() => openEdit(activeSection as ModalType, item)}
+                onClick={() => openEdit("team", item)}
               >
                 <Pencil size={15} />
               </button>
@@ -483,7 +411,7 @@ async function saveItem() {
               <button
                 type="button"
                 style={iconButton}
-                onClick={() => deleteItem(activeSection as ModalType, item.id)}
+                onClick={() => deleteItem("team", item.id)}
               >
                 <Trash2 size={15} />
               </button>
@@ -543,6 +471,9 @@ async function saveItem() {
               </option>
             ))}
           </select>
+          <div style={{ ...rowSub, marginTop: "-6px" }}>
+            Job title is descriptive only and does not set permissions.
+          </div>
 
           <div
             style={{
@@ -571,7 +502,7 @@ async function saveItem() {
                 gap: "10px",
                 color: "#FFFFFF",
                 fontWeight: 700,
-                marginBottom: "12px",
+                marginBottom: "6px",
               }}
             >
               <input
@@ -581,6 +512,10 @@ async function saveItem() {
               />
               Administrator (all modules including Settings)
             </label>
+            <div style={{ ...rowSub, marginBottom: "12px" }}>
+              Enables every operational module including Settings. Does not grant
+              Admin Portal access.
+            </div>
 
             <div
               style={{
@@ -662,54 +597,6 @@ async function saveItem() {
     />
   </div>
 )}
-        </>
-      );
-    }
-
-    if (modalType === "roles") {
-      return (
-        <>
-          <select
-            value={draft.name || JOB_TITLE_OPTIONS[0]}
-            onChange={(e) => {
-              const name = e.target.value as (typeof JOB_TITLE_OPTIONS)[number];
-              setDraft((prev) => ({
-                ...prev,
-                name,
-                access: getJobTitleDefaultAccessLabel(name),
-              }));
-            }}
-            style={input}
-            aria-label="Position"
-          >
-            {JOB_TITLE_OPTIONS.map((title) => (
-              <option key={title} value={title}>
-                {title}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={draft.access || "View Only"}
-            onChange={(e) => updateDraft("access", e.target.value)}
-            style={input}
-          >
-            <option>Full Access</option>
-            <option>Operations + Reports</option>
-            <option>Lost & Found + Pass-On Log</option>
-            <option>Inspections Only</option>
-            <option>Maintenance Only</option>
-            <option>View Only</option>
-          </select>
-
-          <select
-            value={draft.status || "Active"}
-            onChange={(e) => updateDraft("status", e.target.value)}
-            style={input}
-          >
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
         </>
       );
     }
@@ -863,9 +750,7 @@ async function saveItem() {
             <div style={modalBox} className="one-eyrie-modal">
               <div style={modalHeader}>
                 <h2 style={{ margin: 0 }}>
-                  {editingId ? "Edit" : "New"}{" "}
-                  {modalType === "team" && "Team Member"}
-                  {modalType === "roles" && "Role"}
+                  {editingId ? "Edit" : "New"} Team Member
                 </h2>
 
                 <button type="button" style={closeButton} onClick={closeModal}>
