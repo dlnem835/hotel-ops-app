@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   buildStaffTimelineDisplay,
   formatRelativeTimestamp,
+  guestLastViewedFromTimeline,
   type TimelineTone,
 } from "@/app/lib/lost-found-shipping/timeline-ui";
 import type { ShippingCurrentStep } from "@/app/lib/lost-found-shipping/status";
@@ -129,10 +130,45 @@ function ShippingTimelinePanel({
   timeline: ShippingTimelineEntry[];
 }) {
   const [open, setOpen] = useState(false);
+  const listRef = useRef<HTMLOListElement | null>(null);
+  const seenEventIdsRef = useRef<Set<string>>(new Set());
+  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
+
   const rows = useMemo(
     () => buildStaffTimelineDisplay({ events: timeline }),
     [timeline]
   );
+
+  const newestEventRow = useMemo(() => {
+    const events = rows.filter((row) => row.kind === "event" && row.createdAt);
+    return events.length > 0 ? events[events.length - 1] : null;
+  }, [rows]);
+
+  useEffect(() => {
+    if (!open) return;
+    const eventIds = rows
+      .filter((row) => row.kind === "event")
+      .map((row) => row.id);
+    const fresh = eventIds.filter((id) => !seenEventIdsRef.current.has(id));
+    for (const id of eventIds) seenEventIdsRef.current.add(id);
+    if (fresh.length === 0) return;
+
+    setFlashIds(new Set(fresh));
+    const timer = window.setTimeout(() => setFlashIds(new Set()), 1800);
+
+    window.requestAnimationFrame(() => {
+      const newestId = newestEventRow?.id;
+      if (!newestId || !listRef.current) return;
+      const node = listRef.current.querySelector(
+        `[data-timeline-row="${newestId}"]`
+      );
+      if (node instanceof HTMLElement) {
+        node.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+
+    return () => window.clearTimeout(timer);
+  }, [open, rows, newestEventRow?.id]);
 
   return (
     <div style={{ marginTop: "12px" }}>
@@ -168,6 +204,7 @@ function ShippingTimelinePanel({
 
       {open ? (
         <ol
+          ref={listRef}
           style={{
             listStyle: "none",
             margin: "10px 0 0",
@@ -175,6 +212,8 @@ function ShippingTimelinePanel({
             display: "flex",
             flexDirection: "column",
             gap: "8px",
+            maxHeight: "320px",
+            overflowY: "auto",
           }}
         >
           {rows.map((row) => {
@@ -184,27 +223,37 @@ function ShippingTimelinePanel({
                 ? new Date(row.createdAt).toLocaleString()
                 : null;
             const pending = row.kind === "milestone" || !row.createdAt;
+            const flashing = flashIds.has(row.id);
             return (
               <li
                 key={row.id}
+                data-timeline-row={row.id}
                 style={{
                   display: "flex",
                   gap: "10px",
                   borderLeft: `3px solid ${colors.border}`,
                   paddingLeft: "10px",
+                  paddingTop: "4px",
+                  paddingBottom: "4px",
+                  borderRadius: "8px",
+                  background: flashing
+                    ? "rgba(96, 165, 250, 0.28)"
+                    : "transparent",
+                  transition: "background 1.4s ease-out",
                 }}
               >
                 <span
                   aria-hidden="true"
                   style={{
-                    width: "8px",
-                    height: "8px",
-                    marginTop: "5px",
-                    borderRadius: "999px",
-                    background: colors.dot,
+                    width: "18px",
+                    marginTop: "1px",
+                    fontSize: "13px",
+                    lineHeight: 1.2,
                     flexShrink: 0,
                   }}
-                />
+                >
+                  {row.icon}
+                </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
@@ -272,6 +321,20 @@ function ShippingTimelinePanel({
   );
 }
 
+function linkButtonStyle(): CSSProperties {
+  return {
+    border: `1px solid ${ONE_EYRIE.gold}`,
+    background: "transparent",
+    color: ONE_EYRIE.gold,
+    borderRadius: "8px",
+    height: "30px",
+    padding: "0 10px",
+    fontWeight: 800,
+    fontSize: "12px",
+    cursor: "pointer",
+  };
+}
+
 export default function LostFoundShippingSection({
   itemId,
   itemName,
@@ -281,8 +344,9 @@ export default function LostFoundShippingSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [guestLinkNote, setGuestLinkNote] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [guestLinks, setGuestLinks] = useState<Record<number, string>>({});
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [linkBusyId, setLinkBusyId] = useState<number | null>(null);
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -312,14 +376,55 @@ export default function LostFoundShippingSection({
     void loadRequests();
   }, [loadRequests]);
 
-  async function copyGuestLink() {
-    if (!guestLinkNote) return;
+  async function ensureGuestLink(requestId: number): Promise<string> {
+    const existing = guestLinks[requestId];
+    if (existing) return existing;
+
+    setLinkBusyId(requestId);
     try {
-      await navigator.clipboard.writeText(guestLinkNote);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
+      const response = await tenantFetch(
+        `/api/lost-and-found/${itemId}/shipping-requests/${requestId}/guest-link`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to issue guest link");
+      }
+      const url = String(result.guestUrl || "");
+      if (!url) throw new Error("Guest link missing from response");
+      setGuestLinks((current) => ({ ...current, [requestId]: url }));
+      await loadRequests();
+      return url;
+    } finally {
+      setLinkBusyId(null);
+    }
+  }
+
+  async function copyGuestLink(requestId: number) {
+    try {
+      const url = await ensureGuestLink(requestId);
+      await navigator.clipboard.writeText(url);
+      setCopiedId(requestId);
+      window.setTimeout(() => setCopiedId((current) => (current === requestId ? null : current)), 2000);
+    } catch (copyError) {
+      setError(
+        copyError instanceof Error
+          ? copyError.message
+          : "Unable to copy guest link"
+      );
+    }
+  }
+
+  async function openGuestPage(requestId: number) {
+    try {
+      const url = await ensureGuestLink(requestId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (openError) {
+      setError(
+        openError instanceof Error
+          ? openError.message
+          : "Unable to open guest page"
+      );
     }
   }
 
@@ -380,66 +485,6 @@ export default function LostFoundShippingSection({
         </button>
       </div>
 
-      {guestLinkNote ? (
-        <div
-          style={{
-            marginBottom: "12px",
-            padding: "10px 12px",
-            borderRadius: "10px",
-            border: `1px solid ${ONE_EYRIE.gold}`,
-            background: ONE_EYRIE.surfaceInset,
-          }}
-        >
-          <div
-            style={{
-              color: ONE_EYRIE.gold,
-              fontSize: "12px",
-              fontWeight: 800,
-              marginBottom: "6px",
-            }}
-          >
-            Phase 1–2: copy guest link (email in Phase 3)
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <code
-              style={{
-                flex: 1,
-                minWidth: "0",
-                fontSize: "11px",
-                color: ONE_EYRIE.textRow,
-                wordBreak: "break-all",
-              }}
-            >
-              {guestLinkNote}
-            </code>
-            <button
-              type="button"
-              onClick={() => void copyGuestLink()}
-              style={{
-                border: `1px solid ${ONE_EYRIE.gold}`,
-                background: "transparent",
-                color: ONE_EYRIE.gold,
-                borderRadius: "8px",
-                height: "30px",
-                padding: "0 10px",
-                fontWeight: 800,
-                fontSize: "12px",
-                cursor: "pointer",
-              }}
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       {loading ? (
         <p style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", margin: 0 }}>
           Loading shipping requests…
@@ -468,6 +513,14 @@ export default function LostFoundShippingSection({
                     .filter(Boolean)
                     .join(", ")
                 : null;
+            const lastViewed = guestLastViewedFromTimeline(
+              (request.timeline || []).map((entry) => ({
+                eventType: entry.eventType,
+                createdAt: entry.createdAt,
+              }))
+            );
+            const linkBusy = linkBusyId === request.id;
+
             return (
               <li
                 key={request.id}
@@ -554,6 +607,46 @@ export default function LostFoundShippingSection({
                     </span>
                     {formatMoney(request.totalAmount, request.currency)}
                   </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Guest viewed:{" "}
+                    </span>
+                    {lastViewed
+                      ? `${formatRelativeTimestamp(lastViewed)} (${new Date(
+                          lastViewed
+                        ).toLocaleString()})`
+                      : "Guest has not viewed request."}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    marginTop: "10px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={linkButtonStyle()}
+                    disabled={linkBusy}
+                    onClick={() => void copyGuestLink(request.id)}
+                  >
+                    {copiedId === request.id
+                      ? "Copied"
+                      : linkBusy
+                        ? "Preparing…"
+                        : "Copy Guest Link"}
+                  </button>
+                  <button
+                    type="button"
+                    style={linkButtonStyle()}
+                    disabled={linkBusy}
+                    onClick={() => void openGuestPage(request.id)}
+                  >
+                    Open Guest Page
+                  </button>
                 </div>
 
                 {request.trackingNumber ? (
@@ -591,7 +684,12 @@ export default function LostFoundShippingSection({
         }}
         onClose={() => setModalOpen(false)}
         onCreated={(result) => {
-          if (result.guestUrl) setGuestLinkNote(result.guestUrl);
+          if (result.guestUrl && result.requestId) {
+            setGuestLinks((current) => ({
+              ...current,
+              [result.requestId!]: result.guestUrl,
+            }));
+          }
           void loadRequests();
         }}
       />

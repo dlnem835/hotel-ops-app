@@ -243,6 +243,16 @@ export default function ShippingRequestGuestPage() {
   }
 
   useEffect(() => {
+    if (ratesExpired || ratesLoading || busy) return;
+    if (rates.length !== 1) return;
+    const only = rates[0];
+    if (!only?.providerRateId) return;
+    if (selectedRateId === only.providerRateId) return;
+    void handleSelectRate(only.providerRateId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rates, ratesExpired, ratesLoading, selectedRateId, busy]);
+
+  useEffect(() => {
     if (!rateExpiresAt) {
       setRatesExpired(false);
       return;
@@ -625,7 +635,7 @@ export default function ShippingRequestGuestPage() {
         {renderProgress()}
         <h1 className="shipping-request-title">We found your item</h1>
         <p className="shipping-request-copy">
-          Confirm your shipping address and choose a delivery option.
+          Please confirm where we should send it, then choose a delivery option.
         </p>
         <div className="shipping-request-fee-note">
           You pay only the carrier’s shipping cost. One Eyrie does not add a
@@ -791,14 +801,19 @@ export default function ShippingRequestGuestPage() {
               ) : null}
             </div>
 
+            <div className="shipping-request-friendly-banner">
+              Great news! We&apos;ve located your item. Select the shipping option
+              that works best for you.
+            </div>
+
             <h2 className="shipping-request-section-title">Choose a shipping option</h2>
             <p className="shipping-request-copy shipping-request-copy--tight">
-              Compare carrier, service, delivery time, and price. Your total is
-              the carrier shipping cost only.
+              Pick the delivery speed that fits your timeline. You only pay the
+              carrier shipping cost.
             </p>
             <p className="shipping-request-disclaimer">
               Shipping rates are supplied by the carrier and may expire. If rates
-              expire, refresh them below without restarting.
+              expire, refresh them below without starting over.
             </p>
 
             {ratesExpired ? (
@@ -902,7 +917,13 @@ export default function ShippingRequestGuestPage() {
                           {formatMoney(rate.amount, rate.currency)}
                         </div>
                         <div className="shipping-request-rate__select-hint">
-                          {selected ? "Selected" : "Select"}
+                          {selected ? (
+                            <span className="shipping-request-rate__check">
+                              ✓ Selected
+                            </span>
+                          ) : (
+                            "Select"
+                          )}
                         </div>
                       </div>
                     </button>
@@ -928,11 +949,16 @@ export default function ShippingRequestGuestPage() {
                     {rateEtaLabel(selectedRate)}
                   </div>
                 ) : null}
-                <div className="shipping-request-selected-summary__amount">
-                  {formatMoney(totalDue, selectedRate?.currency || view.currency)}
-                </div>
-                <div className="shipping-request-selected-summary__note">
-                  Total due = carrier shipping only. No One Eyrie service fee.
+                <div className="shipping-request-total-block">
+                  <div className="shipping-request-total-block__label">
+                    Shipping Total
+                  </div>
+                  <div className="shipping-request-total-block__amount">
+                    {formatMoney(totalDue, selectedRate?.currency || view.currency)}
+                  </div>
+                  <div className="shipping-request-total-block__fee">
+                    No One Eyrie Service Fee
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -940,10 +966,13 @@ export default function ShippingRequestGuestPage() {
             <div className="shipping-request-actions">
               <button
                 type="button"
-                className="shipping-request-btn shipping-request-btn--primary"
+                className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
                 disabled={busy || !selectedRateId || ratesExpired}
                 onClick={handleContinueToPayment}
               >
+                <span className="shipping-request-lock" aria-hidden="true">
+                  🔒
+                </span>
                 Continue to payment
               </button>
               <p className="shipping-request-footnote">

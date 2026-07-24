@@ -108,20 +108,24 @@ export type StaffTimelineDisplayRow =
   | {
       kind: "event";
       id: string;
+      eventType: string;
       tone: TimelineTone;
       label: string;
       actor: "Guest" | "Staff" | "System";
       createdAt: string | null;
       notes: string | null;
+      icon: string;
     }
   | {
       kind: "milestone";
       id: string;
+      milestoneKey: TimelineMilestoneKey;
       tone: TimelineTone;
       label: string;
       actor: null;
       createdAt: null;
       notes: string | null;
+      icon: string;
     };
 
 export function buildStaffTimelineDisplay(input: {
@@ -143,6 +147,7 @@ export function buildStaffTimelineDisplay(input: {
   const rows: StaffTimelineDisplayRow[] = events.map((event, index) => ({
     kind: "event",
     id: `event-${event.id}`,
+    eventType: event.eventType,
     tone: timelineEventTone(event.eventType, {
       isLatestSuccessful: index === latestSuccessfulIndex,
     }),
@@ -150,6 +155,7 @@ export function buildStaffTimelineDisplay(input: {
     actor: normalizeTimelineActor(event.actorLabel),
     createdAt: event.createdAt,
     notes: event.notes,
+    icon: timelineEventIcon(event.eventType),
   }));
 
   const recordedTypes = new Set(events.map((event) => event.eventType));
@@ -162,11 +168,13 @@ export function buildStaffTimelineDisplay(input: {
     rows.push({
       kind: "milestone",
       id: `future-${milestone.key}`,
+      milestoneKey: milestone.key,
       tone: isCurrent ? "current" : "future",
       label: milestone.label,
       actor: null,
       createdAt: null,
       notes: isCurrent ? "Pending · next expected step" : "Pending",
+      icon: timelineMilestoneIcon(milestone.key),
     });
   }
 
@@ -190,7 +198,9 @@ export function formatRelativeTimestamp(
   const absMin = Math.floor(absSec / 60);
   if (absMin < 60) {
     const value = absMin <= 1 ? 1 : absMin;
-    return past ? `${value} minute${value === 1 ? "" : "s"} ago` : `in ${value} minute${value === 1 ? "" : "s"}`;
+    return past
+      ? `${value} minute${value === 1 ? "" : "s"} ago`
+      : `in ${value} minute${value === 1 ? "" : "s"}`;
   }
 
   const absHr = Math.floor(absMin / 60);
@@ -218,6 +228,78 @@ export function formatRelativeTimestamp(
   return past
     ? `${absYear} year${absYear === 1 ? "" : "s"} ago`
     : `in ${absYear} year${absYear === 1 ? "" : "s"}`;
+}
+
+/** Small icons for staff timeline event types. */
+export function timelineEventIcon(eventType: string): string {
+  switch (eventType) {
+    case SHIPPING_TIMELINE_EVENTS.addressValidationFailed:
+    case SHIPPING_TIMELINE_EVENTS.paymentFailed:
+    case SHIPPING_TIMELINE_EVENTS.labelPurchaseFailed:
+      return "⚠";
+    case SHIPPING_TIMELINE_EVENTS.guestEnteredAddress:
+    case SHIPPING_TIMELINE_EVENTS.addressValidated:
+    case SHIPPING_TIMELINE_EVENTS.guestEditingAddress:
+      return "📍";
+    case SHIPPING_TIMELINE_EVENTS.ratesRetrieved:
+    case SHIPPING_TIMELINE_EVENTS.rateSelected:
+      return "🚚";
+    case SHIPPING_TIMELINE_EVENTS.paymentStarted:
+    case SHIPPING_TIMELINE_EVENTS.paymentCompleted:
+      return "💳";
+    case SHIPPING_TIMELINE_EVENTS.labelPurchased:
+    case SHIPPING_TIMELINE_EVENTS.labelPrinted:
+    case SHIPPING_TIMELINE_EVENTS.trackingAssigned:
+      return "📦";
+    case SHIPPING_TIMELINE_EVENTS.packageShipped:
+      return "🚛";
+    case SHIPPING_TIMELINE_EVENTS.packageDelivered:
+      return "✔";
+    case SHIPPING_TIMELINE_EVENTS.requestCreated:
+    case SHIPPING_TIMELINE_EVENTS.guestOpened:
+    case SHIPPING_TIMELINE_EVENTS.requestEmailed:
+    case SHIPPING_TIMELINE_EVENTS.guestLinkIssued:
+      return "✓";
+    default:
+      return "✓";
+  }
+}
+
+export function timelineMilestoneIcon(key: TimelineMilestoneKey): string {
+  switch (key) {
+    case "created":
+    case "opened":
+      return "✓";
+    case "address":
+      return "📍";
+    case "option":
+      return "🚚";
+    case "payment":
+      return "💳";
+    case "label":
+    case "tracking":
+      return "📦";
+    case "shipped":
+      return "🚛";
+    case "delivered":
+      return "✔";
+    default:
+      return "✓";
+  }
+}
+
+export function guestLastViewedFromTimeline(
+  events: Array<{ eventType: string; createdAt: string }>
+): string | null {
+  const opened = events
+    .filter(
+      (event) => event.eventType === SHIPPING_TIMELINE_EVENTS.guestOpened
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  return opened[0]?.createdAt || null;
 }
 
 /** Guest progress steps for the public shipping page. */

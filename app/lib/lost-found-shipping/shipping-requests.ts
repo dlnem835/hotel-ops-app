@@ -326,6 +326,78 @@ export async function createShippingRequest(
   };
 }
 
+/**
+ * Issue (or re-issue) a guest shipping URL for staff copy/open.
+ * Rotates the secure token so prior links stop working.
+ */
+export async function issueGuestShippingLink(
+  supabase: SupabaseClient,
+  scope: LostFoundShippingScope,
+  input: { shippingRequestId: number; lostItemId: number; createdBy: string }
+): Promise<{ guestUrl: string }> {
+  await assertLostItemInTenant(supabase, input.lostItemId, scope);
+
+  const { data: row, error } = await supabase
+    .from("lost_found_shipping_requests")
+    .select("*")
+    .eq("id", input.shippingRequestId)
+    .eq("lost_item_id", input.lostItemId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!row) {
+    throw new TenantRequestError(404, "Shipping request not found.");
+  }
+  if (row.cancelled_at) {
+    throw new TenantRequestError(410, "Shipping request is cancelled.");
+  }
+  if (String(row.payment_status) === "paid") {
+    throw new TenantRequestError(
+      400,
+      "Guest link cannot be rotated after payment."
+    );
+  }
+
+  const settings = await fetchPropertyShippingSettings(supabase, scope);
+  const ttlHours = Number(settings?.tokenTtlHours || 168);
+  const rawToken = generateShippingGuestToken();
+  const tokenHash = hashShippingGuestToken(rawToken);
+  const expiresAt = tokenExpiresAt(ttlHours).toISOString();
+
+  const { error: updateError } = await supabase
+    .from("lost_found_shipping_requests")
+    .update({
+      secure_token_hash: tokenHash,
+      token_expires_at: expiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.shippingRequestId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  await appendShippingEvent(supabase, {
+    organizationId: scope.organizationId,
+    propertyId: scope.propertyId,
+    lostItemId: input.lostItemId,
+    shippingRequestId: input.shippingRequestId,
+    eventType: SHIPPING_TIMELINE_EVENTS.guestLinkIssued,
+    eventSource: "staff",
+    eventData: {
+      notes: "Staff issued a guest shipping link",
+      tokenExpiresAt: expiresAt,
+    },
+    createdBy: input.createdBy,
+  });
+
+  return {
+    guestUrl: `${resolveAppUrl()}/shipping-request/${rawToken}`,
+  };
+}
+
 export type GuestShippingPackageView = {
   lengthIn: number | null;
   widthIn: number | null;

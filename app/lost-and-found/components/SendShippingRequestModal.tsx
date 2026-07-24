@@ -32,7 +32,7 @@ type SendShippingRequestModalProps = {
   open: boolean;
   item: { id: number; item_name?: string; guest_last_name?: string };
   onClose: () => void;
-  onCreated: (result: { guestUrl: string }) => void;
+  onCreated: (result: { guestUrl: string; requestId?: number }) => void;
 };
 
 type FormState = {
@@ -206,7 +206,10 @@ export default function SendShippingRequestModal({
         throw new Error(result.error || "Unable to create shipping request");
       }
 
-      onCreated({ guestUrl: String(result.guestUrl || "") });
+      onCreated({
+        guestUrl: String(result.guestUrl || ""),
+        requestId: Number(result.request?.id) || undefined,
+      });
       onClose();
     } catch (submitError) {
       setError(
