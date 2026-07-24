@@ -279,6 +279,55 @@ export async function POST(request: Request, context: RouteContext) {
       });
     }
 
+    if (action === "edit_address") {
+      if (String(row.payment_status) === "paid") {
+        return NextResponse.json(
+          { error: "Address cannot be changed after payment." },
+          { status: 400 }
+        );
+      }
+      if (
+        String(row.fulfillment_status) === "label_ready" ||
+        String(row.shipment_status) === "label_ready" ||
+        String(row.shipment_status) === "in_transit" ||
+        String(row.shipment_status) === "delivered"
+      ) {
+        return NextResponse.json(
+          { error: "Address cannot be changed at this stage." },
+          { status: 400 }
+        );
+      }
+
+      await supabase
+        .from("lost_found_shipping_requests")
+        .update({
+          recipient_name: "",
+          recipient_phone: "",
+          recipient_address_json: null,
+          provider_rate_id: null,
+          selected_carrier: null,
+          selected_service: null,
+          rate_snapshot_json: null,
+          rate_expires_at: null,
+          quoted_shipping_amount: null,
+          total_amount: null,
+          shipment_status: "awaiting_guest",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", row.id);
+
+      await appendShippingEvent(supabase, {
+        ...ctx,
+        eventType: SHIPPING_TIMELINE_EVENTS.guestEditingAddress,
+        eventSource: "guest",
+        eventData: {
+          notes: "Guest returned to edit the shipping address",
+        },
+      });
+
+      return NextResponse.json({ ok: true });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Request failed";

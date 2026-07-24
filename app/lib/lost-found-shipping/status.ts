@@ -54,6 +54,52 @@ export function deriveShippingUiBadge(
   return "Awaiting Guest";
 }
 
+/** Staff Automated Shipping "Current Step" badge (workflow stage, not lost_items.status). */
+export type ShippingCurrentStep =
+  | "Awaiting Guest Address"
+  | "Awaiting Shipping Selection"
+  | "Awaiting Guest Payment"
+  | "Awaiting Label Purchase"
+  | "Ready to Ship"
+  | "Shipped"
+  | "Delivered"
+  | "Needs Manual Review";
+
+export function deriveShippingCurrentStep(
+  input: ShippingRequestStatusInput & {
+    selectedCarrier?: string | null;
+    selectedService?: string | null;
+    providerRateId?: string | null;
+  },
+  now = new Date()
+): ShippingCurrentStep {
+  if (input.fulfillmentStatus === "needs_manual_review") {
+    return "Needs Manual Review";
+  }
+  if (input.shipmentStatus === "delivered") return "Delivered";
+  if (input.shipmentStatus === "in_transit") return "Shipped";
+  if (
+    input.fulfillmentStatus === "label_ready" ||
+    input.shipmentStatus === "label_ready"
+  ) {
+    return "Ready to Ship";
+  }
+  if (input.paymentStatus === "paid") return "Awaiting Label Purchase";
+  if (input.shipmentStatus === "awaiting_payment") {
+    const hasSelection = Boolean(
+      input.providerRateId || input.selectedCarrier || input.selectedService
+    );
+    return hasSelection ? "Awaiting Guest Payment" : "Awaiting Shipping Selection";
+  }
+  if (
+    input.paymentStatus === "pending" &&
+    isExpired(input.tokenExpiresAt, now)
+  ) {
+    return "Awaiting Guest Address";
+  }
+  return "Awaiting Guest Address";
+}
+
 /**
  * Top-level lost_items.status values.
  * Automated path: Found → Awaiting Guest Payment → Ready to be shipped → Shipped → Delivered.

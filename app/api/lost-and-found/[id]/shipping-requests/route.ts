@@ -4,7 +4,10 @@ import {
   listShippingRequestsForItem,
   listShippingTimelineForRequest,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
-import { deriveShippingUiBadge } from "@/app/lib/lost-found-shipping/status";
+import {
+  deriveShippingCurrentStep,
+  deriveShippingUiBadge,
+} from "@/app/lib/lost-found-shipping/status";
 import { shippingTimelineLabel } from "@/app/lib/lost-found-shipping/timeline";
 import {
   resolveTenantRequest,
@@ -38,15 +41,20 @@ export async function GET(request: Request, context: RouteContext) {
           scope,
           row.id
         );
+        const statusInput = {
+          paymentStatus: row.paymentStatus,
+          fulfillmentStatus: row.fulfillmentStatus,
+          shipmentStatus: row.shipmentStatus,
+          tokenExpiresAt: row.tokenExpiresAt,
+          cancelledAt: row.cancelledAt,
+          selectedCarrier: row.selectedCarrier,
+          selectedService: row.selectedService,
+          providerRateId: row.providerRateId,
+        };
         return {
           ...row,
-          badge: deriveShippingUiBadge({
-            paymentStatus: row.paymentStatus,
-            fulfillmentStatus: row.fulfillmentStatus,
-            shipmentStatus: row.shipmentStatus,
-            tokenExpiresAt: row.tokenExpiresAt,
-            cancelledAt: row.cancelledAt,
-          }),
+          badge: deriveShippingUiBadge(statusInput),
+          currentStep: deriveShippingCurrentStep(statusInput),
           timeline: timeline.map((entry) => ({
             ...entry,
             label: shippingTimelineLabel(entry.eventType),

@@ -72,6 +72,10 @@ export class MockShippingProvider implements ShippingProvider {
         estimatedDaysMin: 2,
         estimatedDaysMax: 5,
         estimatedDeliveryLabel: "2–5 business days",
+        estimatedDeliveryDate: null,
+        carrierLogoUrl: null,
+        badges: ["best_value", "lowest_price"],
+        highlight: "best_value",
       },
       {
         providerRateId: "mock_usps_priority",
@@ -82,6 +86,10 @@ export class MockShippingProvider implements ShippingProvider {
         estimatedDaysMin: 1,
         estimatedDaysMax: 3,
         estimatedDeliveryLabel: "1–3 business days",
+        estimatedDeliveryDate: null,
+        carrierLogoUrl: null,
+        badges: ["fastest"],
+        highlight: "fastest",
       },
       {
         providerRateId: "mock_ups_ground",
@@ -92,6 +100,10 @@ export class MockShippingProvider implements ShippingProvider {
         estimatedDaysMin: 1,
         estimatedDaysMax: 5,
         estimatedDeliveryLabel: "1–5 business days",
+        estimatedDeliveryDate: null,
+        carrierLogoUrl: null,
+        badges: [],
+        highlight: null,
       },
     ];
   }

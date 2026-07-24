@@ -24,6 +24,7 @@ export const SHIPPING_TIMELINE_EVENTS = {
   requestCancelled: "shipping_request_cancelled",
   manualRetry: "manual_retry",
   manualReview: "manual_review",
+  guestEditingAddress: "guest_editing_shipping_address",
 } as const;
 
 export type ShippingTimelineEventType =
@@ -32,24 +33,25 @@ export type ShippingTimelineEventType =
 export const SHIPPING_TIMELINE_LABELS: Record<ShippingTimelineEventType, string> = {
   shipping_request_created: "Shipping request created",
   shipping_request_emailed: "Shipping request emailed to guest",
-  guest_opened_shipping_request: "Guest opened shipping request",
-  guest_entered_shipping_address: "Guest entered shipping address",
+  guest_opened_shipping_request: "Guest opened link",
+  guest_entered_shipping_address: "Address entered",
   address_validated: "Address validated",
   address_validation_failed: "Address validation failed",
   shipping_rates_retrieved: "Shipping rates retrieved",
-  shipping_rate_selected: "Shipping rate selected",
+  shipping_rate_selected: "Shipping option selected",
   payment_started: "Payment started",
-  payment_completed: "Payment completed",
+  payment_completed: "Payment received",
   payment_failed: "Payment failed",
   label_purchased: "Label purchased",
   label_purchase_failed: "Label purchase failed",
   label_printed: "Label printed",
-  tracking_number_assigned: "Tracking number assigned",
+  tracking_number_assigned: "Tracking number generated",
   package_shipped: "Package shipped",
-  package_delivered: "Package delivered",
+  package_delivered: "Delivered",
   shipping_request_cancelled: "Shipping request cancelled",
   manual_retry: "Manual retry",
   manual_review: "Manual review",
+  guest_editing_shipping_address: "Guest editing shipping address",
 };
 
 export function shippingTimelineLabel(eventType: string): string {

@@ -29,6 +29,14 @@ export type ShippingRate = {
   estimatedDaysMin?: number | null;
   estimatedDaysMax?: number | null;
   estimatedDeliveryLabel?: string | null;
+  /** Calendar ISO date (YYYY-MM-DD) when an ETA can be projected from transit days. */
+  estimatedDeliveryDate?: string | null;
+  /** Optional carrier logo URL from the active provider. */
+  carrierLogoUrl?: string | null;
+  /** Highlight badges derived from provider attributes. */
+  badges?: Array<"best_value" | "fastest" | "lowest_price">;
+  /** @deprecated Prefer `badges`. Kept for older snapshots. */
+  highlight?: "cheapest" | "fastest" | "best_value" | null;
 };
 
 export type AddressValidationResult = {

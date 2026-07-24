@@ -99,7 +99,7 @@ export async function listShippingTimelineForRequest(
     const createdBy = row.created_by ? String(row.created_by) : null;
     let actorLabel = "System";
     if (source === "staff") {
-      actorLabel = createdBy ? "User" : "User (Staff)";
+      actorLabel = "Staff";
     } else if (source === "guest") {
       actorLabel = "Guest";
     } else if (source === "stripe" || source === "shippo" || source === "system") {
@@ -148,6 +148,7 @@ export async function recordGuestOpenedIfNeeded(
 }
 
 export function toStaffShippingRequestView(row: ShippingRequestRow) {
+  const recipient = parseShipFromJson(row.recipient_address_json);
   return {
     id: Number(row.id),
     lostItemId: Number(row.lost_item_id),
@@ -163,10 +164,13 @@ export function toStaffShippingRequestView(row: ShippingRequestRow) {
     paymentStatus: String(row.payment_status || "pending"),
     fulfillmentStatus: String(row.fulfillment_status || "pending"),
     shipmentStatus: String(row.shipment_status || "awaiting_guest"),
+    providerRateId: row.provider_rate_id ? String(row.provider_rate_id) : null,
     selectedCarrier: row.selected_carrier ? String(row.selected_carrier) : null,
     selectedService: row.selected_service ? String(row.selected_service) : null,
     totalAmount: row.total_amount == null ? null : Number(row.total_amount),
     currency: String(row.currency || "usd"),
+    destinationCity: recipient?.city || null,
+    destinationState: recipient?.state || null,
     trackingNumber: row.tracking_number ? String(row.tracking_number) : null,
     trackingUrl: row.tracking_url ? String(row.tracking_url) : null,
     labelStoragePath: row.label_storage_path
@@ -174,6 +178,7 @@ export function toStaffShippingRequestView(row: ShippingRequestRow) {
       : null,
     errorMessage: row.error_message ? String(row.error_message) : null,
     tokenExpiresAt: String(row.token_expires_at),
+    rateExpiresAt: row.rate_expires_at ? String(row.rate_expires_at) : null,
     createdAt: String(row.created_at),
     paidAt: row.paid_at ? String(row.paid_at) : null,
     labelCreatedAt: row.label_created_at ? String(row.label_created_at) : null,
@@ -321,6 +326,14 @@ export async function createShippingRequest(
   };
 }
 
+export type GuestShippingPackageView = {
+  lengthIn: number | null;
+  widthIn: number | null;
+  heightIn: number | null;
+  weightOz: number | null;
+  preset: string | null;
+};
+
 export type GuestShippingRequestView = {
   state:
     | "awaiting_guest"
@@ -332,14 +345,27 @@ export type GuestShippingRequestView = {
     | "expired"
     | "unavailable";
   propertyName: string;
+  propertyBrand: string | null;
+  /** Reserved for future property logo uploads; null until configured. */
+  propertyLogoUrl: string | null;
+  itemName: string;
   itemDescription: string;
+  roomNumber: string | null;
+  foundDate: string | null;
+  /** Reserved for future item photos; null until available. */
+  photoUrl: string | null;
   guestName: string;
   guestEmail: string;
   tokenExpiresAt: string;
+  selectedProviderRateId: string | null;
   selectedCarrier: string | null;
   selectedService: string | null;
   totalAmount: number | null;
   currency: string;
+  recipientSummary: string | null;
+  recipientAddress: ShippingAddress | null;
+  package: GuestShippingPackageView;
+  rateExpiresAt: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
 };
@@ -398,46 +424,108 @@ export async function resolveGuestShippingRequestByToken(
   }
 
   let propertyName = "Hotel";
+  let propertyBrand: string | null = null;
   const propertyId = Number(row.property_id);
   const organizationId = Number(row.organization_id);
   if (Number.isFinite(propertyId) && Number.isFinite(organizationId)) {
     const { data: property } = await supabase
       .from("properties")
-      .select("name")
+      .select("name, brand")
       .eq("id", propertyId)
       .eq("organization_id", organizationId)
       .maybeSingle();
     if (property?.name) propertyName = String(property.name);
+    if (property?.brand) propertyBrand = String(property.brand);
+  }
+
+  let itemName = String(row.item_description_public || "Your item");
+  let roomNumber: string | null = null;
+  let foundDate: string | null = null;
+  const lostItemId = Number(row.lost_item_id);
+  if (Number.isFinite(lostItemId)) {
+    const { data: lostItem } = await supabase
+      .from("lost_items")
+      .select("item_name, room_number, created_at, comments")
+      .eq("id", lostItemId)
+      .eq("organization_id", organizationId)
+      .eq("property_id", propertyId)
+      .maybeSingle();
+    if (lostItem?.item_name) itemName = String(lostItem.item_name);
+    if (lostItem?.room_number) roomNumber = String(lostItem.room_number);
+    if (lostItem?.created_at) foundDate = String(lostItem.created_at);
   }
 
   return {
     state,
     propertyName,
-    itemDescription: String(row.item_description_public || "Your item"),
+    propertyBrand,
+    propertyLogoUrl: null,
+    itemName,
+    itemDescription: String(row.item_description_public || itemName || "Your item"),
+    roomNumber,
+    foundDate,
+    photoUrl: null,
     guestName: String(row.guest_name || ""),
     guestEmail: String(row.guest_email || ""),
     tokenExpiresAt: expiresAt,
+    selectedProviderRateId: row.provider_rate_id
+      ? String(row.provider_rate_id)
+      : null,
     selectedCarrier: row.selected_carrier ? String(row.selected_carrier) : null,
     selectedService: row.selected_service ? String(row.selected_service) : null,
     totalAmount: row.total_amount == null ? null : Number(row.total_amount),
     currency: String(row.currency || "usd"),
+    recipientSummary: formatRecipientSummary(row.recipient_address_json),
+    recipientAddress: parseShipFromJson(row.recipient_address_json),
+    package: {
+      lengthIn: row.length_in == null ? null : Number(row.length_in),
+      widthIn: row.width_in == null ? null : Number(row.width_in),
+      heightIn: row.height_in == null ? null : Number(row.height_in),
+      weightOz: row.weight_oz == null ? null : Number(row.weight_oz),
+      preset: row.package_preset ? String(row.package_preset) : null,
+    },
+    rateExpiresAt: row.rate_expires_at ? String(row.rate_expires_at) : null,
     trackingNumber: row.tracking_number ? String(row.tracking_number) : null,
     trackingUrl: row.tracking_url ? String(row.tracking_url) : null,
   };
+}
+
+function formatRecipientSummary(value: unknown): string | null {
+  const address = parseShipFromJson(value);
+  if (!address?.line1) return null;
+  const line2 = address.line2 ? `, ${address.line2}` : "";
+  return `${address.name} · ${address.line1}${line2}, ${address.city}, ${address.state} ${address.postal}`;
 }
 
 function unavailable(): GuestShippingRequestView {
   return {
     state: "unavailable",
     propertyName: "",
+    propertyBrand: null,
+    propertyLogoUrl: null,
+    itemName: "",
     itemDescription: "",
+    roomNumber: null,
+    foundDate: null,
+    photoUrl: null,
     guestName: "",
     guestEmail: "",
     tokenExpiresAt: "",
+    selectedProviderRateId: null,
     selectedCarrier: null,
     selectedService: null,
     totalAmount: null,
     currency: "usd",
+    recipientSummary: null,
+    recipientAddress: null,
+    package: {
+      lengthIn: null,
+      widthIn: null,
+      heightIn: null,
+      weightOz: null,
+      preset: null,
+    },
+    rateExpiresAt: null,
     trackingNumber: null,
     trackingUrl: null,
   };

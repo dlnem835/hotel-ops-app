@@ -21,6 +21,11 @@ export class ShippoShippingProvider implements ShippingProvider {
   readonly id = "shippo";
 
   async validateAddress(address: ShippingAddress): Promise<AddressValidationResult> {
+    const localIssues = localAddressIssues(address);
+    if (localIssues.length > 0) {
+      return { isValid: false, messages: localIssues, suggestedAddress: null };
+    }
+
     const client = getShippoClient();
     const created = await client.addresses.create({
       ...toShippoAddress(address),
@@ -28,15 +33,24 @@ export class ShippoShippingProvider implements ShippingProvider {
     });
 
     const validation = created.validationResults;
-    const isValid = validation?.isValid !== false;
     const messages = (validation?.messages || [])
       .map((message) => String(message.text || message.source || "").trim())
       .filter(Boolean);
 
-    if (!isValid) {
+    // Require an explicit Shippo validation pass when results are present.
+    if (validation && validation.isValid !== true) {
       return {
         isValid: false,
         messages: messages.length > 0 ? messages : ["Address could not be validated."],
+        suggestedAddress: null,
+      };
+    }
+
+    // Defensive: if Shippo returns no validation payload, reject rather than guess.
+    if (!validation) {
+      return {
+        isValid: false,
+        messages: ["Address could not be validated by the carrier service."],
         suggestedAddress: null,
       };
     }
@@ -69,10 +83,11 @@ export class ShippoShippingProvider implements ShippingProvider {
     });
 
     const rates = shipment.rates || [];
-    return rates
-      .map((rate) => mapShippoRate(rate))
-      .filter((rate): rate is ShippingRate => rate != null)
-      .sort((a, b) => a.amount - b.amount);
+    return dedupeRates(
+      rates
+        .map((rate) => mapShippoRate(rate))
+        .filter((rate): rate is ShippingRate => rate != null)
+    ).sort((a, b) => a.amount - b.amount);
   }
 
   async purchaseLabel(input: {
@@ -184,6 +199,35 @@ function mapShippoRate(rate: Rate): ShippingRate | null {
   const days = rate.estimatedDays;
   const serviceName =
     rate.servicelevel?.name || rate.servicelevel?.token || "Service";
+  const durationTerms = rate.durationTerms
+    ? String(rate.durationTerms).trim()
+    : "";
+  const estimatedDeliveryLabel =
+    typeof days === "number"
+      ? `${days} business day${days === 1 ? "" : "s"}`
+      : durationTerms || null;
+
+  const attrs = (rate.attributes || []).map((value) => String(value).toUpperCase());
+  const badges: NonNullable<ShippingRate["badges"]> = [];
+  if (attrs.includes("BESTVALUE") || attrs.includes("CHEAPEST")) {
+    badges.push("best_value");
+  }
+  if (attrs.includes("FASTEST")) {
+    badges.push("fastest");
+  }
+  if (attrs.includes("CHEAPEST") && !attrs.includes("BESTVALUE")) {
+    badges.push("lowest_price");
+  }
+
+  let highlight: ShippingRate["highlight"] = null;
+  if (badges.includes("best_value")) highlight = "best_value";
+  else if (badges.includes("fastest")) highlight = "fastest";
+  else if (badges.includes("lowest_price")) highlight = "cheapest";
+
+  const logo =
+    rate.providerImage75 || rate.providerImage200
+      ? String(rate.providerImage75 || rate.providerImage200)
+      : null;
 
   return {
     providerRateId: rate.objectId,
@@ -193,11 +237,58 @@ function mapShippoRate(rate: Rate): ShippingRate | null {
     currency: String(rate.currency || "USD").toLowerCase(),
     estimatedDaysMin: typeof days === "number" ? days : null,
     estimatedDaysMax: typeof days === "number" ? days : null,
-    estimatedDeliveryLabel:
-      typeof days === "number"
-        ? `${days} business day${days === 1 ? "" : "s"}`
-        : rate.durationTerms || null,
+    estimatedDeliveryLabel,
+    estimatedDeliveryDate:
+      typeof days === "number" ? projectBusinessDateIso(days) : null,
+    carrierLogoUrl: logo,
+    badges,
+    highlight,
   };
+}
+
+function projectBusinessDateIso(businessDays: number, from = new Date()): string {
+  const date = new Date(from);
+  let remaining = Math.max(0, Math.floor(businessDays));
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function localAddressIssues(address: ShippingAddress): string[] {
+  const issues: string[] = [];
+  if (!address.name.trim()) issues.push("Full name is required.");
+  if (!address.line1.trim()) issues.push("Street address is required.");
+  if (!address.city.trim()) issues.push("City is required.");
+  if (!address.state.trim()) issues.push("State is required.");
+  if (!address.postal.trim()) issues.push("Postal code is required.");
+  if (!address.country.trim()) issues.push("Country is required.");
+
+  const country = address.country.trim().toUpperCase();
+  const postal = address.postal.trim();
+  if (country === "US" && postal && !/^\d{5}(-\d{4})?$/.test(postal)) {
+    issues.push("Enter a valid US ZIP code (12345 or 12345-6789).");
+  }
+
+  return issues;
+}
+
+/** Keep the cheapest quote when Shippo returns duplicate carrier/service rows. */
+function dedupeRates(rates: ShippingRate[]): ShippingRate[] {
+  const best = new Map<string, ShippingRate>();
+  for (const rate of rates) {
+    const key = `${rate.carrier.trim().toLowerCase()}::${rate.service.trim().toLowerCase()}`;
+    const existing = best.get(key);
+    if (!existing || rate.amount < existing.amount) {
+      best.set(key, rate);
+    }
+  }
+  return Array.from(best.values());
 }
 
 function mapPurchasedLabel(transaction: Transaction): PurchasedLabel {
