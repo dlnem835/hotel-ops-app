@@ -241,6 +241,21 @@
   gap: 20px;
 }
 
+.one-eyrie-mobile-pass-on-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+  padding-bottom: 8px;
+}
+
+.one-eyrie-mobile-pass-on-load-more__btn {
+  width: auto;
+  min-width: 160px;
+  min-height: 44px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
 .one-eyrie-mobile-pass-on-group__title {
   margin: 0 0 10px;
   font-size: 13px;

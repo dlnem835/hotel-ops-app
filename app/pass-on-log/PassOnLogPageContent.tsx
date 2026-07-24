@@ -36,6 +36,7 @@ import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
 import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
+import { PASS_ON_DAYS_PER_PAGE } from "@/app/mobile/pass-on-log/lib/pass-on-shared";
 import "./pass-on-log-light-theme.css";
 import {
   clearPassOnDraft,
@@ -116,7 +117,6 @@ export default function PassOnLogPageContent() {
   const [currentUserName, setCurrentUserName] = useState("Unknown");
   const [currentAuthUserId, setCurrentAuthUserId] = useState<string | null>(null);
   const [readBaseline, setReadBaseline] = useState<string | null>(null);
-  const PASS_ON_DAYS_PER_PAGE = 7;
   const [visibleDayCount, setVisibleDayCount] = useState(PASS_ON_DAYS_PER_PAGE);
   const [loadingMoreDays, setLoadingMoreDays] = useState(false);
   const [canDeleteAnyPassOn, setCanDeleteAnyPassOn] = useState(false);

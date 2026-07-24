@@ -25,6 +25,9 @@ import { supabase } from "@/app/supabaseClient";
  * Completes any pending invitation, then routes based on account-setup state.
  * Invited users who have not finished first-login setup are sent to the setup
  * page (UX); server routes independently enforce the same gate.
+ *
+ * Destination shell (mobile vs desktop) follows viewport-interface Automatic
+ * rules: phone → /mobile, tablet (iPad) + desktop → desktop shell.
  */
 async function resolvePostAuthTarget(): Promise<string> {
   await completePendingInvitationIfNeeded();
@@ -120,41 +123,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#111111",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <main className="one-eyrie-auth-page">
       <form
         onSubmit={(event) => void handleLogin(event)}
-        style={{
-          width: "420px",
-          background: "#211F1B",
-          border: "1px solid #C8A96A",
-          borderRadius: "18px",
-          padding: "32px",
-        }}
+        className="one-eyrie-auth-card"
       >
         <OneEyrieWordmark className="one-eyrie-wordmark--sidebar one-eyrie-wordmark--login" />
-        <p style={{ color: "#C8A96A", marginTop: 0 }}>Staff Login</p>
+        <p className="one-eyrie-auth-card__eyebrow">Staff Login</p>
 
         {logoutMessage && (
           <div
+            className="one-eyrie-auth-notice"
             style={{
-              marginBottom: "16px",
-              padding: "12px 14px",
-              borderRadius: "10px",
-              border: `1px solid ${ONE_EYRIE.gold}`,
+              borderColor: ONE_EYRIE.gold,
               background: "rgba(200, 169, 106, 0.12)",
               color: ONE_EYRIE.text,
-              fontSize: "14px",
-              lineHeight: 1.45,
             }}
           >
             {logoutMessage}
@@ -162,18 +145,7 @@ export default function LoginPage() {
         )}
 
         {authDebug ? (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "12px 14px",
-              borderRadius: "10px",
-              border: "1px solid rgba(200,169,106,0.5)",
-              background: "rgba(0,0,0,0.25)",
-              color: ONE_EYRIE.text,
-              fontSize: "13px",
-              lineHeight: 1.45,
-            }}
-          >
+          <div className="one-eyrie-auth-notice one-eyrie-auth-notice--debug">
             {authDebug}
           </div>
         ) : null}
@@ -182,8 +154,8 @@ export default function LoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username or email"
-          className="one-eyrie-login-field"
-          style={inputStyle}
+          autoComplete="username"
+          className="one-eyrie-login-field one-eyrie-auth-field"
         />
 
         <input
@@ -191,31 +163,16 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="one-eyrie-login-field"
-          style={inputStyle}
+          autoComplete="current-password"
+          className="one-eyrie-login-field one-eyrie-auth-field"
         />
 
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "14px",
-            borderRadius: "12px",
-            border: "none",
-            background: "#C8A96A",
-            color: "#111111",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
+        <button type="submit" className="one-eyrie-auth-submit">
           Sign In
         </button>
 
-        <p style={{ marginTop: 16, marginBottom: 0, textAlign: "center" }}>
-          <a
-            href="/forgot-password"
-            style={{ color: "#C8A96A", textDecoration: "none", fontSize: 14 }}
-          >
+        <p className="one-eyrie-auth-footer">
+          <a href="/forgot-password" className="one-eyrie-auth-link">
             Forgot password?
           </a>
         </p>
@@ -223,13 +180,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  marginBottom: "14px",
-  padding: "14px",
-  borderRadius: "12px",
-  fontSize: "15px",
-  boxSizing: "border-box",
-  outline: "none",
-};

@@ -109,6 +109,9 @@ export function groupEntriesByDate(entries: PassOnEntry[]): [string, PassOnEntry
   return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
 }
 
+/** Day-groups shown initially / per "Load more" (desktop + mobile). */
+export const PASS_ON_DAYS_PER_PAGE = 7;
+
 /**
  * Flat list order matching the mobile Pass-On Log: newest entry_date first,
  * then newest created_at within each date (same as the list API order).
