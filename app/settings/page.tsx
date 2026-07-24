@@ -36,6 +36,7 @@ import {
   Building2,
   ChevronRight,
   ClipboardCheck,
+  Package,
   Pencil,
   Plus,
   Wrench,
@@ -46,6 +47,7 @@ import {
 } from "lucide-react";
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
+import PropertyShippingSettingsPanel from "./components/PropertyShippingSettingsPanel";
 import RoomsAreasSection from "./components/RoomsAreasSection";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
@@ -70,7 +72,8 @@ type SectionId =
   | "team"
   | "roomsAreas"
   | "templates"
-  | "pmTemplates";
+  | "pmTemplates"
+  | "shipping";
 
 type ModalType = "team" | null;
 
@@ -149,6 +152,13 @@ useEffect(() => {
       subtitle:
         "Preventive maintenance checklists, schedules, and area assignments.",
       icon: <Wrench size={26} />,
+    },
+    {
+      id: "shipping" as SectionId,
+      title: "Shipping",
+      subtitle:
+        "Ship-from address, package defaults, and automated Lost & Found shipping.",
+      icon: <Package size={26} />,
     },
   ];
 
@@ -739,6 +749,10 @@ async function saveItem() {
                   modalFooter,
                 }}
               />
+            ) : activeSection === "shipping" ? (
+              <div style={sectionPanel}>
+                <PropertyShippingSettingsPanel inputStyle={input} />
+              </div>
             ) : (
               renderTable()
             )}

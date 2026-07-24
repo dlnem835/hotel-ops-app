@@ -14,6 +14,7 @@ import LostFoundAddItemModal, {
   combineLostFoundLocation,
   type LostFoundAddItemFormData,
 } from "@/app/lost-and-found/components/LostFoundAddItemModal";
+import LostFoundShippingSection from "@/app/lost-and-found/components/LostFoundShippingSection";
 import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
@@ -46,6 +47,7 @@ const STATUS_FILTER_OPTIONS = [
   { label: "Label Sent", value: "Label sent" },
   { label: "Ready to be Shipped", value: "Ready to be shipped" },
   { label: "Shipped", value: "Shipped" },
+  { label: "Delivered", value: "Delivered" },
   { label: "Discarded", value: "Discarded" },
 ] as const;
 
@@ -587,6 +589,7 @@ setTeamMembers(allTeamMembers || []);
                   <option>Ready to be shipped</option>
                   <option>Label sent</option>
                   <option>Shipped</option>
+                  <option>Delivered</option>
                   <option>Discarded</option>
                 </select>
               </div>
@@ -657,7 +660,12 @@ setTeamMembers(allTeamMembers || []);
     onClick={() => setSelectedItem(null)}
   >
     <div
-      style={{ ...ONE_EYRIE_MODAL_BOX, width: "480px" }}
+      style={{
+        ...ONE_EYRIE_MODAL_BOX,
+        width: "560px",
+        maxHeight: "90vh",
+        overflowY: "auto",
+      }}
       onClick={(event) => event.stopPropagation()}
     >
       <div style={ONE_EYRIE_MODAL_HEADER}>
@@ -703,6 +711,12 @@ setTeamMembers(allTeamMembers || []);
     ? new Date(selectedItem.label_sent_at).toLocaleString()
     : "Not sent yet"}
 </p>
+
+      <LostFoundShippingSection
+        itemId={selectedItem.id}
+        itemName={selectedItem.item_name}
+        guestLastName={selectedItem.guest_last_name}
+      />
 
       <button
         type="button"

@@ -273,7 +273,12 @@ export function getDefaultMobileHome(permissions: ModulePermissions): string {
 
 export function isPublicAppPath(pathname: string): boolean {
   const path = pathname.split("?")[0] ?? pathname;
-  return path === "/login" || path.startsWith("/login");
+  return (
+    path === "/login" ||
+    path.startsWith("/login") ||
+    path === "/shipping-request" ||
+    path.startsWith("/shipping-request/")
+  );
 }
 
 export function isMobileAppPath(pathname: string): boolean {

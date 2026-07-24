@@ -1,0 +1,237 @@
+.shipping-request-page {
+  min-height: 100vh;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  padding: 20px 16px 40px;
+  box-sizing: border-box;
+}
+
+.shipping-request-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #211f1b;
+  border: 1px solid #c8a96a;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.shipping-request-brand {
+  background: #1a1815;
+  padding: 28px 22px 22px;
+  border-bottom: 3px solid #c8a96a;
+  text-align: center;
+}
+
+.shipping-request-brand__eyebrow {
+  margin: 14px 0 0;
+  color: #9ca3af;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shipping-request-body {
+  padding: 28px 22px 30px;
+}
+
+.shipping-request-title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.shipping-request-property {
+  margin: 0 0 16px;
+  color: #c8a96a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shipping-request-copy {
+  margin: 0 0 18px;
+  color: #c9c9c9;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.shipping-request-item {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #151515;
+  border: 1px solid #3a352e;
+  color: #e5e7eb;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.shipping-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shipping-request-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shipping-request-field span {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shipping-request-field input,
+.shipping-request-field select {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #4a4a4a;
+  background: #151515;
+  color: #ffffff;
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+}
+
+.shipping-request-field input:focus,
+.shipping-request-field select:focus {
+  border-color: #c8a96a;
+}
+
+.shipping-request-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.shipping-request-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.shipping-request-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.shipping-request-btn--primary {
+  background: #c8a96a;
+  color: #111111;
+  box-shadow: 0 10px 24px rgba(200, 169, 106, 0.25);
+}
+
+.shipping-request-btn--primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.shipping-request-btn--secondary {
+  background: #302d28;
+  color: #ffffff;
+  border: 1px solid #3a352e;
+}
+
+.shipping-request-message {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shipping-request-message--error {
+  background: #2a1111;
+  color: #ffb4b4;
+}
+
+.shipping-request-message--info {
+  background: #1c3428;
+  color: #b8d4c4;
+}
+
+.shipping-request-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.shipping-request-rate {
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #3a352e;
+  background: #302d28;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.shipping-request-rate:hover,
+.shipping-request-rate:focus-visible {
+  border-color: #c8a96a;
+  outline: none;
+}
+
+.shipping-request-rate__title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.shipping-request-rate__meta {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.shipping-request-rate__amount {
+  margin-top: 8px;
+  color: #c8a96a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.shipping-request-status-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #151515;
+  border: 1px solid #3a352e;
+}
+
+.shipping-request-status-card h3 {
+  margin: 0 0 8px;
+  color: #c8a96a;
+  font-size: 16px;
+}
+
+.shipping-request-status-card p {
+  margin: 0;
+  color: #c9c9c9;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 420px) {
+  .shipping-request-row {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-request-title {
+    font-size: 22px;
+  }
+}
