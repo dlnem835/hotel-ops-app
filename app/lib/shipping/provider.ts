@@ -33,5 +33,9 @@ export interface ShippingProvider {
 
   voidLabel(providerTransactionId: string): Promise<void>;
 
-  getTrackingStatus(trackingNumber: string): Promise<TrackingResult>;
+  getTrackingStatus(input: {
+    trackingNumber: string;
+    /** Carrier slug when required by the provider (e.g. usps, ups). */
+    carrier?: string | null;
+  }): Promise<TrackingResult>;
 }

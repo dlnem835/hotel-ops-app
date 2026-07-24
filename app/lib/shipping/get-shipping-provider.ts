@@ -1,18 +1,21 @@
 import type { ShippingProvider } from "./provider";
+import {
+  assertShippingProviderEnvReady,
+  getShippingProviderMode,
+} from "./env";
 import { MockShippingProvider } from "./providers/mock-provider";
+import { ShippoShippingProvider } from "./providers/shippo-provider";
 
 /**
  * Factory for the active shipping provider.
- * Phase 1: always mock. Phase 2: SHIPPING_PROVIDER=shippo.
+ * Phase 1 default: mock. Phase 2: SHIPPING_PROVIDER=shippo + SHIPPO_API_TOKEN.
  */
 export function getShippingProvider(): ShippingProvider {
-  const configured = (process.env.SHIPPING_PROVIDER || "mock").trim().toLowerCase();
+  const mode = getShippingProviderMode();
 
-  if (configured === "shippo") {
-    // Phase 2: return new ShippoShippingProvider()
-    throw new Error(
-      "Shippo provider is not enabled yet. Set SHIPPING_PROVIDER=mock for Phase 1."
-    );
+  if (mode === "shippo") {
+    assertShippingProviderEnvReady("shippo");
+    return new ShippoShippingProvider();
   }
 
   return new MockShippingProvider();

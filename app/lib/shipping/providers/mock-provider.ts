@@ -121,11 +121,14 @@ export class MockShippingProvider implements ShippingProvider {
     return;
   }
 
-  async getTrackingStatus(trackingNumber: string): Promise<TrackingResult> {
+  async getTrackingStatus(input: {
+    trackingNumber: string;
+    carrier?: string | null;
+  }): Promise<TrackingResult> {
     return {
       status: "pre_transit",
-      trackingNumber,
-      trackingUrl: `https://example.com/track/${trackingNumber}`,
+      trackingNumber: input.trackingNumber,
+      trackingUrl: `https://example.com/track/${input.trackingNumber}`,
       rawStatus: "MOCK_PRE_TRANSIT",
     };
   }
