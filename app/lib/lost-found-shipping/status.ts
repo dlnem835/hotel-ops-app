@@ -54,9 +54,16 @@ export function deriveShippingUiBadge(
   return "Awaiting Guest";
 }
 
-/** Item statuses that automated shipping may write. */
+/**
+ * Top-level lost_items.status values.
+ * Automated path: Found → Awaiting Guest Payment → Ready to be shipped → Shipped → Delivered.
+ * Manual path keeps Label sent / Ready to be shipped compatibility.
+ * Stored is retained for legacy rows.
+ */
 export const LOST_ITEM_STATUS = {
+  found: "Found",
   stored: "Stored",
+  awaitingGuestPayment: "Awaiting Guest Payment",
   labelSent: "Label sent",
   readyToShip: "Ready to be shipped",
   shipped: "Shipped",
@@ -64,8 +71,11 @@ export const LOST_ITEM_STATUS = {
   discarded: "Discarded",
 } as const;
 
+/** Staff filter / select options (legacy + automated). */
 export const LOST_ITEM_STATUS_OPTIONS = [
+  LOST_ITEM_STATUS.found,
   LOST_ITEM_STATUS.stored,
+  LOST_ITEM_STATUS.awaitingGuestPayment,
   LOST_ITEM_STATUS.labelSent,
   LOST_ITEM_STATUS.readyToShip,
   LOST_ITEM_STATUS.shipped,

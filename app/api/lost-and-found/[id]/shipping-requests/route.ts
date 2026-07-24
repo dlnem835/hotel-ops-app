@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import {
   createShippingRequest,
   listShippingRequestsForItem,
+  listShippingTimelineForRequest,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { deriveShippingUiBadge } from "@/app/lib/lost-found-shipping/status";
+import { shippingTimelineLabel } from "@/app/lib/lost-found-shipping/timeline";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -22,24 +24,42 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Invalid item id" }, { status: 400 });
     }
 
+    const scope = { organizationId, propertyId };
     const requests = await listShippingRequestsForItem(
       supabase,
-      { organizationId, propertyId },
+      scope,
       lostItemId
     );
 
-    return NextResponse.json({
-      requests: requests.map((row) => ({
-        ...row,
-        badge: deriveShippingUiBadge({
-          paymentStatus: row.paymentStatus,
-          fulfillmentStatus: row.fulfillmentStatus,
-          shipmentStatus: row.shipmentStatus,
-          tokenExpiresAt: row.tokenExpiresAt,
-          cancelledAt: row.cancelledAt,
-        }),
-      })),
-    });
+    const withTimeline = await Promise.all(
+      requests.map(async (row) => {
+        const timeline = await listShippingTimelineForRequest(
+          supabase,
+          scope,
+          row.id
+        );
+        return {
+          ...row,
+          badge: deriveShippingUiBadge({
+            paymentStatus: row.paymentStatus,
+            fulfillmentStatus: row.fulfillmentStatus,
+            shipmentStatus: row.shipmentStatus,
+            tokenExpiresAt: row.tokenExpiresAt,
+            cancelledAt: row.cancelledAt,
+          }),
+          timeline: timeline.map((entry) => ({
+            ...entry,
+            label: shippingTimelineLabel(entry.eventType),
+            notes:
+              typeof entry.eventData.notes === "string"
+                ? entry.eventData.notes
+                : null,
+          })),
+        };
+      })
+    );
+
+    return NextResponse.json({ requests: withTimeline });
   } catch (error: unknown) {
     return tenantErrorResponse(error);
   }
@@ -88,7 +108,7 @@ export async function POST(request: Request, context: RouteContext) {
           cancelledAt: result.request.cancelledAt,
         }),
       },
-      // Phase 1: return link for staff testing. Phase 3 emails the guest.
+      // Phase 3 emails the guest; until then staff copies this link.
       guestUrl: result.guestUrl,
     });
   } catch (error: unknown) {

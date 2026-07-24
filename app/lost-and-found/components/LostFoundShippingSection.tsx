@@ -17,6 +17,15 @@ type LostFoundShippingSectionProps = {
   guestLastName?: string;
 };
 
+type ShippingTimelineEntry = {
+  id: number;
+  eventType: string;
+  label: string;
+  actorLabel: string;
+  createdAt: string;
+  notes: string | null;
+};
+
 type ShippingRequestListItem = {
   id: number;
   guestEmail: string;
@@ -31,6 +40,7 @@ type ShippingRequestListItem = {
   trackingNumber: string | null;
   trackingUrl: string | null;
   badge: ShippingUiBadge | string;
+  timeline?: ShippingTimelineEntry[];
 };
 
 function formatMoney(amount: number | null, currency: string): string {
@@ -171,7 +181,7 @@ export default function LostFoundShippingSection({
               marginBottom: "6px",
             }}
           >
-            Phase 1: copy guest link (email in Phase 3)
+            Phase 1–2: copy guest link (email in Phase 3)
           </div>
           <div
             style={{
@@ -302,6 +312,63 @@ export default function LostFoundShippingSection({
                       Tracking: {request.trackingNumber}
                     </span>
                   )}
+                </div>
+              ) : null}
+
+              {(request.timeline || []).length > 0 ? (
+                <div style={{ marginTop: "12px" }}>
+                  <div
+                    style={{
+                      color: ONE_EYRIE.gold,
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      letterSpacing: "0.4px",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    SHIPPING TIMELINE
+                  </div>
+                  <ol
+                    style={{
+                      listStyle: "none",
+                      margin: 0,
+                      padding: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    {(request.timeline || []).map((entry) => (
+                      <li
+                        key={entry.id}
+                        style={{
+                          borderLeft: `2px solid ${ONE_EYRIE.border}`,
+                          paddingLeft: "10px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: ONE_EYRIE.textRow,
+                            fontSize: "12px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {entry.label}
+                        </div>
+                        <div
+                          style={{
+                            color: ONE_EYRIE.textSubtle,
+                            fontSize: "11px",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {new Date(entry.createdAt).toLocaleString()} ·{" "}
+                          {entry.actorLabel}
+                          {entry.notes ? ` · ${entry.notes}` : ""}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               ) : null}
             </li>

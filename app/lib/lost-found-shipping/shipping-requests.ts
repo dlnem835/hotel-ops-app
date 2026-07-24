@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveAppUrl } from "@/app/lib/email/auth-email-config";
+import { getShippingProviderMode } from "@/app/lib/shipping/env";
 import {
   getPackagePreset,
   isPackagePresetKey,
@@ -13,6 +14,7 @@ import {
   settingsToShipFromAddress,
 } from "./property-shipping-settings";
 import { LOST_ITEM_STATUS } from "./status";
+import { SHIPPING_TIMELINE_EVENTS } from "./timeline";
 import {
   generateShippingGuestToken,
   hashShippingGuestToken,
@@ -65,6 +67,84 @@ export async function appendShippingEvent(
     created_by: input.createdBy || null,
   });
   if (error) throw new Error(error.message);
+}
+
+export type ShippingTimelineEntry = {
+  id: number;
+  eventType: string;
+  eventSource: string;
+  eventData: Record<string, unknown>;
+  createdAt: string;
+  createdBy: string | null;
+  actorLabel: string;
+};
+
+export async function listShippingTimelineForRequest(
+  supabase: SupabaseClient,
+  scope: LostFoundShippingScope,
+  shippingRequestId: number
+): Promise<ShippingTimelineEntry[]> {
+  const { data, error } = await supabase
+    .from("lost_found_shipping_events")
+    .select("id, event_type, event_source, event_data, created_at, created_by")
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .eq("shipping_request_id", shippingRequestId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data || []).map((row) => {
+    const source = String(row.event_source || "system");
+    const createdBy = row.created_by ? String(row.created_by) : null;
+    let actorLabel = "System";
+    if (source === "staff") {
+      actorLabel = createdBy ? "User" : "User (Staff)";
+    } else if (source === "guest") {
+      actorLabel = "Guest";
+    } else if (source === "stripe" || source === "shippo" || source === "system") {
+      actorLabel = "System";
+    }
+    return {
+      id: Number(row.id),
+      eventType: String(row.event_type || ""),
+      eventSource: source,
+      eventData:
+        row.event_data && typeof row.event_data === "object"
+          ? (row.event_data as Record<string, unknown>)
+          : {},
+      createdAt: String(row.created_at),
+      createdBy,
+      actorLabel,
+    };
+  });
+}
+
+/** Append guest_opened at most once per request. */
+export async function recordGuestOpenedIfNeeded(
+  supabase: SupabaseClient,
+  row: ShippingRequestRow
+): Promise<void> {
+  const requestId = Number(row.id);
+  const { data: existing } = await supabase
+    .from("lost_found_shipping_events")
+    .select("id")
+    .eq("shipping_request_id", requestId)
+    .eq("event_type", SHIPPING_TIMELINE_EVENTS.guestOpened)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return;
+
+  await appendShippingEvent(supabase, {
+    organizationId: Number(row.organization_id),
+    propertyId: Number(row.property_id),
+    lostItemId: Number(row.lost_item_id),
+    shippingRequestId: requestId,
+    eventType: SHIPPING_TIMELINE_EVENTS.guestOpened,
+    eventSource: "guest",
+    eventData: { notes: "Guest opened the secure shipping link" },
+  });
 }
 
 export function toStaffShippingRequestView(row: ShippingRequestRow) {
@@ -182,7 +262,7 @@ export async function createShippingRequest(
       length_in: lengthIn,
       width_in: widthIn,
       height_in: heightIn,
-      shipping_provider: process.env.SHIPPING_PROVIDER || "mock",
+      shipping_provider: getShippingProviderMode(),
       payment_status: "pending",
       fulfillment_status: "pending",
       shipment_status: "awaiting_guest",
@@ -207,7 +287,7 @@ export async function createShippingRequest(
   await supabase
     .from("lost_items")
     .update({
-      status: LOST_ITEM_STATUS.labelSent,
+      status: LOST_ITEM_STATUS.awaitingGuestPayment,
       label_requested_at: new Date().toISOString(),
       label_sent_at: new Date().toISOString(),
     })
@@ -220,7 +300,7 @@ export async function createShippingRequest(
     propertyId: scope.propertyId,
     lostItemId: input.lostItemId,
     shippingRequestId: requestId,
-    eventType: "request_created",
+    eventType: SHIPPING_TIMELINE_EVENTS.requestCreated,
     eventSource: "staff",
     eventData: {
       guestEmailDomain: guestEmail.includes("@")
@@ -228,6 +308,7 @@ export async function createShippingRequest(
         : null,
       packagePreset: presetKey,
       tokenExpiresAt: expiresAt,
+      notes: "Automated shipping request created",
     },
     createdBy: input.createdBy,
   });

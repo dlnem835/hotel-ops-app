@@ -43,9 +43,11 @@ type LnfKpiFilter = "ready-to-ship" | "ready-to-discard";
 
 const STATUS_FILTER_OPTIONS = [
   { label: "All", value: "All" },
+  { label: "Found", value: "Found" },
   { label: "Stored", value: "Stored" },
+  { label: "Awaiting Guest Payment", value: "Awaiting Guest Payment" },
   { label: "Label Sent", value: "Label sent" },
-  { label: "Ready to be Shipped", value: "Ready to be shipped" },
+  { label: "Ready to Ship", value: "Ready to be shipped" },
   { label: "Shipped", value: "Shipped" },
   { label: "Delivered", value: "Delivered" },
   { label: "Discarded", value: "Discarded" },
@@ -277,8 +279,16 @@ setTeamMembers(allTeamMembers || []);
       };
     }
 
+    if (status === "Awaiting Guest Payment") {
+      return { background: "#3B2F14", color: "#FDE68A", border: "1px solid #C8A96A" };
+    }
+
     if (status === "Label sent") {
       return { background: "#7C4A03", color: "#FEF3C7", border: "1px solid #C8A96A" };
+    }
+
+    if (status === "Found") {
+      return { background: "#1E3A2F", color: "#BBF7D0", border: "1px solid #4ADE80" };
     }
 
     if (status === "Stored") {
@@ -290,7 +300,9 @@ setTeamMembers(allTeamMembers || []);
 
   function statusPillClass(status: string): string {
     if (status === "Ready to be shipped") return "lnf-status-pill--ready-ship";
+    if (status === "Awaiting Guest Payment") return "lnf-status-pill--label-sent";
     if (status === "Label sent") return "lnf-status-pill--label-sent";
+    if (status === "Found") return "lnf-status-pill--ready-ship";
     if (status === "Stored") return "lnf-status-pill--stored";
     return "lnf-status-pill--default";
   }
@@ -585,9 +597,11 @@ setTeamMembers(allTeamMembers || []);
                   className="one-eyrie-lnf-status-select"
                   aria-label={`Status for ${item.item_name}`}
                 >
+                  <option>Found</option>
                   <option>Stored</option>
-                  <option>Ready to be shipped</option>
+                  <option>Awaiting Guest Payment</option>
                   <option>Label sent</option>
+                  <option>Ready to be shipped</option>
                   <option>Shipped</option>
                   <option>Delivered</option>
                   <option>Discarded</option>

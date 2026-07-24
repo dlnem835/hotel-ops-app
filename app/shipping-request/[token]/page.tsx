@@ -185,7 +185,7 @@ export default function ShippingRequestGuestPage() {
       setMessage(
         String(
           result.message ||
-            "Phase 1 mock: Stripe Checkout will be connected in Phase 2. Rate selection saved."
+            "Rate selection saved. Stripe Checkout will be connected in Checkpoint C."
         )
       );
       await loadRequest();

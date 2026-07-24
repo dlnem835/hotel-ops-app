@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getShippingProviderMode } from "@/app/lib/shipping/env";
 import { getShippingProvider } from "@/app/lib/shipping/get-shipping-provider";
 import type { ShippingAddress } from "@/app/lib/shipping/types";
 import {
   hashShippingGuestToken,
   isTokenExpired,
 } from "@/app/lib/lost-found-shipping/token";
-import { resolveGuestShippingRequestByToken } from "@/app/lib/lost-found-shipping/shipping-requests";
+import {
+  appendShippingEvent,
+  recordGuestOpenedIfNeeded,
+  resolveGuestShippingRequestByToken,
+  type ShippingRequestRow,
+} from "@/app/lib/lost-found-shipping/shipping-requests";
+import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -17,19 +24,48 @@ function getServiceClient() {
   );
 }
 
+function eventContext(row: ShippingRequestRow) {
+  return {
+    organizationId: Number(row.organization_id),
+    propertyId: Number(row.property_id),
+    lostItemId: Number(row.lost_item_id),
+    shippingRequestId: Number(row.id),
+  };
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { token } = await context.params;
     const supabase = getServiceClient();
     const view = await resolveGuestShippingRequestByToken(supabase, token);
-    return NextResponse.json({ request: view });
+
+    if (view.state !== "unavailable" && view.state !== "expired") {
+      const tokenHash = hashShippingGuestToken(token.trim());
+      const { data: row } = await supabase
+        .from("lost_found_shipping_requests")
+        .select("*")
+        .eq("secure_token_hash", tokenHash)
+        .maybeSingle();
+      if (row) {
+        await recordGuestOpenedIfNeeded(supabase, row as ShippingRequestRow);
+      }
+    }
+
+    return NextResponse.json({
+      request: view,
+      shippingProvider: getShippingProviderMode(),
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unable to load request";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-/** Phase 1: mock address validation for the guest page. */
+/**
+ * Guest shipping actions.
+ * Checkpoint B: address validation + rates use the configured ShippingProvider
+ * (Shippo test when SHIPPING_PROVIDER=shippo). No Stripe Checkout yet.
+ */
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { token } = await context.params;
@@ -58,6 +94,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const provider = getShippingProvider();
+    const ctx = eventContext(row as ShippingRequestRow);
 
     if (action === "validate_address") {
       const address: ShippingAddress = {
@@ -72,9 +109,31 @@ export async function POST(request: Request, context: RouteContext) {
         email: String(body.email ?? row.guest_email ?? "").trim() || undefined,
       };
 
+      await appendShippingEvent(supabase, {
+        ...ctx,
+        eventType: SHIPPING_TIMELINE_EVENTS.guestEnteredAddress,
+        eventSource: "guest",
+        eventData: {
+          notes: "Guest submitted a shipping address",
+          city: address.city,
+          state: address.state,
+          postal: address.postal,
+          country: address.country,
+        },
+      });
+
       const validation = await provider.validateAddress(address);
       if (!validation.isValid) {
-        return NextResponse.json({ validation });
+        await appendShippingEvent(supabase, {
+          ...ctx,
+          eventType: SHIPPING_TIMELINE_EVENTS.addressValidationFailed,
+          eventSource: "system",
+          eventData: {
+            notes: validation.messages.join(" ") || "Address validation failed",
+            provider: provider.id,
+          },
+        });
+        return NextResponse.json({ validation, shippingProvider: provider.id });
       }
 
       const confirmed = validation.suggestedAddress || address;
@@ -89,7 +148,22 @@ export async function POST(request: Request, context: RouteContext) {
         })
         .eq("id", row.id);
 
-      return NextResponse.json({ validation: { ...validation, suggestedAddress: confirmed } });
+      await appendShippingEvent(supabase, {
+        ...ctx,
+        eventType: SHIPPING_TIMELINE_EVENTS.addressValidated,
+        eventSource: "system",
+        eventData: {
+          notes: validation.suggestedAddress
+            ? "Address validated with suggested corrections"
+            : "Address validated",
+          provider: provider.id,
+        },
+      });
+
+      return NextResponse.json({
+        validation: { ...validation, suggestedAddress: confirmed },
+        shippingProvider: provider.id,
+      });
     }
 
     if (action === "get_rates") {
@@ -113,17 +187,40 @@ export async function POST(request: Request, context: RouteContext) {
         },
       });
 
+      if (rates.length === 0) {
+        return NextResponse.json(
+          { error: "No shipping rates are available for this package and address." },
+          { status: 422 }
+        );
+      }
+
       const rateExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
       await supabase
         .from("lost_found_shipping_requests")
         .update({
           rate_snapshot_json: rates,
           rate_expires_at: rateExpiresAt,
+          shipping_provider: provider.id,
           updated_at: new Date().toISOString(),
         })
         .eq("id", row.id);
 
-      return NextResponse.json({ rates, rateExpiresAt });
+      await appendShippingEvent(supabase, {
+        ...ctx,
+        eventType: SHIPPING_TIMELINE_EVENTS.ratesRetrieved,
+        eventSource: "system",
+        eventData: {
+          notes: `${rates.length} rate(s) retrieved`,
+          provider: provider.id,
+          rateCount: rates.length,
+        },
+      });
+
+      return NextResponse.json({
+        rates,
+        rateExpiresAt,
+        shippingProvider: provider.id,
+      });
     }
 
     if (action === "select_rate") {
@@ -142,6 +239,10 @@ export async function POST(request: Request, context: RouteContext) {
       }
 
       const amount = Number(selected.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return NextResponse.json({ error: "Invalid rate amount." }, { status: 400 });
+      }
+
       await supabase
         .from("lost_found_shipping_requests")
         .update({
@@ -154,14 +255,27 @@ export async function POST(request: Request, context: RouteContext) {
         })
         .eq("id", row.id);
 
-      // Phase 1: mock checkout acknowledgement only (no Stripe).
+      await appendShippingEvent(supabase, {
+        ...ctx,
+        eventType: SHIPPING_TIMELINE_EVENTS.rateSelected,
+        eventSource: "guest",
+        eventData: {
+          notes: `${selected.carrier} ${selected.service} — $${amount.toFixed(2)}`,
+          carrier: selected.carrier,
+          service: selected.service,
+          amount,
+          currency: selected.currency || "usd",
+        },
+      });
+
       return NextResponse.json({
         ok: true,
-        mockCheckout: true,
+        checkoutReady: false,
         amount,
         currency: String(selected.currency || "usd"),
+        shippingProvider: provider.id,
         message:
-          "Phase 1 mock: Stripe Checkout will be connected in Phase 2. Rate selection saved.",
+          "Rate saved. Stripe Checkout will be enabled in Checkpoint C. No payment has been collected.",
       });
     }
 
