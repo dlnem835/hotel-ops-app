@@ -67,6 +67,8 @@ async function main() {
     "property_shipping_settings",
     "lost_found_shipping_requests",
     "lost_found_shipping_events",
+    "payments",
+    "payment_webhook_receipts",
   ]) {
     await tableReachable(table);
   }
@@ -75,12 +77,34 @@ async function main() {
   const { error: colError } = await supabase
     .from("lost_found_shipping_requests")
     .select(
-      "id, organization_id, property_id, lost_item_id, secure_token_hash, token_expires_at, payment_status, fulfillment_status, shipment_status, quoted_shipping_amount, total_amount, label_storage_path"
+      "id, organization_id, property_id, lost_item_id, secure_token_hash, token_expires_at, payment_status, fulfillment_status, shipment_status, quoted_shipping_amount, total_amount, label_storage_path, successful_payment_id, paid_at"
     )
     .limit(0);
   if (colError) fail("shipping_requests core columns", colError.message);
   else pass("shipping_requests core columns selectable");
 
+  const { error: paymentsColError } = await supabase
+    .from("payments")
+    .select(
+      "id, organization_id, property_id, purpose, shipping_request_id, provider, provider_checkout_session_id, provider_payment_intent_id, amount_cents, currency, status, failure_reason, processed_webhook_event_ids, paid_at"
+    )
+    .limit(0);
+  if (paymentsColError) fail("payments columns", paymentsColError.message);
+  else pass("payments columns selectable");
+
+  // Stripe-specific columns must not remain on shipping requests after 052.
+  const { error: legacyStripeError } = await supabase
+    .from("lost_found_shipping_requests")
+    .select("stripe_checkout_session_id")
+    .limit(0);
+  if (!legacyStripeError) {
+    fail(
+      "shipping_requests stripe columns removed",
+      "stripe_checkout_session_id still selectable — apply migration 052"
+    );
+  } else {
+    pass("shipping_requests stripe columns removed");
+  }
   const { error: settingsColError } = await supabase
     .from("property_shipping_settings")
     .select(

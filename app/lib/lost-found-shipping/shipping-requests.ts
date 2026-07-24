@@ -9,6 +9,11 @@ import type { ShippingAddress } from "@/app/lib/shipping/types";
 import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
 import { assertLostItemInTenant } from "@/app/lost-and-found/lib/lost-found-server-db";
 import {
+  centsToAmount,
+  redactStripeId,
+} from "@/app/lib/payments/types";
+import { findPaymentById } from "@/app/lib/payments/payment-records";
+import {
   fetchPropertyShippingSettings,
   isShippingSettingsReady,
   settingsToShipFromAddress,
@@ -185,6 +190,13 @@ export function toStaffShippingRequestView(row: ShippingRequestRow) {
     shippedAt: row.shipped_at ? String(row.shipped_at) : null,
     deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
     cancelledAt: row.cancelled_at ? String(row.cancelled_at) : null,
+    successfulPaymentId: row.successful_payment_id
+      ? Number(row.successful_payment_id)
+      : null,
+    /** Populated when caller attaches successful payment details. */
+    amountPaid: null as number | null,
+    stripePaymentRef: null as string | null,
+    providerReceiptUrl: null as string | null,
   };
 }
 
@@ -202,9 +214,39 @@ export async function listShippingRequestsForItem(
     .eq("lost_item_id", lostItemId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data || []).map((row) =>
-    toStaffShippingRequestView(row as ShippingRequestRow)
-  );
+
+  const views = [];
+  for (const row of data || []) {
+    const view = toStaffShippingRequestView(row as ShippingRequestRow);
+    if (view.successfulPaymentId) {
+      try {
+        const payment = await findPaymentById(supabase, view.successfulPaymentId);
+        if (
+          payment &&
+          payment.organization_id === scope.organizationId &&
+          payment.property_id === scope.propertyId
+        ) {
+          view.amountPaid = centsToAmount(payment.amount_cents);
+          view.stripePaymentRef =
+            redactStripeId(payment.provider_payment_intent_id) ||
+            redactStripeId(payment.provider_checkout_session_id);
+          const receipt =
+            payment.metadata_json &&
+            typeof payment.metadata_json.provider_receipt_url === "string"
+              ? String(payment.metadata_json.provider_receipt_url)
+              : null;
+          view.providerReceiptUrl = receipt;
+          if (!view.paidAt && payment.paid_at) {
+            view.paidAt = payment.paid_at;
+          }
+        }
+      } catch {
+        // Keep business fields even if payment lookup fails.
+      }
+    }
+    views.push(view);
+  }
+  return views;
 }
 
 export async function createShippingRequest(

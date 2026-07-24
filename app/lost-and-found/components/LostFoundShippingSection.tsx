@@ -48,6 +48,10 @@ type ShippingRequestListItem = {
   destinationState?: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  paidAt?: string | null;
+  amountPaid?: number | null;
+  stripePaymentRef?: string | null;
+  providerReceiptUrl?: string | null;
   badge: ShippingUiBadge | string;
   currentStep?: ShippingCurrentStep | string;
   timeline?: ShippingTimelineEntry[];
@@ -607,6 +611,60 @@ export default function LostFoundShippingSection({
                     </span>
                     {formatMoney(request.totalAmount, request.currency)}
                   </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Payment status:{" "}
+                    </span>
+                    {request.paymentStatus === "paid"
+                      ? "Payment Received"
+                      : request.paymentStatus === "failed"
+                        ? "Failed"
+                        : request.paymentStatus === "expired"
+                          ? "Expired"
+                          : "Awaiting payment"}
+                  </div>
+                  {request.paymentStatus === "paid" ? (
+                    <>
+                      <div style={{ color: ONE_EYRIE.textRow }}>
+                        <span style={{ color: ONE_EYRIE.textSubtle }}>
+                          Amount paid:{" "}
+                        </span>
+                        {formatMoney(
+                          request.amountPaid ?? request.totalAmount,
+                          request.currency
+                        )}
+                      </div>
+                      <div style={{ color: ONE_EYRIE.textRow }}>
+                        <span style={{ color: ONE_EYRIE.textSubtle }}>
+                          Paid at:{" "}
+                        </span>
+                        {request.paidAt
+                          ? new Date(request.paidAt).toLocaleString()
+                          : "—"}
+                      </div>
+                      <div style={{ color: ONE_EYRIE.textRow }}>
+                        <span style={{ color: ONE_EYRIE.textSubtle }}>
+                          Stripe reference:{" "}
+                        </span>
+                        {request.stripePaymentRef || "—"}
+                      </div>
+                      {request.providerReceiptUrl ? (
+                        <div style={{ color: ONE_EYRIE.textRow }}>
+                          <span style={{ color: ONE_EYRIE.textSubtle }}>
+                            Receipt:{" "}
+                          </span>
+                          <a
+                            href={request.providerReceiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}
+                          >
+                            View Stripe receipt
+                          </a>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
                       Guest viewed:{" "}

@@ -1,33 +1,19 @@
 import "server-only";
 
 import Stripe from "stripe";
+import { getStripeSecretKey } from "@/app/lib/payments/stripe-env";
 
 /**
- * Server-only Stripe client. Phase 2 Checkpoint A: client construction + test-mode guard.
- * Checkout/webhooks are Checkpoint C.
+ * Server-only Stripe client — test mode only.
  */
-
-function readStripeSecret(): string {
-  const secret = (process.env.STRIPE_SECRET_KEY ?? "").trim();
-  if (!secret) {
-    throw new Error("STRIPE_SECRET_KEY is not configured.");
-  }
-  if (secret.startsWith("sk_live_")) {
-    throw new Error(
-      "Live Stripe secret key is not allowed in Phase 2. Use sk_test_… only."
-    );
-  }
-  if (!secret.startsWith("sk_test_")) {
-    throw new Error("STRIPE_SECRET_KEY must be a test key (sk_test_…).");
-  }
-  return secret;
-}
 
 let cached: Stripe | null = null;
 
 export function getStripeServerClient(): Stripe {
   if (cached) return cached;
-  cached = new Stripe(readStripeSecret());
+  cached = new Stripe(getStripeSecretKey(), {
+    typescript: true,
+  });
   return cached;
 }
 

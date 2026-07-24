@@ -246,6 +246,9 @@ export function timelineEventIcon(eventType: string): string {
       return "🚚";
     case SHIPPING_TIMELINE_EVENTS.paymentStarted:
     case SHIPPING_TIMELINE_EVENTS.paymentCompleted:
+    case SHIPPING_TIMELINE_EVENTS.checkoutSessionCreated:
+    case SHIPPING_TIMELINE_EVENTS.checkoutCancelled:
+    case SHIPPING_TIMELINE_EVENTS.checkoutExpired:
       return "💳";
     case SHIPPING_TIMELINE_EVENTS.labelPurchased:
     case SHIPPING_TIMELINE_EVENTS.labelPrinted:

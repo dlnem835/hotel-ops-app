@@ -63,8 +63,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
 /**
  * Guest shipping actions.
- * Checkpoint B: address validation + rates use the configured ShippingProvider
- * (Shippo test when SHIPPING_PROVIDER=shippo). No Stripe Checkout yet.
+ * Checkpoint B/C: address validation + rates use ShippingProvider;
+ * Checkout is created via /checkout (Stripe test mode).
  */
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -270,12 +270,12 @@ export async function POST(request: Request, context: RouteContext) {
 
       return NextResponse.json({
         ok: true,
-        checkoutReady: false,
+        checkoutReady: true,
         amount,
         currency: String(selected.currency || "usd"),
         shippingProvider: provider.id,
         message:
-          "Rate saved. Stripe Checkout will be enabled in Checkpoint C. No payment has been collected.",
+          "Rate saved. Continue to Secure Checkout when you are ready. No payment has been collected yet.",
       });
     }
 

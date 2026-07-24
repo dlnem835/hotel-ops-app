@@ -429,11 +429,39 @@ export default function ShippingRequestGuestPage() {
     }
   }
 
-  function handleContinueToPayment() {
-    setMessageTone("info");
-    setMessage(
-      "Your shipping option is saved. Secure Stripe Checkout will connect here in Checkpoint C — no payment has been collected."
-    );
+  async function handleContinueToCheckout() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      setMessageTone("info");
+      setMessage("Redirecting to secure checkout…");
+      const response = await fetch(
+        `/api/shipping-request/${encodeURIComponent(token)}/checkout`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to start secure checkout");
+      }
+      if (result.alreadyPaid) {
+        window.location.href =
+          result.redirectTo ||
+          `/shipping-request/${encodeURIComponent(token)}/payment-processing`;
+        return;
+      }
+      if (!result.checkoutUrl) {
+        throw new Error("Secure checkout URL was not returned.");
+      }
+      window.location.href = String(result.checkoutUrl);
+    } catch (error) {
+      setMessageTone("error");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to start secure checkout. Please try again."
+      );
+      setBusy(false);
+    }
   }
 
   const progressActive = view ? guestProgressIndex(view.state) : 0;
@@ -968,16 +996,16 @@ export default function ShippingRequestGuestPage() {
                 type="button"
                 className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
                 disabled={busy || !selectedRateId || ratesExpired}
-                onClick={handleContinueToPayment}
+                onClick={() => void handleContinueToCheckout()}
               >
                 <span className="shipping-request-lock" aria-hidden="true">
                   🔒
                 </span>
-                Continue to payment
+                Continue to Secure Checkout
               </button>
               <p className="shipping-request-footnote">
-                Secure checkout comes next. You will only be charged the selected
-                shipping amount.
+                You’ll complete payment on Stripe’s secure checkout. You are only
+                charged the selected carrier shipping amount — no One Eyrie fee.
               </p>
             </div>
           </div>
