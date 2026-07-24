@@ -74,5 +74,5 @@ export default function MobilePassOnLogDetailPage() {
     );
   }
 
-  return <MobilePassOnLogDetail entry={entry} />;
+  return <MobilePassOnLogDetail key={entry.id} entry={entry} />;
 }

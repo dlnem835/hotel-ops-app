@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { redirectToLogin } from "@/app/lib/auth";
 import {
   addPassOnReply,
+  fetchPassOnEntries,
   fetchTeamMembers,
+  filterRecentPassOnEntries,
+  findAdjacentPassOnEntryIds,
   formatDateTime,
   markPassOnAsViewed,
   PassOnEntry,
@@ -19,23 +23,67 @@ type MobilePassOnLogDetailProps = {
 };
 
 export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailProps) {
+  const router = useRouter();
   const [replyText, setReplyText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
+  const [navEntries, setNavEntries] = useState<PassOnEntry[]>([]);
 
   useEffect(() => {
+    setReplyText("");
+    setError(null);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     void resolveCurrentUserName().then(setCurrentUserName);
     void fetchTeamMembers().then(setTeamMembers).catch(() => undefined);
     void markPassOnAsViewed(entry.id);
   }, [entry.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPassOnEntries()
+      .then((result) => {
+        if (cancelled) return;
+        setNavEntries(filterRecentPassOnEntries(result.entries));
+      })
+      .catch(() => {
+        if (!cancelled) setNavEntries([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const replies = useMemo(() => {
     return [...(entry.pass_on_log_replies || [])].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
   }, [entry.pass_on_log_replies]);
+
+  const { previousId, nextId } = useMemo(
+    () => findAdjacentPassOnEntryIds(navEntries, entry.id),
+    [navEntries, entry.id]
+  );
+
+  function confirmLeaveIfNeeded(): boolean {
+    if (!replyText.trim()) return true;
+    return window.confirm(
+      "You have an unsaved reply. Leave this entry without sending it?"
+    );
+  }
+
+  function navigateToEntry(targetId: number | null) {
+    if (targetId == null) return;
+    if (!confirmLeaveIfNeeded()) return;
+    router.push(`/mobile/pass-on-log/${targetId}`);
+  }
+
+  function handleBackClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (!confirmLeaveIfNeeded()) {
+      event.preventDefault();
+    }
+  }
 
   async function handleReply(event: React.FormEvent) {
     event.preventDefault();
@@ -69,7 +117,11 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
 
   return (
     <div className="one-eyrie-mobile__inner one-eyrie-mobile-pass-on">
-      <Link href="/mobile/pass-on-log" className="one-eyrie-mobile-back">
+      <Link
+        href="/mobile/pass-on-log"
+        className="one-eyrie-mobile-back"
+        onClick={handleBackClick}
+      >
         ← Pass-On Log
       </Link>
 
@@ -128,6 +180,25 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
           {saving ? "Sending…" : "Send Reply"}
         </button>
       </form>
+
+      <div className="one-eyrie-mobile-pass-on-nav" role="navigation" aria-label="Pass-on entry">
+        <button
+          type="button"
+          className="one-eyrie-mobile-pass-on-nav__btn"
+          disabled={previousId == null}
+          onClick={() => navigateToEntry(previousId)}
+        >
+          ← Previous
+        </button>
+        <button
+          type="button"
+          className="one-eyrie-mobile-pass-on-nav__btn"
+          disabled={nextId == null}
+          onClick={() => navigateToEntry(nextId)}
+        >
+          Next →
+        </button>
+      </div>
     </div>
   );
 }

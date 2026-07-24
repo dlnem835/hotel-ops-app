@@ -109,6 +109,36 @@ export function groupEntriesByDate(entries: PassOnEntry[]): [string, PassOnEntry
   return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
 }
 
+/**
+ * Flat list order matching the mobile Pass-On Log: newest entry_date first,
+ * then newest created_at within each date (same as the list API order).
+ */
+export function sortPassOnEntriesForNavigation(entries: PassOnEntry[]): PassOnEntry[] {
+  return [...entries].sort((a, b) => {
+    const dateA = resolveEntryDate(a);
+    const dateB = resolveEntryDate(b);
+    if (dateA !== dateB) return dateB.localeCompare(dateA);
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+/** Previous = older entry; Next = newer entry. */
+export function findAdjacentPassOnEntryIds(
+  entries: PassOnEntry[],
+  currentId: number
+): { previousId: number | null; nextId: number | null } {
+  const ordered = sortPassOnEntriesForNavigation(entries);
+  const index = ordered.findIndex((entry) => entry.id === currentId);
+  if (index < 0) {
+    return { previousId: null, nextId: null };
+  }
+
+  return {
+    previousId: index < ordered.length - 1 ? ordered[index + 1].id : null,
+    nextId: index > 0 ? ordered[index - 1].id : null,
+  };
+}
+
 export type PassOnListResult = {
   entries: PassOnEntry[];
   readBaseline: string | null;

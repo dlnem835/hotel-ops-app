@@ -485,6 +485,38 @@
   margin-top: 18px;
 }
 
+.one-eyrie-mobile-pass-on-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.one-eyrie-mobile-pass-on-nav__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #c8a96a;
+  background: transparent;
+  color: #c8a96a;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.one-eyrie-mobile-pass-on-nav__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #3a352e;
+  color: #6b7280;
+  background: transparent;
+}
+
 .one-eyrie-mobile-field {
   margin-bottom: 14px;
 }
