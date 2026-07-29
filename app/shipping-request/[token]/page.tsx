@@ -160,6 +160,7 @@ export default function ShippingRequestGuestPage() {
   const [rateExpiresAt, setRateExpiresAt] = useState<string | null>(null);
   const [ratesExpired, setRatesExpired] = useState(false);
   const [isPhone, setIsPhone] = useState(false);
+  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
 
   useEffect(() => {
     setIsPhone(isPhoneViewport());
@@ -185,6 +186,7 @@ export default function ShippingRequestGuestPage() {
       }
       const nextView = result.request as GuestShippingRequestView;
       setView(nextView);
+      setCheckoutAvailable(Boolean(result.checkoutAvailable));
       setSelectedRateId(nextView.selectedProviderRateId);
       setRateExpiresAt(nextView.rateExpiresAt);
       if (!options?.quiet) setLogoFailed(false);
@@ -468,6 +470,11 @@ export default function ShippingRequestGuestPage() {
   }
 
   async function handleContinueToCheckout() {
+    if (!checkoutAvailable) {
+      setMessageTone("error");
+      setMessage("Secure online payment is not yet available.");
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -1028,7 +1035,13 @@ export default function ShippingRequestGuestPage() {
           <button
             type="button"
             className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
-            disabled={busy || !selectedRateId || ratesExpired || totalDue == null}
+            disabled={
+              busy ||
+              !checkoutAvailable ||
+              !selectedRateId ||
+              ratesExpired ||
+              totalDue == null
+            }
             onClick={() => void handleContinueToCheckout()}
           >
             <span className="shipping-request-lock" aria-hidden="true">
@@ -1036,9 +1049,15 @@ export default function ShippingRequestGuestPage() {
             </span>
             Continue to Secure Checkout
           </button>
-          <p className="shipping-request-footnote">
-            You’ll complete payment through Stripe’s secure checkout.
-          </p>
+          {checkoutAvailable ? (
+            <p className="shipping-request-footnote">
+              You’ll complete payment through Stripe’s secure checkout.
+            </p>
+          ) : (
+            <p className="shipping-request-footnote shipping-request-footnote--warn">
+              Secure online payment is not yet available.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -1078,7 +1097,11 @@ export default function ShippingRequestGuestPage() {
                 </p>
               )}
               {view?.propertyPhone ? (
-                <p className="shipping-request-hotel__contact">{view.propertyPhone}</p>
+                <p className="shipping-request-hotel__contact">
+                  <a href={`tel:${view.propertyPhone.replace(/[^\d+]/g, "")}`}>
+                    {view.propertyPhone}
+                  </a>
+                </p>
               ) : null}
             </div>
           </div>

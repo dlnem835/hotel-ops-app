@@ -368,6 +368,18 @@ export default function PropertyShippingSettingsPanel({
                 }
                 style={fieldStyle}
               />
+              <span
+                style={{
+                  display: "block",
+                  marginTop: "6px",
+                  color: ONE_EYRIE.textSubtle,
+                  fontSize: "11px",
+                  lineHeight: 1.4,
+                }}
+              >
+                Synced to this property’s hotel profile. Guests see this number
+                automatically on the shipping page.
+              </span>
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
@@ -383,6 +395,17 @@ export default function PropertyShippingSettingsPanel({
                 }
                 style={fieldStyle}
               />
+              <span
+                style={{
+                  display: "block",
+                  marginTop: "6px",
+                  color: ONE_EYRIE.textSubtle,
+                  fontSize: "11px",
+                  lineHeight: 1.4,
+                }}
+              >
+                Used for shipping operations. Not shown on the guest portal.
+              </span>
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">

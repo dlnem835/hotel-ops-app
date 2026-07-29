@@ -81,6 +81,16 @@
   font-size: 12px;
 }
 
+.shipping-request-hotel__contact a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.shipping-request-hotel__contact a:hover {
+  color: #c8a96a;
+  text-decoration: underline;
+}
+
 .shipping-request-destination-card {
   margin: 0 0 12px;
   padding: 12px;
@@ -508,6 +518,11 @@
   font-size: 12px;
   line-height: 1.45;
   text-align: center;
+}
+
+.shipping-request-footnote--warn {
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 .shipping-request-btn--secondary {

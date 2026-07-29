@@ -14,6 +14,7 @@ import {
   type ShippingRequestRow,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
+import { isStripeCheckoutEnvReady } from "@/app/lib/payments/stripe-env";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -54,6 +55,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({
       request: view,
       shippingProvider: getShippingProviderMode(),
+      checkoutAvailable: isStripeCheckoutEnvReady(),
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unable to load request";

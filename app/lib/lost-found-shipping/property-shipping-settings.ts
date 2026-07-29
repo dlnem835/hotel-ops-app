@@ -267,7 +267,8 @@ export async function resolveShipFromForProperty(
   return propertyToShipFromAddress({
     propertyName: settings.senderName.trim() || property.name,
     address: property.address,
-    phone: settings.propertyPhone || property.phone,
+    // Shippo ship-from phone always from the property record for this property_id.
+    phone: property.phone,
     email: settings.propertyEmail,
   });
 }

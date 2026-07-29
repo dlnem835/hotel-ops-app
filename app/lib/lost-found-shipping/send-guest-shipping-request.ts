@@ -88,10 +88,9 @@ async function loadPropertyEmailBranding(
     String(property?.name || "").trim() ||
     settings.senderName ||
     "Hotel";
-  const propertyPhone =
-    settings.propertyPhone ||
-    String(property?.phone_number || "").trim() ||
-    "";
+  // Guest-facing phone always from the property record for this property_id.
+  const propertyPhone = String(property?.phone_number || "").trim();
+  // Return email is operational only — not shown on guest portal / guest email body.
   const propertyReturnEmail = settings.propertyEmail || "";
 
   let propertyAddressLine = String(property?.address || "").trim();

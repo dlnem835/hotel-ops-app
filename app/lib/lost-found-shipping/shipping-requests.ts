@@ -585,6 +585,8 @@ export async function resolveGuestShippingRequestByToken(
   const propertyId = Number(row.property_id);
   const organizationId = Number(row.organization_id);
   if (Number.isFinite(propertyId) && Number.isFinite(organizationId)) {
+    // Guest branding is always resolved from the lost item's property_id —
+    // never staff active property, URL params, or hardcoded hotel values.
     const { data: property } = await supabase
       .from("properties")
       .select(
@@ -595,7 +597,9 @@ export async function resolveGuestShippingRequestByToken(
       .maybeSingle();
     if (property?.name) propertyName = String(property.name);
     if (property?.brand) propertyBrand = String(property.brand);
-    if (property?.phone_number) propertyPhone = String(property.phone_number);
+    // Guest-facing phone: property record only (Platform Property Settings).
+    const phone = String(property?.phone_number || "").trim();
+    propertyPhone = phone || null;
     if (property?.address) {
       propertyAddress = String(property.address);
     } else if (property?.address_line1) {

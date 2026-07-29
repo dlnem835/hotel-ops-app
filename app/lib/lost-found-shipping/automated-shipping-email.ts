@@ -10,6 +10,7 @@ export type AutomatedShippingEmailInput = {
   itemName: string;
   propertyName: string;
   propertyPhone?: string | null;
+  /** Kept for internal ops callers; not rendered in guest email content. */
   propertyReturnEmail?: string | null;
   propertyAddressLine?: string | null;
   guestShippingUrl: string;
@@ -57,7 +58,6 @@ export function buildAutomatedShippingEmail(
   const hello = greeting(input.guestName);
   const expiryLabel = formatExpiry(input.expiresAt);
   const phone = input.propertyPhone?.trim() || "";
-  const returnEmail = input.propertyReturnEmail?.trim() || "";
   const address = input.propertyAddressLine?.trim() || "";
 
   const subject = `${propertyName} found your item — arrange return shipping`;
@@ -65,9 +65,6 @@ export function buildAutomatedShippingEmail(
   const contactLinesHtml = [
     phone
       ? `<div style="margin-top:6px;color:${T.textMuted};">Phone: ${escapeHtml(phone)}</div>`
-      : "",
-    returnEmail
-      ? `<div style="margin-top:6px;color:${T.textMuted};">Email: ${escapeHtml(returnEmail)}</div>`
       : "",
     address
       ? `<div style="margin-top:8px;line-height:1.55;color:${T.textMuted};">${escapeHtml(address)}</div>`
@@ -108,8 +105,8 @@ export function buildAutomatedShippingEmail(
       label: AUTOMATED_SHIPPING_EMAIL_CTA,
       url: input.guestShippingUrl,
     },
-    supportMessage: returnEmail
-      ? `Questions about your item? Contact ${propertyName} at ${returnEmail}.`
+    supportMessage: phone
+      ? `Questions about your item? Contact ${propertyName} at ${phone}.`
       : `Questions about your item? Contact the front desk at ${propertyName}.`,
   });
 
@@ -123,7 +120,6 @@ export function buildAutomatedShippingEmail(
     "",
     `Hotel: ${propertyName}`,
     phone ? `Phone: ${phone}` : null,
-    returnEmail ? `Email: ${returnEmail}` : null,
     address ? `Address: ${address}` : null,
     expiryLabel ? `Link available until: ${expiryLabel}` : null,
     "",

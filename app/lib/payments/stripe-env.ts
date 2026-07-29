@@ -67,6 +67,11 @@ export function assertStripeCheckoutEnvReady(): void {
   );
 }
 
+/** Safe boolean for API responses — never exposes secret values. */
+export function isStripeCheckoutEnvReady(): boolean {
+  return validateStripeCheckoutEnv().length === 0;
+}
+
 export function getStripeSecretKey(): string {
   assertStripeCheckoutEnvReady();
   return readEnv("STRIPE_SECRET_KEY");
