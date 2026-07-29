@@ -336,7 +336,7 @@ export default function PropertyShippingSettingsPanel({
                     senderName: event.target.value,
                   }))
                 }
-                placeholder="SpringHill Suites Tampa Suncoast Parkway"
+                placeholder="Hotel Front Desk"
                 style={fieldStyle}
               />
             </label>

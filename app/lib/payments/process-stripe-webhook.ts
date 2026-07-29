@@ -246,6 +246,10 @@ async function handleCheckoutSessionCompleted(
   }
 
   const metaRequestId = Number(session.metadata?.oe_shipping_request_id || 0);
+  const metaOrgId = Number(session.metadata?.oe_organization_id || 0);
+  const metaPropertyId = Number(session.metadata?.oe_property_id || 0);
+  const metaLostItemId = Number(session.metadata?.oe_lost_item_id || 0);
+
   if (
     payment.shipping_request_id &&
     Number.isFinite(metaRequestId) &&
@@ -264,6 +268,46 @@ async function handleCheckoutSessionCompleted(
       eventType: event.type,
       paymentId: payment.id,
       message: "Shipping request mismatch",
+    };
+  }
+
+  if (
+    Number.isFinite(metaOrgId) &&
+    metaOrgId > 0 &&
+    metaOrgId !== payment.organization_id
+  ) {
+    await updatePaymentStatus(supabase, payment.id, {
+      status: "failed",
+      failureReason: "Checkout metadata organization mismatch",
+      appendWebhookEventId: event.id,
+    });
+    return {
+      ok: false,
+      duplicate: false,
+      handled: true,
+      eventType: event.type,
+      paymentId: payment.id,
+      message: "Organization mismatch",
+    };
+  }
+
+  if (
+    Number.isFinite(metaPropertyId) &&
+    metaPropertyId > 0 &&
+    metaPropertyId !== payment.property_id
+  ) {
+    await updatePaymentStatus(supabase, payment.id, {
+      status: "failed",
+      failureReason: "Checkout metadata property mismatch",
+      appendWebhookEventId: event.id,
+    });
+    return {
+      ok: false,
+      duplicate: false,
+      handled: true,
+      eventType: event.type,
+      paymentId: payment.id,
+      message: "Property mismatch",
     };
   }
 
@@ -295,6 +339,49 @@ async function handleCheckoutSessionCompleted(
       .maybeSingle();
 
     if (request) {
+      if (
+        Number.isFinite(metaLostItemId) &&
+        metaLostItemId > 0 &&
+        metaLostItemId !== Number(request.lost_item_id)
+      ) {
+        await updatePaymentStatus(supabase, payment.id, {
+          status: "failed",
+          failureReason: "Checkout metadata lost item mismatch",
+          appendWebhookEventId: event.id,
+        });
+        return {
+          ok: false,
+          duplicate: false,
+          handled: true,
+          eventType: event.type,
+          paymentId: payment.id,
+          message: "Lost item mismatch",
+        };
+      }
+
+      if (
+        (Number.isFinite(metaOrgId) &&
+          metaOrgId > 0 &&
+          metaOrgId !== Number(request.organization_id)) ||
+        (Number.isFinite(metaPropertyId) &&
+          metaPropertyId > 0 &&
+          metaPropertyId !== Number(request.property_id))
+      ) {
+        await updatePaymentStatus(supabase, payment.id, {
+          status: "failed",
+          failureReason: "Checkout metadata tenant mismatch vs shipping request",
+          appendWebhookEventId: event.id,
+        });
+        return {
+          ok: false,
+          duplicate: false,
+          handled: true,
+          eventType: event.type,
+          paymentId: payment.id,
+          message: "Tenant mismatch vs shipping request",
+        };
+      }
+
       const alreadyPaid = String(request.payment_status) === "paid";
 
       // Mirror business payment state, then purchase label automatically.
@@ -319,7 +406,9 @@ async function handleCheckoutSessionCompleted(
             successful_payment_id: payment.id,
             updated_at: paidAt,
           })
-          .eq("id", request.id);
+          .eq("id", request.id)
+          .eq("organization_id", payment.organization_id)
+          .eq("property_id", payment.property_id);
       }
 
       if (!alreadyPaid) {

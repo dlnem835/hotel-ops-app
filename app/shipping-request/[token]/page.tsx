@@ -113,13 +113,6 @@ function rateBadges(rate: ShippingRate): string[] {
   return labels;
 }
 
-function propertyInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "H";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
-}
-
 function formatPackageSummary(view: GuestShippingRequestView): string | null {
   const pkg = view.package;
   const hasDims =
@@ -343,7 +336,7 @@ export default function ShippingRequestGuestPage() {
       setSelectedRateId(null);
       setMessageTone("success");
       setMessage("Shipping rates refreshed. Please select an option again.");
-      await loadRequest();
+      await loadRequest({ quiet: true });
     } catch (error) {
       setMessageTone("error");
       setMessage(
@@ -408,6 +401,7 @@ export default function ShippingRequestGuestPage() {
   }
 
   async function handleSelectRate(providerRateId: string) {
+    if (busy || ratesLoading) return;
     if (ratesExpired) {
       setMessageTone("error");
       setMessage(
@@ -415,23 +409,23 @@ export default function ShippingRequestGuestPage() {
       );
       return;
     }
+    if (selectedRateId === providerRateId) return;
+
+    const previousSelected = selectedRateId;
+    // Optimistic UI — update summary in place without remounting the page.
+    setSelectedRateId(providerRateId);
     setBusy(true);
     setMessage(null);
     try {
-      const result = await postAction({
+      await postAction({
         action: "select_rate",
         providerRateId,
       });
-      setSelectedRateId(providerRateId);
-      setMessageTone("success");
-      setMessage(
-        String(
-          result.message ||
-            "Shipping option saved. You can continue to secure payment next."
-        )
-      );
-      await loadRequest();
+      // Quiet refresh: do not toggle `loading` (that remounted the rates UI and
+      // scrolled the guest to the top).
+      await loadRequest({ quiet: true });
     } catch (error) {
+      setSelectedRateId(previousSelected);
       const text =
         error instanceof Error
           ? error.message
@@ -684,336 +678,288 @@ export default function ShippingRequestGuestPage() {
     return (
       <>
         {renderProgress()}
-        <h1 className="shipping-request-title">We found your item</h1>
+        <h1 className="shipping-request-title">Choose Your Shipping Option</h1>
         <p className="shipping-request-copy">
-          Please confirm where we should send it, then choose a delivery option.
+          Confirm the delivery details below, then select the shipping option
+          that works best for you.
         </p>
-        <div className="shipping-request-fee-note">
-          You pay only the carrier’s shipping cost. One Eyrie does not add a
-          service fee.
-        </div>
-        {renderItemCard()}
 
         {showAddressForm ? (
-          <form
-            className="shipping-request-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleValidateAddress();
-            }}
-          >
-            <h2 className="shipping-request-section-title">Shipping address</h2>
-            <p className="shipping-request-copy shipping-request-copy--tight">
-              Enter the destination where we should send your item. The hotel
-              ships from its property address automatically.
-            </p>
-            <label className="shipping-request-field">
-              <span>Full name *</span>
-              <input
-                required
-                autoComplete="name"
-                value={address.name}
-                onChange={(event) =>
-                  setAddress((current) => ({ ...current, name: event.target.value }))
-                }
-              />
-            </label>
-            <AddressFields
-              variant="guest"
-              idPrefix="guest-ship-to"
-              value={{
-                line1: address.line1,
-                line2: address.line2,
-                city: address.city,
-                state: address.state,
-                postal: address.postal,
-                country: address.country || "US",
+          <>
+            {renderItemCard()}
+            <form
+              className="shipping-request-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleValidateAddress();
               }}
-              onChange={(next) =>
-                setAddress((current) => ({
-                  ...current,
-                  line1: next.line1,
-                  line2: next.line2,
-                  city: next.city,
-                  state: next.state,
-                  postal: next.postal,
-                  country: next.country,
-                }))
-              }
-            />
-            <label className="shipping-request-field">
-              <span>Phone</span>
-              <input
-                autoComplete="tel"
-                value={address.phone}
-                onChange={(event) =>
-                  setAddress((current) => ({ ...current, phone: event.target.value }))
+            >
+              <h2 className="shipping-request-section-title">Shipping address</h2>
+              <p className="shipping-request-copy shipping-request-copy--tight">
+                Enter the destination where we should send your item. The hotel
+                ships from its property address automatically.
+              </p>
+              <label className="shipping-request-field">
+                <span>Full name *</span>
+                <input
+                  required
+                  autoComplete="name"
+                  value={address.name}
+                  onChange={(event) =>
+                    setAddress((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <AddressFields
+                variant="guest"
+                idPrefix="guest-ship-to"
+                value={{
+                  line1: address.line1,
+                  line2: address.line2,
+                  city: address.city,
+                  state: address.state,
+                  postal: address.postal,
+                  country: address.country || "US",
+                }}
+                onChange={(next) =>
+                  setAddress((current) => ({
+                    ...current,
+                    line1: next.line1,
+                    line2: next.line2,
+                    city: next.city,
+                    state: next.state,
+                    postal: next.postal,
+                    country: next.country,
+                  }))
                 }
               />
-            </label>
-            <label className="shipping-request-field">
-              <span>Email *</span>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={address.email}
-                onChange={(event) =>
-                  setAddress((current) => ({ ...current, email: event.target.value }))
-                }
-              />
-            </label>
-            <div className="shipping-request-actions">
-              <button
-                type="submit"
-                className="shipping-request-btn shipping-request-btn--primary"
-                disabled={busy}
-              >
-                {busy ? "Validating address…" : "Continue to shipping options"}
-              </button>
-            </div>
-          </form>
+              <label className="shipping-request-field">
+                <span>Phone</span>
+                <input
+                  autoComplete="tel"
+                  value={address.phone}
+                  onChange={(event) =>
+                    setAddress((current) => ({
+                      ...current,
+                      phone: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="shipping-request-field">
+                <span>Email *</span>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={address.email}
+                  onChange={(event) =>
+                    setAddress((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <div className="shipping-request-actions">
+                <button
+                  type="submit"
+                  className="shipping-request-btn shipping-request-btn--primary"
+                  disabled={busy}
+                >
+                  {busy ? "Validating address…" : "Continue to shipping options"}
+                </button>
+              </div>
+            </form>
+          </>
         ) : null}
 
         {showRates ? (
-          <div className="shipping-request-rates-section">
-            <div className="shipping-request-destination-card">
-              <div className="shipping-request-destination-card__top">
-                <div className="shipping-request-destination-card__heading">
-                  <span className="shipping-request-destination-card__label">
-                    Destination
-                  </span>
-                  <span className="shipping-request-destination-card__verified">
-                    <span aria-hidden="true">✓</span> Verified
-                  </span>
+          <div className="shipping-request-rates-layout">
+            <div className="shipping-request-rates-main">
+              {renderItemCard()}
+
+              <div className="shipping-request-destination-card">
+                <div className="shipping-request-destination-card__top">
+                  <div className="shipping-request-destination-card__heading">
+                    <span className="shipping-request-destination-card__label">
+                      Destination
+                    </span>
+                    <span className="shipping-request-destination-card__verified">
+                      <span aria-hidden="true">✓</span> Verified
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="shipping-request-back"
+                    disabled={busy}
+                    onClick={() => void handleEditAddress()}
+                  >
+                    ← Edit
+                  </button>
+                </div>
+                <div className="shipping-request-destination-card__lines">
+                  {formatDestinationLines({
+                    name: view.recipientAddress?.name || view.guestName || "",
+                    line1: view.recipientAddress?.line1 || "",
+                    line2: view.recipientAddress?.line2 || "",
+                    city: view.recipientAddress?.city || "",
+                    state: view.recipientAddress?.state || "",
+                    postal: view.recipientAddress?.postal || "",
+                    country: view.recipientAddress?.country || "US",
+                  }).map((line, index) => (
+                    <div key={`${index}-${line}`}>{line}</div>
+                  ))}
+                </div>
+                {packageSummary ? (
+                  <div className="shipping-request-destination-card__package">
+                    Rated package: {packageSummary}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="shipping-request-options-header">
+                <div className="shipping-request-options-header__text">
+                  <h2 className="shipping-request-section-title">
+                    Shipping Options
+                  </h2>
+                  <p className="shipping-request-copy shipping-request-copy--tight">
+                    Pick the delivery speed that fits your timeline.
+                  </p>
                 </div>
                 <button
                   type="button"
-                  className="shipping-request-back"
-                  disabled={busy}
-                  onClick={() => void handleEditAddress()}
-                >
-                  ← Back
-                </button>
-              </div>
-              <div className="shipping-request-destination-card__lines">
-                {formatDestinationLines({
-                  name: view.recipientAddress?.name || view.guestName || "",
-                  line1: view.recipientAddress?.line1 || "",
-                  line2: view.recipientAddress?.line2 || "",
-                  city: view.recipientAddress?.city || "",
-                  state: view.recipientAddress?.state || "",
-                  postal: view.recipientAddress?.postal || "",
-                  country: view.recipientAddress?.country || "US",
-                }).map((line, index) => (
-                  <div key={`${index}-${line}`}>{line}</div>
-                ))}
-              </div>
-              {packageSummary ? (
-                <div className="shipping-request-destination-card__package">
-                  Rated package: {packageSummary}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="shipping-request-friendly-banner">
-              Select the shipping option that works best for you.
-            </div>
-
-            <h2 className="shipping-request-section-title">Choose a shipping option</h2>
-            <p className="shipping-request-copy shipping-request-copy--tight">
-              Pick the delivery speed that fits your timeline. You only pay the
-              carrier shipping cost.
-            </p>
-            <p className="shipping-request-disclaimer">
-              Shipping rates are supplied by the carrier and may expire. If rates
-              expire, refresh them below without starting over.
-            </p>
-
-            {ratesExpired ? (
-              <div className="shipping-request-message shipping-request-message--error">
-                <div>These shipping rates have expired.</div>
-                <button
-                  type="button"
-                  className="shipping-request-btn shipping-request-btn--secondary"
-                  style={{ marginTop: "10px" }}
+                  className="shipping-request-refresh"
                   disabled={busy || ratesLoading}
                   onClick={() => void handleRefreshRates()}
                 >
-                  {ratesLoading ? "Refreshing rates…" : "Refresh shipping rates"}
+                  {ratesLoading ? "Refreshing…" : "Refresh rates"}
                 </button>
               </div>
-            ) : null}
 
-            <div className="shipping-request-rate-toolbar">
-              <button
-                type="button"
-                className="shipping-request-refresh"
-                disabled={busy || ratesLoading}
-                onClick={() => void handleRefreshRates()}
-              >
-                {ratesLoading ? "Refreshing…" : "Refresh rates"}
-              </button>
-            </div>
+              {ratesExpired ? (
+                <div className="shipping-request-message shipping-request-message--error">
+                  <div>These shipping rates have expired.</div>
+                  <button
+                    type="button"
+                    className="shipping-request-btn shipping-request-btn--secondary"
+                    style={{ marginTop: "10px" }}
+                    disabled={busy || ratesLoading}
+                    onClick={() => void handleRefreshRates()}
+                  >
+                    {ratesLoading ? "Refreshing rates…" : "Refresh shipping rates"}
+                  </button>
+                </div>
+              ) : null}
 
-            {ratesLoading && rates.length === 0 ? (
-              <div className="shipping-request-loading" aria-busy="true">
-                <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
-                <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
-                <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
-                <p className="shipping-request-copy">Retrieving live carrier rates…</p>
-              </div>
-            ) : rates.length === 0 ? (
-              <p className="shipping-request-copy">
-                No rates are available for this package and address. Go back and
-                check the address, or contact the hotel.
-              </p>
-            ) : (
-              <div
-                className="shipping-request-rates"
-                role="radiogroup"
-                aria-label="Shipping options"
-              >
-                {rates.map((rate) => {
-                  const selected = selectedRateId === rate.providerRateId;
-                  const badges = rateBadges(rate);
-                  return (
-                    <button
-                      key={rate.providerRateId}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      className={`shipping-request-rate${
-                        selected ? " shipping-request-rate--selected" : ""
-                      }`}
-                      disabled={busy}
-                      onClick={() => void handleSelectRate(rate.providerRateId)}
-                    >
-                      <div className="shipping-request-rate__logo">
-                        {rate.carrierLogoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={rate.carrierLogoUrl}
-                            alt=""
-                            className="shipping-request-rate__logo-img"
-                          />
-                        ) : (
-                          <span className="shipping-request-rate__logo-fallback">
-                            {rate.carrier.slice(0, 3).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <div className="shipping-request-rate__main">
-                        <div className="shipping-request-rate__carrier">
-                          <span>{rate.carrier}</span>
-                          {badges.map((badge) => (
-                            <span
-                              key={badge}
-                              className={`shipping-request-rate__badge${
-                                badge === "Fastest"
-                                  ? " shipping-request-rate__badge--fast"
-                                  : ""
-                              }`}
-                            >
-                              {badge}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="shipping-request-rate__service">
-                          {rate.service}
-                        </div>
-                        <div className="shipping-request-rate__eta">
-                          {rateEtaLabel(rate)}
-                        </div>
-                      </div>
-                      <div className="shipping-request-rate__side">
-                        <div className="shipping-request-rate__amount">
-                          {formatMoney(rate.amount, rate.currency)}
-                        </div>
-                        <div className="shipping-request-rate__select-hint">
-                          {selected ? (
-                            <span className="shipping-request-rate__check">
-                              ✓ Selected
-                            </span>
+              {ratesLoading && rates.length === 0 ? (
+                <div className="shipping-request-loading" aria-busy="true">
+                  <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
+                  <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
+                  <div className="shipping-request-skeleton shipping-request-skeleton--rate" />
+                  <p className="shipping-request-copy">
+                    Retrieving live carrier rates…
+                  </p>
+                </div>
+              ) : rates.length === 0 ? (
+                <p className="shipping-request-copy">
+                  No rates are available for this package and address. Go back and
+                  check the address, or contact the hotel.
+                </p>
+              ) : (
+                <div
+                  className="shipping-request-rates"
+                  role="radiogroup"
+                  aria-label="Shipping options"
+                >
+                  {rates.map((rate) => {
+                    const selected = selectedRateId === rate.providerRateId;
+                    const badges = rateBadges(rate);
+                    return (
+                      <button
+                        key={rate.providerRateId}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        className={`shipping-request-rate${
+                          selected ? " shipping-request-rate--selected" : ""
+                        }`}
+                        disabled={busy || ratesExpired}
+                        onClick={() => void handleSelectRate(rate.providerRateId)}
+                      >
+                        <div className="shipping-request-rate__logo">
+                          {rate.carrierLogoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={rate.carrierLogoUrl}
+                              alt=""
+                              className="shipping-request-rate__logo-img"
+                            />
                           ) : (
-                            "Select"
+                            <span className="shipping-request-rate__logo-fallback">
+                              {rate.carrier.slice(0, 3).toUpperCase()}
+                            </span>
                           )}
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        <div className="shipping-request-rate__main">
+                          <div className="shipping-request-rate__carrier">
+                            <span>{rate.carrier}</span>
+                            {badges.map((badge) => (
+                              <span
+                                key={badge}
+                                className={`shipping-request-rate__badge${
+                                  badge === "Fastest"
+                                    ? " shipping-request-rate__badge--fast"
+                                    : ""
+                                }`}
+                              >
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="shipping-request-rate__service">
+                            {rate.service}
+                          </div>
+                          <div className="shipping-request-rate__eta">
+                            {rateEtaLabel(rate)}
+                          </div>
+                        </div>
+                        <div className="shipping-request-rate__side">
+                          <div className="shipping-request-rate__amount">
+                            {formatMoney(rate.amount, rate.currency)}
+                          </div>
+                          <div className="shipping-request-rate__select-hint">
+                            {selected ? (
+                              <span className="shipping-request-rate__check">
+                                ✓ Selected
+                              </span>
+                            ) : busy ? (
+                              "…"
+                            ) : (
+                              "Select"
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-            {selectedRateId && totalDue != null ? (
-              <div className="shipping-request-order-summary">
-                <div className="shipping-request-order-summary__title">
-                  Order Summary
-                </div>
-                <div className="shipping-request-order-summary__row">
-                  <span>Carrier</span>
-                  <strong>
-                    {selectedRate?.carrier || view.selectedCarrier || "—"}
-                  </strong>
-                </div>
-                <div className="shipping-request-order-summary__row">
-                  <span>Service</span>
-                  <strong>
-                    {selectedRate?.service || view.selectedService || "—"}
-                  </strong>
-                </div>
-                <div className="shipping-request-order-summary__row">
-                  <span>Estimated delivery</span>
-                  <strong>
-                    {selectedRate ? rateEtaLabel(selectedRate) : "—"}
-                  </strong>
-                </div>
-                <div className="shipping-request-order-summary__divider" />
-                <div className="shipping-request-order-summary__row">
-                  <span>Shipping</span>
-                  <strong>
-                    {formatMoney(
-                      totalDue,
-                      selectedRate?.currency || view.currency
-                    )}
-                  </strong>
-                </div>
-                <div className="shipping-request-order-summary__row">
-                  <span>One Eyrie Service Fee</span>
-                  <strong className="shipping-request-order-summary__free">
-                    FREE
-                  </strong>
-                </div>
-                <div className="shipping-request-order-summary__total">
-                  <span>Total</span>
-                  <strong>
-                    {formatMoney(
-                      totalDue,
-                      selectedRate?.currency || view.currency
-                    )}
-                  </strong>
-                </div>
+              {/* Mobile / single-column: summary follows options */}
+              <div className="shipping-request-order-panel shipping-request-order-panel--inline">
+                {renderOrderSummary(totalDue)}
               </div>
-            ) : null}
-
-            <div className="shipping-request-actions">
-              <button
-                type="button"
-                className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
-                disabled={busy || !selectedRateId || ratesExpired}
-                onClick={() => void handleContinueToCheckout()}
-              >
-                <span className="shipping-request-lock" aria-hidden="true">
-                  🔒
-                </span>
-                Continue to Secure Checkout
-              </button>
-              <p className="shipping-request-footnote">
-                You’ll complete payment on Stripe’s secure checkout. You are only
-                charged the selected carrier shipping amount — no One Eyrie fee.
-              </p>
             </div>
+
+            <aside className="shipping-request-order-panel shipping-request-order-panel--aside">
+              <div className="shipping-request-order-panel__sticky">
+                {renderOrderSummary(totalDue)}
+              </div>
+            </aside>
           </div>
         ) : null}
 
@@ -1025,6 +971,76 @@ export default function ShippingRequestGuestPage() {
           </div>
         ) : null}
       </>
+    );
+  }
+
+  function renderOrderSummary(totalDue: number | null) {
+    if (!view) return null;
+    return (
+      <div className="shipping-request-order-summary" id="guest-order-summary">
+        <div className="shipping-request-order-summary__title">Order Summary</div>
+        {selectedRateId && totalDue != null ? (
+          <>
+            <div className="shipping-request-order-summary__row">
+              <span>Carrier</span>
+              <strong>
+                {selectedRate?.carrier || view.selectedCarrier || "—"}
+              </strong>
+            </div>
+            <div className="shipping-request-order-summary__row">
+              <span>Service</span>
+              <strong>
+                {selectedRate?.service || view.selectedService || "—"}
+              </strong>
+            </div>
+            <div className="shipping-request-order-summary__row">
+              <span>Estimated delivery</span>
+              <strong>
+                {selectedRate ? rateEtaLabel(selectedRate) : "—"}
+              </strong>
+            </div>
+            <div className="shipping-request-order-summary__divider" />
+            <div className="shipping-request-order-summary__row">
+              <span>Shipping</span>
+              <strong>
+                {formatMoney(
+                  totalDue,
+                  selectedRate?.currency || view.currency
+                )}
+              </strong>
+            </div>
+            <div className="shipping-request-order-summary__total">
+              <span>Total</span>
+              <strong>
+                {formatMoney(
+                  totalDue,
+                  selectedRate?.currency || view.currency
+                )}
+              </strong>
+            </div>
+          </>
+        ) : (
+          <p className="shipping-request-order-summary__empty">
+            Select a shipping option to see your total.
+          </p>
+        )}
+        <div className="shipping-request-actions shipping-request-actions--summary">
+          <button
+            type="button"
+            className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
+            disabled={busy || !selectedRateId || ratesExpired || totalDue == null}
+            onClick={() => void handleContinueToCheckout()}
+          >
+            <span className="shipping-request-lock" aria-hidden="true">
+              🔒
+            </span>
+            Continue to Secure Checkout
+          </button>
+          <p className="shipping-request-footnote">
+            You’ll complete payment through Stripe’s secure checkout.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -1047,7 +1063,7 @@ export default function ShippingRequestGuestPage() {
               />
             ) : (
               <div className="shipping-request-hotel__monogram" aria-hidden="true">
-                {propertyInitials(view?.propertyName || "Hotel")}
+                OE
               </div>
             )}
             <div className="shipping-request-hotel__text">

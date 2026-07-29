@@ -44,6 +44,8 @@ type ParsedTrackPayload = {
   trackingUrl: string | null;
   estimatedDelivery: string | null;
   objectId: string | null;
+  /** Shippo transaction object id when present (preferred match key). */
+  transactionId: string | null;
   eventType: string;
 };
 
@@ -165,6 +167,14 @@ export function parseShippoTrackPayload(body: unknown): ParsedTrackPayload | nul
     data.estimatedDelivery ||
     null;
 
+  const transactionId = data.transaction
+    ? String(data.transaction)
+    : data.transaction_id
+      ? String(data.transaction_id)
+      : data.transactionId
+        ? String(data.transactionId)
+        : null;
+
   return {
     trackingNumber,
     carrier: data.carrier ? String(data.carrier) : null,
@@ -183,6 +193,7 @@ export function parseShippoTrackPayload(body: unknown): ParsedTrackPayload | nul
       : data.objectId
         ? String(data.objectId)
         : null,
+    transactionId,
     eventType,
   };
 }
@@ -239,6 +250,68 @@ function isStaleTrackingEvent(
   const next = new Date(incomingAt).getTime();
   if (Number.isNaN(last) || Number.isNaN(next)) return false;
   return next < last;
+}
+
+/**
+ * Resolve the shipping request for a Shippo track event.
+ * Prefer provider_transaction_id (unique per label). Tracking number is a
+ * fallback only when exactly one non-cancelled row matches — never pick the
+ * newest among multiples (cross-property collision risk on a shared Shippo account).
+ */
+async function resolveShippingRequestForTrack(
+  supabase: SupabaseClient,
+  parsed: ParsedTrackPayload
+): Promise<{
+  request: ShippingRequestRow | null;
+  ambiguous: boolean;
+  matchKey: "provider_transaction_id" | "tracking_number" | null;
+}> {
+  if (parsed.transactionId) {
+    const { data, error } = await supabase
+      .from("lost_found_shipping_requests")
+      .select("*")
+      .eq("provider_transaction_id", parsed.transactionId)
+      .is("cancelled_at", null)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) {
+      return {
+        request: data as ShippingRequestRow,
+        ambiguous: false,
+        matchKey: "provider_transaction_id",
+      };
+    }
+  }
+
+  const { data: rows, error } = await supabase
+    .from("lost_found_shipping_requests")
+    .select("*")
+    .eq("tracking_number", parsed.trackingNumber)
+    .is("cancelled_at", null);
+
+  if (error) throw new Error(error.message);
+  const matches = (rows || []) as ShippingRequestRow[];
+  if (matches.length === 0) {
+    return { request: null, ambiguous: false, matchKey: null };
+  }
+  if (matches.length > 1) {
+    console.error(
+      "[shippo-webhook] Ambiguous tracking_number match; refusing update",
+      {
+        trackingNumber: parsed.trackingNumber,
+        requestIds: matches.map((r) => r.id),
+        propertyIds: matches.map((r) => r.property_id),
+        organizationIds: matches.map((r) => r.organization_id),
+      }
+    );
+    return { request: null, ambiguous: true, matchKey: null };
+  }
+
+  return {
+    request: matches[0],
+    ambiguous: false,
+    matchKey: "tracking_number",
+  };
 }
 
 async function applyLostItemStatusIfAllowed(
@@ -418,6 +491,9 @@ export async function applyCarrierTrackingUpdate(
       statusDate: parsed.statusDate,
       returnedToSender: isReturned,
       exception: isException || isReturned,
+      organizationId: Number(row.organization_id),
+      propertyId: Number(row.property_id),
+      providerTransactionId: parsed.transactionId,
     },
   });
 
@@ -472,17 +548,18 @@ export async function processShippoTrackingWebhook(
     };
   }
 
-  const { data: row, error } = await supabase
-    .from("lost_found_shipping_requests")
-    .select("*")
-    .eq("tracking_number", parsed.trackingNumber)
-    .is("cancelled_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  if (!row) {
+  const resolved = await resolveShippingRequestForTrack(supabase, parsed);
+  if (resolved.ambiguous) {
+    return {
+      ok: true,
+      duplicate: false,
+      handled: false,
+      message: `Ambiguous tracking match for ${parsed.trackingNumber}; refusing update`,
+      shippingRequestId: null,
+      appliedLostItemStatus: null,
+    };
+  }
+  if (!resolved.request) {
     return {
       ok: true,
       duplicate: false,
@@ -493,6 +570,7 @@ export async function processShippoTrackingWebhook(
     };
   }
 
+  const row = resolved.request;
   const providerEventId = buildProviderEventId(parsed, rawBody);
   const payloadHash = createHash("sha256").update(rawBody).digest("hex");
   const claim = await claimShippingWebhookEvent(supabase, {
@@ -516,17 +594,13 @@ export async function processShippoTrackingWebhook(
     };
   }
 
-  const result = await applyCarrierTrackingUpdate(
-    supabase,
-    row as ShippingRequestRow,
-    parsed
-  );
+  const result = await applyCarrierTrackingUpdate(supabase, row, parsed);
 
   return {
     ok: true,
     duplicate: false,
     handled: true,
-    message: "Tracking update applied",
+    message: `Tracking update applied (matched by ${resolved.matchKey})`,
     shippingRequestId: Number(row.id),
     appliedLostItemStatus: result.appliedLostItemStatus,
   };

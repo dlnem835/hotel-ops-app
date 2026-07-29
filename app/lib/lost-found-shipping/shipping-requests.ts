@@ -364,7 +364,6 @@ export async function createShippingRequest(
     .update({
       status: LOST_ITEM_STATUS.awaitingGuestAction,
       label_requested_at: new Date().toISOString(),
-      label_sent_at: new Date().toISOString(),
     })
     .eq("id", input.lostItemId)
     .eq("organization_id", scope.organizationId)
@@ -774,4 +773,92 @@ export function parseShipFromJson(value: unknown): ShippingAddress | null {
     phone: row.phone ? String(row.phone) : undefined,
     email: row.email ? String(row.email) : undefined,
   };
+}
+
+/** Staff marks an automated shipping label as printed (audit + timestamp). */
+export async function markShippingLabelPrinted(
+  supabase: SupabaseClient,
+  scope: LostFoundShippingScope,
+  input: { shippingRequestId: number; lostItemId: number; createdBy: string }
+): Promise<{ labelPrintedAt: string }> {
+  await assertLostItemInTenant(supabase, input.lostItemId, scope);
+
+  const { data: row, error } = await supabase
+    .from("lost_found_shipping_requests")
+    .select("*")
+    .eq("id", input.shippingRequestId)
+    .eq("lost_item_id", input.lostItemId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!row) throw new TenantRequestError(404, "Shipping request not found.");
+  if (row.cancelled_at) {
+    throw new TenantRequestError(410, "Shipping request is cancelled.");
+  }
+
+  const hasLabel =
+    Boolean(row.label_storage_path) ||
+    Boolean(row.label_created_at) ||
+    String(row.fulfillment_status) === "label_ready" ||
+    String(row.shipment_status) === "label_ready";
+  if (!hasLabel) {
+    throw new TenantRequestError(400, "No shipping label is available to print.");
+  }
+
+  const printedAt = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("lost_found_shipping_requests")
+    .update({
+      label_printed_at: printedAt,
+      updated_at: printedAt,
+    })
+    .eq("id", input.shippingRequestId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  await appendShippingEvent(supabase, {
+    organizationId: scope.organizationId,
+    propertyId: scope.propertyId,
+    lostItemId: input.lostItemId,
+    shippingRequestId: input.shippingRequestId,
+    eventType: SHIPPING_TIMELINE_EVENTS.labelPrinted,
+    eventSource: "staff",
+    eventData: { notes: "Staff marked shipping label as printed" },
+    createdBy: input.createdBy,
+  });
+
+  return { labelPrintedAt: printedAt };
+}
+
+/** Signed URL for a purchased label PDF (private bucket). */
+export async function createShippingLabelSignedUrl(
+  supabase: SupabaseClient,
+  scope: LostFoundShippingScope,
+  input: { shippingRequestId: number; lostItemId: number }
+): Promise<{ url: string } | null> {
+  await assertLostItemInTenant(supabase, input.lostItemId, scope);
+
+  const { data: row, error } = await supabase
+    .from("lost_found_shipping_requests")
+    .select("id, label_storage_path")
+    .eq("id", input.shippingRequestId)
+    .eq("lost_item_id", input.lostItemId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!row?.label_storage_path) return null;
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from("lost-found-shipping-labels")
+    .createSignedUrl(String(row.label_storage_path), 120);
+
+  if (signError) throw new Error(signError.message);
+  if (!signed?.signedUrl) return null;
+  return { url: signed.signedUrl };
 }

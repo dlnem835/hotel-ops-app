@@ -183,7 +183,7 @@ export default function SendShippingRequestModal({
 
     try {
       const response = await tenantFetch(
-        `/api/lost-and-found/${item.id}/shipping-requests`,
+        `/api/lost-and-found/${item.id}/guest-shipping`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -203,19 +203,25 @@ export default function SendShippingRequestModal({
       );
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "Unable to create shipping request");
+        const missing =
+          Array.isArray(result.missing) && result.missing.length > 0
+            ? ` Missing: ${result.missing.join(", ")}.`
+            : "";
+        throw new Error(
+          `${result.error || "Unable to send shipping request."}${missing}`
+        );
       }
 
       onCreated({
         guestUrl: String(result.guestUrl || ""),
-        requestId: Number(result.request?.id) || undefined,
+        requestId: Number(result.requestId) || undefined,
       });
       onClose();
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to create shipping request"
+          : "Unable to send shipping request"
       );
     } finally {
       setSubmitting(false);

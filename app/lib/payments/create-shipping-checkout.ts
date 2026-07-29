@@ -149,6 +149,28 @@ export async function createOrReuseShippingCheckoutSession(
     );
   }
 
+  // Centralized revenue readiness: fee columns may exist, but V1 charges
+  // carrier shipping only. Never add platform/handling/packaging fees yet.
+  const feesEnabled = Boolean(row.fees_enabled);
+  if (feesEnabled) {
+    throw new ShippingCheckoutError(
+      503,
+      "fees_not_active",
+      "Additional fees are not enabled for this release. Contact support."
+    );
+  }
+  const feeCentsTotal =
+    Number(row.platform_fee_cents || 0) +
+    Number(row.handling_fee_cents || 0) +
+    Number(row.packaging_fee_cents || 0);
+  if (feeCentsTotal > 0) {
+    throw new ShippingCheckoutError(
+      503,
+      "fees_not_active",
+      "Additional fees are not enabled for this release. Contact support."
+    );
+  }
+
   const currency = String(row.currency || selected.currency || "usd").toLowerCase();
   if (currency !== "usd") {
     throw new ShippingCheckoutError(
@@ -277,6 +299,9 @@ export async function createOrReuseShippingCheckoutSession(
           oe_flow: "lost_found_shipping",
           oe_payment_id: String(payment.id),
           oe_shipping_request_id: String(requestId),
+          oe_organization_id: String(organizationId),
+          oe_property_id: String(propertyId),
+          oe_lost_item_id: String(lostItemId),
         },
       },
     },

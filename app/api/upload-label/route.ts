@@ -58,7 +58,9 @@ export async function POST(request: Request) {
       label_url: data.publicUrl,
       status: "Ready to Ship",
     })
-    .eq("id", itemId);
+    .eq("id", item.id)
+    .eq("organization_id", item.organization_id)
+    .eq("property_id", item.property_id);
 
   if (updateError) {
     return Response.json({ error: updateError.message }, { status: 500 });

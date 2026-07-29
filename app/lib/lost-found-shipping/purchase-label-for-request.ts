@@ -294,7 +294,9 @@ async function markNeedsManualReview(
       error_message: notes.slice(0, 500),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", Number(row.id));
+    .eq("id", Number(row.id))
+    .eq("organization_id", Number(row.organization_id))
+    .eq("property_id", Number(row.property_id));
 
   await appendShippingEvent(supabase, {
     organizationId: Number(row.organization_id),

@@ -146,7 +146,9 @@ export async function POST(request: Request, context: RouteContext) {
           shipment_status: "awaiting_payment",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("organization_id", Number(row.organization_id))
+        .eq("property_id", Number(row.property_id));
 
       await appendShippingEvent(supabase, {
         ...ctx,
@@ -203,7 +205,9 @@ export async function POST(request: Request, context: RouteContext) {
           shipping_provider: provider.id,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("organization_id", Number(row.organization_id))
+        .eq("property_id", Number(row.property_id));
 
       await appendShippingEvent(supabase, {
         ...ctx,
@@ -250,10 +254,13 @@ export async function POST(request: Request, context: RouteContext) {
           selected_carrier: String(selected.carrier || ""),
           selected_service: String(selected.service || ""),
           quoted_shipping_amount: amount,
+          // Guest pays carrier shipping only (fees_enabled defaults false; no fees charged).
           total_amount: amount,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("organization_id", Number(row.organization_id))
+        .eq("property_id", Number(row.property_id));
 
       await appendShippingEvent(supabase, {
         ...ctx,
@@ -314,7 +321,9 @@ export async function POST(request: Request, context: RouteContext) {
           shipment_status: "awaiting_guest",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("organization_id", Number(row.organization_id))
+        .eq("property_id", Number(row.property_id));
 
       await appendShippingEvent(supabase, {
         ...ctx,

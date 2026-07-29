@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-import SendLabelRequestForm from "../SendLabelRequestForm";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus, Search } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
@@ -15,6 +14,7 @@ import LostFoundAddItemModal, {
   type LostFoundAddItemFormData,
 } from "@/app/lost-and-found/components/LostFoundAddItemModal";
 import LostFoundShippingSection from "@/app/lost-and-found/components/LostFoundShippingSection";
+import GuestShippingRequestForm from "@/app/lost-and-found/components/GuestShippingRequestForm";
 import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
 import {
   LOST_ITEM_STATUS,
@@ -141,7 +141,12 @@ export default function LostAndFoundPage() {
       return;
     }
     const data = await res.json();
-    setLostItems(data.items || []);
+    const items = data.items || [];
+    setLostItems(items);
+    setSelectedItem((current: { id?: number } | null) => {
+      if (!current?.id) return current;
+      return items.find((item: { id: number }) => item.id === current.id) || current;
+    });
   }
 
   useEffect(() => {
@@ -545,7 +550,7 @@ setTeamMembers(allTeamMembers || []);
           <th className="col-location" style={thStyle}>Location</th>
           <th className="col-item" style={thStyle}>Item</th>
           <th className="col-status one-eyrie-lnf-status-header" style={thStyle}>Status</th>
-          <th className="col-send-label one-eyrie-table__cell--wrap" style={thStyle}>Send Label</th>
+          <th className="col-send-label one-eyrie-table__cell--wrap" style={thStyle}>Guest Shipping</th>
           <th className="col-date" style={thStyle}>Date</th>
           <th className="col-comments one-eyrie-table__cell--wrap" style={thStyle}>Comments</th>
           <th className="col-label" style={thStyle}>Label</th>
@@ -619,7 +624,14 @@ setTeamMembers(allTeamMembers || []);
             </td>
 
             <td className="col-send-label one-eyrie-table__cell--wrap" style={tdStyle}>
-              <SendLabelRequestForm itemId={item.id} />
+              <GuestShippingRequestForm
+                itemId={item.id}
+                guestLastName={item.guest_last_name}
+                itemName={item.item_name}
+                onSent={() => {
+                  void fetchItems();
+                }}
+              />
             </td>
 
             <td className="col-date" style={{ ...tdStyle, color: "#E5E7EB" }} title={item.created_at ? new Date(item.created_at).toLocaleDateString() : undefined}>
@@ -683,16 +695,29 @@ setTeamMembers(allTeamMembers || []);
     onClick={() => setSelectedItem(null)}
   >
     <div
+      className="lnf-item-details-modal"
       style={{
         ...ONE_EYRIE_MODAL_BOX,
-        width: "560px",
+        width: "640px",
         maxHeight: "90vh",
-        overflowY: "auto",
+        padding: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
       onClick={(event) => event.stopPropagation()}
     >
-      <div style={ONE_EYRIE_MODAL_HEADER}>
-        <h2 style={{ margin: 0, color: gold }}>Item Details</h2>
+      <div
+        className="lnf-item-details-modal__header"
+        style={{
+          ...ONE_EYRIE_MODAL_HEADER,
+          marginBottom: 0,
+          padding: "18px 20px 14px",
+          borderBottom: `1px solid ${ONE_EYRIE.borderDivider}`,
+          flexShrink: 0,
+        }}
+      >
+        <h2 style={{ margin: 0, color: gold, fontSize: "18px" }}>Item Details</h2>
         <button
           type="button"
           onClick={() => setSelectedItem(null)}
@@ -703,56 +728,91 @@ setTeamMembers(allTeamMembers || []);
         </button>
       </div>
 
-      <p><strong>Guest:</strong> {selectedItem.guest_last_name}</p>
-      <p><strong>Location:</strong> {selectedItem.room_number}</p>
-      <p><strong>Item:</strong> {selectedItem.item_name}</p>
-      <p><strong>Status:</strong> {displayItemStatus(selectedItem.status)}</p>
-      <p><strong>Found By:</strong> {selectedItem.found_by || "Not recorded yet"}</p>
-      Created By: {
-  (() => {
-    const member = teamMembers.find(
-      (person: any) =>
-        String(person.auth_user_id).trim() === String(selectedItem.created_by).trim()
-    );
+      <div className="lnf-item-details-modal__body">
+        <dl className="lnf-item-details-grid">
+          <div className="lnf-item-details-grid__field">
+            <dt>Guest</dt>
+            <dd>{selectedItem.guest_last_name || "Not recorded"}</dd>
+          </div>
+          <div className="lnf-item-details-grid__field">
+            <dt>Location</dt>
+            <dd>
+              {formatLostFoundLocationDisplay(selectedItem.room_number) ||
+                selectedItem.room_number ||
+                "Not recorded"}
+            </dd>
+          </div>
+          <div className="lnf-item-details-grid__field">
+            <dt>Item</dt>
+            <dd>{selectedItem.item_name || "Not recorded"}</dd>
+          </div>
+          <div className="lnf-item-details-grid__field">
+            <dt>Current status</dt>
+            <dd>
+              <span className={`lnf-item-details-status ${statusPillClass(selectedItem.status)}`}>
+                {displayItemStatus(selectedItem.status)}
+              </span>
+            </dd>
+          </div>
+          <div className="lnf-item-details-grid__field">
+            <dt>Found by</dt>
+            <dd>{selectedItem.found_by || "Not recorded yet"}</dd>
+          </div>
+          <div className="lnf-item-details-grid__field">
+            <dt>Created by</dt>
+            <dd>
+              {(() => {
+                const member = teamMembers.find(
+                  (person: { auth_user_id?: string; username?: string; first_name?: string; last_name?: string }) =>
+                    String(person.auth_user_id).trim() ===
+                    String(selectedItem.created_by).trim()
+                );
+                return member
+                  ? member.username ||
+                      `${member.first_name || ""} ${member.last_name || ""}`.trim()
+                  : "Not recorded yet";
+              })()}
+            </dd>
+          </div>
+          <div className="lnf-item-details-grid__field lnf-item-details-grid__field--wide">
+            <dt>Date created</dt>
+            <dd>
+              {selectedItem.created_at
+                ? new Date(selectedItem.created_at).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })
+                : "Not recorded"}
+            </dd>
+          </div>
+        </dl>
 
-    return member
-      ? member.username ||
-          `${member.first_name || ""} ${member.last_name || ""}`.trim()
-      : "Not recorded yet";
-  })()
-}
-      <p>
-  <strong>Date Created:</strong>{" "}
-  {selectedItem.created_at
-    ? new Date(selectedItem.created_at).toLocaleString()
-    : "Not recorded"}
-</p>
+        <LostFoundShippingSection
+          itemId={selectedItem.id}
+          itemName={selectedItem.item_name}
+          guestLastName={selectedItem.guest_last_name}
+          itemStatus={selectedItem.status}
+          itemLabelUrl={selectedItem.label_url || null}
+          onItemMayHaveChanged={() => {
+            void fetchItems();
+          }}
+        />
+      </div>
 
-<p>
-  <strong>Label Sent:</strong>{" "}
-  {selectedItem.label_sent_at
-    ? new Date(selectedItem.label_sent_at).toLocaleString()
-    : "Not sent yet"}
-</p>
-
-      <LostFoundShippingSection
-        itemId={selectedItem.id}
-        itemName={selectedItem.item_name}
-        guestLastName={selectedItem.guest_last_name}
-        onItemMayHaveChanged={() => {
-          void fetchItems();
-        }}
-      />
-
-      <button
-        type="button"
-        onClick={() => setSelectedItem(null)}
-        style={{ ...NEUTRAL_BUTTON, marginTop: "16px" }}
-        className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
-        {...neutralHoverHandlers()}
-      >
-        Close
-      </button>
+      <div className="lnf-item-details-modal__footer">
+        <button
+          type="button"
+          onClick={() => setSelectedItem(null)}
+          style={NEUTRAL_BUTTON}
+          className="one-eyrie-btn one-eyrie-btn--neutral one-eyrie-btn--md"
+          {...neutralHoverHandlers()}
+        >
+          Close
+        </button>
+      </div>
     </div>
   </div>
 )}

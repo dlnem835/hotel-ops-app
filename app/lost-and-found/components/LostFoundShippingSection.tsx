@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   buildStaffTimelineDisplay,
@@ -10,22 +10,24 @@ import {
 } from "@/app/lib/lost-found-shipping/timeline-ui";
 import {
   carrierTrackingStatusLabel,
-  type ShippingCurrentStep,
+  LOST_ITEM_STATUS,
+  normalizeLostItemStatus,
 } from "@/app/lib/lost-found-shipping/status";
-import type { ShippingUiBadge } from "@/app/lib/shipping/types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
   forestHoverHandlers,
   START_WORK_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
-import LostFoundShippingBadge from "./LostFoundShippingBadge";
 import SendShippingRequestModal from "./SendShippingRequestModal";
+import SendLabelRequestForm from "@/app/SendLabelRequestForm";
 
 type LostFoundShippingSectionProps = {
   itemId: number;
   itemName?: string;
   guestLastName?: string;
-  /** Called when shipping data may have changed lost item status (e.g. Shippo webhooks). */
+  itemStatus?: string | null;
+  /** Manual prepaid label URL on the lost item, when present. */
+  itemLabelUrl?: string | null;
   onItemMayHaveChanged?: () => void;
 };
 
@@ -60,22 +62,20 @@ type ShippingRequestListItem = {
   returnedToSender?: boolean;
   labelPrintedAt?: string | null;
   labelCreatedAt?: string | null;
+  labelStoragePath?: string | null;
   estimatedDeliveryAt?: string | null;
   shippedAt?: string | null;
   deliveredAt?: string | null;
   paidAt?: string | null;
   amountPaid?: number | null;
-  stripePaymentRef?: string | null;
-  providerReceiptUrl?: string | null;
-  badge: ShippingUiBadge | string;
-  currentStep?: ShippingCurrentStep | string;
+  cancelledAt?: string | null;
   timeline?: ShippingTimelineEntry[];
 };
 
 const NOTES_COLLAPSE_CHARS = 90;
 
 function formatMoney(amount: number | null, currency: string): string {
-  if (amount == null || !Number.isFinite(amount)) return "—";
+  if (amount == null || !Number.isFinite(amount)) return "Not available";
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -86,20 +86,65 @@ function formatMoney(amount: number | null, currency: string): string {
   }
 }
 
+function formatLocalDate(value: string | null | undefined): string {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function paymentLabel(status: string): string {
+  if (status === "paid") return "Paid";
+  if (status === "failed") return "Failed";
+  if (status === "expired") return "Expired";
+  return "Awaiting payment";
+}
+
+function labelStatusLabel(request: ShippingRequestListItem): string {
+  if (
+    request.fulfillmentStatus === "label_ready" ||
+    request.labelCreatedAt ||
+    request.labelStoragePath
+  ) {
+    return "Ready";
+  }
+  if (request.paymentStatus === "paid") return "Awaiting purchase";
+  return "Not created";
+}
+
+function hasUsableLabel(
+  request: ShippingRequestListItem | null,
+  itemLabelUrl?: string | null
+): boolean {
+  if (itemLabelUrl) return true;
+  if (!request) return false;
+  return Boolean(request.labelStoragePath);
+}
+
+function hasUsableTracking(request: ShippingRequestListItem | null): boolean {
+  if (!request) return false;
+  return Boolean(request.trackingNumber || request.trackingUrl);
+}
+
 function toneStyles(tone: TimelineTone): {
   border: string;
-  dot: string;
   label: string;
 } {
   switch (tone) {
     case "completed":
-      return { border: "#2f6b4f", dot: "#4ade80", label: "#BBF7D0" };
+      return { border: "#2f6b4f", label: "#BBF7D0" };
     case "current":
-      return { border: "#1d4ed8", dot: "#60a5fa", label: "#BFDBFE" };
+      return { border: "#1d4ed8", label: "#BFDBFE" };
     case "failed":
-      return { border: "#7f1d1d", dot: "#f87171", label: "#FECACA" };
+      return { border: "#7f1d1d", label: "#FECACA" };
     default:
-      return { border: "#555048", dot: "#6b7280", label: "#9ca3af" };
+      return { border: "#555048", label: "#9ca3af" };
   }
 }
 
@@ -189,52 +234,27 @@ function ShippingTimelinePanel({
     return () => window.clearTimeout(timer);
   }, [open, rows, newestEventRow?.id]);
 
+  const eventCountLabel =
+    timeline.length > 0
+      ? `${timeline.length} event${timeline.length === 1 ? "" : "s"}`
+      : "No events yet";
+
   return (
-    <div style={{ marginTop: "12px" }}>
+    <div className="lnf-shipping-timeline">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px",
-          border: `1px solid ${ONE_EYRIE.border}`,
-          background: ONE_EYRIE.surfaceInset,
-          color: ONE_EYRIE.gold,
-          borderRadius: "8px",
-          padding: "8px 10px",
-          cursor: "pointer",
-          fontSize: "11px",
-          fontWeight: 800,
-          letterSpacing: "0.4px",
-        }}
+        className="lnf-shipping-timeline__toggle"
       >
-        <span>SHIPPING TIMELINE</span>
-        <span style={{ color: ONE_EYRIE.textSubtle, fontWeight: 700 }}>
-          {open ? "Hide" : "Show"}
-          {timeline.length > 0
-            ? ` · ${timeline.length} event${timeline.length === 1 ? "" : "s"}`
-            : " · pending"}
+        <span>Shipping Timeline</span>
+        <span className="lnf-shipping-timeline__meta">
+          {open ? "Hide" : `Show ${eventCountLabel}`}
         </span>
       </button>
 
       {open ? (
-        <ol
-          ref={listRef}
-          style={{
-            listStyle: "none",
-            margin: "10px 0 0",
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            maxHeight: "320px",
-            overflowY: "auto",
-          }}
-        >
+        <ol ref={listRef} className="lnf-shipping-timeline__list">
           {rows.map((row) => {
             const colors = toneStyles(row.tone);
             const exact =
@@ -247,41 +267,16 @@ function ShippingTimelinePanel({
               <li
                 key={row.id}
                 data-timeline-row={row.id}
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  borderLeft: `3px solid ${colors.border}`,
-                  paddingLeft: "10px",
-                  paddingTop: "4px",
-                  paddingBottom: "4px",
-                  borderRadius: "8px",
-                  background: flashing
-                    ? "rgba(96, 165, 250, 0.28)"
-                    : "transparent",
-                  transition: "background 1.4s ease-out",
-                }}
+                className={`lnf-shipping-timeline__row${
+                  flashing ? " lnf-shipping-timeline__row--flash" : ""
+                }`}
+                style={{ borderLeftColor: colors.border }}
               >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "18px",
-                    marginTop: "1px",
-                    fontSize: "13px",
-                    lineHeight: 1.2,
-                    flexShrink: 0,
-                  }}
-                >
+                <span aria-hidden="true" className="lnf-shipping-timeline__icon">
                   {row.icon}
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
+                  <div className="lnf-shipping-timeline__label-row">
                     <div
                       style={{
                         color: colors.label,
@@ -292,29 +287,11 @@ function ShippingTimelinePanel({
                       {row.label}
                     </div>
                     {pending ? (
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 800,
-                          letterSpacing: "0.04em",
-                          textTransform: "uppercase",
-                          color: "#9ca3af",
-                          border: "1px solid #555048",
-                          borderRadius: "999px",
-                          padding: "1px 7px",
-                        }}
-                      >
-                        Pending
-                      </span>
+                      <span className="lnf-shipping-timeline__pending">Pending</span>
                     ) : null}
                   </div>
                   <div
-                    style={{
-                      color: ONE_EYRIE.textSubtle,
-                      fontSize: "11px",
-                      marginTop: "2px",
-                      lineHeight: 1.4,
-                    }}
+                    className="lnf-shipping-timeline__when"
                     title={exact || undefined}
                   >
                     {row.createdAt ? (
@@ -340,6 +317,23 @@ function ShippingTimelinePanel({
   );
 }
 
+function SummaryField({
+  label,
+  value,
+  valueNode,
+}: {
+  label: string;
+  value?: string;
+  valueNode?: ReactNode;
+}) {
+  return (
+    <div className="lnf-shipping-summary__field">
+      <dt>{label}</dt>
+      <dd>{valueNode ?? value}</dd>
+    </div>
+  );
+}
+
 function linkButtonStyle(): CSSProperties {
   return {
     border: `1px solid ${ONE_EYRIE.gold}`,
@@ -348,7 +342,7 @@ function linkButtonStyle(): CSSProperties {
     borderRadius: "8px",
     height: "30px",
     padding: "0 10px",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "12px",
     cursor: "pointer",
   };
@@ -358,6 +352,8 @@ export default function LostFoundShippingSection({
   itemId,
   itemName,
   guestLastName,
+  itemStatus,
+  itemLabelUrl,
   onItemMayHaveChanged,
 }: LostFoundShippingSectionProps) {
   const [requests, setRequests] = useState<ShippingRequestListItem[]>([]);
@@ -367,41 +363,54 @@ export default function LostFoundShippingSection({
   const [guestLinks, setGuestLinks] = useState<Record<number, string>>({});
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [linkBusyId, setLinkBusyId] = useState<number | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
 
-  const loadRequests = useCallback(async (options?: { quiet?: boolean }) => {
-    if (!options?.quiet) {
-      setLoading(true);
-      setError(null);
-    }
-    try {
-      const response = await tenantFetch(
-        `/api/lost-and-found/${itemId}/shipping-requests`
-      );
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Unable to load shipping requests");
-      }
-      setRequests((result.requests || []) as ShippingRequestListItem[]);
-      if (options?.quiet) onItemMayHaveChanged?.();
-    } catch (loadError) {
+  const workflowStatus =
+    normalizeLostItemStatus(itemStatus) ||
+    String(itemStatus || LOST_ITEM_STATUS.stored);
+
+  const activeRequest = useMemo(() => {
+    return (
+      requests.find((request) => !request.cancelledAt) || requests[0] || null
+    );
+  }, [requests]);
+
+  const loadRequests = useCallback(
+    async (options?: { quiet?: boolean }) => {
       if (!options?.quiet) {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Unable to load shipping requests"
-        );
-        setRequests([]);
+        setLoading(true);
+        setError(null);
       }
-    } finally {
-      if (!options?.quiet) setLoading(false);
-    }
-  }, [itemId, onItemMayHaveChanged]);
+      try {
+        const response = await tenantFetch(
+          `/api/lost-and-found/${itemId}/shipping-requests`
+        );
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Unable to load shipping requests");
+        }
+        setRequests((result.requests || []) as ShippingRequestListItem[]);
+        if (options?.quiet) onItemMayHaveChanged?.();
+      } catch (loadError) {
+        if (!options?.quiet) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Unable to load shipping requests"
+          );
+          setRequests([]);
+        }
+      } finally {
+        if (!options?.quiet) setLoading(false);
+      }
+    },
+    [itemId, onItemMayHaveChanged]
+  );
 
   useEffect(() => {
     void loadRequests();
   }, [loadRequests]);
 
-  // Refresh while shipments are active so Shippo webhook updates appear on staff UI.
   useEffect(() => {
     const active = requests.some(
       (request) =>
@@ -445,10 +454,20 @@ export default function LostFoundShippingSection({
 
   async function copyGuestLink(requestId: number) {
     try {
+      const request = requests.find((row) => row.id === requestId);
+      if (request && request.paymentStatus === "paid" && !guestLinks[requestId]) {
+        setError(
+          "The guest link cannot be re-issued after payment. Guests should keep using their original link."
+        );
+        return;
+      }
       const url = await ensureGuestLink(requestId);
       await navigator.clipboard.writeText(url);
       setCopiedId(requestId);
-      window.setTimeout(() => setCopiedId((current) => (current === requestId ? null : current)), 2000);
+      window.setTimeout(
+        () => setCopiedId((current) => (current === requestId ? null : current)),
+        2000
+      );
     } catch (copyError) {
       setError(
         copyError instanceof Error
@@ -460,6 +479,17 @@ export default function LostFoundShippingSection({
 
   async function openGuestPage(requestId: number) {
     try {
+      const request = requests.find((row) => row.id === requestId);
+      if (request && request.paymentStatus === "paid" && !guestLinks[requestId]) {
+        if (request.trackingUrl) {
+          window.open(request.trackingUrl, "_blank", "noopener,noreferrer");
+          return;
+        }
+        setError(
+          "The guest link cannot be re-issued after payment. Guests should keep using their original link."
+        );
+        return;
+      }
       const url = await ensureGuestLink(requestId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (openError) {
@@ -471,400 +501,438 @@ export default function LostFoundShippingSection({
     }
   }
 
+  async function resolveLabelUrl(
+    request: ShippingRequestListItem | null
+  ): Promise<string | null> {
+    if (itemLabelUrl) return itemLabelUrl;
+    if (!request) return null;
+    if (!hasUsableLabel(request, itemLabelUrl)) return null;
+
+    const response = await tenantFetch(
+      `/api/lost-and-found/${itemId}/shipping-requests/${request.id}/label`
+    );
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || "Unable to open shipping label");
+    }
+    return String(result.url || "") || null;
+  }
+
+  async function openLabel(request: ShippingRequestListItem | null) {
+    setActionBusy("label");
+    try {
+      const url = await resolveLabelUrl(request);
+      if (!url) {
+        setError("No shipping label is available.");
+        return;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (labelError) {
+      setError(
+        labelError instanceof Error
+          ? labelError.message
+          : "Unable to open shipping label"
+      );
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function markPrinted(request: ShippingRequestListItem) {
+    setActionBusy("printed");
+    try {
+      const response = await tenantFetch(
+        `/api/lost-and-found/${itemId}/shipping-requests/${request.id}/mark-printed`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to mark label printed");
+      }
+      await loadRequests();
+    } catch (printError) {
+      setError(
+        printError instanceof Error
+          ? printError.message
+          : "Unable to mark label printed"
+      );
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  function openTracking(request: ShippingRequestListItem | null) {
+    if (!request) return;
+    if (request.trackingUrl) {
+      window.open(request.trackingUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (request.id) void openGuestPage(request.id);
+  }
+
+  async function resendShippingEmail(request: ShippingRequestListItem) {
+    setActionBusy("resend");
+    setError(null);
+    try {
+      const response = await tenantFetch(
+        `/api/lost-and-found/${itemId}/guest-shipping`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            guestEmail: request.guestEmail,
+            guestName: request.guestName || guestLastName || "",
+            itemDescriptionPublic: itemName || "",
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        const missing =
+          Array.isArray(result.missing) && result.missing.length > 0
+            ? ` Missing: ${result.missing.join(", ")}.`
+            : "";
+        throw new Error(
+          `${result.error || "Unable to resend guest shipping email."}${missing}`
+        );
+      }
+      if (result.guestUrl && result.requestId) {
+        setGuestLinks((current) => ({
+          ...current,
+          [Number(result.requestId)]: String(result.guestUrl),
+        }));
+      }
+      await loadRequests();
+      onItemMayHaveChanged?.();
+    } catch (resendError) {
+      setError(
+        resendError instanceof Error
+          ? resendError.message
+          : "Unable to resend guest shipping email"
+      );
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  let primaryAction: {
+    key: string;
+    label: string;
+    onClick: () => void;
+    busy?: boolean;
+  } | null = null;
+
+  if (workflowStatus === LOST_ITEM_STATUS.discarded) {
+    primaryAction = null;
+  } else if (
+    workflowStatus === LOST_ITEM_STATUS.stored &&
+    !activeRequest
+  ) {
+    primaryAction = {
+      key: "send",
+      label: "Send Shipping Request",
+      onClick: () => setModalOpen(true),
+    };
+  } else if (workflowStatus === LOST_ITEM_STATUS.awaitingGuestAction) {
+    if (!activeRequest) {
+      primaryAction = {
+        key: "send",
+        label: "Send Shipping Request",
+        onClick: () => setModalOpen(true),
+      };
+    } else {
+      primaryAction = {
+        key: "resend",
+        label: "Resend Shipping Request",
+        onClick: () => void resendShippingEmail(activeRequest),
+        busy: actionBusy === "resend",
+      };
+    }
+  } else if (workflowStatus === LOST_ITEM_STATUS.readyToShip) {
+    if (hasUsableLabel(activeRequest, itemLabelUrl)) {
+      primaryAction = {
+        key: "print",
+        label: "Print Label",
+        onClick: () => void openLabel(activeRequest),
+        busy: actionBusy === "label",
+      };
+    }
+  } else if (workflowStatus === LOST_ITEM_STATUS.shipped) {
+    if (hasUsableTracking(activeRequest)) {
+      primaryAction = {
+        key: "tracking",
+        label: "View Tracking",
+        onClick: () => openTracking(activeRequest),
+      };
+    }
+  } else if (workflowStatus === LOST_ITEM_STATUS.delivered) {
+    if (hasUsableTracking(activeRequest) || activeRequest?.deliveredAt) {
+      primaryAction = {
+        key: "delivery",
+        label: "View Delivery Details",
+        onClick: () => openTracking(activeRequest),
+      };
+    }
+  }
+
+  // Once a request exists, never show a second generic Send action.
+  if (activeRequest && primaryAction?.key === "send") {
+    primaryAction = null;
+  }
+
+  const showShippingCard =
+    Boolean(activeRequest) || workflowStatus !== LOST_ITEM_STATUS.discarded;
+
+  if (!showShippingCard && !loading) return null;
+
+  const destination =
+    activeRequest?.destinationCity || activeRequest?.destinationState
+      ? [activeRequest.destinationCity, activeRequest.destinationState]
+          .filter(Boolean)
+          .join(", ")
+      : "Not available";
+
+  const lastViewed = activeRequest
+    ? guestLastViewedFromTimeline(
+        (activeRequest.timeline || []).map((entry) => ({
+          eventType: entry.eventType,
+          createdAt: entry.createdAt,
+        }))
+      )
+    : null;
+
+  const linkBusy = activeRequest ? linkBusyId === activeRequest.id : false;
+
   return (
-    <section
-      style={{
-        marginTop: "18px",
-        paddingTop: "16px",
-        borderTop: `1px solid ${ONE_EYRIE.borderDivider}`,
-      }}
-      aria-label="Automated shipping"
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "10px",
-          marginBottom: "10px",
-          flexWrap: "wrap",
-        }}
-      >
+    <section className="lnf-shipping-section" aria-label="Shipping summary">
+      <div className="lnf-shipping-section__header">
         <div>
-          <h3
-            style={{
-              margin: 0,
-              color: ONE_EYRIE.gold,
-              fontSize: "14px",
-              fontWeight: 800,
-              letterSpacing: "0.3px",
-            }}
-          >
-            Automated Shipping
-          </h3>
-          <p
-            style={{
-              margin: "4px 0 0",
-              color: ONE_EYRIE.textSubtle,
-              fontSize: "12px",
-            }}
-          >
-            Guest pays carrier rates via link. Distinct from manual Send Label.
+          <h3 className="lnf-shipping-section__title">Shipping Summary</h3>
+          <p className="lnf-shipping-section__subtitle">
+            Guest shipping, payment, label, and tracking details.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          style={{
-            ...START_WORK_BUTTON,
-            height: "34px",
-            padding: "0 12px",
-            fontSize: "12px",
-          }}
-          className="one-eyrie-btn one-eyrie-btn--forest one-eyrie-btn--sm"
-          {...forestHoverHandlers()}
-        >
-          Send Shipping Request
-        </button>
+        {primaryAction ? (
+          <button
+            type="button"
+            onClick={primaryAction.onClick}
+            disabled={Boolean(primaryAction.busy)}
+            style={{
+              ...START_WORK_BUTTON,
+              height: "34px",
+              padding: "0 12px",
+              fontSize: "12px",
+              opacity: primaryAction.busy ? 0.7 : 1,
+            }}
+            className="one-eyrie-btn one-eyrie-btn--forest one-eyrie-btn--sm"
+            {...forestHoverHandlers()}
+          >
+            {primaryAction.busy ? "Working…" : primaryAction.label}
+          </button>
+        ) : null}
       </div>
 
       {loading ? (
-        <p style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", margin: 0 }}>
-          Loading shipping requests…
-        </p>
+        <p className="lnf-shipping-section__empty">Loading shipping details…</p>
       ) : error ? (
-        <p style={{ color: "#C9A8A8", fontSize: "13px", margin: 0 }}>{error}</p>
-      ) : requests.length === 0 ? (
-        <p style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", margin: 0 }}>
-          No automated shipping requests yet.
+        <p className="lnf-shipping-section__error">{error}</p>
+      ) : !activeRequest ? (
+        <p className="lnf-shipping-section__empty">
+          No shipping request yet. Use Send Shipping Request when the guest is
+          ready to arrange return shipping.
         </p>
       ) : (
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          {requests.map((request) => {
-            const destination =
-              request.destinationCity || request.destinationState
-                ? [request.destinationCity, request.destinationState]
-                    .filter(Boolean)
-                    .join(", ")
-                : null;
-            const lastViewed = guestLastViewedFromTimeline(
-              (request.timeline || []).map((entry) => ({
-                eventType: entry.eventType,
-                createdAt: entry.createdAt,
-              }))
-            );
-            const linkBusy = linkBusyId === request.id;
+        <div className="lnf-shipping-summary">
+          <div className="lnf-shipping-summary__status-row">
+            <span className="lnf-shipping-summary__workflow">
+              {workflowStatus}
+            </span>
+          </div>
 
-            return (
-              <li
-                key={request.id}
-                style={{
-                  background: ONE_EYRIE.row,
-                  border: `1px solid ${ONE_EYRIE.border}`,
-                  borderRadius: "10px",
-                  padding: "10px 12px",
-                }}
+          {(activeRequest.returnedToSender ||
+            activeRequest.shippingExceptionCode ||
+            activeRequest.shippingExceptionMessage) && (
+            <div
+              role="alert"
+              className={`lnf-shipping-summary__alert${
+                activeRequest.returnedToSender
+                  ? " lnf-shipping-summary__alert--danger"
+                  : " lnf-shipping-summary__alert--warn"
+              }`}
+            >
+              {activeRequest.returnedToSender
+                ? "Returned to sender"
+                : "Shipping exception"}
+              {activeRequest.shippingExceptionMessage
+                ? `: ${activeRequest.shippingExceptionMessage}`
+                : ""}
+            </div>
+          )}
+
+          <dl className="lnf-shipping-summary__grid">
+            <SummaryField
+              label="Guest name"
+              value={activeRequest.guestName || "Not available"}
+            />
+            <SummaryField
+              label="Guest email"
+              value={activeRequest.guestEmail || "Not available"}
+            />
+            <SummaryField
+              label="Guest viewed"
+              value={
+                lastViewed
+                  ? `${formatRelativeTimestamp(lastViewed)} · ${formatLocalDate(
+                      lastViewed
+                    )}`
+                  : "Not viewed yet"
+              }
+            />
+            <SummaryField
+              label="Carrier"
+              value={activeRequest.selectedCarrier || "Not available"}
+            />
+            <SummaryField
+              label="Service"
+              value={activeRequest.selectedService || "Not available"}
+            />
+            <SummaryField label="Destination" value={destination} />
+            <SummaryField
+              label="Tracking number"
+              valueNode={
+                activeRequest.trackingNumber ? (
+                  activeRequest.trackingUrl ? (
+                    <a
+                      href={activeRequest.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lnf-shipping-summary__link"
+                    >
+                      {activeRequest.trackingNumber}
+                    </a>
+                  ) : (
+                    activeRequest.trackingNumber
+                  )
+                ) : (
+                  "Not available"
+                )
+              }
+            />
+            <SummaryField
+              label="Payment"
+              value={paymentLabel(activeRequest.paymentStatus)}
+            />
+            <SummaryField
+              label="Label"
+              value={labelStatusLabel(activeRequest)}
+            />
+            <SummaryField
+              label="Printed"
+              value={
+                activeRequest.labelPrintedAt
+                  ? formatLocalDate(activeRequest.labelPrintedAt)
+                  : "Not printed"
+              }
+            />
+            <SummaryField
+              label="Carrier status"
+              value={carrierTrackingStatusLabel(
+                activeRequest.carrierTrackingStatus
+              )}
+            />
+            <SummaryField
+              label="Shipping cost"
+              value={formatMoney(
+                activeRequest.amountPaid ?? activeRequest.totalAmount,
+                activeRequest.currency
+              )}
+            />
+            <SummaryField
+              label="Shipped"
+              value={formatLocalDate(activeRequest.shippedAt)}
+            />
+            <SummaryField
+              label="Estimated delivery"
+              value={formatLocalDate(activeRequest.estimatedDeliveryAt)}
+            />
+            <SummaryField
+              label="Delivered"
+              value={
+                activeRequest.deliveredAt
+                  ? formatLocalDate(activeRequest.deliveredAt)
+                  : activeRequest.shipmentStatus === "delivered"
+                    ? "Delivered"
+                    : "Not available"
+              }
+            />
+          </dl>
+
+          <div className="lnf-shipping-summary__actions">
+            <button
+              type="button"
+              style={linkButtonStyle()}
+              disabled={linkBusy}
+              onClick={() => void openGuestPage(activeRequest.id)}
+            >
+              Open Guest Page
+            </button>
+            <button
+              type="button"
+              style={linkButtonStyle()}
+              disabled={linkBusy}
+              onClick={() => void copyGuestLink(activeRequest.id)}
+            >
+              {copiedId === activeRequest.id
+                ? "Copied"
+                : linkBusy
+                  ? "Preparing…"
+                  : "Copy Guest Link"}
+            </button>
+            {hasUsableLabel(activeRequest, itemLabelUrl) ? (
+              <button
+                type="button"
+                style={linkButtonStyle()}
+                disabled={actionBusy === "label"}
+                onClick={() => void openLabel(activeRequest)}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "6px",
-                      alignItems: "center",
-                    }}
-                  >
-                    {request.currentStep ? (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          height: "24px",
-                          padding: "0 10px",
-                          borderRadius: "999px",
-                          background: "#1E3A5F",
-                          border: "1px solid #60A5FA",
-                          color: "#BFDBFE",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Current Step: {request.currentStep}
-                      </span>
-                    ) : null}
-                    <LostFoundShippingBadge badge={String(request.badge)} />
-                  </div>
-                  <span style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px" }}>
-                    {request.createdAt
-                      ? new Date(request.createdAt).toLocaleString()
-                      : "—"}
-                  </span>
-                </div>
+                Download Label
+              </button>
+            ) : null}
+            {hasUsableLabel(activeRequest, itemLabelUrl) &&
+            !activeRequest.labelPrintedAt ? (
+              <button
+                type="button"
+                style={linkButtonStyle()}
+                disabled={actionBusy === "printed"}
+                onClick={() => void markPrinted(activeRequest)}
+              >
+                {actionBusy === "printed" ? "Saving…" : "Mark Label Printed"}
+              </button>
+            ) : null}
+            {hasUsableTracking(activeRequest) && activeRequest.trackingUrl ? (
+              <button
+                type="button"
+                style={linkButtonStyle()}
+                onClick={() => openTracking(activeRequest)}
+              >
+                View Carrier Tracking
+              </button>
+            ) : null}
+          </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "4px",
-                    fontSize: "12px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {request.returnedToSender ? (
-                    <div
-                      role="alert"
-                      style={{
-                        marginBottom: "4px",
-                        padding: "8px 10px",
-                        borderRadius: "8px",
-                        border: "1px solid #F87171",
-                        background: "#3F1D1D",
-                        color: "#FECACA",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Returned to Sender
-                      {request.shippingExceptionMessage
-                        ? ` — ${request.shippingExceptionMessage}`
-                        : ""}
-                    </div>
-                  ) : request.shippingExceptionCode ||
-                    request.shippingExceptionMessage ? (
-                    <div
-                      role="alert"
-                      style={{
-                        marginBottom: "4px",
-                        padding: "8px 10px",
-                        borderRadius: "8px",
-                        border: "1px solid #FBBF24",
-                        background: "#3B2F14",
-                        color: "#FDE68A",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Shipping Exception
-                      {request.shippingExceptionMessage
-                        ? ` — ${request.shippingExceptionMessage}`
-                        : ""}
-                    </div>
-                  ) : null}
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>Guest: </span>
-                    {request.guestName || request.guestEmail || "No guest email"}
-                    {request.guestName && request.guestEmail
-                      ? ` (${request.guestEmail})`
-                      : ""}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Destination:{" "}
-                    </span>
-                    {destination || "Not provided yet"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Carrier and service:{" "}
-                    </span>
-                    {[request.selectedCarrier, request.selectedService]
-                      .filter(Boolean)
-                      .join(" · ") || "Not selected yet"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Tracking:{" "}
-                    </span>
-                    {request.trackingNumber ? (
-                      request.trackingUrl ? (
-                        <a
-                          href={request.trackingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}
-                        >
-                          {request.trackingNumber}
-                        </a>
-                      ) : (
-                        request.trackingNumber
-                      )
-                    ) : (
-                      "—"
-                    )}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Payment status:{" "}
-                    </span>
-                    {request.paymentStatus === "paid"
-                      ? "Payment Received"
-                      : request.paymentStatus === "failed"
-                        ? "Failed"
-                        : request.paymentStatus === "expired"
-                          ? "Expired"
-                          : "Awaiting payment"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Label status:{" "}
-                    </span>
-                    {request.fulfillmentStatus === "label_ready" ||
-                    request.labelCreatedAt
-                      ? "Label ready"
-                      : request.paymentStatus === "paid"
-                        ? "Awaiting label purchase"
-                        : "Not created"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Printed status:{" "}
-                    </span>
-                    {request.labelPrintedAt
-                      ? `Printed ${new Date(request.labelPrintedAt).toLocaleString()}`
-                      : "Not printed"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Current carrier status:{" "}
-                    </span>
-                    {carrierTrackingStatusLabel(request.carrierTrackingStatus)}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Shipping amount:{" "}
-                    </span>
-                    {formatMoney(request.totalAmount, request.currency)}
-                  </div>
-                  {request.paymentStatus === "paid" ? (
-                    <>
-                      <div style={{ color: ONE_EYRIE.textRow }}>
-                        <span style={{ color: ONE_EYRIE.textSubtle }}>
-                          Amount paid:{" "}
-                        </span>
-                        {formatMoney(
-                          request.amountPaid ?? request.totalAmount,
-                          request.currency
-                        )}
-                      </div>
-                      <div style={{ color: ONE_EYRIE.textRow }}>
-                        <span style={{ color: ONE_EYRIE.textSubtle }}>
-                          Paid at:{" "}
-                        </span>
-                        {request.paidAt
-                          ? new Date(request.paidAt).toLocaleString()
-                          : "—"}
-                      </div>
-                      <div style={{ color: ONE_EYRIE.textRow }}>
-                        <span style={{ color: ONE_EYRIE.textSubtle }}>
-                          Stripe reference:{" "}
-                        </span>
-                        {request.stripePaymentRef || "—"}
-                      </div>
-                      {request.providerReceiptUrl ? (
-                        <div style={{ color: ONE_EYRIE.textRow }}>
-                          <span style={{ color: ONE_EYRIE.textSubtle }}>
-                            Receipt:{" "}
-                          </span>
-                          <a
-                            href={request.providerReceiptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}
-                          >
-                            View Stripe receipt
-                          </a>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : null}
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Shipped date:{" "}
-                    </span>
-                    {request.shippedAt
-                      ? new Date(request.shippedAt).toLocaleString()
-                      : "—"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Estimated delivery:{" "}
-                    </span>
-                    {request.estimatedDeliveryAt
-                      ? new Date(request.estimatedDeliveryAt).toLocaleString()
-                      : "—"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Delivered:{" "}
-                    </span>
-                    {request.deliveredAt
-                      ? new Date(request.deliveredAt).toLocaleString()
-                      : request.shipmentStatus === "delivered"
-                        ? "Delivered"
-                        : "—"}
-                  </div>
-                  <div style={{ color: ONE_EYRIE.textRow }}>
-                    <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Guest viewed:{" "}
-                    </span>
-                    {lastViewed
-                      ? `${formatRelativeTimestamp(lastViewed)} (${new Date(
-                          lastViewed
-                        ).toLocaleString()})`
-                      : "Guest has not viewed request."}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                    marginTop: "10px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    style={linkButtonStyle()}
-                    disabled={linkBusy}
-                    onClick={() => void copyGuestLink(request.id)}
-                  >
-                    {copiedId === request.id
-                      ? "Copied"
-                      : linkBusy
-                        ? "Preparing…"
-                        : "Copy Guest Link"}
-                  </button>
-                  <button
-                    type="button"
-                    style={linkButtonStyle()}
-                    disabled={linkBusy}
-                    onClick={() => void openGuestPage(request.id)}
-                  >
-                    Open Guest Page
-                  </button>
-                </div>
-
-                <ShippingTimelinePanel timeline={request.timeline || []} />
-              </li>
-            );
-          })}
-        </ul>
+          <ShippingTimelinePanel timeline={activeRequest.timeline || []} />
+        </div>
       )}
+
+      <div className="lnf-manual-label-fallback">
+        <h4 className="lnf-manual-label-fallback__title">Manual Label Upload</h4>
+        <p className="lnf-manual-label-fallback__copy">
+          Secondary option for prepaid labels. Guests create their own carrier
+          label and upload the PDF. Prefer Guest Shipping above when automated
+          shipping is enabled.
+        </p>
+        <SendLabelRequestForm itemId={itemId} />
+      </div>
 
       <SendShippingRequestModal
         open={modalOpen}
@@ -882,6 +950,7 @@ export default function LostFoundShippingSection({
             }));
           }
           void loadRequests();
+          onItemMayHaveChanged?.();
         }}
       />
     </section>

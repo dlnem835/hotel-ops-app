@@ -9,7 +9,8 @@ export type TransactionalEmailKind =
   | "email-verification"
   | "organization-invitation"
   | "property-assignment"
-  | "password-changed";
+  | "password-changed"
+  | "guest-shipping";
 
 export type TransactionalEmailCta = {
   label: string;

@@ -298,6 +298,6 @@ export function carrierTrackingStatusLabel(status: string | null | undefined): s
     case "unknown":
       return "Unknown";
     default:
-      return status?.trim() || "—";
+      return status?.trim() || "Not available";
   }
 }
