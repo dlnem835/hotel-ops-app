@@ -77,7 +77,7 @@ async function main() {
       property_id: propertyId,
       item_name: "Checkpoint B API guest flow",
       guest_last_name: "ApiDemo",
-      status: "Awaiting Guest Payment",
+      status: "Awaiting Guest Action",
       comments: "API demo — safe to delete",
     })
     .select("id")

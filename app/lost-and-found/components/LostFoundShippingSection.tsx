@@ -8,7 +8,10 @@ import {
   guestLastViewedFromTimeline,
   type TimelineTone,
 } from "@/app/lib/lost-found-shipping/timeline-ui";
-import type { ShippingCurrentStep } from "@/app/lib/lost-found-shipping/status";
+import {
+  carrierTrackingStatusLabel,
+  type ShippingCurrentStep,
+} from "@/app/lib/lost-found-shipping/status";
 import type { ShippingUiBadge } from "@/app/lib/shipping/types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
@@ -22,6 +25,8 @@ type LostFoundShippingSectionProps = {
   itemId: number;
   itemName?: string;
   guestLastName?: string;
+  /** Called when shipping data may have changed lost item status (e.g. Shippo webhooks). */
+  onItemMayHaveChanged?: () => void;
 };
 
 type ShippingTimelineEntry = {
@@ -35,6 +40,7 @@ type ShippingTimelineEntry = {
 
 type ShippingRequestListItem = {
   id: number;
+  guestName?: string;
   guestEmail: string;
   createdAt: string;
   paymentStatus: string;
@@ -48,6 +54,15 @@ type ShippingRequestListItem = {
   destinationState?: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  carrierTrackingStatus?: string | null;
+  shippingExceptionCode?: string | null;
+  shippingExceptionMessage?: string | null;
+  returnedToSender?: boolean;
+  labelPrintedAt?: string | null;
+  labelCreatedAt?: string | null;
+  estimatedDeliveryAt?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
   paidAt?: string | null;
   amountPaid?: number | null;
   stripePaymentRef?: string | null;
@@ -343,6 +358,7 @@ export default function LostFoundShippingSection({
   itemId,
   itemName,
   guestLastName,
+  onItemMayHaveChanged,
 }: LostFoundShippingSectionProps) {
   const [requests, setRequests] = useState<ShippingRequestListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -352,9 +368,11 @@ export default function LostFoundShippingSection({
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [linkBusyId, setLinkBusyId] = useState<number | null>(null);
 
-  const loadRequests = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadRequests = useCallback(async (options?: { quiet?: boolean }) => {
+    if (!options?.quiet) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const response = await tenantFetch(
         `/api/lost-and-found/${itemId}/shipping-requests`
@@ -364,21 +382,42 @@ export default function LostFoundShippingSection({
         throw new Error(result.error || "Unable to load shipping requests");
       }
       setRequests((result.requests || []) as ShippingRequestListItem[]);
+      if (options?.quiet) onItemMayHaveChanged?.();
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Unable to load shipping requests"
-      );
-      setRequests([]);
+      if (!options?.quiet) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load shipping requests"
+        );
+        setRequests([]);
+      }
     } finally {
-      setLoading(false);
+      if (!options?.quiet) setLoading(false);
     }
-  }, [itemId]);
+  }, [itemId, onItemMayHaveChanged]);
 
   useEffect(() => {
     void loadRequests();
   }, [loadRequests]);
+
+  // Refresh while shipments are active so Shippo webhook updates appear on staff UI.
+  useEffect(() => {
+    const active = requests.some(
+      (request) =>
+        ["label_ready", "in_transit", "awaiting_payment", "awaiting_guest"].includes(
+          request.shipmentStatus
+        ) ||
+        request.paymentStatus === "paid" ||
+        request.fulfillmentStatus === "label_ready" ||
+        request.fulfillmentStatus === "pending"
+    );
+    if (!active) return;
+    const timer = window.setInterval(() => {
+      void loadRequests({ quiet: true });
+    }, 12000);
+    return () => window.clearInterval(timer);
+  }, [requests, loadRequests]);
 
   async function ensureGuestLink(requestId: number): Promise<string> {
     const existing = guestLinks[requestId];
@@ -587,9 +626,50 @@ export default function LostFoundShippingSection({
                     lineHeight: 1.45,
                   }}
                 >
+                  {request.returnedToSender ? (
+                    <div
+                      role="alert"
+                      style={{
+                        marginBottom: "4px",
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid #F87171",
+                        background: "#3F1D1D",
+                        color: "#FECACA",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Returned to Sender
+                      {request.shippingExceptionMessage
+                        ? ` — ${request.shippingExceptionMessage}`
+                        : ""}
+                    </div>
+                  ) : request.shippingExceptionCode ||
+                    request.shippingExceptionMessage ? (
+                    <div
+                      role="alert"
+                      style={{
+                        marginBottom: "4px",
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid #FBBF24",
+                        background: "#3B2F14",
+                        color: "#FDE68A",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Shipping Exception
+                      {request.shippingExceptionMessage
+                        ? ` — ${request.shippingExceptionMessage}`
+                        : ""}
+                    </div>
+                  ) : null}
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>Guest: </span>
-                    {request.guestEmail || "No guest email"}
+                    {request.guestName || request.guestEmail || "No guest email"}
+                    {request.guestName && request.guestEmail
+                      ? ` (${request.guestEmail})`
+                      : ""}
                   </div>
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
@@ -599,7 +679,7 @@ export default function LostFoundShippingSection({
                   </div>
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Selected service:{" "}
+                      Carrier and service:{" "}
                     </span>
                     {[request.selectedCarrier, request.selectedService]
                       .filter(Boolean)
@@ -607,9 +687,24 @@ export default function LostFoundShippingSection({
                   </div>
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
-                      Shipping amount:{" "}
+                      Tracking:{" "}
                     </span>
-                    {formatMoney(request.totalAmount, request.currency)}
+                    {request.trackingNumber ? (
+                      request.trackingUrl ? (
+                        <a
+                          href={request.trackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}
+                        >
+                          {request.trackingNumber}
+                        </a>
+                      ) : (
+                        request.trackingNumber
+                      )
+                    ) : (
+                      "—"
+                    )}
                   </div>
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
@@ -622,6 +717,37 @@ export default function LostFoundShippingSection({
                         : request.paymentStatus === "expired"
                           ? "Expired"
                           : "Awaiting payment"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Label status:{" "}
+                    </span>
+                    {request.fulfillmentStatus === "label_ready" ||
+                    request.labelCreatedAt
+                      ? "Label ready"
+                      : request.paymentStatus === "paid"
+                        ? "Awaiting label purchase"
+                        : "Not created"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Printed status:{" "}
+                    </span>
+                    {request.labelPrintedAt
+                      ? `Printed ${new Date(request.labelPrintedAt).toLocaleString()}`
+                      : "Not printed"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Current carrier status:{" "}
+                    </span>
+                    {carrierTrackingStatusLabel(request.carrierTrackingStatus)}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Shipping amount:{" "}
+                    </span>
+                    {formatMoney(request.totalAmount, request.currency)}
                   </div>
                   {request.paymentStatus === "paid" ? (
                     <>
@@ -667,6 +793,32 @@ export default function LostFoundShippingSection({
                   ) : null}
                   <div style={{ color: ONE_EYRIE.textRow }}>
                     <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Shipped date:{" "}
+                    </span>
+                    {request.shippedAt
+                      ? new Date(request.shippedAt).toLocaleString()
+                      : "—"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Estimated delivery:{" "}
+                    </span>
+                    {request.estimatedDeliveryAt
+                      ? new Date(request.estimatedDeliveryAt).toLocaleString()
+                      : "—"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
+                      Delivered:{" "}
+                    </span>
+                    {request.deliveredAt
+                      ? new Date(request.deliveredAt).toLocaleString()
+                      : request.shipmentStatus === "delivered"
+                        ? "Delivered"
+                        : "—"}
+                  </div>
+                  <div style={{ color: ONE_EYRIE.textRow }}>
+                    <span style={{ color: ONE_EYRIE.textSubtle }}>
                       Guest viewed:{" "}
                     </span>
                     {lastViewed
@@ -706,25 +858,6 @@ export default function LostFoundShippingSection({
                     Open Guest Page
                   </button>
                 </div>
-
-                {request.trackingNumber ? (
-                  <div style={{ marginTop: "6px", fontSize: "12px" }}>
-                    {request.trackingUrl ? (
-                      <a
-                        href={request.trackingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: ONE_EYRIE.gold }}
-                      >
-                        Track {request.trackingNumber}
-                      </a>
-                    ) : (
-                      <span style={{ color: ONE_EYRIE.textRow }}>
-                        Tracking: {request.trackingNumber}
-                      </span>
-                    )}
-                  </div>
-                ) : null}
 
                 <ShippingTimelinePanel timeline={request.timeline || []} />
               </li>

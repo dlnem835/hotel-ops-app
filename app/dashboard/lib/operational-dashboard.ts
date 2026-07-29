@@ -119,7 +119,7 @@ export async function buildOperationalDashboard(
 
   const lostItems = lostItemsResult.data || [];
   const readyToShip = lostItems.filter(
-    (item) => item.status === "Ready to be shipped"
+    (item) => item.status === "Ready to Ship" || item.status === "Ready to be shipped"
   ).length;
   const storedToday = lostItems.filter(
     (item) =>

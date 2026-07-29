@@ -64,11 +64,39 @@ function canApplyShipped(status) {
 
 const MANUAL_STATUSES = [
   "Stored",
-  "Label sent",
-  "Ready to be shipped",
+  "Awaiting Guest Action",
+  "Ready to Ship",
   "Shipped",
+  "Delivered",
   "Discarded",
 ];
+
+const STATUS_RANK = {
+  Stored: 1,
+  "Awaiting Guest Action": 2,
+  "Ready to Ship": 3,
+  Shipped: 4,
+  Delivered: 5,
+  Discarded: 100,
+};
+
+function normalizeStatus(raw) {
+  const map = {
+    Found: "Stored",
+    "Awaiting Guest Payment": "Awaiting Guest Action",
+    "Label sent": "Awaiting Guest Action",
+    "Ready to be shipped": "Ready to Ship",
+  };
+  const status = String(raw || "").trim();
+  return map[status] || status;
+}
+
+function canApplyAutomated(current, next) {
+  const cur = normalizeStatus(current);
+  if (cur === "Discarded") return false;
+  if (cur === next) return false;
+  return (STATUS_RANK[next] || 0) > (STATUS_RANK[cur] || 0);
+}
 
 const PRESET_KEYS = [
   "document_envelope",
@@ -151,21 +179,26 @@ check("badge: awaiting guest / payment / expired / delivered", () => {
   );
 });
 
-check("Delivered webhook must not overwrite Discarded or re-apply", () => {
-  assert.strictEqual(canApplyDelivered("Shipped"), true);
-  assert.strictEqual(canApplyDelivered("Ready to be shipped"), true);
-  assert.strictEqual(canApplyDelivered("Discarded"), false);
-  assert.strictEqual(canApplyDelivered("Delivered"), false);
-  assert.strictEqual(canApplyShipped("Delivered"), false);
+check("Delivered webhook must not overwrite Discarded or downgrade", () => {
+  assert.strictEqual(canApplyAutomated("Shipped", "Delivered"), true);
+  assert.strictEqual(canApplyAutomated("Ready to Ship", "Shipped"), true);
+  assert.strictEqual(canApplyAutomated("Ready to be shipped", "Shipped"), true);
+  assert.strictEqual(canApplyAutomated("Delivered", "Shipped"), false);
+  assert.strictEqual(canApplyAutomated("Discarded", "Delivered"), false);
+  assert.strictEqual(canApplyAutomated("Delivered", "Delivered"), false);
+  assert.strictEqual(canApplyAutomated("Shipped", "Ready to Ship"), false);
 });
 
-check("manual Lost & Found status strings preserved", () => {
+check("primary Lost & Found status strings (six)", () => {
   for (const status of MANUAL_STATUSES) {
     assert.ok(typeof status === "string" && status.length > 0);
   }
+  assert.ok(MANUAL_STATUSES.includes("Awaiting Guest Action"));
+  assert.ok(MANUAL_STATUSES.includes("Ready to Ship"));
   assert.ok(!MANUAL_STATUSES.includes("Awaiting Guest Payment"));
-  assert.ok(!MANUAL_STATUSES.includes("Payment Failed"));
   assert.ok(!MANUAL_STATUSES.includes("Found"));
+  assert.ok(!MANUAL_STATUSES.includes("Label sent"));
+  assert.ok(!MANUAL_STATUSES.includes("Ready to be shipped"));
 });
 
 check("package preset keys match Phase 1 design", () => {

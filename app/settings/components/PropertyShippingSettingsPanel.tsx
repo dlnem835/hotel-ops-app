@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Package } from "lucide-react";
+import AddressFields from "@/app/components/address/AddressFields";
+import type { AddressValue } from "@/app/lib/address/format";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   getPackagePreset,
@@ -51,6 +53,13 @@ const emptyDraft: PropertyShippingSettings = {
   defaultSenderContact: "",
   tokenTtlHours: 168,
   updatedAt: null,
+  propertyAddressComplete: false,
+  propertyAddressIncompleteFields: [],
+};
+
+const futureFieldStyle: React.CSSProperties = {
+  opacity: 0.55,
+  cursor: "not-allowed",
 };
 
 function draftsEqual(a: PropertyShippingSettings, b: PropertyShippingSettings): boolean {
@@ -73,6 +82,17 @@ function draftsEqual(a: PropertyShippingSettings, b: PropertyShippingSettings): 
     a.defaultSenderContact === b.defaultSenderContact &&
     a.tokenTtlHours === b.tokenTtlHours
   );
+}
+
+function draftToAddress(draft: PropertyShippingSettings): AddressValue {
+  return {
+    line1: draft.shipFromLine1,
+    line2: draft.shipFromLine2,
+    city: draft.shipFromCity,
+    state: draft.shipFromState,
+    postal: draft.shipFromPostal,
+    country: draft.shipFromCountry || "US",
+  };
 }
 
 export default function PropertyShippingSettingsPanel({
@@ -135,6 +155,18 @@ export default function PropertyShippingSettingsPanel({
     }));
   }
 
+  function setAddress(next: AddressValue) {
+    setDraft((current) => ({
+      ...current,
+      shipFromLine1: next.line1,
+      shipFromLine2: next.line2,
+      shipFromCity: next.city,
+      shipFromState: next.state,
+      shipFromPostal: next.postal,
+      shipFromCountry: next.country || "US",
+    }));
+  }
+
   async function handleSave() {
     setSaving(true);
     setError(null);
@@ -191,14 +223,14 @@ export default function PropertyShippingSettingsPanel({
   return (
     <section
       className="one-eyrie-hotel-property-panel"
-      aria-label="Property shipping settings"
+      aria-label="Shipping settings"
       style={{ maxWidth: "920px" }}
     >
       <div className="one-eyrie-hotel-property-panel__header">
         <div className="one-eyrie-hotel-property-panel__title-row">
           <Package size={14} color={ONE_EYRIE.gold} aria-hidden />
           <span className="one-eyrie-hotel-property-panel__title">
-            Automated Shipping Defaults
+            Shipping Settings
           </span>
         </div>
 
@@ -263,12 +295,17 @@ export default function PropertyShippingSettingsPanel({
           <div
             className="one-eyrie-hotel-property-panel__fields"
             style={{
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
             }}
           >
             <label
               className="one-eyrie-hotel-property-panel__field"
-              style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: "8px",
+                gridColumn: "1 / -1",
+              }}
             >
               <input
                 type="checkbox"
@@ -281,12 +318,15 @@ export default function PropertyShippingSettingsPanel({
                 }
               />
               <span style={{ textTransform: "none", letterSpacing: 0 }}>
-                Enable automated shipping
+                Enable Automated Shipping
               </span>
             </label>
 
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Sender name</span>
+            <label
+              className="one-eyrie-hotel-property-panel__field"
+              style={{ gridColumn: "1 / -1" }}
+            >
+              <span>Ship From Name</span>
               <input
                 type="text"
                 value={draft.senderName}
@@ -296,103 +336,27 @@ export default function PropertyShippingSettingsPanel({
                     senderName: event.target.value,
                   }))
                 }
-                placeholder="Hotel / ship-from name"
+                placeholder="SpringHill Suites Tampa Suncoast Parkway"
                 style={fieldStyle}
               />
             </label>
 
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Ship-from line 1</span>
-              <input
-                type="text"
-                value={draft.shipFromLine1}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromLine1: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
+            <div
+              className="one-eyrie-hotel-property-panel__field"
+              style={{ gridColumn: "1 / -1" }}
+            >
+              <AddressFields
+                idPrefix="ship-from"
+                variant="settings"
+                value={draftToAddress(draft)}
+                onChange={setAddress}
+                inputStyle={fieldStyle}
+                required
               />
-            </label>
+            </div>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Ship-from line 2</span>
-              <input
-                type="text"
-                value={draft.shipFromLine2}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromLine2: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
-              />
-            </label>
-
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>City</span>
-              <input
-                type="text"
-                value={draft.shipFromCity}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromCity: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
-              />
-            </label>
-
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>State</span>
-              <input
-                type="text"
-                value={draft.shipFromState}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromState: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
-              />
-            </label>
-
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Postal</span>
-              <input
-                type="text"
-                value={draft.shipFromPostal}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromPostal: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
-              />
-            </label>
-
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Country</span>
-              <input
-                type="text"
-                value={draft.shipFromCountry}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    shipFromCountry: event.target.value,
-                  }))
-                }
-                style={fieldStyle}
-              />
-            </label>
-
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Property phone</span>
+              <span>Phone Number</span>
               <input
                 type="tel"
                 value={draft.propertyPhone}
@@ -407,7 +371,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Property email</span>
+              <span>Return Email</span>
               <input
                 type="email"
                 value={draft.propertyEmail}
@@ -422,7 +386,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default package preset</span>
+              <span>Default Package</span>
               <select
                 value={draft.defaultPackagePreset}
                 onChange={(event) =>
@@ -439,7 +403,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default length (in)</span>
+              <span>Length</span>
               <input
                 type="number"
                 min={0}
@@ -459,7 +423,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default width (in)</span>
+              <span>Width</span>
               <input
                 type="number"
                 min={0}
@@ -479,7 +443,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default height (in)</span>
+              <span>Height</span>
               <input
                 type="number"
                 min={0}
@@ -499,7 +463,7 @@ export default function PropertyShippingSettingsPanel({
             </label>
 
             <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default weight (oz)</span>
+              <span>Weight</span>
               <input
                 type="number"
                 min={0}
@@ -518,37 +482,42 @@ export default function PropertyShippingSettingsPanel({
               />
             </label>
 
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Default sender contact</span>
-              <input
-                type="text"
-                value={draft.defaultSenderContact}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    defaultSenderContact: event.target.value,
-                  }))
-                }
-                placeholder="Optional contact name"
-                style={fieldStyle}
-              />
+            <label
+              className="one-eyrie-hotel-property-panel__field"
+              style={futureFieldStyle}
+              title="Coming soon"
+            >
+              <span>Preferred Carrier (future)</span>
+              <select disabled style={fieldStyle} value="">
+                <option value="">Not available yet</option>
+              </select>
             </label>
 
-            <label className="one-eyrie-hotel-property-panel__field">
-              <span>Guest link TTL (hours)</span>
-              <input
-                type="number"
-                min={1}
-                max={720}
-                value={draft.tokenTtlHours}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    tokenTtlHours: Number(event.target.value) || 168,
-                  }))
-                }
-                style={fieldStyle}
-              />
+            <label
+              className="one-eyrie-hotel-property-panel__field"
+              style={{
+                ...futureFieldStyle,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              title="Coming soon"
+            >
+              <input type="checkbox" disabled checked={false} />
+              <span style={{ textTransform: "none", letterSpacing: 0 }}>
+                Signature Required (future)
+              </span>
+            </label>
+
+            <label
+              className="one-eyrie-hotel-property-panel__field"
+              style={futureFieldStyle}
+              title="Coming soon"
+            >
+              <span>Insurance Default (future)</span>
+              <select disabled style={fieldStyle} value="">
+                <option value="">Not available yet</option>
+              </select>
             </label>
           </div>
         </>

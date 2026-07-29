@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import AddressFields from "@/app/components/address/AddressFields";
+import { EMPTY_ADDRESS, type AddressValue } from "@/app/lib/address/format";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type {
   AdminOrganizationDetail,
@@ -16,6 +18,80 @@ import AdminAdministratorsTable from "../../components/AdminAdministratorsTable"
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
+}
+
+function AdminPropertyAddressPrompt({
+  property,
+  onSaved,
+  onError,
+}: {
+  property: AdminPropertyDetail;
+  onSaved: (property: AdminPropertyDetail) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [address, setAddress] = useState<AddressValue>({
+    ...EMPTY_ADDRESS,
+    line1: property.addressLine1 || "",
+    line2: property.addressLine2 || "",
+    city: property.addressCity || "",
+    state: property.addressState || "",
+    postal: property.addressPostal || "",
+    country: property.addressCountry || "US",
+  });
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    onError(null);
+    const response = await adminFetch(`/api/admin/properties/${property.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    const body = (await response.json().catch(() => null)) as
+      | AdminPropertyDetail
+      | { error?: string }
+      | null;
+    setSaving(false);
+    if (!response.ok) {
+      onError(
+        body && "error" in body && body.error
+          ? body.error
+          : `Request failed (${response.status})`
+      );
+      return;
+    }
+    onSaved(body as AdminPropertyDetail);
+  }
+
+  return (
+    <section className="admin-portal__card">
+      <h3 className="admin-portal__section-title">Complete property address</h3>
+      <p className="admin-portal__muted">
+        This property still has an incomplete structured address. Complete it once
+        — it becomes the canonical Ship From address for automated Lost &amp; Found
+        shipping.
+      </p>
+      <form className="admin-portal__form" onSubmit={(event) => void handleSubmit(event)}>
+        <AddressFields
+          variant="admin"
+          idPrefix="admin-property-fix"
+          value={address}
+          onChange={setAddress}
+        />
+        <div className="admin-portal__form-actions">
+          <button
+            type="submit"
+            className="admin-portal__button admin-portal__button--primary"
+            disabled={saving}
+          >
+            {saving ? "Saving…" : "Save structured address"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 }
 
 export default function AdminPropertyDetailPage() {
@@ -86,6 +162,14 @@ export default function AdminPropertyDetailPage() {
           name: property.name,
           brand: property.brand,
           address: property.address,
+          addressLine1: property.addressLine1,
+          addressLine2: property.addressLine2,
+          addressCity: property.addressCity,
+          addressState: property.addressState,
+          addressPostal: property.addressPostal,
+          addressCountry: property.addressCountry,
+          addressComplete: property.addressComplete,
+          addressIncompleteFields: property.addressIncompleteFields,
           phoneNumber: property.phoneNumber,
           timezone: property.timezone,
           active: property.active,
@@ -209,7 +293,18 @@ export default function AdminPropertyDetailPage() {
           </div>
           <div className="admin-portal__meta-item">
             <dt>Address</dt>
-            <dd>{property.address || "—"}</dd>
+            <dd>
+              {property.addressComplete ? (
+                property.address || "—"
+              ) : (
+                <span style={{ color: "#FECACA" }}>
+                  Incomplete
+                  {property.addressIncompleteFields?.length
+                    ? ` — missing ${property.addressIncompleteFields.join(", ")}`
+                    : ""}
+                </span>
+              )}
+            </dd>
           </div>
           <div className="admin-portal__meta-item">
             <dt>Phone</dt>
@@ -225,6 +320,17 @@ export default function AdminPropertyDetailPage() {
           </div>
         </dl>
       </section>
+
+      {!property.addressComplete ? (
+        <AdminPropertyAddressPrompt
+          property={property}
+          onSaved={(next) => {
+            setProperty(next);
+            setActionSuccess("Property address updated.");
+          }}
+          onError={setActionError}
+        />
+      ) : null}
 
       {actionError ? <AdminErrorState message={actionError} /> : null}
 
@@ -256,6 +362,14 @@ export default function AdminPropertyDetailPage() {
               name: property.name,
               brand: property.brand,
               address: property.address,
+              addressLine1: property.addressLine1,
+              addressLine2: property.addressLine2,
+              addressCity: property.addressCity,
+              addressState: property.addressState,
+              addressPostal: property.addressPostal,
+              addressCountry: property.addressCountry,
+              addressComplete: property.addressComplete,
+              addressIncompleteFields: property.addressIncompleteFields,
               phoneNumber: property.phoneNumber,
               timezone: property.timezone,
               active: property.active,

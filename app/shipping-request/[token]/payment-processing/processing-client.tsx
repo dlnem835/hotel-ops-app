@@ -37,20 +37,40 @@ export default function ShippingPaymentProcessingClient() {
         setView(next);
 
         if (
-          next.state === "payment_processing" ||
           next.state === "label_created" ||
           next.state === "in_transit" ||
           next.state === "delivered"
         ) {
           setDone(true);
-          setMessage("Payment received. The hotel will prepare your shipment.");
+          setMessage("Payment confirmed. Opening your shipment tracking…");
+          window.setTimeout(() => {
+            window.location.href = `/shipping-request/${encodeURIComponent(token)}`;
+          }, 800);
+          return;
+        }
+
+        if (next.state === "payment_processing") {
+          setMessage(
+            "Payment received. Creating your shipping label — this page will open tracking when ready…"
+          );
+          attempts += 1;
+          if (attempts >= 30) {
+            setDone(true);
+            setMessage(
+              "Your payment is confirmed. Open your shipping link anytime to check label and tracking status."
+            );
+            return;
+          }
+          window.setTimeout(() => {
+            void tick();
+          }, 2500);
           return;
         }
 
         attempts += 1;
         if (attempts >= 20) {
           setMessage(
-            "We’re still confirming your payment. This page will update when Stripe verifies the charge. You can safely close this window and return later."
+            "We’re still confirming your payment. You can safely close this window and return later with your shipping link."
           );
           return;
         }
@@ -71,7 +91,7 @@ export default function ShippingPaymentProcessingClient() {
     return () => {
       cancelled = true;
     };
-  }, [load]);
+  }, [load, token]);
 
   const backHref = `/shipping-request/${encodeURIComponent(token)}`;
 
@@ -80,95 +100,30 @@ export default function ShippingPaymentProcessingClient() {
       <div className="shipping-request-shell">
         <div className="shipping-request-brand">
           <div className="shipping-request-hotel">
-            <div className="shipping-request-hotel__monogram" aria-hidden="true">
-              {(view?.propertyName || "H").slice(0, 2).toUpperCase()}
+            <div className="shipping-request-hotel__monogram" aria-hidden>
+              OE
             </div>
-            <div className="shipping-request-hotel__text">
-              <p className="shipping-request-hotel__name">
+            <div>
+              <div className="shipping-request-hotel__name">
                 {view?.propertyName || "Hotel"}
-              </p>
-              <p className="shipping-request-brand__eyebrow">
-                Lost &amp; Found Shipping
-              </p>
+              </div>
+              <div className="shipping-request-hotel__meta">Secure checkout</div>
             </div>
           </div>
         </div>
+
         <div className="shipping-request-body">
-          <h1 className="shipping-request-title">
-            {done ? "Shipping Payment Received" : "Payment processing"}
-          </h1>
-          <p className="shipping-request-copy">{message}</p>
-
-          {done ? (
-            <div className="shipping-request-status-card">
-              <h3>Thank you. Your payment has been received.</h3>
-              <p>
-                The hotel will now prepare your item for shipment. You will receive
-                tracking information after the shipping label is created and the
-                package is sent.
+          <div className="shipping-request-status-card">
+            <h3>{done ? "All set" : "Processing payment"}</h3>
+            <p>{message}</p>
+            {sessionId ? (
+              <p style={{ marginTop: "8px", fontSize: "12px", opacity: 0.7 }}>
+                Session reference received.
               </p>
-              <div style={{ marginTop: "14px", fontSize: "13px", color: "#c9c9c9" }}>
-                <div>
-                  <strong>Payment Received:</strong> complete
-                </div>
-                <div>
-                  <strong>Preparing Shipment:</strong> current
-                </div>
-                <div>
-                  <strong>Shipped:</strong> pending
-                </div>
-                <div>
-                  <strong>Delivered:</strong> pending
-                </div>
-              </div>
-              {view ? (
-                <div style={{ marginTop: "14px", fontSize: "13px", color: "#e5e7eb" }}>
-                  <div>{view.itemName}</div>
-                  <div>
-                    {[view.selectedCarrier, view.selectedService]
-                      .filter(Boolean)
-                      .join(" · ") || "Shipping option selected"}
-                  </div>
-                  {view.totalAmount != null ? (
-                    <div>
-                      Amount:{" "}
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: (view.currency || "usd").toUpperCase(),
-                      }).format(view.totalAmount)}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="shipping-request-status-card">
-              <h3>Secure confirmation in progress</h3>
-              <p>
-                Browser return is not treated as proof of payment. We wait for
-                Stripe’s verified webhook confirmation before marking this
-                request paid.
-              </p>
-              {sessionId ? (
-                <p style={{ marginTop: "10px", color: "#9ca3af", fontSize: "12px" }}>
-                  Checkout reference received.
-                </p>
-              ) : null}
-            </div>
-          )}
-
-          <div className="shipping-request-actions" style={{ marginTop: "18px" }}>
-            <Link
-              href={backHref}
-              className="shipping-request-btn shipping-request-btn--secondary"
-              style={{
-                display: "grid",
-                placeItems: "center",
-                textDecoration: "none",
-              }}
-            >
-              Back to shipping request
-            </Link>
+            ) : null}
+            <p style={{ marginTop: "16px" }}>
+              <Link href={backHref}>Return to shipping request</Link>
+            </p>
           </div>
         </div>
       </div>

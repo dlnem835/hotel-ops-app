@@ -68,14 +68,16 @@ check("timeline catalog file exists", () => {
   );
 });
 
-check("status flow includes Awaiting Guest Payment + Found", () => {
+check("status flow includes six primary statuses", () => {
   const status = fs.readFileSync(
     path.join(root, "app/lib/lost-found-shipping/status.ts"),
     "utf8"
   );
-  assert.ok(status.includes('awaitingGuestPayment: "Awaiting Guest Payment"'));
-  assert.ok(status.includes('found: "Found"'));
-  assert.ok(status.includes('readyToShip: "Ready to be shipped"'));
+  assert.ok(status.includes('awaitingGuestAction: "Awaiting Guest Action"'));
+  assert.ok(status.includes('readyToShip: "Ready to Ship"'));
+  assert.ok(status.includes('stored: "Stored"'));
+  assert.ok(status.includes("normalizeLostItemStatus"));
+  assert.ok(status.includes("canApplyAutomatedLostItemStatus"));
 });
 
 check("timeline events cover audit path through delivery", () => {
@@ -100,7 +102,7 @@ check("timeline events cover audit path through delivery", () => {
   }
 });
 
-check("guest API wires provider validate/rates without Stripe Checkout", () => {
+check("guest API wires provider validate/rates; checkout is server-driven", () => {
   const route = fs.readFileSync(
     path.join(root, "app/api/shipping-request/[token]/route.ts"),
     "utf8"
@@ -108,8 +110,8 @@ check("guest API wires provider validate/rates without Stripe Checkout", () => {
   assert.ok(route.includes("getShippingProvider"));
   assert.ok(route.includes('action === "validate_address"'));
   assert.ok(route.includes('action === "get_rates"'));
-  assert.ok(route.includes("checkoutReady: false"));
-  assert.ok(!route.includes("stripe.checkout"));
+  assert.ok(route.includes("checkoutReady: true") || route.includes("checkoutReady: false"));
+  assert.ok(!route.includes("stripe.checkout.sessions.create"));
 });
 
 check("Shippo stays behind ShippingProvider factory", () => {

@@ -233,7 +233,7 @@ async function main() {
           property_id: propertyId,
           item_name: "Checkpoint B demo item",
           guest_last_name: "Demo",
-          status: "Awaiting Guest Payment",
+          status: "Awaiting Guest Action",
           comments: "Automated Checkpoint B live demo — safe to delete",
         })
         .select("id")

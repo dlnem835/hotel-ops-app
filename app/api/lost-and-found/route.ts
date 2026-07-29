@@ -7,6 +7,10 @@ import {
   listLostItems,
   createLostItem,
 } from "@/app/lost-and-found/lib/lost-found-server-db";
+import {
+  coerceLostItemStatusForWrite,
+  LOST_ITEM_STATUS,
+} from "@/app/lib/lost-found-shipping/status";
 
 export async function GET(request: Request) {
   try {
@@ -28,7 +32,10 @@ export async function POST(request: Request) {
       room_number: body.room_number ?? null,
       guest_last_name: body.guest_last_name ?? null,
       found_by: body.found_by ?? null,
-      status: body.status ?? "Stored",
+      status: coerceLostItemStatusForWrite(
+        body.status,
+        LOST_ITEM_STATUS.stored
+      ),
       created_by: user.id,
     };
 

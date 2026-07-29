@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Building2 } from "lucide-react";
+import AddressFields from "@/app/components/address/AddressFields";
+import {
+  propertyFieldsToAddressValue,
+  type PropertyAddressFields,
+} from "@/app/lib/address/property-address";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { HotelProperty } from "../lib/hotel-property-types";
@@ -26,9 +31,34 @@ const compactInput = (inputStyle: React.CSSProperties): React.CSSProperties => (
 const emptyProperty: HotelProperty = {
   hotelName: "",
   address: "",
+  addressLine1: "",
+  addressLine2: "",
+  addressCity: "",
+  addressState: "",
+  addressPostal: "",
+  addressCountry: "US",
   phoneNumber: "",
   updatedAt: null,
+  addressComplete: false,
+  addressIncompleteFields: [
+    "Street Address",
+    "City",
+    "State / Province",
+    "Postal Code",
+    "Country",
+  ],
 };
+
+function toAddressFields(property: HotelProperty): PropertyAddressFields {
+  return {
+    addressLine1: property.addressLine1,
+    addressLine2: property.addressLine2,
+    addressCity: property.addressCity,
+    addressState: property.addressState,
+    addressPostal: property.addressPostal,
+    addressCountry: property.addressCountry || "US",
+  };
+}
 
 export default function HotelPropertyInfoPanel({
   inputStyle,
@@ -75,7 +105,12 @@ export default function HotelPropertyInfoPanel({
 
   const isDirty =
     draft.hotelName !== property.hotelName ||
-    draft.address !== property.address ||
+    draft.addressLine1 !== property.addressLine1 ||
+    draft.addressLine2 !== property.addressLine2 ||
+    draft.addressCity !== property.addressCity ||
+    draft.addressState !== property.addressState ||
+    draft.addressPostal !== property.addressPostal ||
+    draft.addressCountry !== property.addressCountry ||
     draft.phoneNumber !== property.phoneNumber;
 
   async function handleSave() {
@@ -89,7 +124,12 @@ export default function HotelPropertyInfoPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hotelName: draft.hotelName,
-          address: draft.address,
+          addressLine1: draft.addressLine1,
+          addressLine2: draft.addressLine2,
+          addressCity: draft.addressCity,
+          addressState: draft.addressState,
+          addressPostal: draft.addressPostal,
+          addressCountry: draft.addressCountry,
           phoneNumber: draft.phoneNumber,
         }),
       });
@@ -165,46 +205,100 @@ export default function HotelPropertyInfoPanel({
       {loading ? (
         <div className="one-eyrie-hotel-property-panel__status">Loading…</div>
       ) : (
-        <div className="one-eyrie-hotel-property-panel__fields">
-          <label className="one-eyrie-hotel-property-panel__field">
-            <span>Hotel name</span>
-            <input
-              type="text"
-              value={draft.hotelName}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, hotelName: event.target.value }))
-              }
-              placeholder="Property name"
-              style={compactInput(inputStyle)}
-            />
-          </label>
+        <>
+          {!draft.addressComplete ? (
+            <div
+              style={{
+                marginBottom: "10px",
+                padding: "8px 10px",
+                borderRadius: "8px",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                background: ONE_EYRIE.surfaceInset,
+                color: "#FECACA",
+                fontSize: "12px",
+                lineHeight: 1.45,
+              }}
+            >
+              Complete the property address fields below. This address is the
+              canonical Ship From location for Lost &amp; Found automated
+              shipping
+              {draft.addressIncompleteFields.length > 0
+                ? `: missing ${draft.addressIncompleteFields.join(", ")}.`
+                : "."}
+            </div>
+          ) : null}
 
-          <label className="one-eyrie-hotel-property-panel__field one-eyrie-hotel-property-panel__field--address">
-            <span>Address</span>
-            <input
-              type="text"
-              value={draft.address}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, address: event.target.value }))
-              }
-              placeholder="Street, city, state, ZIP"
-              style={compactInput(inputStyle)}
-            />
-          </label>
+          <div className="one-eyrie-hotel-property-panel__fields">
+            <label className="one-eyrie-hotel-property-panel__field">
+              <span>Hotel name</span>
+              <input
+                type="text"
+                value={draft.hotelName}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    hotelName: event.target.value,
+                  }))
+                }
+                placeholder="Property name"
+                style={compactInput(inputStyle)}
+              />
+            </label>
 
-          <label className="one-eyrie-hotel-property-panel__field">
-            <span>Phone</span>
-            <input
-              type="tel"
-              value={draft.phoneNumber}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, phoneNumber: event.target.value }))
-              }
-              placeholder="Main hotel line"
-              style={compactInput(inputStyle)}
-            />
-          </label>
-        </div>
+            <div
+              className="one-eyrie-hotel-property-panel__field one-eyrie-hotel-property-panel__field--address"
+              style={{ gridColumn: "1 / -1" }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  color: ONE_EYRIE.textSubtle,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Property address (Ship From)
+              </span>
+              <AddressFields
+                variant="settings"
+                idPrefix="hotel-property"
+                required
+                inputStyle={compactInput(inputStyle)}
+                value={propertyFieldsToAddressValue(toAddressFields(draft))}
+                onChange={(next) =>
+                  setDraft((current) => ({
+                    ...current,
+                    addressLine1: next.line1,
+                    addressLine2: next.line2,
+                    addressCity: next.city,
+                    addressState: next.state,
+                    addressPostal: next.postal,
+                    addressCountry: next.country,
+                  }))
+                }
+              />
+            </div>
+
+            <label className="one-eyrie-hotel-property-panel__field">
+              <span>Phone</span>
+              <input
+                type="tel"
+                value={draft.phoneNumber}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    phoneNumber: event.target.value,
+                  }))
+                }
+                placeholder="Main hotel line"
+                style={compactInput(inputStyle)}
+              />
+            </label>
+          </div>
+        </>
       )}
     </section>
   );

@@ -16,7 +16,7 @@ import { findPaymentById } from "@/app/lib/payments/payment-records";
 import {
   fetchPropertyShippingSettings,
   isShippingSettingsReady,
-  settingsToShipFromAddress,
+  resolveShipFromForProperty,
 } from "./property-shipping-settings";
 import { LOST_ITEM_STATUS } from "./status";
 import { SHIPPING_TIMELINE_EVENTS } from "./timeline";
@@ -107,7 +107,13 @@ export async function listShippingTimelineForRequest(
       actorLabel = "Staff";
     } else if (source === "guest") {
       actorLabel = "Guest";
-    } else if (source === "stripe" || source === "shippo" || source === "system") {
+    } else if (source === "stripe") {
+      actorLabel = "Stripe";
+    } else if (source === "shippo") {
+      actorLabel = "Shippo";
+    } else if (source === "carrier") {
+      actorLabel = "Carrier";
+    } else if (source === "system") {
       actorLabel = "System";
     }
     return {
@@ -178,6 +184,26 @@ export function toStaffShippingRequestView(row: ShippingRequestRow) {
     destinationState: recipient?.state || null,
     trackingNumber: row.tracking_number ? String(row.tracking_number) : null,
     trackingUrl: row.tracking_url ? String(row.tracking_url) : null,
+    carrierTrackingStatus: row.carrier_tracking_status
+      ? String(row.carrier_tracking_status)
+      : null,
+    carrierTrackingRaw: row.carrier_tracking_raw
+      ? String(row.carrier_tracking_raw)
+      : null,
+    shippingExceptionCode: row.shipping_exception_code
+      ? String(row.shipping_exception_code)
+      : null,
+    shippingExceptionMessage: row.shipping_exception_message
+      ? String(row.shipping_exception_message)
+      : null,
+    shippingExceptionAt: row.shipping_exception_at
+      ? String(row.shipping_exception_at)
+      : null,
+    returnedToSender: Boolean(row.returned_to_sender),
+    labelPrintedAt: row.label_printed_at ? String(row.label_printed_at) : null,
+    estimatedDeliveryAt: row.estimated_delivery_at
+      ? String(row.estimated_delivery_at)
+      : null,
     labelStoragePath: row.label_storage_path
       ? String(row.label_storage_path)
       : null,
@@ -260,7 +286,9 @@ export async function createShippingRequest(
   if (!isShippingSettingsReady(settings)) {
     throw new TenantRequestError(
       400,
-      "Complete Property Shipping Settings before sending an automated shipping request."
+      settings.propertyAddressComplete
+        ? "Complete Property Shipping Settings before sending an automated shipping request."
+        : "Complete the property address in Hotel Building Information before sending an automated shipping request."
     );
   }
 
@@ -285,7 +313,7 @@ export async function createShippingRequest(
     : "custom";
   getPackagePreset(presetKey);
 
-  const shipFrom = settingsToShipFromAddress(settings);
+  const shipFrom = await resolveShipFromForProperty(supabase, scope, settings);
   const rawToken = generateShippingGuestToken();
   const tokenHash = hashShippingGuestToken(rawToken);
   const expiresAt = tokenExpiresAt(settings.tokenTtlHours).toISOString();
@@ -334,7 +362,7 @@ export async function createShippingRequest(
   await supabase
     .from("lost_items")
     .update({
-      status: LOST_ITEM_STATUS.awaitingGuestPayment,
+      status: LOST_ITEM_STATUS.awaitingGuestAction,
       label_requested_at: new Date().toISOString(),
       label_sent_at: new Date().toISOString(),
     })
@@ -462,6 +490,10 @@ export type GuestShippingRequestView = {
   propertyBrand: string | null;
   /** Reserved for future property logo uploads; null until configured. */
   propertyLogoUrl: string | null;
+  /** Property phone for branded guest experience (optional). */
+  propertyPhone: string | null;
+  /** Property mailing address line for branding (not ship-from). */
+  propertyAddress: string | null;
   itemName: string;
   itemDescription: string;
   roomNumber: string | null;
@@ -482,6 +514,13 @@ export type GuestShippingRequestView = {
   rateExpiresAt: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  carrierTrackingStatus: string | null;
+  latestCarrierUpdate: string | null;
+  estimatedDeliveryAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  returnedToSender: boolean;
+  shippingExceptionMessage: string | null;
 };
 
 export async function resolveGuestShippingRequestByToken(
@@ -515,11 +554,14 @@ export async function resolveGuestShippingRequestByToken(
 
   let state: GuestShippingRequestView["state"] = "awaiting_guest";
 
+  // Post-payment / in-progress shipment: original guest link is a tracking page.
+  // Never treat these as "expired" even if the pre-payment token TTL has passed.
   if (shipmentStatus === "delivered") state = "delivered";
   else if (shipmentStatus === "in_transit") state = "in_transit";
   else if (
     fulfillmentStatus === "label_ready" ||
-    shipmentStatus === "label_ready"
+    shipmentStatus === "label_ready" ||
+    Boolean(row.tracking_number)
   ) {
     state = "label_created";
   } else if (paymentStatus === "paid" && fulfillmentStatus === "pending") {
@@ -539,17 +581,36 @@ export async function resolveGuestShippingRequestByToken(
 
   let propertyName = "Hotel";
   let propertyBrand: string | null = null;
+  let propertyPhone: string | null = null;
+  let propertyAddress: string | null = null;
   const propertyId = Number(row.property_id);
   const organizationId = Number(row.organization_id);
   if (Number.isFinite(propertyId) && Number.isFinite(organizationId)) {
     const { data: property } = await supabase
       .from("properties")
-      .select("name, brand")
+      .select(
+        "name, brand, address, address_line1, address_line2, address_city, address_state, address_postal, address_country, phone_number"
+      )
       .eq("id", propertyId)
       .eq("organization_id", organizationId)
       .maybeSingle();
     if (property?.name) propertyName = String(property.name);
     if (property?.brand) propertyBrand = String(property.brand);
+    if (property?.phone_number) propertyPhone = String(property.phone_number);
+    if (property?.address) {
+      propertyAddress = String(property.address);
+    } else if (property?.address_line1) {
+      propertyAddress = [
+        property.address_line1,
+        property.address_line2,
+        [property.address_city, property.address_state]
+          .filter(Boolean)
+          .join(", "),
+        property.address_postal,
+      ]
+        .filter((part) => part && String(part).trim())
+        .join(", ");
+    }
   }
 
   let itemName = String(row.item_description_public || "Your item");
@@ -569,11 +630,39 @@ export async function resolveGuestShippingRequestByToken(
     if (lostItem?.created_at) foundDate = String(lostItem.created_at);
   }
 
+  let latestCarrierUpdate: string | null = null;
+  const requestId = Number(row.id);
+  if (Number.isFinite(requestId)) {
+    const { data: latestTrack } = await supabase
+      .from("lost_found_shipping_events")
+      .select("event_data, event_type, created_at")
+      .eq("shipping_request_id", requestId)
+      .in("event_type", [
+        SHIPPING_TIMELINE_EVENTS.trackingUpdateReceived,
+        SHIPPING_TIMELINE_EVENTS.packageShipped,
+        SHIPPING_TIMELINE_EVENTS.packageDelivered,
+        SHIPPING_TIMELINE_EVENTS.shippingException,
+        SHIPPING_TIMELINE_EVENTS.returnedToSender,
+        SHIPPING_TIMELINE_EVENTS.trackingAssigned,
+        SHIPPING_TIMELINE_EVENTS.labelPurchased,
+      ])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const eventData =
+      latestTrack?.event_data && typeof latestTrack.event_data === "object"
+        ? (latestTrack.event_data as Record<string, unknown>)
+        : null;
+    if (eventData?.notes) latestCarrierUpdate = String(eventData.notes);
+  }
+
   return {
     state,
     propertyName,
     propertyBrand,
     propertyLogoUrl: null,
+    propertyPhone,
+    propertyAddress,
     itemName,
     itemDescription: String(row.item_description_public || itemName || "Your item"),
     roomNumber,
@@ -601,6 +690,23 @@ export async function resolveGuestShippingRequestByToken(
     rateExpiresAt: row.rate_expires_at ? String(row.rate_expires_at) : null,
     trackingNumber: row.tracking_number ? String(row.tracking_number) : null,
     trackingUrl: row.tracking_url ? String(row.tracking_url) : null,
+    carrierTrackingStatus: row.carrier_tracking_status
+      ? String(row.carrier_tracking_status)
+      : null,
+    latestCarrierUpdate:
+      latestCarrierUpdate ||
+      (row.shipping_exception_message
+        ? String(row.shipping_exception_message)
+        : null),
+    estimatedDeliveryAt: row.estimated_delivery_at
+      ? String(row.estimated_delivery_at)
+      : null,
+    shippedAt: row.shipped_at ? String(row.shipped_at) : null,
+    deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
+    returnedToSender: Boolean(row.returned_to_sender),
+    shippingExceptionMessage: row.shipping_exception_message
+      ? String(row.shipping_exception_message)
+      : null,
   };
 }
 
@@ -617,6 +723,8 @@ function unavailable(): GuestShippingRequestView {
     propertyName: "",
     propertyBrand: null,
     propertyLogoUrl: null,
+    propertyPhone: null,
+    propertyAddress: null,
     itemName: "",
     itemDescription: "",
     roomNumber: null,
@@ -642,6 +750,13 @@ function unavailable(): GuestShippingRequestView {
     rateExpiresAt: null,
     trackingNumber: null,
     trackingUrl: null,
+    carrierTrackingStatus: null,
+    latestCarrierUpdate: null,
+    estimatedDeliveryAt: null,
+    shippedAt: null,
+    deliveredAt: null,
+    returnedToSender: false,
+    shippingExceptionMessage: null,
   };
 }
 

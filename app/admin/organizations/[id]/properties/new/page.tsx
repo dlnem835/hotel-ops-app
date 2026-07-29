@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import AddressFields from "@/app/components/address/AddressFields";
+import {
+  EMPTY_ADDRESS,
+  type AddressValue,
+} from "@/app/lib/address/format";
 import { adminFetch } from "@/app/lib/platform-admin/admin-fetch";
 import type {
   AdminOrganizationDetail,
@@ -23,7 +28,7 @@ export default function AdminCreatePropertyPage() {
 
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressFields, setAddressFields] = useState<AddressValue>(EMPTY_ADDRESS);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [timezone, setTimezone] = useState(DEFAULT_PROPERTY_TIMEZONE);
   const [timezoneReady, setTimezoneReady] = useState(false);
@@ -87,7 +92,20 @@ export default function AdminCreatePropertyPage() {
       body: JSON.stringify({
         name: name.trim(),
         brand: brand.trim() || null,
-        address: address.trim(),
+        address: {
+          line1: addressFields.line1,
+          line2: addressFields.line2,
+          city: addressFields.city,
+          state: addressFields.state,
+          postal: addressFields.postal,
+          country: addressFields.country,
+        },
+        addressLine1: addressFields.line1,
+        addressLine2: addressFields.line2,
+        addressCity: addressFields.city,
+        addressState: addressFields.state,
+        addressPostal: addressFields.postal,
+        addressCountry: addressFields.country,
         phoneNumber: phoneNumber.trim(),
         timezone,
       }),
@@ -136,14 +154,16 @@ export default function AdminCreatePropertyPage() {
             <input type="text" value={brand} onChange={(event) => setBrand(event.target.value)} />
           </label>
 
-          <label className="admin-portal__field">
+          <div className="admin-portal__field">
             <span>Address</span>
-            <input
-              type="text"
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
+            <AddressFields
+              variant="admin"
+              idPrefix="admin-property"
+              required={false}
+              value={addressFields}
+              onChange={setAddressFields}
             />
-          </label>
+          </div>
 
           <label className="admin-portal__field">
             <span>Phone number</span>

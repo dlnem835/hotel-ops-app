@@ -16,6 +16,11 @@ import LostFoundAddItemModal, {
 } from "@/app/lost-and-found/components/LostFoundAddItemModal";
 import LostFoundShippingSection from "@/app/lost-and-found/components/LostFoundShippingSection";
 import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
+import {
+  LOST_ITEM_STATUS,
+  LOST_ITEM_STATUS_OPTIONS,
+  normalizeLostItemStatus,
+} from "@/app/lib/lost-found-shipping/status";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -43,15 +48,15 @@ type LnfKpiFilter = "ready-to-ship" | "ready-to-discard";
 
 const STATUS_FILTER_OPTIONS = [
   { label: "All", value: "All" },
-  { label: "Found", value: "Found" },
-  { label: "Stored", value: "Stored" },
-  { label: "Awaiting Guest Payment", value: "Awaiting Guest Payment" },
-  { label: "Label Sent", value: "Label sent" },
-  { label: "Ready to Ship", value: "Ready to be shipped" },
-  { label: "Shipped", value: "Shipped" },
-  { label: "Delivered", value: "Delivered" },
-  { label: "Discarded", value: "Discarded" },
+  ...LOST_ITEM_STATUS_OPTIONS.map((status) => ({
+    label: status,
+    value: status,
+  })),
 ] as const;
+
+function displayItemStatus(status: string | null | undefined): string {
+  return normalizeLostItemStatus(status) || String(status || LOST_ITEM_STATUS.stored);
+}
 
 const SORT_OPTIONS: { label: string; value: LnfSortOrder }[] = [
   { label: "Newest First", value: "newest" },
@@ -84,7 +89,7 @@ export default function LostAndFoundPage() {
   const filtersDropdownRef = useRef<HTMLDivElement>(null);
 
   const readyToShipCount = lostItems.filter(
-    (item) => item.status === "Ready to be shipped"
+    (item) => displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
   ).length;
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
@@ -102,13 +107,14 @@ export default function LostAndFoundPage() {
         .includes(searchterm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "All" || item.status === statusFilter;
+      statusFilter === "All" ||
+      displayItemStatus(item.status) === statusFilter;
 
     const matchesKpi =
       kpiFilter === null
         ? true
         : kpiFilter === "ready-to-ship"
-          ? item.status === "Ready to be shipped"
+          ? displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
           : isEligibleForDiscard(item, discardCutoff);
 
     return matchesSearch && matchesStatus && matchesKpi;
@@ -271,7 +277,8 @@ setTeamMembers(allTeamMembers || []);
   }
 
   function statusStyle(status: string) {
-    if (status === "Ready to be shipped") {
+    const normalized = displayItemStatus(status);
+    if (normalized === LOST_ITEM_STATUS.readyToShip) {
       return {
         background: FOREST.bgSoft,
         color: FOREST.text,
@@ -279,31 +286,36 @@ setTeamMembers(allTeamMembers || []);
       };
     }
 
-    if (status === "Awaiting Guest Payment") {
+    if (normalized === LOST_ITEM_STATUS.awaitingGuestAction) {
       return { background: "#3B2F14", color: "#FDE68A", border: "1px solid #C8A96A" };
     }
 
-    if (status === "Label sent") {
-      return { background: "#7C4A03", color: "#FEF3C7", border: "1px solid #C8A96A" };
+    if (normalized === LOST_ITEM_STATUS.stored) {
+      return { background: "#333333", color: "#E5E7EB", border: "1px solid #555" };
     }
 
-    if (status === "Found") {
+    if (normalized === LOST_ITEM_STATUS.shipped) {
+      return { background: "#1E3A5F", color: "#BFDBFE", border: "1px solid #60A5FA" };
+    }
+
+    if (normalized === LOST_ITEM_STATUS.delivered) {
       return { background: "#1E3A2F", color: "#BBF7D0", border: "1px solid #4ADE80" };
     }
 
-    if (status === "Stored") {
-      return { background: "#333333", color: "#E5E7EB", border: "1px solid #555" };
+    if (normalized === LOST_ITEM_STATUS.discarded) {
+      return { background: "#3F1D1D", color: "#FECACA", border: "1px solid #F87171" };
     }
 
     return { background: "#1F2937", color: "#E5E7EB", border: "1px solid #374151" };
   }
 
   function statusPillClass(status: string): string {
-    if (status === "Ready to be shipped") return "lnf-status-pill--ready-ship";
-    if (status === "Awaiting Guest Payment") return "lnf-status-pill--label-sent";
-    if (status === "Label sent") return "lnf-status-pill--label-sent";
-    if (status === "Found") return "lnf-status-pill--ready-ship";
-    if (status === "Stored") return "lnf-status-pill--stored";
+    const normalized = displayItemStatus(status);
+    if (normalized === LOST_ITEM_STATUS.readyToShip) return "lnf-status-pill--ready-ship";
+    if (normalized === LOST_ITEM_STATUS.awaitingGuestAction) {
+      return "lnf-status-pill--label-sent";
+    }
+    if (normalized === LOST_ITEM_STATUS.stored) return "lnf-status-pill--stored";
     return "lnf-status-pill--default";
   }
 
@@ -592,19 +604,16 @@ setTeamMembers(allTeamMembers || []);
                 style={statusStyle(item.status)}
               >
                 <select
-                  value={item.status}
+                  value={displayItemStatus(item.status)}
                   onChange={(e) => updateStatus(item.id, e.target.value)}
                   className="one-eyrie-lnf-status-select"
                   aria-label={`Status for ${item.item_name}`}
                 >
-                  <option>Found</option>
-                  <option>Stored</option>
-                  <option>Awaiting Guest Payment</option>
-                  <option>Label sent</option>
-                  <option>Ready to be shipped</option>
-                  <option>Shipped</option>
-                  <option>Delivered</option>
-                  <option>Discarded</option>
+                  {LOST_ITEM_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
                 </select>
               </div>
             </td>
@@ -697,7 +706,7 @@ setTeamMembers(allTeamMembers || []);
       <p><strong>Guest:</strong> {selectedItem.guest_last_name}</p>
       <p><strong>Location:</strong> {selectedItem.room_number}</p>
       <p><strong>Item:</strong> {selectedItem.item_name}</p>
-      <p><strong>Status:</strong> {selectedItem.status}</p>
+      <p><strong>Status:</strong> {displayItemStatus(selectedItem.status)}</p>
       <p><strong>Found By:</strong> {selectedItem.found_by || "Not recorded yet"}</p>
       Created By: {
   (() => {
@@ -730,6 +739,9 @@ setTeamMembers(allTeamMembers || []);
         itemId={selectedItem.id}
         itemName={selectedItem.item_name}
         guestLastName={selectedItem.guest_last_name}
+        onItemMayHaveChanged={() => {
+          void fetchItems();
+        }}
       />
 
       <button

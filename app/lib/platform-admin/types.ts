@@ -41,7 +41,16 @@ export type AdminPropertySummary = {
   organizationId: number;
   name: string;
   brand: string | null;
+  /** Denormalized single-line display. */
   address: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressCity: string;
+  addressState: string;
+  addressPostal: string;
+  addressCountry: string;
+  addressComplete: boolean;
+  addressIncompleteFields: string[];
   phoneNumber: string;
   timezone: string;
   active: boolean;
@@ -171,7 +180,22 @@ export type CreateOrganizationRequest = {
 export type CreatePropertyRequest = {
   name: string;
   brand?: string | null;
-  address?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressPostal?: string;
+  addressCountry?: string;
+  address?: string | AddressValueLike;
   phoneNumber?: string;
   timezone?: string;
+};
+
+type AddressValueLike = {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postal?: string;
+  country?: string;
 };

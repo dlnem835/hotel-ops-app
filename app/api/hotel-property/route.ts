@@ -13,9 +13,31 @@ import {
 } from "@/app/lib/tenant/server/resolve-tenant-request";
 
 function normalizeInput(body: Record<string, unknown>): HotelPropertyInput {
+  const nested =
+    body.address && typeof body.address === "object"
+      ? (body.address as Record<string, unknown>)
+      : null;
+
   return {
     hotelName: String(body.hotelName ?? body.hotel_name ?? "").trim(),
-    address: String(body.address ?? "").trim(),
+    addressLine1: String(
+      body.addressLine1 ?? body.address_line1 ?? nested?.line1 ?? ""
+    ).trim(),
+    addressLine2: String(
+      body.addressLine2 ?? body.address_line2 ?? nested?.line2 ?? ""
+    ).trim(),
+    addressCity: String(
+      body.addressCity ?? body.address_city ?? nested?.city ?? ""
+    ).trim(),
+    addressState: String(
+      body.addressState ?? body.address_state ?? nested?.state ?? ""
+    ).trim(),
+    addressPostal: String(
+      body.addressPostal ?? body.address_postal ?? nested?.postal ?? ""
+    ).trim(),
+    addressCountry: String(
+      body.addressCountry ?? body.address_country ?? nested?.country ?? "US"
+    ).trim() || "US",
     phoneNumber: String(body.phoneNumber ?? body.phone_number ?? "").trim(),
   };
 }

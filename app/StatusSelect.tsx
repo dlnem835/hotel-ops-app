@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-
-const statuses = [
-  "Found",
-  "Label request sent",
-  "Ready to be shipped",
-  "Shipped",
-  "Discarded",
-];
+import {
+  LOST_ITEM_STATUS,
+  LOST_ITEM_STATUS_OPTIONS,
+  normalizeLostItemStatus,
+} from "@/app/lib/lost-found-shipping/status";
 
 export default function StatusSelect({ id, currentStatus }: any) {
-  const [status, setStatus] = useState(currentStatus || "Found");
+  const [status, setStatus] = useState(
+    normalizeLostItemStatus(currentStatus) || LOST_ITEM_STATUS.stored
+  );
 
   async function updateStatus(e: any) {
     const newStatus = e.target.value;
@@ -29,7 +28,7 @@ export default function StatusSelect({ id, currentStatus }: any) {
 
   return (
     <select value={status} onChange={updateStatus}>
-      {statuses.map((statusOption) => (
+      {LOST_ITEM_STATUS_OPTIONS.map((statusOption) => (
         <option key={statusOption} value={statusOption}>
           {statusOption}
         </option>

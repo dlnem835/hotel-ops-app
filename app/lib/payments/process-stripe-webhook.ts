@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
+import { purchaseLabelForPaidShippingRequest } from "@/app/lib/lost-found-shipping/purchase-label-for-request";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import {
   claimWebhookEvent,
@@ -14,6 +15,7 @@ import {
 import { getStripeServerClient } from "@/app/lib/payments/stripe-server";
 import { getStripeWebhookSecret } from "@/app/lib/payments/stripe-env";
 import { redactStripeId } from "@/app/lib/payments/types";
+import { laterTokenExpiry } from "@/app/lib/lost-found-shipping/token";
 
 export type StripeWebhookResult = {
   ok: boolean;
@@ -68,7 +70,7 @@ async function resolvePaymentForSession(
 
 /**
  * Verify Stripe signature and process payment webhooks idempotently.
- * Does not purchase labels or update Shipped/Delivered.
+ * On paid: mirrors payment state, then attempts automatic label purchase.
  */
 export async function processStripeWebhookEvent(
   supabase: SupabaseClient,
@@ -295,7 +297,7 @@ async function handleCheckoutSessionCompleted(
     if (request) {
       const alreadyPaid = String(request.payment_status) === "paid";
 
-      // Mirror business payment state; do not purchase label or mark Ready to Ship.
+      // Mirror business payment state, then purchase label automatically.
       if (!alreadyPaid) {
         await supabase
           .from("lost_found_shipping_requests")
@@ -303,6 +305,8 @@ async function handleCheckoutSessionCompleted(
             payment_status: "paid",
             paid_at: paidAt,
             successful_payment_id: payment.id,
+            // Same guest URL becomes the persistent tracking page after payment.
+            token_expires_at: laterTokenExpiry(null, new Date(paidAt)),
             updated_at: paidAt,
           })
           .eq("id", request.id)
@@ -337,6 +341,20 @@ async function handleCheckoutSessionCompleted(
             receiptUrl: receiptUrl || null,
           },
         });
+      }
+
+      // Auto-purchase label after verified payment (idempotent).
+      try {
+        await purchaseLabelForPaidShippingRequest(
+          supabase,
+          Number(request.id)
+        );
+      } catch (labelError) {
+        // Payment stays paid; fulfillment flagged for review inside purchase helper.
+        console.error(
+          "[stripe-webhook] label purchase failed",
+          labelError instanceof Error ? labelError.message : "unknown"
+        );
       }
     }
   }

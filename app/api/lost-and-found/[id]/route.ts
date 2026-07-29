@@ -7,6 +7,7 @@ import {
   updateLostItem,
   deleteLostItem,
 } from "@/app/lost-and-found/lib/lost-found-server-db";
+import { coerceLostItemStatusForWrite } from "@/app/lib/lost-found-shipping/status";
 
 export async function PATCH(
   request: Request,
@@ -18,7 +19,9 @@ export async function PATCH(
     const body = await request.json();
 
     const patch: Record<string, string | null> = {};
-    if (typeof body.status === "string") patch.status = body.status;
+    if (typeof body.status === "string") {
+      patch.status = coerceLostItemStatusForWrite(body.status);
+    }
     if (typeof body.comments === "string") patch.comments = body.comments;
 
     if (Object.keys(patch).length === 0) {

@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getPropertyAddressIncompleteFields,
+  isPropertyAddressComplete,
+  propertyAddressToDbColumns,
+  propertyRowToAddressFields,
+  propertyToShipFromAddress,
+  type PropertyAddressFields,
+} from "@/app/lib/address/property-address";
+import {
   getPackagePreset,
   isPackagePresetKey,
   type PackagePresetKey,
@@ -16,6 +24,7 @@ export type PropertyShippingSettings = {
   organizationId: number;
   shippingEnabled: boolean;
   senderName: string;
+  /** Mirrored from property for display; ship-from source of truth is properties.* */
   shipFromLine1: string;
   shipFromLine2: string;
   shipFromCity: string;
@@ -32,17 +41,20 @@ export type PropertyShippingSettings = {
   defaultSenderContact: string;
   tokenTtlHours: number;
   updatedAt: string | null;
+  propertyAddressComplete: boolean;
+  propertyAddressIncompleteFields: string[];
 };
 
 export type PropertyShippingSettingsInput = {
   shippingEnabled: boolean;
   senderName: string;
-  shipFromLine1: string;
-  shipFromLine2: string;
-  shipFromCity: string;
-  shipFromState: string;
-  shipFromPostal: string;
-  shipFromCountry: string;
+  /** When provided, updates canonical property address (Ship From source of truth). */
+  shipFromLine1?: string;
+  shipFromLine2?: string;
+  shipFromCity?: string;
+  shipFromState?: string;
+  shipFromPostal?: string;
+  shipFromCountry?: string;
   propertyPhone: string;
   propertyEmail: string;
   defaultPackagePreset: string;
@@ -54,16 +66,11 @@ export type PropertyShippingSettingsInput = {
   tokenTtlHours: number;
 };
 
-const REQUIRED_FOR_ENABLE = [
-  { key: "senderName", label: "Sender / property name" },
-  { key: "shipFromLine1", label: "Ship-from street address" },
-  { key: "shipFromCity", label: "City" },
-  { key: "shipFromState", label: "State" },
-  { key: "shipFromPostal", label: "Postal code" },
-  { key: "shipFromCountry", label: "Country" },
-  { key: "propertyPhone", label: "Property phone" },
-  { key: "propertyEmail", label: "Property email" },
-] as const;
+const REQUIRED_CONTACT_FOR_ENABLE = [
+  { key: "senderName" as const, label: "Ship From Name" },
+  { key: "propertyPhone" as const, label: "Phone Number" },
+  { key: "propertyEmail" as const, label: "Return Email" },
+];
 
 function emptySettings(scope: PropertyShippingScope): PropertyShippingSettings {
   const preset = getPackagePreset("small_box");
@@ -88,6 +95,15 @@ function emptySettings(scope: PropertyShippingScope): PropertyShippingSettings {
     defaultSenderContact: "",
     tokenTtlHours: 168,
     updatedAt: null,
+    propertyAddressComplete: false,
+    propertyAddressIncompleteFields: getPropertyAddressIncompleteFields({
+      addressLine1: "",
+      addressLine2: "",
+      addressCity: "",
+      addressState: "",
+      addressPostal: "",
+      addressCountry: "US",
+    }),
   };
 }
 
@@ -95,6 +111,24 @@ function toNumberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function applyPropertyAddressMirror(
+  settings: PropertyShippingSettings,
+  address: PropertyAddressFields
+): PropertyShippingSettings {
+  const incomplete = getPropertyAddressIncompleteFields(address);
+  return {
+    ...settings,
+    shipFromLine1: address.addressLine1,
+    shipFromLine2: address.addressLine2,
+    shipFromCity: address.addressCity,
+    shipFromState: address.addressState,
+    shipFromPostal: address.addressPostal,
+    shipFromCountry: address.addressCountry || "US",
+    propertyAddressComplete: incomplete.length === 0,
+    propertyAddressIncompleteFields: incomplete,
+  };
 }
 
 export function rowToPropertyShippingSettings(
@@ -124,20 +158,34 @@ export function rowToPropertyShippingSettings(
     defaultSenderContact: String(row.default_sender_contact || ""),
     tokenTtlHours: Number(row.token_ttl_hours) || 168,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
+    propertyAddressComplete: false,
+    propertyAddressIncompleteFields: [],
   };
 }
 
-/** Fields that must be filled before automated shipping can be used. */
+/** Contact + Ship From address fields that must be filled to enable shipping. */
 export function getShippingSettingsIncompleteFields(
   settings: PropertyShippingSettings | PropertyShippingSettingsInput
 ): string[] {
   const missing: string[] = [];
-  for (const field of REQUIRED_FOR_ENABLE) {
+  for (const field of REQUIRED_CONTACT_FOR_ENABLE) {
     const value = String(settings[field.key] ?? "").trim();
     if (!value) missing.push(field.label);
   }
   if (!String(settings.propertyEmail || "").includes("@")) {
-    if (!missing.includes("Property email")) missing.push("Property email");
+    if (!missing.includes("Return Email")) missing.push("Return Email");
+  }
+
+  const addressFields: PropertyAddressFields = {
+    addressLine1: String(settings.shipFromLine1 ?? "").trim(),
+    addressLine2: String(settings.shipFromLine2 ?? "").trim(),
+    addressCity: String(settings.shipFromCity ?? "").trim(),
+    addressState: String(settings.shipFromState ?? "").trim(),
+    addressPostal: String(settings.shipFromPostal ?? "").trim(),
+    addressCountry: String(settings.shipFromCountry ?? "US").trim() || "US",
+  };
+  for (const label of getPropertyAddressIncompleteFields(addressFields)) {
+    missing.push(label);
   }
   return missing;
 }
@@ -147,10 +195,12 @@ export function isShippingSettingsReady(
 ): boolean {
   return (
     settings.shippingEnabled &&
+    settings.propertyAddressComplete &&
     getShippingSettingsIncompleteFields(settings).length === 0
   );
 }
 
+/** @deprecated Prefer resolveShipFromForProperty — kept for transitional callers. */
 export function settingsToShipFromAddress(
   settings: PropertyShippingSettings
 ): ShippingAddress {
@@ -167,6 +217,61 @@ export function settingsToShipFromAddress(
   };
 }
 
+export async function fetchPropertyAddressFields(
+  supabase: SupabaseClient,
+  scope: PropertyShippingScope
+): Promise<{ name: string; phone: string; address: PropertyAddressFields }> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select(
+      "name, phone_number, address_line1, address_line2, address_city, address_state, address_postal, address_country"
+    )
+    .eq("id", scope.propertyId)
+    .eq("organization_id", scope.organizationId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) {
+    return {
+      name: "",
+      phone: "",
+      address: {
+        addressLine1: "",
+        addressLine2: "",
+        addressCity: "",
+        addressState: "",
+        addressPostal: "",
+        addressCountry: "US",
+      },
+    };
+  }
+
+  return {
+    name: String(data.name || ""),
+    phone: String(data.phone_number || ""),
+    address: propertyRowToAddressFields(data as Record<string, unknown>),
+  };
+}
+
+export async function resolveShipFromForProperty(
+  supabase: SupabaseClient,
+  scope: PropertyShippingScope,
+  settings: PropertyShippingSettings
+): Promise<ShippingAddress> {
+  const property = await fetchPropertyAddressFields(supabase, scope);
+  if (!isPropertyAddressComplete(property.address)) {
+    throw new Error(
+      "Complete the Ship From address in Shipping Settings before sending shipping requests."
+    );
+  }
+  return propertyToShipFromAddress({
+    propertyName: settings.senderName.trim() || property.name,
+    address: property.address,
+    phone: settings.propertyPhone || property.phone,
+    email: settings.propertyEmail,
+  });
+}
+
 export async function fetchPropertyShippingSettings(
   supabase: SupabaseClient,
   scope: PropertyShippingScope
@@ -179,8 +284,21 @@ export async function fetchPropertyShippingSettings(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) return emptySettings(scope);
-  return rowToPropertyShippingSettings(data as Record<string, unknown>);
+
+  const property = await fetchPropertyAddressFields(supabase, scope);
+  const base = data
+    ? rowToPropertyShippingSettings(data as Record<string, unknown>)
+    : emptySettings(scope);
+
+  // Prefer property phone when shipping phone empty.
+  if (!base.propertyPhone.trim() && property.phone.trim()) {
+    base.propertyPhone = property.phone;
+  }
+  if (!base.senderName.trim() && property.name.trim()) {
+    base.senderName = property.name;
+  }
+
+  return applyPropertyAddressMirror(base, property.address);
 }
 
 export async function upsertPropertyShippingSettings(
@@ -192,30 +310,91 @@ export async function upsertPropertyShippingSettings(
     ? input.defaultPackagePreset
     : "small_box";
 
-  const incomplete = getShippingSettingsIncompleteFields(input);
-  const shippingEnabled =
-    Boolean(input.shippingEnabled) && incomplete.length === 0;
+  let property = await fetchPropertyAddressFields(supabase, scope);
 
+  // Shipping Settings may update the canonical property address.
+  const hasAddressPayload =
+    input.shipFromLine1 !== undefined ||
+    input.shipFromCity !== undefined ||
+    input.shipFromState !== undefined ||
+    input.shipFromPostal !== undefined;
+
+  if (hasAddressPayload) {
+    const nextAddress: PropertyAddressFields = {
+      addressLine1: String(input.shipFromLine1 ?? property.address.addressLine1).trim(),
+      addressLine2: String(input.shipFromLine2 ?? property.address.addressLine2).trim(),
+      addressCity: String(input.shipFromCity ?? property.address.addressCity).trim(),
+      addressState: String(input.shipFromState ?? property.address.addressState).trim(),
+      addressPostal: String(input.shipFromPostal ?? property.address.addressPostal).trim(),
+      addressCountry: String(
+        input.shipFromCountry ?? property.address.addressCountry ?? "US"
+      ).trim() || "US",
+    };
+    const columns = propertyAddressToDbColumns(nextAddress);
+    const { error: propertyError } = await supabase
+      .from("properties")
+      .update({
+        ...columns,
+        // Keep hotel phone in sync when shipping phone is provided.
+        ...(input.propertyPhone.trim()
+          ? { phone_number: input.propertyPhone.trim() }
+          : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", scope.propertyId)
+      .eq("organization_id", scope.organizationId);
+    if (propertyError) throw new Error(propertyError.message);
+    property = await fetchPropertyAddressFields(supabase, scope);
+  }
+
+  const mirrored = applyPropertyAddressMirror(
+    {
+      ...emptySettings(scope),
+      shippingEnabled: Boolean(input.shippingEnabled),
+      senderName: input.senderName.trim(),
+      propertyPhone: input.propertyPhone.trim(),
+      propertyEmail: input.propertyEmail.trim(),
+      defaultPackagePreset: presetKey,
+      defaultLengthIn: input.defaultLengthIn,
+      defaultWidthIn: input.defaultWidthIn,
+      defaultHeightIn: input.defaultHeightIn,
+      defaultWeightOz: input.defaultWeightOz,
+      defaultSenderContact: input.defaultSenderContact.trim(),
+      tokenTtlHours: Math.min(
+        720,
+        Math.max(1, Math.round(input.tokenTtlHours) || 168)
+      ),
+    },
+    property.address
+  );
+
+  const incomplete = getShippingSettingsIncompleteFields(mirrored);
+  const shippingEnabled =
+    Boolean(input.shippingEnabled) &&
+    mirrored.propertyAddressComplete &&
+    incomplete.length === 0;
+
+  // Persist mirrored ship-from columns for audit/compat; source of truth remains properties.
   const payload = {
     property_id: scope.propertyId,
     organization_id: scope.organizationId,
     shipping_enabled: shippingEnabled,
-    sender_name: input.senderName.trim(),
-    ship_from_line1: input.shipFromLine1.trim(),
-    ship_from_line2: input.shipFromLine2.trim(),
-    ship_from_city: input.shipFromCity.trim(),
-    ship_from_state: input.shipFromState.trim(),
-    ship_from_postal: input.shipFromPostal.trim(),
-    ship_from_country: (input.shipFromCountry.trim() || "US").toUpperCase(),
-    property_phone: input.propertyPhone.trim(),
-    property_email: input.propertyEmail.trim(),
+    sender_name: mirrored.senderName,
+    ship_from_line1: mirrored.shipFromLine1,
+    ship_from_line2: mirrored.shipFromLine2,
+    ship_from_city: mirrored.shipFromCity,
+    ship_from_state: mirrored.shipFromState,
+    ship_from_postal: mirrored.shipFromPostal,
+    ship_from_country: (mirrored.shipFromCountry || "US").toUpperCase(),
+    property_phone: mirrored.propertyPhone,
+    property_email: mirrored.propertyEmail,
     default_package_preset: presetKey,
     default_length_in: input.defaultLengthIn,
     default_width_in: input.defaultWidthIn,
     default_height_in: input.defaultHeightIn,
     default_weight_oz: input.defaultWeightOz,
     default_sender_contact: input.defaultSenderContact.trim(),
-    token_ttl_hours: Math.min(720, Math.max(1, Math.round(input.tokenTtlHours) || 168)),
+    token_ttl_hours: mirrored.tokenTtlHours,
     updated_at: new Date().toISOString(),
   };
 
@@ -226,5 +405,8 @@ export async function upsertPropertyShippingSettings(
     .single();
 
   if (error) throw new Error(error.message);
-  return rowToPropertyShippingSettings(data as Record<string, unknown>);
+  return applyPropertyAddressMirror(
+    rowToPropertyShippingSettings(data as Record<string, unknown>),
+    property.address
+  );
 }

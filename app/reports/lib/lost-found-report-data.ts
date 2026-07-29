@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeLostItemStatus } from "@/app/lib/lost-found-shipping/status";
 import type {
   LostFoundFilterOptions,
   LostFoundFoundByRow,
@@ -32,8 +33,8 @@ const AGING_RETENTION_MONTHS = 6;
 
 export const LOST_FOUND_AGING_ELIGIBLE_STATUSES = [
   "Stored",
-  "Label sent",
-  "Ready to be shipped",
+  "Awaiting Guest Action",
+  "Ready to Ship",
 ] as const;
 
 export type LostFoundAgingEligibleStatus = (typeof LOST_FOUND_AGING_ELIGIBLE_STATUSES)[number];
@@ -55,9 +56,11 @@ export function isLostFoundItemAging(
   item: Pick<LostFoundReportItem, "status" | "createdAtSource">,
   cutoff = getLostFoundAgingCutoffDate()
 ): boolean {
+  const normalized =
+    normalizeLostItemStatus(item.status) || String(item.status || "");
   if (
     !LOST_FOUND_AGING_ELIGIBLE_STATUSES.includes(
-      item.status as LostFoundAgingEligibleStatus
+      normalized as LostFoundAgingEligibleStatus
     )
   ) {
     return false;

@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       .update({
         label_requested_at: now,
         label_sent_at: now,
-        status: "Label sent",
+        status: "Awaiting Guest Action",
       })
       .eq("id", itemId)
       .eq("organization_id", organizationId)

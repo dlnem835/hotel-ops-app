@@ -2,12 +2,19 @@
 
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AddressFields from "@/app/components/address/AddressFields";
+import { formatDestinationLines } from "@/app/lib/address/format";
 import type { GuestShippingRequestView } from "@/app/lib/lost-found-shipping/shipping-requests";
 import {
   GUEST_PROGRESS_STEPS,
   guestProgressIndex,
 } from "@/app/lib/lost-found-shipping/timeline-ui";
 import type { ShippingRate } from "@/app/lib/shipping/types";
+import {
+  isPhoneViewport,
+  subscribePhoneViewport,
+} from "@/app/lib/viewport-interface";
+import GuestShipmentTrackingCard from "./GuestShipmentTrackingCard";
 import "../shipping-request.css";
 
 type AddressForm = {
@@ -159,16 +166,24 @@ export default function ShippingRequestGuestPage() {
   const [logoFailed, setLogoFailed] = useState(false);
   const [rateExpiresAt, setRateExpiresAt] = useState<string | null>(null);
   const [ratesExpired, setRatesExpired] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
 
-  const loadRequest = useCallback(async () => {
+  useEffect(() => {
+    setIsPhone(isPhoneViewport());
+    return subscribePhoneViewport(() => setIsPhone(isPhoneViewport()));
+  }, []);
+
+  const loadRequest = useCallback(async (options?: { quiet?: boolean }) => {
     if (!token) {
       setLoadError("Missing shipping link.");
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setLoadError(null);
+    if (!options?.quiet) {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
       const response = await fetch(`/api/shipping-request/${encodeURIComponent(token)}`);
       const result = await response.json();
@@ -179,7 +194,7 @@ export default function ShippingRequestGuestPage() {
       setView(nextView);
       setSelectedRateId(nextView.selectedProviderRateId);
       setRateExpiresAt(nextView.rateExpiresAt);
-      setLogoFailed(false);
+      if (!options?.quiet) setLogoFailed(false);
       setAddress((current) => {
         const recipient = nextView.recipientAddress;
         if (recipient?.line1) {
@@ -202,18 +217,47 @@ export default function ShippingRequestGuestPage() {
         };
       });
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Unable to load shipping request"
-      );
-      setView(null);
+      if (!options?.quiet) {
+        setLoadError(
+          error instanceof Error ? error.message : "Unable to load shipping request"
+        );
+        setView(null);
+      }
     } finally {
-      setLoading(false);
+      if (!options?.quiet) setLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
     void loadRequest();
   }, [loadRequest]);
+
+  // Auto-refresh after payment so Shippo tracking updates appear without staff help.
+  useEffect(() => {
+    if (!view) return;
+    const shouldPoll =
+      view.state === "payment_processing" ||
+      view.state === "label_created" ||
+      view.state === "in_transit";
+    if (!shouldPoll) return;
+
+    const intervalMs = view.state === "payment_processing" ? 4000 : 10000;
+    const timer = window.setInterval(() => {
+      void loadRequest({ quiet: true });
+    }, intervalMs);
+
+    function onVisible() {
+      if (document.visibilityState === "visible") {
+        void loadRequest({ quiet: true });
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [view?.state, loadRequest]);
 
   async function postAction(body: Record<string, unknown>) {
     const response = await fetch(`/api/shipping-request/${encodeURIComponent(token)}`, {
@@ -591,63 +635,42 @@ export default function ShippingRequestGuestPage() {
         <>
           {renderProgress()}
           {renderItemCard()}
-          <div className="shipping-request-status-card">
-            <h3>Payment received</h3>
-            <p>We are preparing your shipping label. This usually takes a moment.</p>
-          </div>
-        </>
-      );
-    }
-
-    if (view.state === "label_created") {
-      return (
-        <>
-          {renderProgress()}
-          {renderItemCard()}
-          <div className="shipping-request-status-card">
-            <h3>Label created</h3>
-            <p>
-              Your shipping label is ready. The hotel will ship your item shortly
-              {view.selectedCarrier ? ` via ${view.selectedCarrier}` : ""}.
-            </p>
-          </div>
-        </>
-      );
-    }
-
-    if (view.state === "in_transit") {
-      return (
-        <>
-          {renderProgress()}
-          {renderItemCard()}
-          <div className="shipping-request-status-card">
-            <h3>Shipped</h3>
-            <p>Your item is on the way.</p>
-            {view.trackingNumber ? (
-              <p style={{ marginTop: "10px" }}>
-                {view.trackingUrl ? (
-                  <a href={view.trackingUrl} target="_blank" rel="noreferrer">
-                    Track {view.trackingNumber}
-                  </a>
-                ) : (
-                  <>Tracking: {view.trackingNumber}</>
-                )}
+          {view.trackingNumber ? (
+            <GuestShipmentTrackingCard view={view} />
+          ) : (
+            <div className="shipping-request-status-card">
+              <h3>Payment received</h3>
+              <p>
+                We are preparing your shipping label. This usually takes a
+                moment — this page updates automatically.
               </p>
-            ) : null}
-          </div>
+            </div>
+          )}
         </>
       );
     }
 
-    if (view.state === "delivered") {
+    if (
+      view.state === "label_created" ||
+      view.state === "in_transit" ||
+      view.state === "delivered"
+    ) {
       return (
         <>
           {renderProgress()}
           {renderItemCard()}
-          <div className="shipping-request-status-card">
-            <h3>Delivered</h3>
-            <p>Your item has been delivered. Thank you.</p>
-          </div>
+          {view.state === "label_created" && !view.trackingNumber ? (
+            <div className="shipping-request-status-card">
+              <h3>Preparing for Shipment</h3>
+              <p>
+                Your payment is confirmed and your shipping label is being
+                created. This page updates automatically — keep this link to
+                track your shipment.
+              </p>
+            </div>
+          ) : (
+            <GuestShipmentTrackingCard view={view} />
+          )}
         </>
       );
     }
@@ -680,8 +703,12 @@ export default function ShippingRequestGuestPage() {
             }}
           >
             <h2 className="shipping-request-section-title">Shipping address</h2>
+            <p className="shipping-request-copy shipping-request-copy--tight">
+              Enter the destination where we should send your item. The hotel
+              ships from its property address automatically.
+            </p>
             <label className="shipping-request-field">
-              <span>Full name</span>
+              <span>Full name *</span>
               <input
                 required
                 autoComplete="name"
@@ -691,84 +718,29 @@ export default function ShippingRequestGuestPage() {
                 }
               />
             </label>
-            <label className="shipping-request-field">
-              <span>Address line 1</span>
-              <input
-                required
-                autoComplete="address-line1"
-                value={address.line1}
-                onChange={(event) =>
-                  setAddress((current) => ({ ...current, line1: event.target.value }))
-                }
-              />
-            </label>
-            <label className="shipping-request-field">
-              <span>Address line 2</span>
-              <input
-                autoComplete="address-line2"
-                value={address.line2}
-                onChange={(event) =>
-                  setAddress((current) => ({ ...current, line2: event.target.value }))
-                }
-              />
-            </label>
-            <div className="shipping-request-row">
-              <label className="shipping-request-field">
-                <span>City</span>
-                <input
-                  required
-                  autoComplete="address-level2"
-                  value={address.city}
-                  onChange={(event) =>
-                    setAddress((current) => ({ ...current, city: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="shipping-request-field">
-                <span>State</span>
-                <input
-                  required
-                  autoComplete="address-level1"
-                  value={address.state}
-                  onChange={(event) =>
-                    setAddress((current) => ({
-                      ...current,
-                      state: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <div className="shipping-request-row">
-              <label className="shipping-request-field">
-                <span>Postal code</span>
-                <input
-                  required
-                  autoComplete="postal-code"
-                  value={address.postal}
-                  onChange={(event) =>
-                    setAddress((current) => ({
-                      ...current,
-                      postal: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="shipping-request-field">
-                <span>Country</span>
-                <input
-                  required
-                  autoComplete="country"
-                  value={address.country}
-                  onChange={(event) =>
-                    setAddress((current) => ({
-                      ...current,
-                      country: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
+            <AddressFields
+              variant="guest"
+              idPrefix="guest-ship-to"
+              value={{
+                line1: address.line1,
+                line2: address.line2,
+                city: address.city,
+                state: address.state,
+                postal: address.postal,
+                country: address.country || "US",
+              }}
+              onChange={(next) =>
+                setAddress((current) => ({
+                  ...current,
+                  line1: next.line1,
+                  line2: next.line2,
+                  city: next.city,
+                  state: next.state,
+                  postal: next.postal,
+                  country: next.country,
+                }))
+              }
+            />
             <label className="shipping-request-field">
               <span>Phone</span>
               <input
@@ -780,7 +752,7 @@ export default function ShippingRequestGuestPage() {
               />
             </label>
             <label className="shipping-request-field">
-              <span>Email</span>
+              <span>Email *</span>
               <input
                 type="email"
                 required
@@ -805,13 +777,15 @@ export default function ShippingRequestGuestPage() {
 
         {showRates ? (
           <div className="shipping-request-rates-section">
-            <div className="shipping-request-ship-to">
-              <div className="shipping-request-ship-to__top">
-                <div>
-                  <div className="shipping-request-ship-to__label">Shipping to</div>
-                  <div className="shipping-request-ship-to__value">
-                    {view.recipientSummary || "Confirmed address"}
-                  </div>
+            <div className="shipping-request-destination-card">
+              <div className="shipping-request-destination-card__top">
+                <div className="shipping-request-destination-card__heading">
+                  <span className="shipping-request-destination-card__label">
+                    Destination
+                  </span>
+                  <span className="shipping-request-destination-card__verified">
+                    <span aria-hidden="true">✓</span> Verified
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -822,16 +796,28 @@ export default function ShippingRequestGuestPage() {
                   ← Back
                 </button>
               </div>
+              <div className="shipping-request-destination-card__lines">
+                {formatDestinationLines({
+                  name: view.recipientAddress?.name || view.guestName || "",
+                  line1: view.recipientAddress?.line1 || "",
+                  line2: view.recipientAddress?.line2 || "",
+                  city: view.recipientAddress?.city || "",
+                  state: view.recipientAddress?.state || "",
+                  postal: view.recipientAddress?.postal || "",
+                  country: view.recipientAddress?.country || "US",
+                }).map((line, index) => (
+                  <div key={`${index}-${line}`}>{line}</div>
+                ))}
+              </div>
               {packageSummary ? (
-                <div className="shipping-request-ship-to__package">
+                <div className="shipping-request-destination-card__package">
                   Rated package: {packageSummary}
                 </div>
               ) : null}
             </div>
 
             <div className="shipping-request-friendly-banner">
-              Great news! We&apos;ve located your item. Select the shipping option
-              that works best for you.
+              Select the shipping option that works best for you.
             </div>
 
             <h2 className="shipping-request-section-title">Choose a shipping option</h2>
@@ -961,32 +947,52 @@ export default function ShippingRequestGuestPage() {
             )}
 
             {selectedRateId && totalDue != null ? (
-              <div className="shipping-request-selected-summary shipping-request-selected-summary--emphasis">
-                <div className="shipping-request-selected-summary__label">
-                  Selected shipping option
+              <div className="shipping-request-order-summary">
+                <div className="shipping-request-order-summary__title">
+                  Order Summary
                 </div>
-                <div className="shipping-request-selected-summary__value">
-                  {selectedRate
-                    ? `${selectedRate.carrier} · ${selectedRate.service}`
-                    : `${view.selectedCarrier || "Carrier"} · ${
-                        view.selectedService || "Service"
-                      }`}
+                <div className="shipping-request-order-summary__row">
+                  <span>Carrier</span>
+                  <strong>
+                    {selectedRate?.carrier || view.selectedCarrier || "—"}
+                  </strong>
                 </div>
-                {selectedRate ? (
-                  <div className="shipping-request-selected-summary__eta">
-                    {rateEtaLabel(selectedRate)}
-                  </div>
-                ) : null}
-                <div className="shipping-request-total-block">
-                  <div className="shipping-request-total-block__label">
-                    Shipping Total
-                  </div>
-                  <div className="shipping-request-total-block__amount">
-                    {formatMoney(totalDue, selectedRate?.currency || view.currency)}
-                  </div>
-                  <div className="shipping-request-total-block__fee">
-                    No One Eyrie Service Fee
-                  </div>
+                <div className="shipping-request-order-summary__row">
+                  <span>Service</span>
+                  <strong>
+                    {selectedRate?.service || view.selectedService || "—"}
+                  </strong>
+                </div>
+                <div className="shipping-request-order-summary__row">
+                  <span>Estimated delivery</span>
+                  <strong>
+                    {selectedRate ? rateEtaLabel(selectedRate) : "—"}
+                  </strong>
+                </div>
+                <div className="shipping-request-order-summary__divider" />
+                <div className="shipping-request-order-summary__row">
+                  <span>Shipping</span>
+                  <strong>
+                    {formatMoney(
+                      totalDue,
+                      selectedRate?.currency || view.currency
+                    )}
+                  </strong>
+                </div>
+                <div className="shipping-request-order-summary__row">
+                  <span>One Eyrie Service Fee</span>
+                  <strong className="shipping-request-order-summary__free">
+                    FREE
+                  </strong>
+                </div>
+                <div className="shipping-request-order-summary__total">
+                  <span>Total</span>
+                  <strong>
+                    {formatMoney(
+                      totalDue,
+                      selectedRate?.currency || view.currency
+                    )}
+                  </strong>
                 </div>
               </div>
             ) : null}
@@ -1023,7 +1029,11 @@ export default function ShippingRequestGuestPage() {
   }
 
   return (
-    <main className="shipping-request-page">
+    <main
+      className={`shipping-request-page${
+        isPhone ? " shipping-request-page--phone" : " shipping-request-page--desktop"
+      }`}
+    >
       <div className="shipping-request-shell">
         <div className="shipping-request-brand">
           <div className="shipping-request-hotel">
@@ -1051,6 +1061,9 @@ export default function ShippingRequestGuestPage() {
                   Lost &amp; Found Shipping
                 </p>
               )}
+              {view?.propertyPhone ? (
+                <p className="shipping-request-hotel__contact">{view.propertyPhone}</p>
+              ) : null}
             </div>
           </div>
         </div>

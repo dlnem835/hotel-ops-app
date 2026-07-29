@@ -3,6 +3,7 @@ import type {
   ShippingPaymentStatus,
   ShippingShipmentStatus,
   ShippingUiBadge,
+  TrackingStatus,
 } from "@/app/lib/shipping/types";
 
 function isExpired(expiresAt: string | Date, now = new Date()): boolean {
@@ -101,52 +102,202 @@ export function deriveShippingCurrentStep(
 }
 
 /**
- * Top-level lost_items.status values.
- * Automated path: Found → Awaiting Guest Payment → Ready to be shipped → Shipped → Delivered.
- * Manual path keeps Label sent / Ready to be shipped compatibility.
- * Stored is retained for legacy rows.
+ * Six primary Lost & Found operational statuses (staff-facing).
+ * Detailed payment / carrier state lives on shipping request fields + timeline.
  */
 export const LOST_ITEM_STATUS = {
-  found: "Found",
   stored: "Stored",
-  awaitingGuestPayment: "Awaiting Guest Payment",
-  labelSent: "Label sent",
-  readyToShip: "Ready to be shipped",
+  awaitingGuestAction: "Awaiting Guest Action",
+  readyToShip: "Ready to Ship",
   shipped: "Shipped",
   delivered: "Delivered",
   discarded: "Discarded",
 } as const;
 
-/** Staff filter / select options (legacy + automated). */
-export const LOST_ITEM_STATUS_OPTIONS = [
-  LOST_ITEM_STATUS.found,
+export type LostItemStatus =
+  (typeof LOST_ITEM_STATUS)[keyof typeof LOST_ITEM_STATUS];
+
+/** Staff filter / select options — primary six only. */
+export const LOST_ITEM_STATUS_OPTIONS: readonly LostItemStatus[] = [
   LOST_ITEM_STATUS.stored,
-  LOST_ITEM_STATUS.awaitingGuestPayment,
-  LOST_ITEM_STATUS.labelSent,
+  LOST_ITEM_STATUS.awaitingGuestAction,
   LOST_ITEM_STATUS.readyToShip,
   LOST_ITEM_STATUS.shipped,
   LOST_ITEM_STATUS.delivered,
   LOST_ITEM_STATUS.discarded,
 ] as const;
 
+/** @deprecated Legacy string aliases for docs / migration notes only. */
+export const LOST_ITEM_STATUS_LEGACY_ALIASES = {
+  foundLegacy: "Found",
+  awaitingGuestPaymentLegacy: "Awaiting Guest Payment",
+  labelSentLegacy: "Label sent",
+  readyToBeShippedLegacy: "Ready to be shipped",
+} as const;
+
+const LEGACY_STATUS_MAP: Record<string, LostItemStatus> = {
+  Found: LOST_ITEM_STATUS.stored,
+  Stored: LOST_ITEM_STATUS.stored,
+  "Awaiting Guest Payment": LOST_ITEM_STATUS.awaitingGuestAction,
+  "Awaiting Guest Action": LOST_ITEM_STATUS.awaitingGuestAction,
+  "Label sent": LOST_ITEM_STATUS.awaitingGuestAction,
+  "Label Sent": LOST_ITEM_STATUS.awaitingGuestAction,
+  "Label request sent": LOST_ITEM_STATUS.awaitingGuestAction,
+  "Ready to be shipped": LOST_ITEM_STATUS.readyToShip,
+  "Ready to be Shipped": LOST_ITEM_STATUS.readyToShip,
+  "Ready to Ship": LOST_ITEM_STATUS.readyToShip,
+  Shipped: LOST_ITEM_STATUS.shipped,
+  Delivered: LOST_ITEM_STATUS.delivered,
+  Discarded: LOST_ITEM_STATUS.discarded,
+  Closed: LOST_ITEM_STATUS.discarded,
+};
+
+/** Normalize legacy or current status strings to the six primary values. */
+export function normalizeLostItemStatus(
+  raw: string | null | undefined
+): LostItemStatus | null {
+  const status = (raw || "").trim();
+  if (!status) return null;
+  if (status in LEGACY_STATUS_MAP) return LEGACY_STATUS_MAP[status];
+  return null;
+}
+
+export function isPrimaryLostItemStatus(
+  raw: string | null | undefined
+): raw is LostItemStatus {
+  const normalized = normalizeLostItemStatus(raw);
+  return (
+    normalized !== null &&
+    (LOST_ITEM_STATUS_OPTIONS as readonly string[]).includes(normalized)
+  );
+}
+
+/** Validate / coerce a staff-provided status for writes. */
+export function coerceLostItemStatusForWrite(
+  raw: string | null | undefined,
+  fallback: LostItemStatus = LOST_ITEM_STATUS.stored
+): LostItemStatus {
+  return normalizeLostItemStatus(raw) || fallback;
+}
+
 /**
- * Whether a tracking webhook may move lost_items.status to Delivered.
- * Never overwrite Discarded; never downgrade from Delivered.
+ * Workflow rank for automated upgrades.
+ * Discarded is terminal and never auto-overwritten.
  */
+export const LOST_ITEM_STATUS_RANK: Record<LostItemStatus, number> = {
+  [LOST_ITEM_STATUS.stored]: 1,
+  [LOST_ITEM_STATUS.awaitingGuestAction]: 2,
+  [LOST_ITEM_STATUS.readyToShip]: 3,
+  [LOST_ITEM_STATUS.shipped]: 4,
+  [LOST_ITEM_STATUS.delivered]: 5,
+  [LOST_ITEM_STATUS.discarded]: 100,
+};
+
+export type AutomatedLostItemStatusTarget =
+  | typeof LOST_ITEM_STATUS.awaitingGuestAction
+  | typeof LOST_ITEM_STATUS.readyToShip
+  | typeof LOST_ITEM_STATUS.shipped
+  | typeof LOST_ITEM_STATUS.delivered;
+
+/**
+ * Whether an automated (System / Shippo / Stripe) update may set lost_items.status.
+ * - Never overwrite Discarded
+ * - Never downgrade workflow rank (e.g. Delivered → Shipped, Shipped → Ready to Ship)
+ * - Same status is a no-op (returns false so callers skip write)
+ */
+export function canApplyAutomatedLostItemStatus(
+  currentStatus: string | null | undefined,
+  nextStatus: AutomatedLostItemStatusTarget
+): boolean {
+  const current = normalizeLostItemStatus(currentStatus);
+  if (!current) return true;
+  if (current === LOST_ITEM_STATUS.discarded) return false;
+  if (current === nextStatus) return false;
+
+  const currentRank = LOST_ITEM_STATUS_RANK[current];
+  const nextRank = LOST_ITEM_STATUS_RANK[nextStatus];
+  return nextRank > currentRank;
+}
+
+/** @deprecated Prefer canApplyAutomatedLostItemStatus(..., Delivered) */
 export function canApplyDeliveredToLostItem(
   currentStatus: string | null | undefined
 ): boolean {
-  const status = (currentStatus || "").trim();
-  if (status === LOST_ITEM_STATUS.discarded) return false;
-  if (status === LOST_ITEM_STATUS.delivered) return false;
-  return true;
+  return canApplyAutomatedLostItemStatus(
+    currentStatus,
+    LOST_ITEM_STATUS.delivered
+  );
 }
 
+/** @deprecated Prefer canApplyAutomatedLostItemStatus(..., Shipped) */
 export function canApplyShippedToLostItem(
   currentStatus: string | null | undefined
 ): boolean {
-  const status = (currentStatus || "").trim();
-  if (status === LOST_ITEM_STATUS.discarded) return false;
-  if (status === LOST_ITEM_STATUS.delivered) return false;
-  return true;
+  return canApplyAutomatedLostItemStatus(
+    currentStatus,
+    LOST_ITEM_STATUS.shipped
+  );
+}
+
+/**
+ * Map normalized carrier tracking → proposed operational lost_items.status.
+ * Exceptions / returned do not propose Delivered; RTS stays Shipped.
+ */
+export function trackingStatusToOperationalLostItemStatus(
+  tracking: TrackingStatus
+): AutomatedLostItemStatusTarget | null {
+  switch (tracking) {
+    case "pre_transit":
+      return LOST_ITEM_STATUS.readyToShip;
+    case "in_transit":
+      return LOST_ITEM_STATUS.shipped;
+    case "delivered":
+      return LOST_ITEM_STATUS.delivered;
+    case "returned":
+      return LOST_ITEM_STATUS.shipped;
+    case "exception":
+    case "unknown":
+      return null;
+    default:
+      return null;
+  }
+}
+
+export function mapShippoRawTrackingStatus(raw: string): TrackingStatus {
+  const upper = (raw || "").trim().toUpperCase();
+  switch (upper) {
+    case "PRE_TRANSIT":
+      return "pre_transit";
+    case "TRANSIT":
+    case "OUT_FOR_DELIVERY":
+      return "in_transit";
+    case "DELIVERED":
+      return "delivered";
+    case "RETURNED":
+      return "returned";
+    case "FAILURE":
+    case "ERROR":
+      return "exception";
+    default:
+      return "unknown";
+  }
+}
+
+export function carrierTrackingStatusLabel(status: string | null | undefined): string {
+  switch ((status || "").trim().toLowerCase()) {
+    case "pre_transit":
+      return "Pre-transit";
+    case "in_transit":
+      return "In transit";
+    case "delivered":
+      return "Delivered";
+    case "exception":
+      return "Exception";
+    case "returned":
+      return "Returned to sender";
+    case "unknown":
+      return "Unknown";
+    default:
+      return status?.trim() || "—";
+  }
 }

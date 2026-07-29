@@ -6,6 +6,11 @@ import type {
   AdminPropertyDetail,
   AdminPropertySummary,
 } from "@/app/lib/platform-admin/types";
+import {
+  getPropertyAddressIncompleteFields,
+  isPropertyAddressComplete,
+  propertyRowToAddressFields,
+} from "@/app/lib/address/property-address";
 import { invitationBelongsOnPropertyPage } from "@/app/lib/platform-admin/roles";
 import {
   buildOrganizationOnboarding,
@@ -44,12 +49,21 @@ type PropertyRow = {
   name: string;
   brand: string | null;
   address: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_postal?: string | null;
+  address_country?: string | null;
   phone_number: string;
   timezone: string;
   active: boolean;
   created_at: string;
   updated_at: string;
 };
+
+const PROPERTY_LIST_COLUMNS =
+  "id, organization_id, name, brand, address, address_line1, address_line2, address_city, address_state, address_postal, address_country, phone_number, timezone, active, created_at, updated_at";
 
 function mapOrganizationSummary(
   org: OrganizationRow,
@@ -67,12 +81,22 @@ function mapOrganizationSummary(
 }
 
 function mapPropertySummary(property: PropertyRow): AdminPropertySummary {
+  const fields = propertyRowToAddressFields(property as unknown as Record<string, unknown>);
+  const incomplete = getPropertyAddressIncompleteFields(fields);
   return {
     id: property.id,
     organizationId: property.organization_id,
     name: property.name,
     brand: property.brand,
     address: property.address,
+    addressLine1: fields.addressLine1,
+    addressLine2: fields.addressLine2,
+    addressCity: fields.addressCity,
+    addressState: fields.addressState,
+    addressPostal: fields.addressPostal,
+    addressCountry: fields.addressCountry,
+    addressComplete: isPropertyAddressComplete(fields),
+    addressIncompleteFields: incomplete,
     phoneNumber: property.phone_number,
     timezone: property.timezone,
     active: property.active,
@@ -158,9 +182,7 @@ export async function fetchAdminOrganizationDetail(
 
   const { data: properties, error: propertyError } = await supabase
     .from("properties")
-    .select(
-      "id, organization_id, name, brand, address, phone_number, timezone, active, created_at, updated_at"
-    )
+    .select(PROPERTY_LIST_COLUMNS)
     .eq("organization_id", organizationId)
     .order("id", { ascending: true });
 
@@ -232,9 +254,7 @@ export async function fetchAdminPropertyDetail(
 ): Promise<AdminPropertyDetail | null> {
   const { data: property, error: propertyError } = await supabase
     .from("properties")
-    .select(
-      "id, organization_id, name, brand, address, phone_number, timezone, active, created_at, updated_at"
-    )
+    .select(PROPERTY_LIST_COLUMNS)
     .eq("id", propertyId)
     .maybeSingle();
 

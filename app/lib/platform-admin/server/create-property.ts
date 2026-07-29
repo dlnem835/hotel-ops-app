@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminPropertyDetail } from "@/app/lib/platform-admin/types";
+import {
+  addressValueToPropertyFields,
+  propertyAddressToDbColumns,
+} from "@/app/lib/address/property-address";
+import type { AddressValue } from "@/app/lib/address/format";
 import { writeAdminAuditLog } from "@/app/lib/platform-admin/server/admin-audit-log";
 import { fetchAdminPropertyDetail } from "@/app/lib/platform-admin/server/admin-organizations";
 import { PlatformAdminRequestError } from "@/app/lib/platform-admin/server/resolve-platform-admin-request";
@@ -11,20 +16,53 @@ import {
 export type CreatePropertyInput = {
   name: string;
   brand?: string | null;
-  address: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressCity: string;
+  addressState: string;
+  addressPostal: string;
+  addressCountry: string;
   phoneNumber?: string;
   timezone: string;
 };
 
+function parseAddressFromBody(body: Record<string, unknown>): AddressValue {
+  const nested =
+    body.address && typeof body.address === "object"
+      ? (body.address as Record<string, unknown>)
+      : null;
+  return {
+    line1: String(
+      body.addressLine1 ?? body.address_line1 ?? nested?.line1 ?? ""
+    ).trim(),
+    line2: String(
+      body.addressLine2 ?? body.address_line2 ?? nested?.line2 ?? ""
+    ).trim(),
+    city: String(
+      body.addressCity ?? body.address_city ?? nested?.city ?? ""
+    ).trim(),
+    state: String(
+      body.addressState ?? body.address_state ?? nested?.state ?? ""
+    ).trim(),
+    postal: String(
+      body.addressPostal ?? body.address_postal ?? nested?.postal ?? ""
+    ).trim(),
+    country:
+      String(
+        body.addressCountry ?? body.address_country ?? nested?.country ?? "US"
+      ).trim() || "US",
+  };
+}
+
 function parseCreatePropertyInput(body: Record<string, unknown>): CreatePropertyInput {
   const name = String(body.name ?? "").trim();
-  const address = String(body.address ?? "").trim();
   const brand =
     body.brand === undefined || body.brand === null
       ? null
       : String(body.brand).trim() || null;
   const phoneNumber = String(body.phoneNumber ?? body.phone_number ?? "").trim();
   const timezone = String(body.timezone ?? "").trim();
+  const address = parseAddressFromBody(body);
 
   if (!name) {
     throw new PlatformAdminRequestError(400, "Property name is required");
@@ -44,7 +82,12 @@ function parseCreatePropertyInput(body: Record<string, unknown>): CreateProperty
   return {
     name,
     brand,
-    address,
+    addressLine1: address.line1,
+    addressLine2: address.line2,
+    addressCity: address.city,
+    addressState: address.state,
+    addressPostal: address.postal,
+    addressCountry: address.country,
     phoneNumber,
     timezone,
   };
@@ -89,6 +132,16 @@ export async function createAdminProperty(
   }
 
   const input = parseCreatePropertyInput(body);
+  const addressColumns = propertyAddressToDbColumns(
+    addressValueToPropertyFields({
+      line1: input.addressLine1,
+      line2: input.addressLine2,
+      city: input.addressCity,
+      state: input.addressState,
+      postal: input.addressPostal,
+      country: input.addressCountry,
+    })
+  );
 
   let propertyId = await allocateNextPropertyId(supabase);
   let inserted = false;
@@ -99,10 +152,10 @@ export async function createAdminProperty(
       organization_id: organizationId,
       name: input.name,
       brand: input.brand,
-      address: input.address,
       phone_number: input.phoneNumber ?? "",
       timezone: input.timezone || DEFAULT_PROPERTY_TIMEZONE,
       active: true,
+      ...addressColumns,
     });
 
     if (!insertError) {
@@ -145,5 +198,52 @@ export async function createAdminProperty(
     throw new Error("Created property could not be loaded");
   }
 
+  return detail;
+}
+
+export async function updateAdminPropertyAddress(
+  supabase: SupabaseClient,
+  actorUserId: string,
+  propertyId: number,
+  body: Record<string, unknown>
+): Promise<AdminPropertyDetail> {
+  const address = parseAddressFromBody(body);
+  const addressColumns = propertyAddressToDbColumns(
+    addressValueToPropertyFields(address)
+  );
+
+  const { data: existing, error: existingError } = await supabase
+    .from("properties")
+    .select("id, organization_id, name")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (existingError) throw new Error(existingError.message);
+  if (!existing) {
+    throw new PlatformAdminRequestError(404, "Property not found");
+  }
+
+  const { error } = await supabase
+    .from("properties")
+    .update({
+      ...addressColumns,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", propertyId);
+
+  if (error) throw new Error(error.message);
+
+  await writeAdminAuditLog(supabase, {
+    actorUserId,
+    action: "property.address_updated",
+    targetType: "property",
+    targetId: String(propertyId),
+    organizationId: Number(existing.organization_id),
+    propertyId,
+    metadata: { name: existing.name },
+  });
+
+  const detail = await fetchAdminPropertyDetail(supabase, propertyId);
+  if (!detail) throw new Error("Updated property could not be loaded");
   return detail;
 }

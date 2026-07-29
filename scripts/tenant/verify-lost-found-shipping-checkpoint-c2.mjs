@@ -87,16 +87,25 @@ check("checkout amount comes only from server payment record", () => {
   assert.ok(!source.includes("stripe_checkout_session_id"));
 });
 
-check("successful payment does not purchase label in C2", () => {
+check("successful payment triggers label purchase orchestration", () => {
   const processor = fs.readFileSync(
     path.join(root, "app/lib/payments/process-stripe-webhook.ts"),
     "utf8"
   );
-  assert.ok(!/purchaseLabel|buyLabel|createLabel|transactions\.create/i.test(processor));
-  assert.ok(!processor.includes("package_shipped"));
-  assert.ok(!processor.includes("package_delivered"));
-  assert.ok(!processor.includes("Ready to be shipped"));
+  assert.ok(processor.includes("purchaseLabelForPaidShippingRequest"));
   assert.ok(processor.includes("paymentCompleted"));
+  assert.ok(
+    fs.existsSync(
+      path.join(root, "app/lib/lost-found-shipping/purchase-label-for-request.ts")
+    )
+  );
+  const purchase = fs.readFileSync(
+    path.join(root, "app/lib/lost-found-shipping/purchase-label-for-request.ts"),
+    "utf8"
+  );
+  assert.ok(purchase.includes("purchaseLabel"));
+  assert.ok(purchase.includes("markShippingLabelReady"));
+  assert.ok(purchase.includes("ensureShippoTrackUpdatedWebhook"));
 });
 
 check("redirect alone does not mark paid", () => {
@@ -107,7 +116,8 @@ check("redirect alone does not mark paid", () => {
     ),
     "utf8"
   );
-  assert.ok(processing.includes("webhook confirmation"));
+  assert.ok(processing.includes("Confirming your payment"));
+  assert.ok(processing.includes("/api/shipping-request/"));
   assert.ok(!/payment_status:\s*['\"]paid['\"]/.test(processing));
   const cancelled = fs.readFileSync(
     path.join(

@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     .from("lost_items")
     .update({
       label_url: data.publicUrl,
-      status: "Ready to be shipped",
+      status: "Ready to Ship",
     })
     .eq("id", itemId);
 

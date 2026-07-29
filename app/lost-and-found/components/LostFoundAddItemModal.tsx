@@ -250,11 +250,9 @@ export default function LostFoundAddItemModal({
               className="one-eyrie-field"
               style={fieldInput}
             >
-              <option>Found</option>
               <option>Stored</option>
-              <option>Awaiting Guest Payment</option>
-              <option>Label sent</option>
-              <option>Ready to be shipped</option>
+              <option>Awaiting Guest Action</option>
+              <option>Ready to Ship</option>
               <option>Shipped</option>
               <option>Delivered</option>
               <option>Discarded</option>
