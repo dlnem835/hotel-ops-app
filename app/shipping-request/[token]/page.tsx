@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddressFields from "@/app/components/address/AddressFields";
 import { formatDestinationLines } from "@/app/lib/address/format";
 import type { GuestShippingRequestView } from "@/app/lib/lost-found-shipping/shipping-requests";
@@ -16,6 +16,13 @@ import {
 } from "@/app/lib/viewport-interface";
 import GuestShipmentTrackingCard from "./GuestShipmentTrackingCard";
 import "../shipping-request.css";
+
+const CHECKOUT_UNAVAILABLE_MESSAGE =
+  "Secure online payment is not yet available.";
+
+function parseCheckoutAvailable(value: unknown): boolean {
+  return value === true;
+}
 
 type AddressForm = {
   name: string;
@@ -140,6 +147,116 @@ function weightLabel(weightOz: number | null): string | null {
   return `${weightOz} oz`;
 }
 
+type OrderSummaryPanelProps = {
+  view: GuestShippingRequestView;
+  selectedRate: ShippingRate | null;
+  selectedRateId: string | null;
+  totalDue: number | null;
+  busy: boolean;
+  ratesExpired: boolean;
+  /** null = still unknown; only false shows the unavailable message */
+  checkoutAvailable: boolean | null;
+  onCheckout: () => void;
+};
+
+function OrderSummaryPanel({
+  view,
+  selectedRate,
+  selectedRateId,
+  totalDue,
+  busy,
+  ratesExpired,
+  checkoutAvailable,
+  onCheckout,
+}: OrderSummaryPanelProps) {
+  const checkoutReady = checkoutAvailable === true;
+  const checkoutBlocked = checkoutAvailable === false;
+
+  return (
+    <div
+      className="shipping-request-order-summary"
+      data-checkout-available={
+        checkoutAvailable == null ? "unknown" : checkoutReady ? "true" : "false"
+      }
+    >
+      <div className="shipping-request-order-summary__title">Order Summary</div>
+      {selectedRateId && totalDue != null ? (
+        <>
+          <div className="shipping-request-order-summary__row">
+            <span>Carrier</span>
+            <strong>
+              {selectedRate?.carrier || view.selectedCarrier || "—"}
+            </strong>
+          </div>
+          <div className="shipping-request-order-summary__row">
+            <span>Service</span>
+            <strong>
+              {selectedRate?.service || view.selectedService || "—"}
+            </strong>
+          </div>
+          <div className="shipping-request-order-summary__row">
+            <span>Estimated delivery</span>
+            <strong>
+              {selectedRate ? rateEtaLabel(selectedRate) : "—"}
+            </strong>
+          </div>
+          <div className="shipping-request-order-summary__divider" />
+          <div className="shipping-request-order-summary__row">
+            <span>Shipping</span>
+            <strong>
+              {formatMoney(
+                totalDue,
+                selectedRate?.currency || view.currency
+              )}
+            </strong>
+          </div>
+          <div className="shipping-request-order-summary__total">
+            <span>Total</span>
+            <strong>
+              {formatMoney(
+                totalDue,
+                selectedRate?.currency || view.currency
+              )}
+            </strong>
+          </div>
+        </>
+      ) : (
+        <p className="shipping-request-order-summary__empty">
+          Select a shipping option to see your total.
+        </p>
+      )}
+      <div className="shipping-request-actions shipping-request-actions--summary">
+        <button
+          type="button"
+          className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
+          disabled={
+            busy ||
+            !checkoutReady ||
+            !selectedRateId ||
+            ratesExpired ||
+            totalDue == null
+          }
+          onClick={onCheckout}
+        >
+          <span className="shipping-request-lock" aria-hidden="true">
+            🔒
+          </span>
+          Continue to Secure Checkout
+        </button>
+        {checkoutReady ? (
+          <p className="shipping-request-footnote">
+            You’ll complete payment through Stripe’s secure checkout.
+          </p>
+        ) : checkoutBlocked ? (
+          <p className="shipping-request-footnote shipping-request-footnote--warn">
+            {CHECKOUT_UNAVAILABLE_MESSAGE}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function ShippingRequestGuestPage() {
   const params = useParams<{ token: string }>();
   const token = String(params?.token || "");
@@ -160,11 +277,26 @@ export default function ShippingRequestGuestPage() {
   const [rateExpiresAt, setRateExpiresAt] = useState<string | null>(null);
   const [ratesExpired, setRatesExpired] = useState(false);
   const [isPhone, setIsPhone] = useState(false);
-  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
+  // null until first successful GET — avoids treating "not loaded yet" as unavailable
+  const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(
+    null
+  );
+  const checkoutAvailableRef = useRef(false);
 
   useEffect(() => {
     setIsPhone(isPhoneViewport());
     return subscribePhoneViewport(() => setIsPhone(isPhoneViewport()));
+  }, []);
+
+  const applyCheckoutAvailable = useCallback((value: unknown) => {
+    const available = parseCheckoutAvailable(value);
+    checkoutAvailableRef.current = available;
+    setCheckoutAvailable(available);
+    if (available) {
+      setMessage((current) =>
+        current === CHECKOUT_UNAVAILABLE_MESSAGE ? null : current
+      );
+    }
   }, []);
 
   const loadRequest = useCallback(async (options?: { quiet?: boolean }) => {
@@ -179,14 +311,17 @@ export default function ShippingRequestGuestPage() {
       setLoadError(null);
     }
     try {
-      const response = await fetch(`/api/shipping-request/${encodeURIComponent(token)}`);
+      const response = await fetch(
+        `/api/shipping-request/${encodeURIComponent(token)}`,
+        { cache: "no-store" }
+      );
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || "Unable to load shipping request");
       }
       const nextView = result.request as GuestShippingRequestView;
       setView(nextView);
-      setCheckoutAvailable(Boolean(result.checkoutAvailable));
+      applyCheckoutAvailable(result.checkoutAvailable);
       setSelectedRateId(nextView.selectedProviderRateId);
       setRateExpiresAt(nextView.rateExpiresAt);
       if (!options?.quiet) setLogoFailed(false);
@@ -221,25 +356,30 @@ export default function ShippingRequestGuestPage() {
     } finally {
       if (!options?.quiet) setLoading(false);
     }
-  }, [token]);
+  }, [token, applyCheckoutAvailable]);
 
   useEffect(() => {
     void loadRequest();
   }, [loadRequest]);
 
   // Auto-refresh after payment so Shippo tracking updates appear without staff help.
+  // Also re-sync checkoutAvailable on awaiting_payment when the tab becomes visible
+  // (covers Stripe env becoming ready while the guest page stayed open).
   useEffect(() => {
     if (!view) return;
     const shouldPoll =
       view.state === "payment_processing" ||
       view.state === "label_created" ||
       view.state === "in_transit";
-    if (!shouldPoll) return;
+    const shouldResyncCheckout = view.state === "awaiting_payment";
+    if (!shouldPoll && !shouldResyncCheckout) return;
 
     const intervalMs = view.state === "payment_processing" ? 4000 : 10000;
-    const timer = window.setInterval(() => {
-      void loadRequest({ quiet: true });
-    }, intervalMs);
+    const timer = shouldPoll
+      ? window.setInterval(() => {
+          void loadRequest({ quiet: true });
+        }, intervalMs)
+      : null;
 
     function onVisible() {
       if (document.visibilityState === "visible") {
@@ -249,7 +389,7 @@ export default function ShippingRequestGuestPage() {
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      window.clearInterval(timer);
+      if (timer != null) window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [view?.state, loadRequest]);
@@ -259,10 +399,14 @@ export default function ShippingRequestGuestPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      cache: "no-store",
     });
     const result = await response.json();
     if (!response.ok) {
       throw new Error(result.error || "Request failed");
+    }
+    if ("checkoutAvailable" in result) {
+      applyCheckoutAvailable(result.checkoutAvailable);
     }
     return result;
   }
@@ -470,9 +614,9 @@ export default function ShippingRequestGuestPage() {
   }
 
   async function handleContinueToCheckout() {
-    if (!checkoutAvailable) {
+    if (!checkoutAvailableRef.current) {
       setMessageTone("error");
-      setMessage("Secure online payment is not yet available.");
+      setMessage(CHECKOUT_UNAVAILABLE_MESSAGE);
       return;
     }
     setBusy(true);
@@ -482,7 +626,7 @@ export default function ShippingRequestGuestPage() {
       setMessage("Redirecting to secure checkout…");
       const response = await fetch(
         `/api/shipping-request/${encodeURIComponent(token)}/checkout`,
-        { method: "POST" }
+        { method: "POST", cache: "no-store" }
       );
       const result = await response.json();
       if (!response.ok) {
@@ -958,13 +1102,31 @@ export default function ShippingRequestGuestPage() {
 
               {/* Mobile / single-column: summary follows options */}
               <div className="shipping-request-order-panel shipping-request-order-panel--inline">
-                {renderOrderSummary(totalDue)}
+                <OrderSummaryPanel
+                  view={view}
+                  selectedRate={selectedRate}
+                  selectedRateId={selectedRateId}
+                  totalDue={totalDue}
+                  busy={busy}
+                  ratesExpired={ratesExpired}
+                  checkoutAvailable={checkoutAvailable}
+                  onCheckout={() => void handleContinueToCheckout()}
+                />
               </div>
             </div>
 
             <aside className="shipping-request-order-panel shipping-request-order-panel--aside">
               <div className="shipping-request-order-panel__sticky">
-                {renderOrderSummary(totalDue)}
+                <OrderSummaryPanel
+                  view={view}
+                  selectedRate={selectedRate}
+                  selectedRateId={selectedRateId}
+                  totalDue={totalDue}
+                  busy={busy}
+                  ratesExpired={ratesExpired}
+                  checkoutAvailable={checkoutAvailable}
+                  onCheckout={() => void handleContinueToCheckout()}
+                />
               </div>
             </aside>
           </div>
@@ -978,88 +1140,6 @@ export default function ShippingRequestGuestPage() {
           </div>
         ) : null}
       </>
-    );
-  }
-
-  function renderOrderSummary(totalDue: number | null) {
-    if (!view) return null;
-    return (
-      <div className="shipping-request-order-summary" id="guest-order-summary">
-        <div className="shipping-request-order-summary__title">Order Summary</div>
-        {selectedRateId && totalDue != null ? (
-          <>
-            <div className="shipping-request-order-summary__row">
-              <span>Carrier</span>
-              <strong>
-                {selectedRate?.carrier || view.selectedCarrier || "—"}
-              </strong>
-            </div>
-            <div className="shipping-request-order-summary__row">
-              <span>Service</span>
-              <strong>
-                {selectedRate?.service || view.selectedService || "—"}
-              </strong>
-            </div>
-            <div className="shipping-request-order-summary__row">
-              <span>Estimated delivery</span>
-              <strong>
-                {selectedRate ? rateEtaLabel(selectedRate) : "—"}
-              </strong>
-            </div>
-            <div className="shipping-request-order-summary__divider" />
-            <div className="shipping-request-order-summary__row">
-              <span>Shipping</span>
-              <strong>
-                {formatMoney(
-                  totalDue,
-                  selectedRate?.currency || view.currency
-                )}
-              </strong>
-            </div>
-            <div className="shipping-request-order-summary__total">
-              <span>Total</span>
-              <strong>
-                {formatMoney(
-                  totalDue,
-                  selectedRate?.currency || view.currency
-                )}
-              </strong>
-            </div>
-          </>
-        ) : (
-          <p className="shipping-request-order-summary__empty">
-            Select a shipping option to see your total.
-          </p>
-        )}
-        <div className="shipping-request-actions shipping-request-actions--summary">
-          <button
-            type="button"
-            className="shipping-request-btn shipping-request-btn--primary shipping-request-btn--with-lock"
-            disabled={
-              busy ||
-              !checkoutAvailable ||
-              !selectedRateId ||
-              ratesExpired ||
-              totalDue == null
-            }
-            onClick={() => void handleContinueToCheckout()}
-          >
-            <span className="shipping-request-lock" aria-hidden="true">
-              🔒
-            </span>
-            Continue to Secure Checkout
-          </button>
-          {checkoutAvailable ? (
-            <p className="shipping-request-footnote">
-              You’ll complete payment through Stripe’s secure checkout.
-            </p>
-          ) : (
-            <p className="shipping-request-footnote shipping-request-footnote--warn">
-              Secure online payment is not yet available.
-            </p>
-          )}
-        </div>
-      </div>
     );
   }
 

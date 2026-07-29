@@ -52,11 +52,18 @@ export async function GET(_request: Request, context: RouteContext) {
       }
     }
 
-    return NextResponse.json({
-      request: view,
-      shippingProvider: getShippingProviderMode(),
-      checkoutAvailable: isStripeCheckoutEnvReady(),
-    });
+    return NextResponse.json(
+      {
+        request: view,
+        shippingProvider: getShippingProviderMode(),
+        checkoutAvailable: isStripeCheckoutEnvReady(),
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unable to load request";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -226,6 +233,7 @@ export async function POST(request: Request, context: RouteContext) {
         rates,
         rateExpiresAt,
         shippingProvider: provider.id,
+        checkoutAvailable: isStripeCheckoutEnvReady(),
       });
     }
 
@@ -283,6 +291,7 @@ export async function POST(request: Request, context: RouteContext) {
         amount,
         currency: String(selected.currency || "usd"),
         shippingProvider: provider.id,
+        checkoutAvailable: isStripeCheckoutEnvReady(),
         message:
           "Rate saved. Continue to Secure Checkout when you are ready. No payment has been collected yet.",
       });

@@ -150,13 +150,13 @@ export class ShippoShippingProvider implements ShippingProvider {
 
 function toShippoAddress(address: ShippingAddress) {
   return {
-    name: address.name.trim(),
-    street1: address.line1.trim(),
+    name: String(address.name || "").trim(),
+    street1: String(address.line1 || "").trim(),
     street2: address.line2?.trim() || undefined,
-    city: address.city.trim(),
-    state: address.state.trim(),
-    zip: address.postal.trim(),
-    country: (address.country || "US").trim().toUpperCase(),
+    city: String(address.city || "").trim(),
+    state: String(address.state || "").trim(),
+    zip: String(address.postal || "").trim(),
+    country: String(address.country || "US").trim().toUpperCase(),
     phone: address.phone?.trim() || undefined,
     email: address.email?.trim() || undefined,
   };
@@ -262,15 +262,15 @@ function projectBusinessDateIso(businessDays: number, from = new Date()): string
 
 function localAddressIssues(address: ShippingAddress): string[] {
   const issues: string[] = [];
-  if (!address.name.trim()) issues.push("Full name is required.");
-  if (!address.line1.trim()) issues.push("Street address is required.");
-  if (!address.city.trim()) issues.push("City is required.");
-  if (!address.state.trim()) issues.push("State is required.");
-  if (!address.postal.trim()) issues.push("Postal code is required.");
-  if (!address.country.trim()) issues.push("Country is required.");
+  if (!address.name?.trim()) issues.push("Full name is required.");
+  if (!address.line1?.trim()) issues.push("Street address is required.");
+  if (!address.city?.trim()) issues.push("City is required.");
+  if (!address.state?.trim()) issues.push("State is required.");
+  if (!address.postal?.trim()) issues.push("Postal code is required.");
+  if (!address.country?.trim()) issues.push("Country is required.");
 
-  const country = address.country.trim().toUpperCase();
-  const postal = address.postal.trim();
+  const country = String(address.country || "").trim().toUpperCase();
+  const postal = String(address.postal || "").trim();
   if (country === "US" && postal && !/^\d{5}(-\d{4})?$/.test(postal)) {
     issues.push("Enter a valid US ZIP code (12345 or 12345-6789).");
   }
