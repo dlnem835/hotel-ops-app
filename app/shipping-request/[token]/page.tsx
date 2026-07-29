@@ -558,7 +558,11 @@ export default function ShippingRequestGuestPage() {
       );
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "Unable to start secure checkout");
+        const detail =
+          typeof result?.code === "string" && result.code
+            ? `${result.error || "Unable to start secure checkout"} (${result.code})`
+            : result.error || "Unable to start secure checkout";
+        throw new Error(detail);
       }
       if (result.alreadyPaid) {
         window.location.href =
@@ -569,7 +573,7 @@ export default function ShippingRequestGuestPage() {
       if (!result.checkoutUrl) {
         throw new Error("Secure checkout URL was not returned.");
       }
-      window.location.href = String(result.checkoutUrl);
+      window.location.assign(String(result.checkoutUrl));
     } catch (error) {
       setMessageTone("error");
       setMessage(

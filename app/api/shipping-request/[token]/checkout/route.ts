@@ -5,6 +5,7 @@ import {
   createOrReuseShippingCheckoutSession,
   ShippingCheckoutError,
 } from "@/app/lib/payments/create-shipping-checkout";
+import { redactCheckoutSecrets } from "@/app/lib/payments/checkout-error-message";
 import { hashShippingGuestToken } from "@/app/lib/lost-found-shipping/token";
 
 type RouteContext = { params: Promise<{ token: string }> };
@@ -51,6 +52,16 @@ export async function POST(request: Request, context: RouteContext) {
       });
     }
 
+    if (!result.checkoutUrl) {
+      return NextResponse.json(
+        {
+          error: "Stripe Checkout did not return a redirect URL.",
+          code: "missing_checkout_url",
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({
       alreadyPaid: false,
       reused: result.reused,
@@ -58,18 +69,20 @@ export async function POST(request: Request, context: RouteContext) {
     });
   } catch (error: unknown) {
     if (error instanceof ShippingCheckoutError) {
+      console.error("[checkout]", error.code, error.message);
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status }
       );
     }
-    const message =
+
+    const raw =
       error instanceof Error ? error.message : "Unable to start checkout";
-    // Never leak Stripe secrets; keep message high-level when env is missing.
-    const safe =
-      /STRIPE_SECRET_KEY|sk_test|sk_live|whsec_/i.test(message)
-        ? "Secure checkout is not configured yet."
-        : message;
-    return NextResponse.json({ error: safe, code: "checkout_error" }, { status: 500 });
+    const safe = redactCheckoutSecrets(raw) || "Unable to start secure checkout.";
+    console.error("[checkout] unexpected", safe);
+    return NextResponse.json(
+      { error: safe, code: "checkout_error" },
+      { status: 500 }
+    );
   }
 }

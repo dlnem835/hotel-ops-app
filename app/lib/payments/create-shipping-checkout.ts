@@ -17,7 +17,9 @@ import {
 } from "@/app/lib/payments/payment-records";
 import { getStripeServerClient } from "@/app/lib/payments/stripe-server";
 import { assertStripeCheckoutEnvReady } from "@/app/lib/payments/stripe-env";
+import { redactCheckoutSecrets } from "@/app/lib/payments/checkout-error-message";
 import { redactStripeId } from "@/app/lib/payments/types";
+import Stripe from "stripe";
 
 export class ShippingCheckoutError extends Error {
   status: number;
@@ -28,6 +30,56 @@ export class ShippingCheckoutError extends Error {
     this.status = status;
     this.code = code;
   }
+}
+
+function assertCheckoutAppBaseUrl(baseUrl: string): void {
+  const isLocalhost = /localhost|127\.0\.0\.1/i.test(baseUrl);
+  // Local next dev may use http://localhost. Vercel must not.
+  if (isLocalhost) {
+    if (process.env.VERCEL) {
+      throw new ShippingCheckoutError(
+        500,
+        "bad_app_url",
+        "NEXT_PUBLIC_APP_URL still points to localhost on Vercel. Set it to https://app.oneeyrie.com in Production and redeploy."
+      );
+    }
+    return;
+  }
+  if (!/^https:\/\//i.test(baseUrl)) {
+    throw new ShippingCheckoutError(
+      500,
+      "bad_app_url",
+      "Checkout requires NEXT_PUBLIC_APP_URL to be an https:// origin (set https://app.oneeyrie.com in Vercel and redeploy)."
+    );
+  }
+}
+
+function toShippingCheckoutError(error: unknown): ShippingCheckoutError {
+  if (error instanceof ShippingCheckoutError) return error;
+
+  if (error instanceof Stripe.errors.StripeError) {
+    const safeMessage = redactCheckoutSecrets(error.message || "Stripe request failed");
+    if (error instanceof Stripe.errors.StripeAuthenticationError) {
+      return new ShippingCheckoutError(
+        502,
+        "stripe_auth",
+        "Stripe rejected the API key. Confirm STRIPE_SECRET_KEY is a valid sk_test_… key in Vercel Production and redeploy."
+      );
+    }
+    return new ShippingCheckoutError(
+      502,
+      error.code || "stripe_error",
+      safeMessage || "Unable to start Stripe Checkout. Please try again."
+    );
+  }
+
+  const raw =
+    error instanceof Error ? error.message : "Unable to start secure checkout";
+  return new ShippingCheckoutError(
+    500,
+    "checkout_error",
+    redactCheckoutSecrets(raw) || "Unable to start secure checkout. Please try again."
+  );
 }
 
 /**
@@ -45,7 +97,32 @@ export async function createOrReuseShippingCheckoutSession(
   reused: boolean;
   alreadyPaid: boolean;
 }> {
-  assertStripeCheckoutEnvReady();
+  try {
+    return await createOrReuseShippingCheckoutSessionInner(supabase, rawToken);
+  } catch (error) {
+    throw toShippingCheckoutError(error);
+  }
+}
+
+async function createOrReuseShippingCheckoutSessionInner(
+  supabase: SupabaseClient,
+  rawToken: string
+): Promise<{
+  checkoutUrl: string;
+  sessionId: string;
+  paymentId: number;
+  reused: boolean;
+  alreadyPaid: boolean;
+}> {
+  try {
+    assertStripeCheckoutEnvReady();
+  } catch {
+    throw new ShippingCheckoutError(
+      503,
+      "stripe_env",
+      "Stripe Checkout env is not ready on this server. Set STRIPE_SECRET_KEY (sk_test_…) in Vercel Production and redeploy."
+    );
+  }
 
   const token = rawToken.trim();
   if (!token || token.length < 20) {
@@ -251,6 +328,7 @@ export async function createOrReuseShippingCheckoutSession(
   });
 
   const baseUrl = getAppBaseUrl();
+  assertCheckoutAppBaseUrl(baseUrl);
   const successUrl = `${baseUrl}/shipping-request/${encodeURIComponent(
     token
   )}/payment-processing?session_id={CHECKOUT_SESSION_ID}`;
