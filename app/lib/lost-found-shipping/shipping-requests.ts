@@ -563,7 +563,11 @@ export async function resolveGuestShippingRequestByToken(
     Boolean(row.tracking_number)
   ) {
     state = "label_created";
-  } else if (paymentStatus === "paid" && fulfillmentStatus === "pending") {
+  } else if (
+    paymentStatus === "paid" &&
+    (fulfillmentStatus === "pending" ||
+      fulfillmentStatus === "needs_manual_review")
+  ) {
     state = "payment_processing";
   } else if (paymentStatus === "paid") {
     state = "label_created";
