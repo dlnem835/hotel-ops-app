@@ -15,8 +15,9 @@ function getServiceClient() {
 }
 
 /**
- * Stripe webhook endpoint (test mode for Checkpoint C2).
- * Signature verified with STRIPE_WEBHOOK_SECRET. Never trusts browser redirects.
+ * Stripe webhook endpoint (test or live — matches STRIPE_SECRET_KEY mode).
+ * Signature verified with STRIPE_WEBHOOK_SECRET for that same mode.
+ * Never trusts browser redirects.
  */
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");

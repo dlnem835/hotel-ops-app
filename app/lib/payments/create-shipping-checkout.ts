@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAppBaseUrl } from "@/app/lib/shipping/env";
+import {
+  getAppBaseUrl,
+  getShippingProviderMode,
+} from "@/app/lib/shipping/env";
 import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import {
@@ -16,7 +19,10 @@ import {
   updatePaymentStatus,
 } from "@/app/lib/payments/payment-records";
 import { getStripeServerClient } from "@/app/lib/payments/stripe-server";
-import { assertStripeCheckoutEnvReady } from "@/app/lib/payments/stripe-env";
+import {
+  assertStripeCheckoutEnvReady,
+  getStripeCheckoutStatus,
+} from "@/app/lib/payments/stripe-env";
 import { redactCheckoutSecrets } from "@/app/lib/payments/checkout-error-message";
 import { redactStripeId } from "@/app/lib/payments/types";
 import Stripe from "stripe";
@@ -121,6 +127,16 @@ async function createOrReuseShippingCheckoutSessionInner(
       503,
       "stripe_env",
       "Stripe Checkout env is not ready on this server. Set STRIPE_SECRET_KEY (sk_test_… or sk_live_…) in Vercel Production and redeploy."
+    );
+  }
+
+  const stripeMode = getStripeCheckoutStatus().mode;
+  const shippingMode = getShippingProviderMode();
+  if (stripeMode === "live" && shippingMode === "mock") {
+    throw new ShippingCheckoutError(
+      503,
+      "shipping_provider",
+      "Live Stripe payments require SHIPPING_PROVIDER=shippo. Mock shipping rates cannot be used with live checkout."
     );
   }
 
@@ -426,7 +442,9 @@ async function createOrReuseShippingCheckoutSessionInner(
     eventType: SHIPPING_TIMELINE_EVENTS.checkoutSessionCreated,
     eventSource: "system",
     eventData: {
-      notes: "Stripe Checkout session created (test mode)",
+      notes: `Stripe Checkout session created (${
+        session.livemode ? "live" : "test"
+      } mode)`,
       sessionRef: redactStripeId(session.id),
       paymentId: payment.id,
       amountCents,

@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getShippingProvider } from "@/app/lib/shipping/get-shipping-provider";
 import { getShippingProviderMode } from "@/app/lib/shipping/env";
+import { getStripeCheckoutStatus } from "@/app/lib/payments/stripe-env";
 import type { ShippingAddress, ShippingPackage } from "@/app/lib/shipping/types";
 import {
   appendShippingEvent,
@@ -100,6 +101,22 @@ export async function purchaseLabelForPaidShippingRequest(
     };
   }
 
+  const providerRateId = String(row.provider_rate_id || "").trim();
+  const stripeMode = getStripeCheckoutStatus().mode;
+  if (stripeMode === "live" && providerRateId.startsWith("mock_")) {
+    await markNeedsManualReview(
+      supabase,
+      row,
+      "Live payment used a mock shipping rate. Set SHIPPING_PROVIDER=shippo, refresh rates, and purchase the label from staff tools."
+    );
+    return {
+      ok: false,
+      skipped: false,
+      message: "Live payment cannot purchase a mock shipping label",
+      trackingNumber: null,
+    };
+  }
+
   if (
     String(row.fulfillment_status) === "label_ready" &&
     row.tracking_number
@@ -122,7 +139,6 @@ export async function purchaseLabelForPaidShippingRequest(
     };
   }
 
-  const providerRateId = String(row.provider_rate_id || "").trim();
   if (!providerRateId) {
     await markNeedsManualReview(supabase, row, "Missing provider rate id for label purchase");
     return {
