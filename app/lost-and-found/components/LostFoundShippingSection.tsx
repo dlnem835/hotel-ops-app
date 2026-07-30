@@ -190,10 +190,15 @@ function TimelineNotes({ notes }: { notes: string }) {
 
 function ShippingTimelinePanel({
   timeline,
+  open,
+  onOpenChange,
+  title = "Activity History",
 }: {
   timeline: ShippingTimelineEntry[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
 }) {
-  const [open, setOpen] = useState(false);
   const listRef = useRef<HTMLOListElement | null>(null);
   const seenEventIdsRef = useRef<Set<string>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
@@ -239,80 +244,86 @@ function ShippingTimelinePanel({
       ? `${timeline.length} event${timeline.length === 1 ? "" : "s"}`
       : "No events yet";
 
-  return (
-    <div className="lnf-shipping-timeline">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-expanded={open}
-        className="lnf-shipping-timeline__toggle"
-      >
-        <span>Shipping Timeline</span>
-        <span className="lnf-shipping-timeline__meta">
-          {open ? "Hide" : `Show ${eventCountLabel}`}
-        </span>
-      </button>
+  if (!open) return null;
 
-      {open ? (
-        <ol ref={listRef} className="lnf-shipping-timeline__list">
-          {rows.map((row) => {
-            const colors = toneStyles(row.tone);
-            const exact =
-              row.createdAt && !Number.isNaN(new Date(row.createdAt).getTime())
-                ? new Date(row.createdAt).toLocaleString()
-                : null;
-            const pending = row.kind === "milestone" || !row.createdAt;
-            const flashing = flashIds.has(row.id);
-            return (
-              <li
-                key={row.id}
-                data-timeline-row={row.id}
-                className={`lnf-shipping-timeline__row${
-                  flashing ? " lnf-shipping-timeline__row--flash" : ""
-                }`}
-                style={{ borderLeftColor: colors.border }}
-              >
-                <span aria-hidden="true" className="lnf-shipping-timeline__icon">
-                  {row.icon}
-                </span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="lnf-shipping-timeline__label-row">
-                    <div
-                      style={{
-                        color: colors.label,
-                        fontSize: "12px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {row.label}
-                    </div>
-                    {pending ? (
-                      <span className="lnf-shipping-timeline__pending">Pending</span>
-                    ) : null}
-                  </div>
+  return (
+    <div
+      className="lnf-shipping-activity"
+      role="region"
+      aria-label={title}
+    >
+      <div className="lnf-shipping-activity__header">
+        <div>
+          <h4 className="lnf-shipping-activity__title">{title}</h4>
+          <p className="lnf-shipping-activity__meta">{eventCountLabel}</p>
+        </div>
+        <button
+          type="button"
+          className="lnf-shipping-activity__close"
+          onClick={() => onOpenChange(false)}
+        >
+          Hide
+        </button>
+      </div>
+
+      <ol ref={listRef} className="lnf-shipping-timeline__list">
+        {rows.map((row) => {
+          const colors = toneStyles(row.tone);
+          const exact =
+            row.createdAt && !Number.isNaN(new Date(row.createdAt).getTime())
+              ? new Date(row.createdAt).toLocaleString()
+              : null;
+          const pending = row.kind === "milestone" || !row.createdAt;
+          const flashing = flashIds.has(row.id);
+          return (
+            <li
+              key={row.id}
+              data-timeline-row={row.id}
+              className={`lnf-shipping-timeline__row${
+                flashing ? " lnf-shipping-timeline__row--flash" : ""
+              }`}
+              style={{ borderLeftColor: colors.border }}
+            >
+              <span aria-hidden="true" className="lnf-shipping-timeline__icon">
+                {row.icon}
+              </span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="lnf-shipping-timeline__label-row">
                   <div
-                    className="lnf-shipping-timeline__when"
-                    title={exact || undefined}
+                    style={{
+                      color: colors.label,
+                      fontSize: "12px",
+                      fontWeight: 700,
+                    }}
                   >
-                    {row.createdAt ? (
-                      <>
-                        <span>{formatRelativeTimestamp(row.createdAt)}</span>
-                        {exact ? (
-                          <span style={{ opacity: 0.85 }}> · {exact}</span>
-                        ) : null}
-                      </>
-                    ) : (
-                      "Not yet recorded"
-                    )}
-                    {row.actor ? ` · ${row.actor}` : ""}
+                    {row.label}
                   </div>
-                  {row.notes ? <TimelineNotes notes={row.notes} /> : null}
+                  {pending ? (
+                    <span className="lnf-shipping-timeline__pending">Pending</span>
+                  ) : null}
                 </div>
-              </li>
-            );
-          })}
-        </ol>
-      ) : null}
+                <div
+                  className="lnf-shipping-timeline__when"
+                  title={exact || undefined}
+                >
+                  {row.createdAt ? (
+                    <>
+                      <span>{formatRelativeTimestamp(row.createdAt)}</span>
+                      {exact ? (
+                        <span style={{ opacity: 0.85 }}> · {exact}</span>
+                      ) : null}
+                    </>
+                  ) : (
+                    "Not yet recorded"
+                  )}
+                  {row.actor ? ` · ${row.actor}` : ""}
+                </div>
+                {row.notes ? <TimelineNotes notes={row.notes} /> : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
@@ -360,6 +371,7 @@ export default function LostFoundShippingSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [activityHistoryOpen, setActivityHistoryOpen] = useState(false);
   const [guestLinks, setGuestLinks] = useState<Record<number, string>>({});
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [linkBusyId, setLinkBusyId] = useState<number | null>(null);
@@ -406,6 +418,10 @@ export default function LostFoundShippingSection({
     },
     [itemId, onItemMayHaveChanged]
   );
+
+  useEffect(() => {
+    setActivityHistoryOpen(false);
+  }, [itemId]);
 
   useEffect(() => {
     void loadRequests();
@@ -706,12 +722,7 @@ export default function LostFoundShippingSection({
   return (
     <section className="lnf-shipping-section" aria-label="Shipping summary">
       <div className="lnf-shipping-section__header">
-        <div>
-          <h3 className="lnf-shipping-section__title">Shipping Summary</h3>
-          <p className="lnf-shipping-section__subtitle">
-            Guest shipping, payment, label, and tracking details.
-          </p>
-        </div>
+        <h3 className="lnf-shipping-section__title">Shipping Summary</h3>
         {primaryAction ? (
           <button
             type="button"
@@ -743,12 +754,6 @@ export default function LostFoundShippingSection({
         </p>
       ) : (
         <div className="lnf-shipping-summary">
-          <div className="lnf-shipping-summary__status-row">
-            <span className="lnf-shipping-summary__workflow">
-              {workflowStatus}
-            </span>
-          </div>
-
           {(activeRequest.returnedToSender ||
             activeRequest.shippingExceptionCode ||
             activeRequest.shippingExceptionMessage) && (
@@ -771,10 +776,6 @@ export default function LostFoundShippingSection({
 
           <dl className="lnf-shipping-summary__grid">
             <SummaryField
-              label="Guest name"
-              value={activeRequest.guestName || "Not available"}
-            />
-            <SummaryField
               label="Guest email"
               value={activeRequest.guestEmail || "Not available"}
             />
@@ -788,6 +789,7 @@ export default function LostFoundShippingSection({
                   : "Not viewed yet"
               }
             />
+            <SummaryField label="Destination" value={destination} />
             <SummaryField
               label="Carrier"
               value={activeRequest.selectedCarrier || "Not available"}
@@ -796,7 +798,29 @@ export default function LostFoundShippingSection({
               label="Service"
               value={activeRequest.selectedService || "Not available"}
             />
-            <SummaryField label="Destination" value={destination} />
+            <SummaryField
+              label="Payment status"
+              value={paymentLabel(activeRequest.paymentStatus)}
+            />
+            <SummaryField
+              label="Shipping cost"
+              value={formatMoney(
+                activeRequest.amountPaid ?? activeRequest.totalAmount,
+                activeRequest.currency
+              )}
+            />
+            <SummaryField
+              label="Label status"
+              value={labelStatusLabel(activeRequest)}
+            />
+            <SummaryField
+              label="Printed status"
+              value={
+                activeRequest.labelPrintedAt
+                  ? formatLocalDate(activeRequest.labelPrintedAt)
+                  : "Not printed"
+              }
+            />
             <SummaryField
               label="Tracking number"
               valueNode={
@@ -819,44 +843,17 @@ export default function LostFoundShippingSection({
               }
             />
             <SummaryField
-              label="Payment"
-              value={paymentLabel(activeRequest.paymentStatus)}
-            />
-            <SummaryField
-              label="Label"
-              value={labelStatusLabel(activeRequest)}
-            />
-            <SummaryField
-              label="Printed"
-              value={
-                activeRequest.labelPrintedAt
-                  ? formatLocalDate(activeRequest.labelPrintedAt)
-                  : "Not printed"
-              }
-            />
-            <SummaryField
               label="Carrier status"
               value={carrierTrackingStatusLabel(
                 activeRequest.carrierTrackingStatus
               )}
             />
             <SummaryField
-              label="Shipping cost"
-              value={formatMoney(
-                activeRequest.amountPaid ?? activeRequest.totalAmount,
-                activeRequest.currency
-              )}
-            />
-            <SummaryField
-              label="Shipped"
-              value={formatLocalDate(activeRequest.shippedAt)}
-            />
-            <SummaryField
               label="Estimated delivery"
               value={formatLocalDate(activeRequest.estimatedDeliveryAt)}
             />
             <SummaryField
-              label="Delivered"
+              label="Delivered date"
               value={
                 activeRequest.deliveredAt
                   ? formatLocalDate(activeRequest.deliveredAt)
@@ -888,18 +885,17 @@ export default function LostFoundShippingSection({
                   ? "Preparing…"
                   : "Copy Guest Link"}
             </button>
-            {hasUsableLabel(activeRequest, itemLabelUrl) ? (
-              <button
-                type="button"
-                style={linkButtonStyle()}
-                disabled={actionBusy === "label"}
-                onClick={() => void openLabel(activeRequest)}
-              >
-                Download Label
-              </button>
-            ) : null}
+            <button
+              type="button"
+              style={linkButtonStyle()}
+              aria-expanded={activityHistoryOpen}
+              onClick={() => setActivityHistoryOpen((current) => !current)}
+            >
+              {activityHistoryOpen ? "Hide Activity History" : "View Activity History"}
+            </button>
             {hasUsableLabel(activeRequest, itemLabelUrl) &&
-            !activeRequest.labelPrintedAt ? (
+            !activeRequest.labelPrintedAt &&
+            workflowStatus === LOST_ITEM_STATUS.readyToShip ? (
               <button
                 type="button"
                 style={linkButtonStyle()}
@@ -909,30 +905,27 @@ export default function LostFoundShippingSection({
                 {actionBusy === "printed" ? "Saving…" : "Mark Label Printed"}
               </button>
             ) : null}
-            {hasUsableTracking(activeRequest) && activeRequest.trackingUrl ? (
-              <button
-                type="button"
-                style={linkButtonStyle()}
-                onClick={() => openTracking(activeRequest)}
-              >
-                View Carrier Tracking
-              </button>
-            ) : null}
           </div>
 
-          <ShippingTimelinePanel timeline={activeRequest.timeline || []} />
+          <ShippingTimelinePanel
+            timeline={activeRequest.timeline || []}
+            open={activityHistoryOpen}
+            onOpenChange={setActivityHistoryOpen}
+          />
         </div>
       )}
 
-      <div className="lnf-manual-label-fallback">
-        <h4 className="lnf-manual-label-fallback__title">Manual Label Upload</h4>
+      <details className="lnf-manual-label-fallback">
+        <summary className="lnf-manual-label-fallback__summary">
+          Manual Label Upload
+        </summary>
         <p className="lnf-manual-label-fallback__copy">
           Secondary option for prepaid labels. Guests create their own carrier
           label and upload the PDF. Prefer Guest Shipping above when automated
           shipping is enabled.
         </p>
         <SendLabelRequestForm itemId={itemId} />
-      </div>
+      </details>
 
       <SendShippingRequestModal
         open={modalOpen}

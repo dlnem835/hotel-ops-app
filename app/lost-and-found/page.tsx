@@ -698,8 +698,9 @@ setTeamMembers(allTeamMembers || []);
       className="lnf-item-details-modal"
       style={{
         ...ONE_EYRIE_MODAL_BOX,
-        width: "640px",
-        maxHeight: "90vh",
+        width: "720px",
+        maxWidth: "calc(100vw - 24px)",
+        maxHeight: "86vh",
         padding: 0,
         display: "flex",
         flexDirection: "column",
@@ -729,66 +730,80 @@ setTeamMembers(allTeamMembers || []);
       </div>
 
       <div className="lnf-item-details-modal__body">
-        <dl className="lnf-item-details-grid">
-          <div className="lnf-item-details-grid__field">
-            <dt>Guest</dt>
-            <dd>{selectedItem.guest_last_name || "Not recorded"}</dd>
-          </div>
-          <div className="lnf-item-details-grid__field">
-            <dt>Location</dt>
-            <dd>
-              {formatLostFoundLocationDisplay(selectedItem.room_number) ||
-                selectedItem.room_number ||
-                "Not recorded"}
-            </dd>
-          </div>
-          <div className="lnf-item-details-grid__field">
-            <dt>Item</dt>
-            <dd>{selectedItem.item_name || "Not recorded"}</dd>
-          </div>
-          <div className="lnf-item-details-grid__field">
-            <dt>Current status</dt>
-            <dd>
-              <span className={`lnf-item-details-status ${statusPillClass(selectedItem.status)}`}>
-                {displayItemStatus(selectedItem.status)}
-              </span>
-            </dd>
-          </div>
-          <div className="lnf-item-details-grid__field">
-            <dt>Found by</dt>
-            <dd>{selectedItem.found_by || "Not recorded yet"}</dd>
-          </div>
-          <div className="lnf-item-details-grid__field">
-            <dt>Created by</dt>
-            <dd>
-              {(() => {
-                const member = teamMembers.find(
-                  (person: { auth_user_id?: string; username?: string; first_name?: string; last_name?: string }) =>
-                    String(person.auth_user_id).trim() ===
-                    String(selectedItem.created_by).trim()
-                );
-                return member
-                  ? member.username ||
-                      `${member.first_name || ""} ${member.last_name || ""}`.trim()
-                  : "Not recorded yet";
-              })()}
-            </dd>
-          </div>
-          <div className="lnf-item-details-grid__field lnf-item-details-grid__field--wide">
-            <dt>Date created</dt>
-            <dd>
-              {selectedItem.created_at
-                ? new Date(selectedItem.created_at).toLocaleString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : "Not recorded"}
-            </dd>
-          </div>
-        </dl>
+        <section className="lnf-item-details-section" aria-label="Item details">
+          <h3 className="lnf-item-details-section__title">Item Details</h3>
+          <dl className="lnf-item-details-grid">
+            <div className="lnf-item-details-grid__field">
+              <dt>Guest</dt>
+              <dd>{selectedItem.guest_last_name || "Not recorded"}</dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Location</dt>
+              <dd>
+                {formatLostFoundLocationDisplay(selectedItem.room_number) ||
+                  selectedItem.room_number ||
+                  "Not recorded"}
+              </dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Item</dt>
+              <dd>{selectedItem.item_name || "Not recorded"}</dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Date found</dt>
+              <dd>
+                {selectedItem.date_found || selectedItem.created_at
+                  ? new Date(
+                      selectedItem.date_found || selectedItem.created_at
+                    ).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : "Not recorded"}
+              </dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Current status</dt>
+              <dd>
+                <span
+                  className={`lnf-item-details-status ${statusPillClass(
+                    selectedItem.status
+                  )}`}
+                >
+                  {displayItemStatus(selectedItem.status)}
+                </span>
+              </dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Found by</dt>
+              <dd>{selectedItem.found_by || "Not recorded yet"}</dd>
+            </div>
+            <div className="lnf-item-details-grid__field">
+              <dt>Created by</dt>
+              <dd>
+                {(() => {
+                  const member = teamMembers.find(
+                    (person: {
+                      auth_user_id?: string;
+                      username?: string;
+                      first_name?: string;
+                      last_name?: string;
+                    }) =>
+                      String(person.auth_user_id).trim() ===
+                      String(selectedItem.created_by).trim()
+                  );
+                  return member
+                    ? member.username ||
+                        `${member.first_name || ""} ${member.last_name || ""}`.trim()
+                    : "Not recorded yet";
+                })()}
+              </dd>
+            </div>
+          </dl>
+        </section>
 
         <LostFoundShippingSection
           itemId={selectedItem.id}
