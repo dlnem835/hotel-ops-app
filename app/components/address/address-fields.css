@@ -42,10 +42,12 @@
 .oe-address-fields--guest .oe-address-fields__field input,
 .oe-address-fields--guest .oe-address-fields__field select {
   height: 44px;
+  min-height: 44px;
   padding: 0 12px;
   background: #151515;
   border: 1px solid #3a352e;
   color: #ffffff;
+  font-size: 16px;
 }
 
 .oe-address-fields--guest .oe-address-fields__field input:focus,
@@ -92,5 +94,11 @@
 
   .oe-address-fields__field--state {
     max-width: none;
+  }
+
+  .oe-address-fields--guest .oe-address-fields__field input,
+  .oe-address-fields--guest .oe-address-fields__field select {
+    height: 48px;
+    min-height: 48px;
   }
 }

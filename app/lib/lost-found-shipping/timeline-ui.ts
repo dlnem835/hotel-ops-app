@@ -310,9 +310,9 @@ export function guestLastViewedFromTimeline(
 /** Guest progress steps for the public shipping page. */
 export const GUEST_PROGRESS_STEPS = [
   { key: "address", label: "Address" },
-  { key: "options", label: "Shipping Options" },
+  { key: "options", label: "Options" },
   { key: "payment", label: "Payment" },
-  { key: "label", label: "Label Created" },
+  { key: "label", label: "Label" },
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
 ] as const;
