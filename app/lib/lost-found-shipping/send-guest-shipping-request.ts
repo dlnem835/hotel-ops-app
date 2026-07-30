@@ -215,6 +215,7 @@ export async function sendGuestShippingRequest(
   if (existing && isReusableForGuestEmail(existing)) {
     requestId = Number(existing.id);
     resent = true;
+    const previousEmail = String(existing.guest_email || "").trim().toLowerCase();
 
     const { error: updateError } = await supabase
       .from("lost_found_shipping_requests")
@@ -232,6 +233,23 @@ export async function sendGuestShippingRequest(
       .eq("property_id", scope.propertyId);
 
     if (updateError) throw new Error(updateError.message);
+
+    if (previousEmail && previousEmail !== guestEmail) {
+      await appendShippingEvent(supabase, {
+        organizationId: scope.organizationId,
+        propertyId: scope.propertyId,
+        lostItemId: input.lostItemId,
+        shippingRequestId: requestId,
+        eventType: SHIPPING_TIMELINE_EVENTS.guestEmailUpdated,
+        eventSource: "staff",
+        eventData: {
+          notes: `Guest email updated from ${previousEmail} to ${guestEmail}`,
+          previousEmail,
+          newEmail: guestEmail,
+        },
+        createdBy: input.createdBy,
+      });
+    }
 
     const link = await issueGuestShippingLink(supabase, scope, {
       shippingRequestId: requestId,
@@ -335,12 +353,15 @@ export async function sendGuestShippingRequest(
     propertyId: scope.propertyId,
     lostItemId: input.lostItemId,
     shippingRequestId: requestId,
-    eventType: SHIPPING_TIMELINE_EVENTS.requestEmailed,
+    eventType: resent
+      ? SHIPPING_TIMELINE_EVENTS.requestResent
+      : SHIPPING_TIMELINE_EVENTS.requestEmailed,
     eventSource: "staff",
     eventData: {
       notes: resent
-        ? "Guest shipping request email resent via Resend"
-        : "Guest shipping request email sent via Resend",
+        ? `Guest shipping request resent to ${guestEmail}`
+        : `Guest shipping request email sent to ${guestEmail}`,
+      guestEmail,
       guestEmailDomain: guestEmail.split("@")[1] || null,
       resendMessageId: emailed.messageId,
       emailFrom: emailed.from,

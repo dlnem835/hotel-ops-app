@@ -16,6 +16,7 @@ import LostFoundAddItemModal, {
 import LostFoundShippingSection from "@/app/lost-and-found/components/LostFoundShippingSection";
 import LostFoundItemActionsMenu from "@/app/lost-and-found/components/LostFoundItemActionsMenu";
 import SendShippingRequestModal from "@/app/lost-and-found/components/SendShippingRequestModal";
+import ResendShippingRequestModal from "@/app/lost-and-found/components/ResendShippingRequestModal";
 import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
 import {
   LOST_ITEM_STATUS,
@@ -93,6 +94,13 @@ export default function LostAndFoundPage() {
     null
   );
   const [sendModalItem, setSendModalItem] = useState<any | null>(null);
+  const [resendModalItem, setResendModalItem] = useState<{
+    id: number;
+    item_name?: string | null;
+    guest_last_name?: string | null;
+    guestEmail?: string;
+    guestName?: string;
+  } | null>(null);
   const [commentEditItem, setCommentEditItem] = useState<any | null>(null);
   const [canDeleteItems, setCanDeleteItems] = useState(false);
 
@@ -648,6 +656,15 @@ setTeamMembers(allTeamMembers || []);
                   setActionsMenuItemId(nextOpen ? item.id : null)
                 }
                 onSendShippingRequest={() => setSendModalItem(item)}
+                onResendShippingRequest={({ guestEmail, guestName }) =>
+                  setResendModalItem({
+                    id: Number(item.id),
+                    item_name: item.item_name,
+                    guest_last_name: item.guest_last_name,
+                    guestEmail,
+                    guestName,
+                  })
+                }
                 onEditComment={() => setCommentEditItem(item)}
                 onDeleted={() => {
                   void fetchItems();
@@ -847,9 +864,31 @@ setTeamMembers(allTeamMembers || []);
             guest_last_name: sendModalItem?.guest_last_name,
           }}
           onClose={() => setSendModalItem(null)}
-          onCreated={() => {
+          onCreated={(result) => {
             setSendModalItem(null);
-            setSuccessToast("Guest shipping email sent.");
+            const email = String(result.guestEmail || "").trim();
+            setSuccessToast(
+              email
+                ? `Shipping request sent to ${email}`
+                : "Guest shipping email sent."
+            );
+            void fetchItems();
+          }}
+        />
+
+        <ResendShippingRequestModal
+          open={Boolean(resendModalItem)}
+          item={{
+            id: Number(resendModalItem?.id),
+            item_name: resendModalItem?.item_name,
+            guest_last_name: resendModalItem?.guest_last_name,
+          }}
+          initialGuestEmail={resendModalItem?.guestEmail || ""}
+          initialGuestName={resendModalItem?.guestName || ""}
+          onClose={() => setResendModalItem(null)}
+          onResent={({ guestEmail }) => {
+            setResendModalItem(null);
+            setSuccessToast(`Shipping request sent to ${guestEmail}`);
             void fetchItems();
           }}
         />

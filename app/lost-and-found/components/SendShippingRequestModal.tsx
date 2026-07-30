@@ -32,7 +32,11 @@ type SendShippingRequestModalProps = {
   open: boolean;
   item: { id: number; item_name?: string; guest_last_name?: string };
   onClose: () => void;
-  onCreated: (result: { guestUrl: string; requestId?: number }) => void;
+  onCreated: (result: {
+    guestUrl: string;
+    requestId?: number;
+    guestEmail?: string;
+  }) => void;
 };
 
 type FormState = {
@@ -215,6 +219,9 @@ export default function SendShippingRequestModal({
       onCreated({
         guestUrl: String(result.guestUrl || ""),
         requestId: Number(result.requestId) || undefined,
+        guestEmail: String(result.guestEmail || form.guestEmail || "")
+          .trim()
+          .toLowerCase(),
       });
       onClose();
     } catch (submitError) {

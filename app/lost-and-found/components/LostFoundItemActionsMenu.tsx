@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MoreVertical } from "lucide-react";
-import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { tenantFetch, readTenantJson } from "@/app/lib/tenant/tenant-fetch";
 import {
   LOST_ITEM_STATUS,
   normalizeLostItemStatus,
@@ -20,6 +20,10 @@ type LostFoundItemActionsMenuProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSendShippingRequest: () => void;
+  onResendShippingRequest: (details: {
+    guestEmail: string;
+    guestName: string;
+  }) => void;
   onEditComment: () => void;
   onDeleted: () => void;
   onRefresh: () => void;
@@ -44,6 +48,7 @@ export default function LostFoundItemActionsMenu({
   open,
   onOpenChange,
   onSendShippingRequest,
+  onResendShippingRequest,
   onEditComment,
   onDeleted,
   onRefresh,
@@ -83,11 +88,14 @@ export default function LostFoundItemActionsMenu({
     const response = await tenantFetch(
       `/api/lost-and-found/${item.id}/shipping-requests`
     );
-    const result = await response.json();
+    const result = await readTenantJson<{
+      error?: string;
+      requests?: ShippingRequestRow[];
+    }>(response);
     if (!response.ok) {
       throw new Error(result.error || "Unable to load shipping request");
     }
-    const requests = (result.requests || []) as ShippingRequestRow[];
+    const requests = result.requests || [];
     return requests.find((row) => !row.cancelledAt) || requests[0] || null;
   }
 
@@ -96,7 +104,9 @@ export default function LostFoundItemActionsMenu({
       `/api/lost-and-found/${item.id}/shipping-requests/${requestId}/guest-link`,
       { method: "POST" }
     );
-    const result = await response.json();
+    const result = await readTenantJson<{ error?: string; guestUrl?: string }>(
+      response
+    );
     if (!response.ok) {
       throw new Error(result.error || "Unable to issue guest link");
     }
@@ -171,32 +181,12 @@ export default function LostFoundItemActionsMenu({
               onClick={() =>
                 void withBusy(async () => {
                   const request = await loadActiveRequest();
-                  if (!request?.guestEmail) {
-                    throw new Error(
-                      "No guest email on file. Open Item Details to resend."
-                    );
-                  }
-                  const response = await tenantFetch(
-                    `/api/lost-and-found/${item.id}/guest-shipping`,
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        guestEmail: request.guestEmail,
-                        guestName:
-                          request.guestName || item.guest_last_name || "",
-                        itemDescriptionPublic: item.item_name || "",
-                      }),
-                    }
-                  );
-                  const result = await response.json();
-                  if (!response.ok) {
-                    throw new Error(
-                      result.error || "Unable to resend shipping request"
-                    );
-                  }
-                  onToast?.("Guest shipping email resent.");
-                  onRefresh();
+                  onResendShippingRequest({
+                    guestEmail: String(request?.guestEmail || "").trim(),
+                    guestName: String(
+                      request?.guestName || item.guest_last_name || ""
+                    ).trim(),
+                  });
                 })
               }
             >
@@ -267,7 +257,10 @@ export default function LostFoundItemActionsMenu({
                   const response = await tenantFetch(
                     `/api/lost-and-found/${item.id}/shipping-requests/${request.id}/label`
                   );
-                  const result = await response.json();
+                  const result = await readTenantJson<{
+                    error?: string;
+                    url?: string;
+                  }>(response);
                   if (!response.ok || !result.url) {
                     throw new Error(
                       result.error || "Unable to open shipping label"

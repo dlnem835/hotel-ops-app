@@ -6,6 +6,8 @@
 export const SHIPPING_TIMELINE_EVENTS = {
   requestCreated: "shipping_request_created",
   requestEmailed: "shipping_request_emailed",
+  requestResent: "shipping_request_resent",
+  guestEmailUpdated: "guest_email_updated",
   guestOpened: "guest_opened_shipping_request",
   guestEnteredAddress: "guest_entered_shipping_address",
   addressValidated: "address_validated",
@@ -41,6 +43,8 @@ export type ShippingTimelineEventType =
 export const SHIPPING_TIMELINE_LABELS: Record<ShippingTimelineEventType, string> = {
   shipping_request_created: "Shipping request created",
   shipping_request_emailed: "Shipping request emailed to guest",
+  shipping_request_resent: "Shipping request resent to guest",
+  guest_email_updated: "Guest email updated",
   guest_opened_shipping_request: "Guest opened link",
   guest_entered_shipping_address: "Address entered",
   address_validated: "Address validated",

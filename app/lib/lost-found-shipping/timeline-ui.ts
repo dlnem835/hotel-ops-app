@@ -261,6 +261,8 @@ export function timelineEventIcon(eventType: string): string {
     case SHIPPING_TIMELINE_EVENTS.requestCreated:
     case SHIPPING_TIMELINE_EVENTS.guestOpened:
     case SHIPPING_TIMELINE_EVENTS.requestEmailed:
+    case SHIPPING_TIMELINE_EVENTS.requestResent:
+    case SHIPPING_TIMELINE_EVENTS.guestEmailUpdated:
     case SHIPPING_TIMELINE_EVENTS.guestLinkIssued:
       return "✓";
     default:
