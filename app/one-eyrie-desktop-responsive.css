@@ -467,9 +467,9 @@
 }
 
 .one-eyrie-lnf-table .col-delete { width: 32px; }
-.one-eyrie-lnf-table .col-guest { width: 21%; }
+.one-eyrie-lnf-table .col-guest { width: 22%; }
 .one-eyrie-lnf-table .col-location { width: 17%; }
-.one-eyrie-lnf-table .col-item { width: 20%; }
+.one-eyrie-lnf-table .col-item { width: 18%; }
 .one-eyrie-lnf-table .col-status {
   width: 21%;
 }
@@ -941,7 +941,7 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-guest,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-guest {
-    width: 21%;
+    width: 22%;
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
@@ -955,15 +955,15 @@
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-item,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-item {
-    width: 20%;
+    width: 18%;
     padding-left: 20px !important;
-    padding-right: 20px !important;
+    padding-right: 10px !important;
   }
 
   .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th.col-status,
   .one-eyrie-lost-found-page .one-eyrie-lnf-table tbody td.col-status {
     width: 21%;
-    padding-left: 20px !important;
+    padding-left: 10px !important;
     padding-right: 20px !important;
     text-align: left !important;
   }

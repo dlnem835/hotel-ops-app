@@ -3,6 +3,7 @@ import {
   resolveTenantRequest,
   tenantErrorResponse,
 } from "@/app/lib/tenant/server/resolve-tenant-request";
+import { assertAdminPortalDeleteAccess } from "@/app/lib/org-admin/server/assert-admin-portal-delete-access";
 import {
   deletePassOnEntry,
   getPassOnEntry,
@@ -55,9 +56,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { supabase, user, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertAdminPortalDeleteAccess(supabase, user.id, organizationId);
     const { id } = await context.params;
     await deletePassOnEntry(supabase, Number(id), { organizationId, propertyId });
     return NextResponse.json({ success: true });

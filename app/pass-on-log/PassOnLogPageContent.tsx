@@ -147,8 +147,8 @@ export default function PassOnLogPageContent() {
     );
   }
 
-  function canDeletePassOnContent(storedAuthor: string | null | undefined) {
-    return canDeleteAnyPassOn || isAuthorMatch(storedAuthor);
+  function canDeletePassOnContent(_storedAuthor?: string | null) {
+    return canDeleteAnyPassOn;
   }
 
  async function updateEntry(id: number) {
@@ -586,7 +586,7 @@ async function markAsViewed(entryId: number) {
 
     const { data: teamMember } = await supabase
       .from("team_members")
-      .select("first_name, last_name, username, job_title, is_administrator")
+      .select("first_name, last_name, username")
       .eq("auth_user_id", session.user.id)
       .single();
 
@@ -594,12 +594,14 @@ async function markAsViewed(entryId: number) {
       setCurrentUserName(
         teamMember.username || "unknown"
       );
-      const jobTitle = (teamMember.job_title || "").trim();
-      setCanDeleteAnyPassOn(
-        Boolean(teamMember.is_administrator) ||
-          jobTitle === "General Manager" ||
-          jobTitle === "Assistant General Manager"
-      );
+    }
+
+    try {
+      const accessRes = await tenantFetch("/api/org-admin/access");
+      const access = await accessRes.json().catch(() => ({}));
+      setCanDeleteAnyPassOn(Boolean(access.hasAccess));
+    } catch {
+      setCanDeleteAnyPassOn(false);
     }
 
    const { data: allTeamMembers } = await supabase

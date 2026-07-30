@@ -25,6 +25,8 @@ type LostFoundItemActionsMenuProps = {
   onRefresh: () => void;
   onError: (message: string) => void;
   onToast?: (message: string) => void;
+  /** Admin Portal entitlement — required to show Delete Item. */
+  canDelete?: boolean;
 };
 
 type ShippingRequestRow = {
@@ -47,6 +49,7 @@ export default function LostFoundItemActionsMenu({
   onRefresh,
   onError,
   onToast,
+  canDelete = false,
 }: LostFoundItemActionsMenuProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -202,63 +205,30 @@ export default function LostFoundItemActionsMenu({
           ) : null}
 
           {showGuestLinkActions ? (
-            <>
-              <button
-                type="button"
-                role="menuitem"
-                className="lnf-row-actions__item"
-                disabled={busy}
-                onClick={() =>
-                  void withBusy(async () => {
-                    const request = await loadActiveRequest();
-                    if (!request) {
-                      throw new Error("No shipping request found for this item.");
-                    }
-                    if (request.paymentStatus === "paid") {
-                      if (request.trackingUrl) {
-                        window.open(
-                          request.trackingUrl,
-                          "_blank",
-                          "noopener,noreferrer"
-                        );
-                        return;
-                      }
-                      throw new Error(
-                        "Guest link cannot be re-issued after payment."
-                      );
-                    }
-                    const url = await ensureGuestLink(request.id);
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  })
-                }
-              >
-                Open Guest Page
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="lnf-row-actions__item"
-                disabled={busy}
-                onClick={() =>
-                  void withBusy(async () => {
-                    const request = await loadActiveRequest();
-                    if (!request) {
-                      throw new Error("No shipping request found for this item.");
-                    }
-                    if (request.paymentStatus === "paid") {
-                      throw new Error(
-                        "Guest link cannot be re-issued after payment."
-                      );
-                    }
-                    const url = await ensureGuestLink(request.id);
-                    await navigator.clipboard.writeText(url);
-                    onToast?.("Guest link copied.");
-                  })
-                }
-              >
-                Copy Guest Link
-              </button>
-            </>
+            <button
+              type="button"
+              role="menuitem"
+              className="lnf-row-actions__item"
+              disabled={busy}
+              onClick={() =>
+                void withBusy(async () => {
+                  const request = await loadActiveRequest();
+                  if (!request) {
+                    throw new Error("No shipping request found for this item.");
+                  }
+                  if (request.paymentStatus === "paid") {
+                    throw new Error(
+                      "Guest link cannot be re-issued after payment."
+                    );
+                  }
+                  const url = await ensureGuestLink(request.id);
+                  await navigator.clipboard.writeText(url);
+                  onToast?.("Guest link copied.");
+                })
+              }
+            >
+              Copy Guest Link
+            </button>
           ) : null}
 
           <button
@@ -315,40 +285,42 @@ export default function LostFoundItemActionsMenu({
             </button>
           ) : null}
 
-          <button
-            type="button"
-            role="menuitem"
-            className="lnf-row-actions__item lnf-row-actions__item--danger"
-            disabled={busy}
-            onClick={() => {
-              onOpenChange(false);
-              if (!confirm("Delete this item?")) return;
-              void (async () => {
-                try {
-                  const response = await tenantFetch(
-                    `/api/lost-and-found/${item.id}`,
-                    { method: "DELETE" }
-                  );
-                  if (!response.ok) {
-                    const result = await response.json().catch(() => ({}));
-                    throw new Error(
-                      (result as { error?: string }).error ||
-                        "Unable to delete item"
+          {canDelete ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="lnf-row-actions__item lnf-row-actions__item--danger"
+              disabled={busy}
+              onClick={() => {
+                onOpenChange(false);
+                if (!confirm("Delete this item?")) return;
+                void (async () => {
+                  try {
+                    const response = await tenantFetch(
+                      `/api/lost-and-found/${item.id}`,
+                      { method: "DELETE" }
+                    );
+                    if (!response.ok) {
+                      const result = await response.json().catch(() => ({}));
+                      throw new Error(
+                        (result as { error?: string }).error ||
+                          "Unable to delete item"
+                      );
+                    }
+                    onDeleted();
+                  } catch (error) {
+                    onError(
+                      error instanceof Error
+                        ? error.message
+                        : "Unable to delete item"
                     );
                   }
-                  onDeleted();
-                } catch (error) {
-                  onError(
-                    error instanceof Error
-                      ? error.message
-                      : "Unable to delete item"
-                  );
-                }
-              })();
-            }}
-          >
-            Delete Item
-          </button>
+                })();
+              }}
+            >
+              Delete Item
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -3,6 +3,7 @@ import {
   resolveTenantRequest,
   tenantErrorResponse,
 } from "@/app/lib/tenant/server/resolve-tenant-request";
+import { assertAdminPortalDeleteAccess } from "@/app/lib/org-admin/server/assert-admin-portal-delete-access";
 import {
   updateLostItem,
   deleteLostItem,
@@ -41,7 +42,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(request);
+    const { supabase, user, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertAdminPortalDeleteAccess(supabase, user.id, organizationId);
     await deleteLostItem(supabase, id, { organizationId, propertyId });
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -94,6 +94,7 @@ export default function LostAndFoundPage() {
   );
   const [sendModalItem, setSendModalItem] = useState<any | null>(null);
   const [commentEditItem, setCommentEditItem] = useState<any | null>(null);
+  const [canDeleteItems, setCanDeleteItems] = useState(false);
 
   const readyToShipCount = lostItems.filter(
     (item) => displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
@@ -184,6 +185,13 @@ const { data: allTeamMembers } = await supabase
   .select("auth_user_id, first_name, last_name, username");
 
 setTeamMembers(allTeamMembers || []);
+    try {
+      const accessRes = await tenantFetch("/api/org-admin/access");
+      const access = await accessRes.json().catch(() => ({}));
+      setCanDeleteItems(Boolean(access.hasAccess));
+    } catch {
+      setCanDeleteItems(false);
+    }
     fetchItems();
   }
 
@@ -654,6 +662,7 @@ setTeamMembers(allTeamMembers || []);
                 }}
                 onError={(message) => setActionError(message)}
                 onToast={(message) => setSuccessToast(message)}
+                canDelete={canDeleteItems}
               />
             </td>
           </tr>
@@ -673,6 +682,8 @@ setTeamMembers(allTeamMembers || []);
       style={{
         ...ONE_EYRIE_MODAL_BOX,
         width: "720px",
+        minWidth: "min(720px, calc(100vw - 24px))",
+        minHeight: "620px",
         maxWidth: "calc(100vw - 24px)",
         maxHeight: "86vh",
         padding: 0,
@@ -852,11 +863,18 @@ setTeamMembers(allTeamMembers || []);
               className="lnf-comment-edit-modal"
               style={{
                 ...ONE_EYRIE_MODAL_BOX,
-                width: "420px",
+                width: "460px",
                 maxWidth: "calc(100vw - 24px)",
+                minHeight: "280px",
                 padding: 0,
               }}
               onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.stopPropagation();
+                  setCommentEditItem(null);
+                }
+              }}
             >
               <div
                 style={{
@@ -882,6 +900,7 @@ setTeamMembers(allTeamMembers || []);
               </div>
               <div style={{ padding: "16px 18px 18px" }}>
                 <LostFoundCommentCell
+                  variant="modal"
                   itemId={commentEditItem.id}
                   comments={commentEditItem.comments}
                   onSave={async (id, comments) => {
