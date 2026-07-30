@@ -58,24 +58,20 @@ export function validateShippingProviderEnv(
   return issues;
 }
 
-/** Validates Stripe test-mode env (Checkpoint C will require these at runtime). */
+/** Validates Stripe env for shipping checkout (test or live secret). */
 export function validateStripeTestEnv(): ShippingEnvIssue[] {
   const issues: ShippingEnvIssue[] = [];
   const secret = readEnv("STRIPE_SECRET_KEY");
   if (!secret) {
     issues.push({
       key: "STRIPE_SECRET_KEY",
-      message: "Required for Stripe Checkout (use sk_test_… for test mode).",
+      message:
+        "Required for Stripe Checkout (use sk_test_… or sk_live_…).",
     });
-  } else if (secret.startsWith("sk_live_")) {
+  } else if (!secret.startsWith("sk_test_") && !secret.startsWith("sk_live_")) {
     issues.push({
       key: "STRIPE_SECRET_KEY",
-      message: "Live Stripe key detected. Phase 2 requires test mode (sk_test_…). Refusing to start.",
-    });
-  } else if (!secret.startsWith("sk_test_")) {
-    issues.push({
-      key: "STRIPE_SECRET_KEY",
-      message: "Unexpected Stripe secret format. Expected sk_test_… for Phase 2.",
+      message: "Unexpected Stripe secret format. Expected sk_test_… or sk_live_…",
     });
   }
 

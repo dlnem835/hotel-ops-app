@@ -13,7 +13,11 @@ function renderHeader(): string {
 
   return `
     <tr>
-      <td align="center" style="padding:36px 32px 28px;background:${T.charcoal};border-bottom:3px solid ${T.gold};">
+      <td
+        align="center"
+        bgcolor="${T.charcoal}"
+        style="padding:36px 32px 28px;background-color:${T.charcoal};border-bottom:3px solid ${T.gold};"
+      >
         <a href="${siteOrigin}" style="text-decoration:none;">
           <img
             src="${logoUrl}"
@@ -33,11 +37,15 @@ function renderCta(label: string, url: string): string {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 0;">
       <tr>
-        <td align="center" bgcolor="${T.gold}" style="border-radius:999px;background:${T.gold};">
+        <td
+          align="center"
+          bgcolor="${T.gold}"
+          style="border-radius:999px;background-color:${T.gold};"
+        >
           <a
             href="${safeUrl}"
             target="_blank"
-            style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;line-height:1.2;color:${T.buttonText};text-decoration:none;border-radius:999px;background:${T.gold};box-shadow:0 10px 24px rgba(200,169,106,0.28);"
+            style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;line-height:1.2;color:${T.buttonText};text-decoration:none;border-radius:999px;background-color:${T.gold};"
           >
             ${safeLabel}
           </a>
@@ -51,18 +59,28 @@ function renderSupportBlock(message: string): string {
 
   return `
     <tr>
-      <td style="padding:0 32px 28px;">
-        <div style="border-top:1px solid ${T.divider};padding-top:24px;">
-          <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold};">
-            Need Help?
-          </p>
-          <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:${T.textMuted};">
-            ${escapeHtml(message)}
-          </p>
-          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;">
-            <a href="mailto:${support}" style="color:${T.goldLight};text-decoration:none;">${support}</a>
-          </p>
-        </div>
+      <td
+        bgcolor="${T.card}"
+        style="padding:0 32px 28px;background-color:${T.card};"
+      >
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="background-color:${T.card};">
+          <tr>
+            <td
+              bgcolor="${T.card}"
+              style="border-top:1px solid ${T.divider};padding-top:24px;background-color:${T.card};"
+            >
+              <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold};">
+                Need Help?
+              </p>
+              <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:${T.textMuted};">
+                ${escapeHtml(message)}
+              </p>
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;">
+                <a href="mailto:${support}" style="color:${T.goldLight};text-decoration:none;">${support}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>`;
 }
@@ -70,15 +88,27 @@ function renderSupportBlock(message: string): string {
 function renderFooter(currentYear: number): string {
   return `
     <tr>
-      <td align="center" style="padding:8px 32px 36px;">
-        <div style="border-top:1px solid ${T.divider};padding-top:22px;">
-          <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle};">
-            &copy; ${currentYear} One Eyrie
-          </p>
-          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle};">
-            Hotel Operations Platform
-          </p>
-        </div>
+      <td
+        align="center"
+        bgcolor="${T.card}"
+        style="padding:8px 32px 36px;background-color:${T.card};"
+      >
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="background-color:${T.card};">
+          <tr>
+            <td
+              align="center"
+              bgcolor="${T.card}"
+              style="border-top:1px solid ${T.divider};padding-top:22px;background-color:${T.card};"
+            >
+              <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle};">
+                &copy; ${currentYear} One Eyrie
+              </p>
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle};">
+                Hotel Operations Platform
+              </p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>`;
 }
@@ -86,6 +116,9 @@ function renderFooter(currentYear: number): string {
 /**
  * Shared One Eyrie transactional email shell.
  * Dark charcoal card, gold accents, logo header, optional CTA, support + footer.
+ *
+ * Email-safe: table layout + explicit bgcolor / background-color on every shell
+ * surface so Gmail mobile cannot fall back to a white canvas.
  */
 export function renderTransactionalEmailHtml(
   input: TransactionalEmailLayoutInput
@@ -107,24 +140,81 @@ export function renderTransactionalEmailHtml(
     : "";
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
-  <meta name="supported-color-schemes" content="dark" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="supported-color-schemes" content="dark light" />
   <title>${escapeHtml(input.heading)}</title>
+  <style type="text/css">
+    :root { color-scheme: dark light; supported-color-schemes: dark light; }
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: ${T.black} !important;
+    }
+    .oe-email-outer { background-color: ${T.black} !important; }
+    .oe-email-card { background-color: ${T.card} !important; }
+    @media only screen and (max-width: 620px) {
+      .oe-email-pad { padding-left: 16px !important; padding-right: 16px !important; }
+      .oe-email-shell-pad { padding: 16px 10px !important; }
+      .oe-email-heading { font-size: 22px !important; line-height: 1.3 !important; }
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background:${T.black};">
+<body
+  bgcolor="${T.black}"
+  style="margin:0;padding:0;width:100%;background-color:${T.black};"
+>
   ${preheader}
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${T.black};">
+  <table
+    role="presentation"
+    class="oe-email-outer"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    width="100%"
+    bgcolor="${T.black}"
+    style="width:100%;background-color:${T.black};"
+  >
     <tr>
-      <td align="center" style="padding:28px 16px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:${T.card};border:1px solid ${T.gold};border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.45);">
+      <td
+        align="center"
+        bgcolor="${T.black}"
+        class="oe-email-shell-pad"
+        style="padding:28px 16px;background-color:${T.black};"
+      >
+        <table
+          role="presentation"
+          class="oe-email-card"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          width="100%"
+          bgcolor="${T.card}"
+          style="max-width:560px;width:100%;background-color:${T.card};border:1px solid ${T.gold};border-radius:18px;"
+        >
           ${renderHeader()}
           <tr>
-            <td style="padding:36px 32px 8px;">
-              <h1 style="margin:0 0 22px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;font-weight:800;color:${T.text};text-align:center;">
+            <td
+              bgcolor="${T.card}"
+              class="oe-email-pad"
+              style="padding:36px 32px 8px;background-color:${T.card};"
+            >
+              <h1
+                class="oe-email-heading"
+                style="margin:0 0 22px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;font-weight:800;color:${T.text};text-align:center;"
+              >
                 ${escapeHtml(input.heading)}
               </h1>
               <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:${T.textMuted};">

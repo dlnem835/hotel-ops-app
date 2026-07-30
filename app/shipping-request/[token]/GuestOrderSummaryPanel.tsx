@@ -73,6 +73,7 @@ export default function GuestOrderSummaryPanel({
 }: GuestOrderSummaryPanelProps) {
   const checkoutReady = checkoutAvailable === true;
   const checkoutBlocked = checkoutAvailable === false;
+  const checkoutPending = checkoutAvailable == null;
 
   return (
     <div
@@ -149,15 +150,15 @@ export default function GuestOrderSummaryPanel({
           <p className="shipping-request-footnote">
             You’ll complete payment through Stripe’s secure checkout.
           </p>
+        ) : checkoutPending ? (
+          <p className="shipping-request-footnote">
+            Checking payment availability…
+          </p>
         ) : checkoutBlocked ? (
           <p className="shipping-request-footnote shipping-request-footnote--warn">
             {CHECKOUT_UNAVAILABLE_MESSAGE}
           </p>
-        ) : (
-          <p className="shipping-request-footnote">
-            Checking payment availability…
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

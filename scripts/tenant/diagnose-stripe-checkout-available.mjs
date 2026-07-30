@@ -39,21 +39,18 @@ function validateStripeCheckoutEnv() {
   if (!secret) {
     issues.push({
       key: "STRIPE_SECRET_KEY",
-      message: "Required for Stripe Checkout (use sk_test_… for test mode).",
-      reason: "missing",
+      message:
+        "Required for Stripe Checkout (set sk_test_… or sk_live_… in the deployment environment).",
+      reason: "missing_secret",
     });
-  } else if (secret.startsWith("sk_live_")) {
+  } else if (secret.startsWith("sk_test_") || secret.startsWith("sk_live_")) {
+    // valid
+  } else {
     issues.push({
       key: "STRIPE_SECRET_KEY",
       message:
-        "Live Stripe key detected. Checkpoint C requires test mode (sk_test_…). Refusing to start.",
-      reason: "sk_live_blocked",
-    });
-  } else if (!secret.startsWith("sk_test_")) {
-    issues.push({
-      key: "STRIPE_SECRET_KEY",
-      message: "Unexpected Stripe secret format. Expected sk_test_… for Checkpoint C.",
-      reason: "invalid_prefix",
+        "Unexpected Stripe secret format. Expected sk_test_… or sk_live_…",
+      reason: "invalid_secret_format",
       actualPrefix: secret.slice(0, Math.min(10, secret.length)),
     });
   }
@@ -70,7 +67,9 @@ console.log("\n=== Variables that affect checkoutAvailable ===");
 console.log(
   "Required by isStripeCheckoutEnvReady / validateStripeCheckoutEnv:"
 );
-console.log("  - STRIPE_SECRET_KEY must be present and start with sk_test_");
+console.log(
+  "  - STRIPE_SECRET_KEY must be present and start with sk_test_ or sk_live_"
+);
 console.log(
   "NOT required for checkoutAvailable (but needed later for webhooks/client):"
 );

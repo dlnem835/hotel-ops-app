@@ -65,6 +65,8 @@ async function probe(baseUrl, token) {
       status: res.status,
       ms: Date.now() - started,
       checkoutAvailable: json?.checkoutAvailable,
+      checkoutMode: json?.checkoutMode ?? null,
+      checkoutUnavailableReason: json?.checkoutUnavailableReason ?? null,
       hasRequest: Boolean(json?.request),
       requestState: json?.request?.state ?? null,
       propertyName: json?.request?.propertyName ?? null,
@@ -102,7 +104,8 @@ console.log({
   prefix: secret ? secret.slice(0, 8) : null,
   startsWithSkTest: secret.startsWith("sk_test_"),
   localCheckoutAvailableWouldBe:
-    Boolean(secret) && secret.startsWith("sk_test_") && !secret.startsWith("sk_live_"),
+    Boolean(secret) &&
+    (secret.startsWith("sk_test_") || secret.startsWith("sk_live_")),
 });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -191,18 +194,24 @@ if (primary.checkoutAvailable === true) {
 } else if (primary.checkoutAvailable === false) {
   console.log("\nACTUAL_CAUSE: Configuration on this server process.");
   console.log(
-    "GET returned checkoutAvailable:false because validateStripeCheckoutEnv() failed."
+    "GET returned checkoutAvailable:false because getStripeCheckoutStatus() failed."
   );
   console.log(
-    "That means STRIPE_SECRET_KEY is missing, empty, sk_live_, or not sk_test_ in THIS server process."
+    "That means STRIPE_SECRET_KEY is missing, empty, or not sk_test_/sk_live_ in THIS server process."
   );
+  if (primary.checkoutUnavailableReason) {
+    console.log("checkoutUnavailableReason:", primary.checkoutUnavailableReason);
+  }
+  if (primary.checkoutMode != null) {
+    console.log("checkoutMode:", primary.checkoutMode);
+  }
   if (primary.hostClass === "localhost") {
     console.log(
       "REQUIRED_STEP: Restart the local Next.js server so it reloads .env.local (STRIPE_SECRET_KEY is present in .env.local for this workspace)."
     );
   } else {
     console.log(
-      "REQUIRED_STEP: Set STRIPE_SECRET_KEY=sk_test_… in this host's environment (Vercel Project Settings → Environment Variables), then redeploy."
+      "REQUIRED_STEP: Set STRIPE_SECRET_KEY=sk_test_… or sk_live_… for Production in Vercel → Environment Variables, then redeploy."
     );
   }
 } else {

@@ -64,31 +64,43 @@ export function buildAutomatedShippingEmail(
 
   const contactLinesHtml = [
     phone
-      ? `<div style="margin-top:6px;color:${T.textMuted};">Phone: ${escapeHtml(phone)}</div>`
+      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">Phone: ${escapeHtml(phone)}</td></tr>`
       : "",
     address
-      ? `<div style="margin-top:8px;line-height:1.55;color:${T.textMuted};">${escapeHtml(address)}</div>`
+      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:8px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">${escapeHtml(address)}</td></tr>`
       : "",
   ].join("");
 
   const bodyHtml = `
-    <p style="margin:0 0 16px;">${hello.html}</p>
-    <p style="margin:0 0 16px;">
+    <p style="margin:0 0 16px;color:${T.textMuted};">${hello.html}</p>
+    <p style="margin:0 0 16px;color:${T.textMuted};">
       Good news — <strong style="color:${T.text};">${escapeHtml(propertyName)}</strong>
       has located <strong style="color:${T.text};">${escapeHtml(itemName)}</strong>
       and can ship it back to you.
     </p>
-    <p style="margin:0 0 16px;">
+    <p style="margin:0 0 16px;color:${T.textMuted};">
       Use the secure link below to confirm your address, choose a shipping option,
       and pay for return shipping. You&rsquo;ll pick the carrier and service on the next page.
     </p>
-    <div style="background:${T.charcoal};border:1px solid ${T.border};border-radius:14px;padding:16px;margin:0 0 8px;">
-      <p style="margin:0 0 6px;color:${T.gold};font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
-        Hotel contact
-      </p>
-      <div style="color:${T.text};font-weight:700;">${escapeHtml(propertyName)}</div>
-      ${contactLinesHtml}
-    </div>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="width:100%;background-color:${T.charcoal};border:1px solid ${T.border};border-radius:14px;margin:0 0 8px;">
+      <tr>
+        <td bgcolor="${T.charcoal}" style="padding:16px;background-color:${T.charcoal};">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="background-color:${T.charcoal};">
+            <tr>
+              <td bgcolor="${T.charcoal}" style="background-color:${T.charcoal};color:${T.gold};font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
+                Hotel contact
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.text};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
+                ${escapeHtml(propertyName)}
+              </td>
+            </tr>
+            ${contactLinesHtml}
+          </table>
+        </td>
+      </tr>
+    </table>
     ${
       expiryLabel
         ? `<p style="margin:16px 0 0;font-size:13px;color:${T.textSubtle};">This link remains available until ${escapeHtml(expiryLabel)}.</p>`

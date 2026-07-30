@@ -63,7 +63,7 @@ function toShippingCheckoutError(error: unknown): ShippingCheckoutError {
       return new ShippingCheckoutError(
         502,
         "stripe_auth",
-        "Stripe rejected the API key. Confirm STRIPE_SECRET_KEY is a valid sk_test_… key in Vercel Production and redeploy."
+        "Stripe rejected the API key. Confirm STRIPE_SECRET_KEY is a valid sk_test_… or sk_live_… key in Vercel Production and redeploy."
       );
     }
     return new ShippingCheckoutError(
@@ -120,7 +120,7 @@ async function createOrReuseShippingCheckoutSessionInner(
     throw new ShippingCheckoutError(
       503,
       "stripe_env",
-      "Stripe Checkout env is not ready on this server. Set STRIPE_SECRET_KEY (sk_test_…) in Vercel Production and redeploy."
+      "Stripe Checkout env is not ready on this server. Set STRIPE_SECRET_KEY (sk_test_… or sk_live_…) in Vercel Production and redeploy."
     );
   }
 

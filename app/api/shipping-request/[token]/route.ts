@@ -14,7 +14,7 @@ import {
   type ShippingRequestRow,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
-import { isStripeCheckoutEnvReady } from "@/app/lib/payments/stripe-env";
+import { getStripeCheckoutPublicFields } from "@/app/lib/payments/stripe-env";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -56,7 +56,7 @@ export async function GET(_request: Request, context: RouteContext) {
       {
         request: view,
         shippingProvider: getShippingProviderMode(),
-        checkoutAvailable: isStripeCheckoutEnvReady(),
+        ...getStripeCheckoutPublicFields(),
       },
       {
         headers: {
@@ -233,7 +233,7 @@ export async function POST(request: Request, context: RouteContext) {
         rates,
         rateExpiresAt,
         shippingProvider: provider.id,
-        checkoutAvailable: isStripeCheckoutEnvReady(),
+        ...getStripeCheckoutPublicFields(),
       });
     }
 
@@ -291,7 +291,7 @@ export async function POST(request: Request, context: RouteContext) {
         amount,
         currency: String(selected.currency || "usd"),
         shippingProvider: provider.id,
-        checkoutAvailable: isStripeCheckoutEnvReady(),
+        ...getStripeCheckoutPublicFields(),
         message:
           "Rate saved. Continue to Secure Checkout when you are ready. No payment has been collected yet.",
       });
