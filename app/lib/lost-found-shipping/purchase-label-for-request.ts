@@ -13,6 +13,8 @@ import {
 import { markShippingLabelReady } from "@/app/lib/lost-found-shipping/process-shippo-tracking-webhook";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { ensureShippoTrackUpdatedWebhook } from "@/app/lib/shipping/shippo-ensure-webhooks";
+import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
+import { redactStripeId } from "@/app/lib/payments/types";
 
 const LOCK_STALE_MS = 2 * 60 * 1000;
 
@@ -92,7 +94,20 @@ export async function purchaseLabelForPaidShippingRequest(
   const propertyId = Number(row.property_id);
   const lostItemId = Number(row.lost_item_id);
 
+  logFulfillment("info", "label.purchase_start", {
+    shippingRequestId,
+    organizationId,
+    propertyId,
+    lostItemId,
+    paymentStatus: row.payment_status,
+    fulfillmentStatus: row.fulfillment_status,
+    providerRateId: row.provider_rate_id
+      ? redactStripeId(String(row.provider_rate_id))
+      : null,
+  });
+
   if (String(row.payment_status) !== "paid") {
+    logFulfillment("warn", "label.skip_not_paid", { shippingRequestId });
     return {
       ok: false,
       skipped: true,
@@ -109,6 +124,10 @@ export async function purchaseLabelForPaidShippingRequest(
       row,
       "Live payment used a mock shipping rate. Set SHIPPING_PROVIDER=shippo, refresh rates, and purchase the label from staff tools."
     );
+    logFulfillment("error", "label.blocked_live_mock_rate", {
+      shippingRequestId,
+      providerRateId,
+    });
     return {
       ok: false,
       skipped: false,
@@ -210,6 +229,12 @@ export async function purchaseLabelForPaidShippingRequest(
 
   try {
     const provider = getShippingProvider();
+    logFulfillment("info", "label.provider_purchase_call", {
+      shippingRequestId,
+      providerMode: getShippingProviderMode(),
+      providerRateId: redactStripeId(providerRateId),
+      idempotencyKey: idempotencyKey.slice(0, 80),
+    });
     const purchased = await provider.purchaseLabel({
       shipFrom: shipFrom as ShippingAddress,
       shipTo: shipTo as ShippingAddress,
@@ -218,11 +243,25 @@ export async function purchaseLabelForPaidShippingRequest(
       idempotencyKey,
     });
 
+    logFulfillment("info", "label.provider_purchase_ok", {
+      shippingRequestId,
+      trackingNumber: purchased.trackingNumber,
+      carrier: purchased.carrier,
+      service: purchased.service,
+      providerTransactionId: redactStripeId(purchased.providerTransactionId),
+      hasLabelUrl: Boolean(purchased.labelUrl),
+    });
+
     const labelStoragePath = await uploadLabelPdfIfPossible(supabase, {
       organizationId,
       propertyId,
       shippingRequestId,
       labelUrl: purchased.labelUrl,
+    });
+
+    logFulfillment("info", "label.storage_result", {
+      shippingRequestId,
+      labelStoragePath: labelStoragePath || null,
     });
 
     await markShippingLabelReady(supabase, {
@@ -255,6 +294,12 @@ export async function purchaseLabelForPaidShippingRequest(
       await ensureShippoTrackUpdatedWebhook();
     }
 
+    logFulfillment("info", "label.purchase_complete", {
+      shippingRequestId,
+      trackingNumber: purchased.trackingNumber,
+      lostItemStatus: "Ready to Ship",
+    });
+
     return {
       ok: true,
       skipped: false,
@@ -267,9 +312,17 @@ export async function purchaseLabelForPaidShippingRequest(
         ? purchaseError.message
         : "Label purchase failed";
 
+    logFulfillment("error", "label.purchase_failed", {
+      shippingRequestId,
+      organizationId,
+      propertyId,
+      message,
+    });
+
     await supabase
       .from("lost_found_shipping_requests")
       .update({
+        // Keep payment_status=paid; leave shipment awaiting label (not awaiting payment).
         fulfillment_status: "needs_manual_review",
         error_message: message.slice(0, 500),
         label_purchase_lock_at: null,
@@ -277,7 +330,8 @@ export async function purchaseLabelForPaidShippingRequest(
       })
       .eq("id", shippingRequestId)
       .eq("organization_id", organizationId)
-      .eq("property_id", propertyId);
+      .eq("property_id", propertyId)
+      .eq("payment_status", "paid");
 
     await appendShippingEvent(supabase, {
       organizationId,

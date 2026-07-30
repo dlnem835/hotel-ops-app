@@ -61,6 +61,7 @@ export type ShippingCurrentStep =
   | "Awaiting Shipping Selection"
   | "Awaiting Guest Payment"
   | "Awaiting Label Purchase"
+  | "Payment received — label creation failed"
   | "Ready to Ship"
   | "Shipped"
   | "Delivered"
@@ -75,7 +76,7 @@ export function deriveShippingCurrentStep(
   now = new Date()
 ): ShippingCurrentStep {
   if (input.fulfillmentStatus === "needs_manual_review") {
-    return "Needs Manual Review";
+    return "Payment received — label creation failed";
   }
   if (input.shipmentStatus === "delivered") return "Delivered";
   if (input.shipmentStatus === "in_transit") return "Shipped";

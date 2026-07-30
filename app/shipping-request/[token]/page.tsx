@@ -718,8 +718,9 @@ export default function ShippingRequestGuestPage() {
             <div className="shipping-request-status-card">
               <h3>Payment received</h3>
               <p>
-                We are preparing your shipping label. This usually takes a
-                moment — this page updates automatically.
+                {view.fulfillmentStatus === "needs_manual_review"
+                  ? "Your payment is confirmed. The hotel is finishing your shipping label — this page updates automatically when tracking is available."
+                  : "We are preparing your shipping label. This usually takes a moment — this page updates automatically."}
               </p>
             </div>
           )}

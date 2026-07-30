@@ -336,7 +336,8 @@ export function guestProgressIndex(
     case "awaiting_payment":
       return 1;
     case "payment_processing":
-      return 2;
+      // Payment confirmed — advance past Payment so guest is not stuck on Processing.
+      return 3;
     case "label_created":
       return 3;
     case "in_transit":

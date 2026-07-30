@@ -39,18 +39,17 @@ export function validateShippingProviderEnv(
     if (!token) {
       issues.push({
         key: "SHIPPO_API_TOKEN",
-        message: "Required when SHIPPING_PROVIDER=shippo (use shippo_test_… for test mode).",
+        message:
+          "Required when SHIPPING_PROVIDER=shippo (use shippo_test_… or shippo_live_…).",
       });
-    } else if (!token.startsWith("shippo_test_") && !token.startsWith("shippo_live_")) {
-      issues.push({
-        key: "SHIPPO_API_TOKEN",
-        message: "Unexpected Shippo token format. Expected shippo_test_… or shippo_live_…",
-      });
-    } else if (token.startsWith("shippo_live_")) {
+    } else if (
+      !token.startsWith("shippo_test_") &&
+      !token.startsWith("shippo_live_")
+    ) {
       issues.push({
         key: "SHIPPO_API_TOKEN",
         message:
-          "Live Shippo token detected. Phase 2 requires test mode (shippo_test_…). Refusing to start.",
+          "Unexpected Shippo token format. Expected shippo_test_… or shippo_live_…",
       });
     }
   }

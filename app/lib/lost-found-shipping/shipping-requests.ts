@@ -520,6 +520,8 @@ export type GuestShippingRequestView = {
   deliveredAt: string | null;
   returnedToSender: boolean;
   shippingExceptionMessage: string | null;
+  /** Staff/internal fulfillment state — used for guest copy when label failed. */
+  fulfillmentStatus: string | null;
 };
 
 export async function resolveGuestShippingRequestByToken(
@@ -714,6 +716,7 @@ export async function resolveGuestShippingRequestByToken(
     shippingExceptionMessage: row.shipping_exception_message
       ? String(row.shipping_exception_message)
       : null,
+    fulfillmentStatus: fulfillmentStatus || null,
   };
 }
 
@@ -764,6 +767,7 @@ function unavailable(): GuestShippingRequestView {
     deliveredAt: null,
     returnedToSender: false,
     shippingExceptionMessage: null,
+    fulfillmentStatus: null,
   };
 }
 

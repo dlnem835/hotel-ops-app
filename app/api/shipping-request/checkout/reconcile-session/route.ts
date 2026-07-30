@@ -16,14 +16,16 @@ function getServiceClient() {
 /**
  * Recover paid Checkout Sessions when the guest token is unavailable.
  * Requires an existing payments row for the session id, then verifies with Stripe.
- * Idempotent with webhooks / token reconcile.
+ * Optional retryLabel re-quotes Shippo and purchases once (never recharges guest).
  */
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as {
       sessionId?: string;
+      retryLabel?: boolean;
     };
     const sessionId = String(body.sessionId || "").trim();
+    const retryLabel = Boolean(body.retryLabel);
     if (!sessionId.startsWith("cs_")) {
       return NextResponse.json(
         { error: "Missing checkout session id.", code: "missing_session" },
@@ -66,22 +68,45 @@ export async function POST(request: Request) {
       source: "reconcile",
     });
 
+    let labelRetry: {
+      ok: boolean;
+      skipped: boolean;
+      message: string;
+      trackingNumber: string | null;
+    } | null = null;
+
+    if (retryLabel && payment.shipping_request_id) {
+      const { retryLabelForPaidShippingRequest } = await import(
+        "@/app/lib/lost-found-shipping/retry-label-for-paid-request"
+      );
+      labelRetry = await retryLabelForPaidShippingRequest(
+        supabase,
+        payment.shipping_request_id,
+        { actor: "system" }
+      );
+    }
+
     let labelReady = false;
+    let paymentStatus = "pending";
     if (payment.shipping_request_id) {
       const { data: req } = await supabase
         .from("lost_found_shipping_requests")
-        .select("payment_status,fulfillment_status,tracking_number")
+        .select("payment_status,fulfillment_status,tracking_number,error_message")
         .eq("id", payment.shipping_request_id)
         .maybeSingle();
+      paymentStatus = String(req?.payment_status || "pending");
       labelReady =
         String(req?.fulfillment_status) === "label_ready" ||
         Boolean(req?.tracking_number);
       return NextResponse.json({
-        status: String(req?.payment_status) === "paid" ? "paid" : "pending",
+        status: paymentStatus === "paid" ? "paid" : "pending",
         paymentId: result.paymentId,
         shippingRequestId: payment.shipping_request_id,
         labelReady,
-        labelPurchased: result.labelPurchased,
+        labelPurchased: result.labelPurchased || Boolean(labelRetry?.ok && !labelRetry?.skipped),
+        labelRetry,
+        fulfillmentStatus: req?.fulfillment_status || null,
+        errorMessage: req?.error_message || null,
         message: result.message,
         sessionRef: redactStripeId(sessionId),
         duplicate: result.duplicate,

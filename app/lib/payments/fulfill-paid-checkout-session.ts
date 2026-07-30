@@ -4,6 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { purchaseLabelForPaidShippingRequest } from "@/app/lib/lost-found-shipping/purchase-label-for-request";
+import {
+  alertLabelCreationFailed,
+  sendGuestPaymentConfirmationEmail,
+  sendHotelLabelReadyEmail,
+} from "@/app/lib/lost-found-shipping/notify-shipping-fulfillment";
+import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { laterTokenExpiry } from "@/app/lib/lost-found-shipping/token";
 import {
@@ -80,8 +86,22 @@ export async function fulfillPaidCheckoutSession(
     source: "webhook" | "reconcile";
   }
 ): Promise<FulfillPaidCheckoutResult> {
+  logFulfillment("info", "fulfill.start", {
+    source: options.source,
+    eventType: options.eventType,
+    eventRef: redactStripeId(options.providerEventId),
+    sessionRef: redactStripeId(session.id),
+    paymentStatus: session.payment_status,
+    livemode: session.livemode,
+  });
+
   const payment = await resolvePaymentForCheckoutSession(supabase, session);
   if (!payment) {
+    logFulfillment("warn", "fulfill.no_payment_match", {
+      source: options.source,
+      sessionRef: redactStripeId(session.id),
+      metaPaymentId: session.metadata?.oe_payment_id || null,
+    });
     return {
       ok: true,
       duplicate: false,
@@ -93,6 +113,15 @@ export async function fulfillPaidCheckoutSession(
     };
   }
 
+  logFulfillment("info", "fulfill.payment_resolved", {
+    source: options.source,
+    paymentId: payment.id,
+    paymentStatus: payment.status,
+    organizationId: payment.organization_id,
+    propertyId: payment.property_id,
+    shippingRequestId: payment.shipping_request_id,
+  });
+
   const claim = await claimWebhookEvent(supabase, {
     providerEventId: options.providerEventId,
     eventType: options.eventType,
@@ -101,6 +130,11 @@ export async function fulfillPaidCheckoutSession(
     propertyId: payment.property_id,
   });
   if (!claim.claimed) {
+    logFulfillment("info", "fulfill.duplicate_event", {
+      source: options.source,
+      eventRef: redactStripeId(options.providerEventId),
+      paymentId: payment.id,
+    });
     // Another worker already claimed this event id — still attempt label if paid.
     if (payment.status === "paid" && payment.shipping_request_id) {
       try {
@@ -108,6 +142,24 @@ export async function fulfillPaidCheckoutSession(
           supabase,
           payment.shipping_request_id
         );
+        if (label.ok && !label.skipped) {
+          const { data: req } = await supabase
+            .from("lost_found_shipping_requests")
+            .select("lost_item_id")
+            .eq("id", payment.shipping_request_id)
+            .maybeSingle();
+          await notifyGuestAndStaffAfterPayment(supabase, {
+            shippingRequestId: payment.shipping_request_id,
+            organizationId: payment.organization_id,
+            propertyId: payment.property_id,
+            lostItemId: Number(req?.lost_item_id || 0),
+            amountCents: payment.amount_cents,
+            currency: payment.currency,
+            labelPurchased: true,
+            labelMessage: label.message,
+            newlyPaid: false,
+          });
+        }
         return {
           ok: true,
           duplicate: true,
@@ -117,8 +169,12 @@ export async function fulfillPaidCheckoutSession(
           message: "Already processed",
           labelPurchased: Boolean(label.ok && !label.skipped),
         };
-      } catch {
-        // fall through
+      } catch (labelError) {
+        logFulfillment("error", "fulfill.duplicate_label_retry_failed", {
+          paymentId: payment.id,
+          message:
+            labelError instanceof Error ? labelError.message : "unknown",
+        });
       }
     }
     return {
@@ -131,6 +187,12 @@ export async function fulfillPaidCheckoutSession(
       labelPurchased: false,
     };
   }
+
+  logFulfillment("info", "fulfill.event_claimed", {
+    source: options.source,
+    eventRef: redactStripeId(options.providerEventId),
+    paymentId: payment.id,
+  });
 
   if (payment.status === "paid") {
     await updatePaymentStatus(supabase, payment.id, {
@@ -146,11 +208,28 @@ export async function fulfillPaidCheckoutSession(
           payment.shipping_request_id
         );
         labelPurchased = Boolean(label.ok && !label.skipped);
+        const { data: req } = await supabase
+          .from("lost_found_shipping_requests")
+          .select("lost_item_id")
+          .eq("id", payment.shipping_request_id)
+          .maybeSingle();
+        await notifyGuestAndStaffAfterPayment(supabase, {
+          shippingRequestId: payment.shipping_request_id,
+          organizationId: payment.organization_id,
+          propertyId: payment.property_id,
+          lostItemId: Number(req?.lost_item_id || 0),
+          amountCents: payment.amount_cents,
+          currency: payment.currency,
+          labelPurchased,
+          labelMessage: label.message,
+          newlyPaid: false,
+        });
       } catch (labelError) {
-        console.error(
-          "[stripe-fulfill] label purchase failed (already paid)",
-          labelError instanceof Error ? labelError.message : "unknown"
-        );
+        logFulfillment("error", "fulfill.label_failed_already_paid", {
+          paymentId: payment.id,
+          message:
+            labelError instanceof Error ? labelError.message : "unknown",
+        });
       }
     }
     return {
@@ -303,6 +382,14 @@ export async function fulfillPaidCheckoutSession(
   const stripe = getStripeServerClient();
   const receiptUrl = await resolveProviderReceiptUrl(stripe, session);
 
+  logFulfillment("info", "fulfill.marking_paid", {
+    source: options.source,
+    paymentId: payment.id,
+    amountCents: payment.amount_cents,
+    shippingRequestId: payment.shipping_request_id,
+    paymentIntentRef: redactStripeId(paymentIntentId),
+  });
+
   await updatePaymentStatus(supabase, payment.id, {
     status: "paid",
     paidAt,
@@ -312,6 +399,11 @@ export async function fulfillPaidCheckoutSession(
     metadataPatch: receiptUrl
       ? { provider_receipt_url: receiptUrl }
       : undefined,
+  });
+
+  logFulfillment("info", "fulfill.payment_marked_paid", {
+    paymentId: payment.id,
+    paidAt,
   });
 
   let labelPurchased = false;
@@ -338,6 +430,11 @@ export async function fulfillPaidCheckoutSession(
           failureReason: "Checkout metadata lost item mismatch",
           appendWebhookEventId: options.providerEventId,
         });
+        logFulfillment("error", "fulfill.meta_lost_item_mismatch", {
+          paymentId: payment.id,
+          metaLostItemId,
+          requestLostItemId: request.lost_item_id,
+        });
         return {
           ok: false,
           duplicate: false,
@@ -362,6 +459,9 @@ export async function fulfillPaidCheckoutSession(
           failureReason: "Checkout metadata tenant mismatch vs shipping request",
           appendWebhookEventId: options.providerEventId,
         });
+        logFulfillment("error", "fulfill.meta_tenant_mismatch", {
+          paymentId: payment.id,
+        });
         return {
           ok: false,
           duplicate: false,
@@ -382,12 +482,15 @@ export async function fulfillPaidCheckoutSession(
             payment_status: "paid",
             paid_at: paidAt,
             successful_payment_id: payment.id,
+            // Stay on awaiting_payment shipment enum until label_ready, but payment_status drives UI.
             token_expires_at: laterTokenExpiry(null, new Date(paidAt)),
             updated_at: paidAt,
+            error_message: null,
           })
           .eq("id", request.id)
           .eq("organization_id", payment.organization_id)
-          .eq("property_id", payment.property_id);
+          .eq("property_id", payment.property_id)
+          .neq("payment_status", "paid");
       } else if (!request.successful_payment_id) {
         await supabase
           .from("lost_found_shipping_requests")
@@ -425,20 +528,74 @@ export async function fulfillPaidCheckoutSession(
         });
       }
 
+      logFulfillment("info", "fulfill.label_purchase_start", {
+        shippingRequestId: Number(request.id),
+        paymentId: payment.id,
+        source: options.source,
+      });
+
       try {
         const label = await purchaseLabelForPaidShippingRequest(
           supabase,
           Number(request.id)
         );
         labelPurchased = Boolean(label.ok && !label.skipped);
-      } catch (labelError) {
-        console.error(
-          "[stripe-fulfill] label purchase failed",
-          labelError instanceof Error ? labelError.message : "unknown"
+        logFulfillment(
+          labelPurchased ? "info" : "warn",
+          "fulfill.label_purchase_result",
+          {
+            shippingRequestId: Number(request.id),
+            ok: label.ok,
+            skipped: label.skipped,
+            labelPurchased,
+            message: label.message,
+            trackingNumber: label.trackingNumber,
+          }
         );
+        await notifyGuestAndStaffAfterPayment(supabase, {
+          shippingRequestId: Number(request.id),
+          organizationId: payment.organization_id,
+          propertyId: payment.property_id,
+          lostItemId: Number(request.lost_item_id),
+          amountCents: payment.amount_cents,
+          currency: payment.currency,
+          labelPurchased,
+          labelMessage: label.message,
+          newlyPaid: !alreadyPaid,
+        });
+      } catch (labelError) {
+        const message =
+          labelError instanceof Error ? labelError.message : "unknown";
+        logFulfillment("error", "fulfill.label_purchase_exception", {
+          shippingRequestId: Number(request.id),
+          message,
+        });
+        await notifyGuestAndStaffAfterPayment(supabase, {
+          shippingRequestId: Number(request.id),
+          organizationId: payment.organization_id,
+          propertyId: payment.property_id,
+          lostItemId: Number(request.lost_item_id),
+          amountCents: payment.amount_cents,
+          currency: payment.currency,
+          labelPurchased: false,
+          labelMessage: message,
+          newlyPaid: !alreadyPaid,
+        });
       }
+    } else {
+      logFulfillment("error", "fulfill.shipping_request_missing", {
+        paymentId: payment.id,
+        shippingRequestId: payment.shipping_request_id,
+      });
     }
   }
+
+  logFulfillment("info", "fulfill.complete", {
+    source: options.source,
+    paymentId: payment.id,
+    shippingRequestId: payment.shipping_request_id,
+    labelPurchased,
+  });
 
   return {
     ok: true,
@@ -449,6 +606,136 @@ export async function fulfillPaidCheckoutSession(
     message: "Payment marked paid",
     labelPurchased,
   };
+}
+
+async function notifyGuestAndStaffAfterPayment(
+  supabase: SupabaseClient,
+  input: {
+    shippingRequestId: number;
+    organizationId: number;
+    propertyId: number;
+    lostItemId: number;
+    amountCents: number;
+    currency: string;
+    labelPurchased: boolean;
+    labelMessage: string;
+    newlyPaid: boolean;
+  }
+) {
+  const { data: row } = await supabase
+    .from("lost_found_shipping_requests")
+    .select(
+      "guest_email,guest_name,item_description_public,tracking_number,tracking_url,selected_carrier,selected_service,fulfillment_status,error_message,total_amount,label_storage_path"
+    )
+    .eq("id", input.shippingRequestId)
+    .maybeSingle();
+  if (!row) return;
+
+  let propertyName = "the hotel";
+  const { data: property } = await supabase
+    .from("properties")
+    .select("name")
+    .eq("id", input.propertyId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+  if (property?.name) propertyName = String(property.name);
+
+  const itemName =
+    String(row.item_description_public || "").trim() || "your item";
+  const amount = Number(input.amountCents) / 100;
+  const trackingNumber = row.tracking_number
+    ? String(row.tracking_number)
+    : null;
+  const trackingUrl = row.tracking_url ? String(row.tracking_url) : null;
+
+  if (input.newlyPaid || input.labelPurchased) {
+    logFulfillment("info", "notify.guest_payment_email_start", {
+      shippingRequestId: input.shippingRequestId,
+      hasTracking: Boolean(trackingNumber),
+      labelPurchased: input.labelPurchased,
+    });
+    const emailed = await sendGuestPaymentConfirmationEmail({
+      guestEmail: String(row.guest_email || ""),
+      guestName: row.guest_name ? String(row.guest_name) : null,
+      propertyName,
+      itemName,
+      amount,
+      currency: input.currency,
+      guestTrackingUrl: trackingUrl,
+      trackingNumber,
+      carrier: row.selected_carrier ? String(row.selected_carrier) : null,
+      service: row.selected_service ? String(row.selected_service) : null,
+    });
+    if (!emailed.ok) {
+      logFulfillment("error", "notify.guest_payment_email_failed", {
+        shippingRequestId: input.shippingRequestId,
+        message: emailed.message,
+      });
+    } else {
+      logFulfillment("info", "notify.guest_payment_email_sent", {
+        shippingRequestId: input.shippingRequestId,
+        hasTracking: Boolean(trackingNumber),
+      });
+    }
+  }
+
+  if (input.labelPurchased && row.label_storage_path) {
+    logFulfillment("info", "notify.hotel_label_email_start", {
+      shippingRequestId: input.shippingRequestId,
+      lostItemId: input.lostItemId,
+    });
+    const hotelMail = await sendHotelLabelReadyEmail({
+      supabase,
+      organizationId: input.organizationId,
+      propertyId: input.propertyId,
+      lostItemId: input.lostItemId,
+      shippingRequestId: input.shippingRequestId,
+      propertyName,
+      itemName,
+      trackingNumber,
+      carrier: row.selected_carrier ? String(row.selected_carrier) : null,
+      service: row.selected_service ? String(row.selected_service) : null,
+      labelStoragePath: String(row.label_storage_path),
+    });
+    if (!hotelMail.ok) {
+      logFulfillment("error", "notify.hotel_label_email_failed", {
+        shippingRequestId: input.shippingRequestId,
+        message: hotelMail.message,
+      });
+    } else {
+      logFulfillment("info", "notify.hotel_label_email_sent", {
+        shippingRequestId: input.shippingRequestId,
+      });
+    }
+  }
+
+  if (
+    !input.labelPurchased &&
+    String(row.fulfillment_status) === "needs_manual_review"
+  ) {
+    logFulfillment("warn", "notify.label_failed_alert", {
+      shippingRequestId: input.shippingRequestId,
+      errorMessage: String(
+        row.error_message || input.labelMessage || "Label purchase failed"
+      ).slice(0, 240),
+    });
+    await alertLabelCreationFailed({
+      supabase,
+      organizationId: input.organizationId,
+      propertyId: input.propertyId,
+      lostItemId: input.lostItemId,
+      shippingRequestId: input.shippingRequestId,
+      propertyName,
+      itemName,
+      guestEmail: row.guest_email ? String(row.guest_email) : null,
+      errorMessage:
+        String(row.error_message || input.labelMessage || "Label purchase failed").slice(
+          0,
+          500
+        ),
+      amount,
+    });
+  }
 }
 
 async function appendShippingTimelineSafe(

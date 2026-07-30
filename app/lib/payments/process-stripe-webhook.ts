@@ -5,6 +5,7 @@ import type Stripe from "stripe";
 import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { fulfillPaidCheckoutSession } from "@/app/lib/payments/fulfill-paid-checkout-session";
+import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import {
   claimWebhookEvent,
   findPaymentByCheckoutSessionId,
@@ -25,6 +26,8 @@ export type StripeWebhookResult = {
   handled: boolean;
   eventType: string;
   paymentId: number | null;
+  shippingRequestId?: number | null;
+  labelPurchased?: boolean;
   message: string;
 };
 
@@ -50,6 +53,7 @@ export async function processStripeWebhookEvent(
   signatureHeader: string | null
 ): Promise<StripeWebhookResult> {
   if (!signatureHeader) {
+    logFulfillment("error", "webhook.verify_missing_signature", {});
     throw new StripeWebhookVerifyError("Missing Stripe-Signature header");
   }
 
@@ -61,12 +65,15 @@ export async function processStripeWebhookEvent(
       signatureHeader,
       getStripeWebhookSecret()
     );
-  } catch {
+  } catch (verifyError) {
     const status = getStripeCheckoutStatus();
-    console.error("[stripe-webhook] signature verification failed", {
+    logFulfillment("error", "webhook.verify_failed", {
       reason: "invalid_signature",
       stripeMode: status.mode,
-      vercelEnv: process.env.VERCEL_ENV || null,
+      detail:
+        verifyError instanceof Error
+          ? verifyError.message.slice(0, 200)
+          : "unknown",
       hint:
         status.mode === "live"
           ? "STRIPE_WEBHOOK_SECRET must be the signing secret from the LIVE webhook endpoint (not test/CLI)."
@@ -75,25 +82,61 @@ export async function processStripeWebhookEvent(
     throw new StripeWebhookVerifyError("Invalid Stripe webhook signature");
   }
 
+  logFulfillment("info", "webhook.verify_ok", {
+    eventType: event.type,
+    eventRef: redactStripeId(event.id),
+    livemode: event.livemode,
+    stripeMode: getStripeCheckoutStatus().mode,
+  });
+
   if (
     event.type === "checkout.session.completed" ||
     event.type === "checkout.session.async_payment_succeeded"
   ) {
-    const result = await fulfillPaidCheckoutSession(
-      supabase,
-      event.data.object as Stripe.Checkout.Session,
+    const session = event.data.object as Stripe.Checkout.Session;
+    logFulfillment("info", "webhook.checkout_paid_event", {
+      eventType: event.type,
+      eventRef: redactStripeId(event.id),
+      sessionRef: redactStripeId(session.id),
+      paymentStatus: session.payment_status,
+      livemode: session.livemode,
+      metaOrgId: session.metadata?.oe_organization_id || null,
+      metaPropertyId: session.metadata?.oe_property_id || null,
+      metaLostItemId: session.metadata?.oe_lost_item_id || null,
+      metaShippingRequestId: session.metadata?.oe_shipping_request_id || null,
+      metaPaymentId: session.metadata?.oe_payment_id || null,
+    });
+
+    const result = await fulfillPaidCheckoutSession(supabase, session, {
+      providerEventId: event.id,
+      eventType: event.type,
+      source: "webhook",
+    });
+
+    logFulfillment(
+      result.ok ? "info" : "error",
+      "webhook.fulfillment_result",
       {
-        providerEventId: event.id,
         eventType: event.type,
-        source: "webhook",
+        eventRef: redactStripeId(event.id),
+        ok: result.ok,
+        duplicate: result.duplicate,
+        handled: result.handled,
+        paymentId: result.paymentId,
+        shippingRequestId: result.shippingRequestId,
+        labelPurchased: result.labelPurchased,
+        message: result.message,
       }
     );
+
     return {
       ok: result.ok,
       duplicate: result.duplicate,
       handled: result.handled,
       eventType: event.type,
       paymentId: result.paymentId,
+      shippingRequestId: result.shippingRequestId,
+      labelPurchased: result.labelPurchased,
       message: result.message,
     };
   }
@@ -121,6 +164,11 @@ export async function processStripeWebhookEvent(
       event.data.object as Stripe.PaymentIntent
     );
   }
+
+  logFulfillment("info", "webhook.event_ignored", {
+    eventType: event.type,
+    eventRef: redactStripeId(event.id),
+  });
 
   return {
     ok: true,

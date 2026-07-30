@@ -48,6 +48,7 @@ type ShippingRequestListItem = {
   paidAt?: string | null;
   amountPaid?: number | null;
   cancelledAt?: string | null;
+  errorMessage?: string | null;
 };
 
 function formatMoney(amount: number | null, currency: string): string {
@@ -88,7 +89,13 @@ function labelStatusLabel(request: ShippingRequestListItem): string {
     request.labelCreatedAt ||
     request.labelStoragePath
   ) {
-    return "Ready";
+    return "Created";
+  }
+  if (
+    request.paymentStatus === "paid" &&
+    request.fulfillmentStatus === "needs_manual_review"
+  ) {
+    return "Payment received — label creation failed";
   }
   if (request.paymentStatus === "paid") return "Awaiting purchase";
   return "Not created";
@@ -202,6 +209,7 @@ export default function LostFoundShippingSection({
         ) ||
         request.paymentStatus === "paid" ||
         request.fulfillmentStatus === "label_ready" ||
+        request.fulfillmentStatus === "needs_manual_review" ||
         request.fulfillmentStatus === "pending"
     );
     if (!active) return;
@@ -307,6 +315,31 @@ export default function LostFoundShippingSection({
     }
   }
 
+  async function retryLabel(request: ShippingRequestListItem) {
+    setActionBusy("retry-label");
+    setError(null);
+    try {
+      const response = await tenantFetch(
+        `/api/lost-and-found/${itemId}/shipping-requests/${request.id}/retry-label`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to retry label creation");
+      }
+      await loadRequests();
+      onItemMayHaveChanged?.();
+    } catch (retryError) {
+      setError(
+        retryError instanceof Error
+          ? retryError.message
+          : "Unable to retry label creation"
+      );
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
   const destination =
     activeRequest?.destinationCity || activeRequest?.destinationState
       ? [activeRequest.destinationCity, activeRequest.destinationState]
@@ -355,7 +388,9 @@ export default function LostFoundShippingSection({
           <div className="lnf-shipping-summary">
             {(activeRequest.returnedToSender ||
               activeRequest.shippingExceptionCode ||
-              activeRequest.shippingExceptionMessage) && (
+              activeRequest.shippingExceptionMessage ||
+              (activeRequest.paymentStatus === "paid" &&
+                activeRequest.fulfillmentStatus === "needs_manual_review")) && (
               <div
                 role="alert"
                 className={`lnf-shipping-summary__alert${
@@ -364,12 +399,22 @@ export default function LostFoundShippingSection({
                     : " lnf-shipping-summary__alert--warn"
                 }`}
               >
-                {activeRequest.returnedToSender
-                  ? "Returned to sender"
-                  : "Shipping exception"}
-                {activeRequest.shippingExceptionMessage
-                  ? `: ${activeRequest.shippingExceptionMessage}`
-                  : ""}
+                {activeRequest.paymentStatus === "paid" &&
+                activeRequest.fulfillmentStatus === "needs_manual_review"
+                  ? `Payment received — label creation failed${
+                      activeRequest.errorMessage
+                        ? `: ${activeRequest.errorMessage}`
+                        : ""
+                    }`
+                  : activeRequest.returnedToSender
+                    ? "Returned to sender"
+                    : "Shipping exception"}
+                {activeRequest.paymentStatus === "paid" &&
+                activeRequest.fulfillmentStatus === "needs_manual_review"
+                  ? ""
+                  : activeRequest.shippingExceptionMessage
+                    ? `: ${activeRequest.shippingExceptionMessage}`
+                    : ""}
               </div>
             )}
 
@@ -468,6 +513,19 @@ export default function LostFoundShippingSection({
                     ? "Preparing…"
                     : "Copy Guest Link"}
               </button>
+              {activeRequest.paymentStatus === "paid" &&
+              activeRequest.fulfillmentStatus === "needs_manual_review" ? (
+                <button
+                  type="button"
+                  style={linkButtonStyle()}
+                  disabled={actionBusy === "retry-label"}
+                  onClick={() => void retryLabel(activeRequest)}
+                >
+                  {actionBusy === "retry-label"
+                    ? "Retrying…"
+                    : "Retry Label Creation"}
+                </button>
+              ) : null}
               {hasUsableLabel(activeRequest, itemLabelUrl) &&
               !activeRequest.labelPrintedAt &&
               workflowStatus === LOST_ITEM_STATUS.readyToShip ? (
@@ -478,6 +536,46 @@ export default function LostFoundShippingSection({
                   onClick={() => void markPrinted(activeRequest)}
                 >
                   {actionBusy === "printed" ? "Saving…" : "Mark Label Printed"}
+                </button>
+              ) : null}
+              {hasUsableLabel(activeRequest, itemLabelUrl) ? (
+                <button
+                  type="button"
+                  style={linkButtonStyle()}
+                  disabled={actionBusy === "print-label"}
+                  onClick={() => {
+                    void (async () => {
+                      setActionBusy("print-label");
+                      try {
+                        const response = await tenantFetch(
+                          `/api/lost-and-found/${itemId}/shipping-requests/${activeRequest.id}/label`
+                        );
+                        const result = await response.json();
+                        if (!response.ok) {
+                          throw new Error(
+                            result.error || "Unable to open shipping label"
+                          );
+                        }
+                        if (result.url) {
+                          window.open(
+                            String(result.url),
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }
+                      } catch (labelError) {
+                        setError(
+                          labelError instanceof Error
+                            ? labelError.message
+                            : "Unable to open shipping label"
+                        );
+                      } finally {
+                        setActionBusy(null);
+                      }
+                    })();
+                  }}
+                >
+                  Print Label
                 </button>
               ) : null}
             </div>

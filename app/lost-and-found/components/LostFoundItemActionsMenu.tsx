@@ -38,9 +38,11 @@ type ShippingRequestRow = {
   guestEmail?: string;
   guestName?: string;
   paymentStatus?: string;
+  fulfillmentStatus?: string;
   cancelledAt?: string | null;
   labelStoragePath?: string | null;
   trackingUrl?: string | null;
+  errorMessage?: string | null;
 };
 
 export default function LostFoundItemActionsMenu({
@@ -233,6 +235,56 @@ export default function LostFoundItemActionsMenu({
           >
             {item.comments?.trim() ? "Edit Comment" : "Add Comment"}
           </button>
+
+          {showResend ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="lnf-row-actions__item"
+              disabled={busy}
+              onClick={() =>
+                void withBusy(async () => {
+                  const request = await loadActiveRequest();
+                  if (!request?.id) {
+                    throw new Error("No shipping request found.");
+                  }
+                  if (String(request.paymentStatus) !== "paid") {
+                    throw new Error(
+                      "Retry Label Creation is only available after payment succeeds."
+                    );
+                  }
+                  if (
+                    String(request.fulfillmentStatus) === "label_ready" ||
+                    request.labelStoragePath
+                  ) {
+                    throw new Error("A shipping label is already available.");
+                  }
+                  const response = await tenantFetch(
+                    `/api/lost-and-found/${item.id}/shipping-requests/${request.id}/retry-label`,
+                    { method: "POST" }
+                  );
+                  const result = await readTenantJson<{
+                    error?: string;
+                    message?: string;
+                    trackingNumber?: string | null;
+                  }>(response);
+                  if (!response.ok) {
+                    throw new Error(
+                      result.error || "Unable to retry label creation"
+                    );
+                  }
+                  onToast?.(
+                    result.trackingNumber
+                      ? `Label created. Tracking ${result.trackingNumber}.`
+                      : result.message || "Label retry completed."
+                  );
+                  onRefresh();
+                })
+              }
+            >
+              Retry Label Creation
+            </button>
+          ) : null}
 
           {showPrintLabel ? (
             <button
