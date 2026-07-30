@@ -1,15 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
-  buildStaffTimelineDisplay,
-  formatRelativeTimestamp,
-  guestLastViewedFromTimeline,
-  type TimelineTone,
-} from "@/app/lib/lost-found-shipping/timeline-ui";
-import {
-  carrierTrackingStatusLabel,
   LOST_ITEM_STATUS,
   normalizeLostItemStatus,
 } from "@/app/lib/lost-found-shipping/status";
@@ -29,15 +22,6 @@ type LostFoundShippingSectionProps = {
   /** Manual prepaid label URL on the lost item, when present. */
   itemLabelUrl?: string | null;
   onItemMayHaveChanged?: () => void;
-};
-
-type ShippingTimelineEntry = {
-  id: number;
-  eventType: string;
-  label: string;
-  actorLabel: string;
-  createdAt: string;
-  notes: string | null;
 };
 
 type ShippingRequestListItem = {
@@ -69,10 +53,7 @@ type ShippingRequestListItem = {
   paidAt?: string | null;
   amountPaid?: number | null;
   cancelledAt?: string | null;
-  timeline?: ShippingTimelineEntry[];
 };
-
-const NOTES_COLLAPSE_CHARS = 90;
 
 function formatMoney(amount: number | null, currency: string): string {
   if (amount == null || !Number.isFinite(amount)) return "Not available";
@@ -132,202 +113,6 @@ function hasUsableTracking(request: ShippingRequestListItem | null): boolean {
   return Boolean(request.trackingNumber || request.trackingUrl);
 }
 
-function toneStyles(tone: TimelineTone): {
-  border: string;
-  label: string;
-} {
-  switch (tone) {
-    case "completed":
-      return { border: "#2f6b4f", label: "#BBF7D0" };
-    case "current":
-      return { border: "#1d4ed8", label: "#BFDBFE" };
-    case "failed":
-      return { border: "#7f1d1d", label: "#FECACA" };
-    default:
-      return { border: "#555048", label: "#9ca3af" };
-  }
-}
-
-function TimelineNotes({ notes }: { notes: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const long = notes.length > NOTES_COLLAPSE_CHARS;
-  const shown =
-    !long || expanded ? notes : `${notes.slice(0, NOTES_COLLAPSE_CHARS).trim()}…`;
-
-  return (
-    <div style={{ marginTop: "4px" }}>
-      <div
-        style={{
-          color: ONE_EYRIE.textSubtle,
-          fontSize: "11px",
-          lineHeight: 1.4,
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {shown}
-      </div>
-      {long ? (
-        <button
-          type="button"
-          onClick={() => setExpanded((current) => !current)}
-          style={{
-            marginTop: "4px",
-            border: "none",
-            background: "transparent",
-            color: ONE_EYRIE.gold,
-            fontSize: "11px",
-            fontWeight: 700,
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
-          {expanded ? "Show less" : "Show more"}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function ShippingTimelinePanel({
-  timeline,
-  open,
-  onOpenChange,
-  title = "Activity History",
-}: {
-  timeline: ShippingTimelineEntry[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title?: string;
-}) {
-  const listRef = useRef<HTMLOListElement | null>(null);
-  const seenEventIdsRef = useRef<Set<string>>(new Set());
-  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
-
-  const rows = useMemo(
-    () => buildStaffTimelineDisplay({ events: timeline }),
-    [timeline]
-  );
-
-  const newestEventRow = useMemo(() => {
-    const events = rows.filter((row) => row.kind === "event" && row.createdAt);
-    return events.length > 0 ? events[events.length - 1] : null;
-  }, [rows]);
-
-  useEffect(() => {
-    if (!open) return;
-    const eventIds = rows
-      .filter((row) => row.kind === "event")
-      .map((row) => row.id);
-    const fresh = eventIds.filter((id) => !seenEventIdsRef.current.has(id));
-    for (const id of eventIds) seenEventIdsRef.current.add(id);
-    if (fresh.length === 0) return;
-
-    setFlashIds(new Set(fresh));
-    const timer = window.setTimeout(() => setFlashIds(new Set()), 1800);
-
-    window.requestAnimationFrame(() => {
-      const newestId = newestEventRow?.id;
-      if (!newestId || !listRef.current) return;
-      const node = listRef.current.querySelector(
-        `[data-timeline-row="${newestId}"]`
-      );
-      if (node instanceof HTMLElement) {
-        node.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    });
-
-    return () => window.clearTimeout(timer);
-  }, [open, rows, newestEventRow?.id]);
-
-  const eventCountLabel =
-    timeline.length > 0
-      ? `${timeline.length} event${timeline.length === 1 ? "" : "s"}`
-      : "No events yet";
-
-  if (!open) return null;
-
-  return (
-    <div
-      className="lnf-shipping-activity"
-      role="region"
-      aria-label={title}
-    >
-      <div className="lnf-shipping-activity__header">
-        <div>
-          <h4 className="lnf-shipping-activity__title">{title}</h4>
-          <p className="lnf-shipping-activity__meta">{eventCountLabel}</p>
-        </div>
-        <button
-          type="button"
-          className="lnf-shipping-activity__close"
-          onClick={() => onOpenChange(false)}
-        >
-          Hide
-        </button>
-      </div>
-
-      <ol ref={listRef} className="lnf-shipping-timeline__list">
-        {rows.map((row) => {
-          const colors = toneStyles(row.tone);
-          const exact =
-            row.createdAt && !Number.isNaN(new Date(row.createdAt).getTime())
-              ? new Date(row.createdAt).toLocaleString()
-              : null;
-          const pending = row.kind === "milestone" || !row.createdAt;
-          const flashing = flashIds.has(row.id);
-          return (
-            <li
-              key={row.id}
-              data-timeline-row={row.id}
-              className={`lnf-shipping-timeline__row${
-                flashing ? " lnf-shipping-timeline__row--flash" : ""
-              }`}
-              style={{ borderLeftColor: colors.border }}
-            >
-              <span aria-hidden="true" className="lnf-shipping-timeline__icon">
-                {row.icon}
-              </span>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="lnf-shipping-timeline__label-row">
-                  <div
-                    style={{
-                      color: colors.label,
-                      fontSize: "12px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {row.label}
-                  </div>
-                  {pending ? (
-                    <span className="lnf-shipping-timeline__pending">Pending</span>
-                  ) : null}
-                </div>
-                <div
-                  className="lnf-shipping-timeline__when"
-                  title={exact || undefined}
-                >
-                  {row.createdAt ? (
-                    <>
-                      <span>{formatRelativeTimestamp(row.createdAt)}</span>
-                      {exact ? (
-                        <span style={{ opacity: 0.85 }}> · {exact}</span>
-                      ) : null}
-                    </>
-                  ) : (
-                    "Not yet recorded"
-                  )}
-                  {row.actor ? ` · ${row.actor}` : ""}
-                </div>
-                {row.notes ? <TimelineNotes notes={row.notes} /> : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
-
 function SummaryField({
   label,
   value,
@@ -371,7 +156,6 @@ export default function LostFoundShippingSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [activityHistoryOpen, setActivityHistoryOpen] = useState(false);
   const [guestLinks, setGuestLinks] = useState<Record<number, string>>({});
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [linkBusyId, setLinkBusyId] = useState<number | null>(null);
@@ -418,10 +202,6 @@ export default function LostFoundShippingSection({
     },
     [itemId, onItemMayHaveChanged]
   );
-
-  useEffect(() => {
-    setActivityHistoryOpen(false);
-  }, [itemId]);
 
   useEffect(() => {
     void loadRequests();
@@ -708,15 +488,6 @@ export default function LostFoundShippingSection({
           .join(", ")
       : "Not available";
 
-  const lastViewed = activeRequest
-    ? guestLastViewedFromTimeline(
-        (activeRequest.timeline || []).map((entry) => ({
-          eventType: entry.eventType,
-          createdAt: entry.createdAt,
-        }))
-      )
-    : null;
-
   const linkBusy = activeRequest ? linkBusyId === activeRequest.id : false;
 
   return (
@@ -779,16 +550,6 @@ export default function LostFoundShippingSection({
               label="Guest email"
               value={activeRequest.guestEmail || "Not available"}
             />
-            <SummaryField
-              label="Guest viewed"
-              value={
-                lastViewed
-                  ? `${formatRelativeTimestamp(lastViewed)} · ${formatLocalDate(
-                      lastViewed
-                    )}`
-                  : "Not viewed yet"
-              }
-            />
             <SummaryField label="Destination" value={destination} />
             <SummaryField
               label="Carrier"
@@ -799,15 +560,15 @@ export default function LostFoundShippingSection({
               value={activeRequest.selectedService || "Not available"}
             />
             <SummaryField
-              label="Payment status"
-              value={paymentLabel(activeRequest.paymentStatus)}
-            />
-            <SummaryField
               label="Shipping cost"
               value={formatMoney(
                 activeRequest.amountPaid ?? activeRequest.totalAmount,
                 activeRequest.currency
               )}
+            />
+            <SummaryField
+              label="Payment status"
+              value={paymentLabel(activeRequest.paymentStatus)}
             />
             <SummaryField
               label="Label status"
@@ -841,12 +602,6 @@ export default function LostFoundShippingSection({
                   "Not available"
                 )
               }
-            />
-            <SummaryField
-              label="Carrier status"
-              value={carrierTrackingStatusLabel(
-                activeRequest.carrierTrackingStatus
-              )}
             />
             <SummaryField
               label="Estimated delivery"
@@ -885,14 +640,6 @@ export default function LostFoundShippingSection({
                   ? "Preparing…"
                   : "Copy Guest Link"}
             </button>
-            <button
-              type="button"
-              style={linkButtonStyle()}
-              aria-expanded={activityHistoryOpen}
-              onClick={() => setActivityHistoryOpen((current) => !current)}
-            >
-              {activityHistoryOpen ? "Hide Activity History" : "View Activity History"}
-            </button>
             {hasUsableLabel(activeRequest, itemLabelUrl) &&
             !activeRequest.labelPrintedAt &&
             workflowStatus === LOST_ITEM_STATUS.readyToShip ? (
@@ -906,12 +653,6 @@ export default function LostFoundShippingSection({
               </button>
             ) : null}
           </div>
-
-          <ShippingTimelinePanel
-            timeline={activeRequest.timeline || []}
-            open={activityHistoryOpen}
-            onOpenChange={setActivityHistoryOpen}
-          />
         </div>
       )}
 

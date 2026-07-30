@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-import { Trash2, Eye, SlidersHorizontal, Package, Check, X, Plus, Search } from "lucide-react";
+import { Eye, SlidersHorizontal, Package, Trash2, X, Plus, Search, Check } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
 import OneEyrieDesktopHeaderActions from "@/app/components/OneEyrieDesktopHeaderActions";
@@ -14,7 +14,8 @@ import LostFoundAddItemModal, {
   type LostFoundAddItemFormData,
 } from "@/app/lost-and-found/components/LostFoundAddItemModal";
 import LostFoundShippingSection from "@/app/lost-and-found/components/LostFoundShippingSection";
-import GuestShippingRequestForm from "@/app/lost-and-found/components/GuestShippingRequestForm";
+import LostFoundItemActionsMenu from "@/app/lost-and-found/components/LostFoundItemActionsMenu";
+import SendShippingRequestModal from "@/app/lost-and-found/components/SendShippingRequestModal";
 import { formatLostFoundLocationDisplay } from "@/app/lost-and-found/lib/format-location-display";
 import {
   LOST_ITEM_STATUS,
@@ -85,8 +86,14 @@ export default function LostAndFoundPage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersDropdownRef = useRef<HTMLDivElement>(null);
+  const [actionsMenuItemId, setActionsMenuItemId] = useState<number | string | null>(
+    null
+  );
+  const [sendModalItem, setSendModalItem] = useState<any | null>(null);
+  const [commentEditItem, setCommentEditItem] = useState<any | null>(null);
 
   const readyToShipCount = lostItems.filter(
     (item) => displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
@@ -190,6 +197,12 @@ setTeamMembers(allTeamMembers || []);
   }, [successToast]);
 
   useEffect(() => {
+    if (!actionError) return;
+    const timer = window.setTimeout(() => setActionError(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [actionError]);
+
+  useEffect(() => {
     if (!filtersOpen) return;
 
     function handlePointerDown(event: MouseEvent) {
@@ -246,13 +259,6 @@ setTeamMembers(allTeamMembers || []);
 
     setSuccessToast("Item added successfully.");
     return true;
-  }
-
-  async function deleteItem(id: string) {
-    if (!confirm("Delete this item?")) return;
-
-    await tenantFetch(`/api/lost-and-found/${id}`, { method: "DELETE" });
-    fetchItems();
   }
 
   async function updateStatus(id: string, status: string) {
@@ -545,16 +551,13 @@ setTeamMembers(allTeamMembers || []);
             letterSpacing: "0.6px",
           }}
         >
-          <th className="col-delete" style={thStyle}></th>
           <th className="col-guest" style={thStyle}>Guest</th>
           <th className="col-location" style={thStyle}>Location</th>
           <th className="col-item" style={thStyle}>Item</th>
           <th className="col-status one-eyrie-lnf-status-header" style={thStyle}>Status</th>
-          <th className="col-send-label one-eyrie-table__cell--wrap" style={thStyle}>Guest Shipping</th>
           <th className="col-date" style={thStyle}>Date</th>
-          <th className="col-comments one-eyrie-table__cell--wrap" style={thStyle}>Comments</th>
-          <th className="col-label" style={thStyle}>Label</th>
           <th className="col-view one-eyrie-table__cell--actions" style={{ ...thStyle, textAlign: "center" }}>View</th>
+          <th className="col-actions one-eyrie-table__cell--actions" style={{ ...thStyle, textAlign: "center" }}>Actions</th>
         </tr>
       </thead>
 
@@ -570,17 +573,6 @@ setTeamMembers(allTeamMembers || []);
                 : "one-eyrie-table-row"
             }
           >
-            <td className="col-delete one-eyrie-table__cell--actions" style={tdStyle}>
-  <button
-    type="button"
-    onClick={() => deleteItem(item.id)}
-    className="one-eyrie-icon-btn"
-    title="Delete item"
-  >
-    <Trash2 size={16} />
-  </button>
-</td>
-
             <td
               className="col-guest one-eyrie-truncate"
               style={tdStyle}
@@ -623,65 +615,47 @@ setTeamMembers(allTeamMembers || []);
               </div>
             </td>
 
-            <td className="col-send-label one-eyrie-table__cell--wrap" style={tdStyle}>
-              <GuestShippingRequestForm
-                itemId={item.id}
-                guestLastName={item.guest_last_name}
-                itemName={item.item_name}
-                onSent={() => {
-                  void fetchItems();
-                }}
-              />
-            </td>
-
             <td className="col-date" style={{ ...tdStyle, color: "#E5E7EB" }} title={item.created_at ? new Date(item.created_at).toLocaleDateString() : undefined}>
               {item.created_at
                 ? new Date(item.created_at).toLocaleDateString()
                 : "—"}
             </td>
 
-            <td className="col-comments one-eyrie-table__cell--wrap" style={tdStyle}>
-              <LostFoundCommentCell
-                itemId={item.id}
-                comments={item.comments}
-                onSave={updateComments}
+            <td className="col-view one-eyrie-table__cell--actions" style={{ ...tdStyle, textAlign: "center" }}>
+              <button
+                type="button"
+                onClick={() => setSelectedItem(item)}
+                className="one-eyrie-icon-btn"
+                title="View details"
+              >
+                <Eye size={18} />
+              </button>
+            </td>
+
+            <td className="col-actions one-eyrie-table__cell--actions" style={{ ...tdStyle, textAlign: "center" }}>
+              <LostFoundItemActionsMenu
+                item={item}
+                open={actionsMenuItemId === item.id}
+                onOpenChange={(nextOpen) =>
+                  setActionsMenuItemId(nextOpen ? item.id : null)
+                }
+                onSendShippingRequest={() => setSendModalItem(item)}
+                onEditComment={() => setCommentEditItem(item)}
+                onDeleted={() => {
+                  void fetchItems();
+                  setSelectedItem((current: any | null) =>
+                    current && String(current.id) === String(item.id)
+                      ? null
+                      : current
+                  );
+                }}
+                onRefresh={() => {
+                  void fetchItems();
+                }}
+                onError={(message) => setActionError(message)}
+                onToast={(message) => setSuccessToast(message)}
               />
             </td>
-
-            <td className="col-label one-eyrie-truncate" style={tdStyle}>
-              {item.label_url ? (
-                <a
-                  href={item.label_url}
-                  target="_blank"
-                  title="View label"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    color: ONE_EYRIE.text,
-                    textDecoration: "none",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                  }}
-                >
-                  <Check size={14} color={FOREST.border} strokeWidth={2.5} />
-                  Label
-                </a>
-              ) : (
-                <span style={{ color: "#6B7280" }}>—</span>
-              )}
-            </td>
-
-            <td className="col-view one-eyrie-table__cell--actions" style={{ ...tdStyle, textAlign: "center" }}>
-  <button
-    type="button"
-    onClick={() => setSelectedItem(item)}
-    className="one-eyrie-icon-btn"
-    title="View details"
-  >
-    <Eye size={18} />
-  </button>
-</td>
           </tr>
           );
         })}
@@ -815,6 +789,22 @@ setTeamMembers(allTeamMembers || []);
             void fetchItems();
           }}
         />
+
+        <section className="lnf-item-details-section lnf-item-details-section--comments" aria-label="Comments">
+          <h3 className="lnf-item-details-section__title">Comments</h3>
+          <LostFoundCommentCell
+            itemId={selectedItem.id}
+            comments={selectedItem.comments}
+            onSave={async (id, comments) => {
+              await updateComments(id, comments);
+              setSelectedItem((current: any | null) =>
+                current && String(current.id) === String(id)
+                  ? { ...current, comments }
+                  : current
+              );
+            }}
+          />
+        </section>
       </div>
 
       <div className="lnf-item-details-modal__footer">
@@ -837,6 +827,119 @@ setTeamMembers(allTeamMembers || []);
           onClose={() => setShowAddModal(false)}
           onSubmit={submitNewItem}
         />
+
+        <SendShippingRequestModal
+          open={Boolean(sendModalItem)}
+          item={{
+            id: Number(sendModalItem?.id),
+            item_name: sendModalItem?.item_name,
+            guest_last_name: sendModalItem?.guest_last_name,
+          }}
+          onClose={() => setSendModalItem(null)}
+          onCreated={() => {
+            setSendModalItem(null);
+            setSuccessToast("Guest shipping email sent.");
+            void fetchItems();
+          }}
+        />
+
+        {commentEditItem ? (
+          <div
+            style={ONE_EYRIE_MODAL_OVERLAY}
+            onClick={() => setCommentEditItem(null)}
+          >
+            <div
+              className="lnf-comment-edit-modal"
+              style={{
+                ...ONE_EYRIE_MODAL_BOX,
+                width: "420px",
+                maxWidth: "calc(100vw - 24px)",
+                padding: 0,
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div
+                style={{
+                  ...ONE_EYRIE_MODAL_HEADER,
+                  marginBottom: 0,
+                  padding: "16px 18px 12px",
+                  borderBottom: `1px solid ${ONE_EYRIE.borderDivider}`,
+                }}
+              >
+                <h2 style={{ margin: 0, color: gold, fontSize: "16px" }}>
+                  {commentEditItem.comments?.trim()
+                    ? "Edit Comment"
+                    : "Add Comment"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setCommentEditItem(null)}
+                  style={ONE_EYRIE_MODAL_CLOSE_BUTTON}
+                  aria-label="Close"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div style={{ padding: "16px 18px 18px" }}>
+                <LostFoundCommentCell
+                  itemId={commentEditItem.id}
+                  comments={commentEditItem.comments}
+                  onSave={async (id, comments) => {
+                    await updateComments(id, comments);
+                    setCommentEditItem(null);
+                    setSelectedItem((current: any | null) =>
+                      current && String(current.id) === String(id)
+                        ? { ...current, comments }
+                        : current
+                    );
+                    setSuccessToast("Comment saved.");
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {actionError ? (
+          <div
+            role="alert"
+            className="lnf-action-error-toast"
+            style={{
+              position: "fixed",
+              bottom: "28px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 1000,
+              padding: "12px 18px",
+              borderRadius: "10px",
+              border: "1px solid #F87171",
+              background: "#3F1D1D",
+              color: "#FECACA",
+              fontSize: "13px",
+              fontWeight: 700,
+              boxShadow: "0 10px 28px rgba(0, 0, 0, 0.45)",
+              maxWidth: "min(520px, calc(100vw - 32px))",
+            }}
+          >
+            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+              <span style={{ flex: 1 }}>{actionError}</span>
+              <button
+                type="button"
+                onClick={() => setActionError(null)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#FECACA",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontWeight: 800,
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {successToast ? (
           <div
@@ -925,15 +1028,18 @@ const searchInputStyle: React.CSSProperties = {
 };
 
 const thStyle: React.CSSProperties = {
-  padding: "9px 8px",
+  padding: "8px 20px 10px",
   fontSize: "12px",
   textTransform: "uppercase",
+  verticalAlign: "middle",
+  textAlign: "left",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "10px 8px",
+  padding: "10px 20px",
   verticalAlign: "middle",
   fontSize: "13px",
+  textAlign: "left",
 };
 const actionMenuItem: React.CSSProperties = {
   display: "flex",
