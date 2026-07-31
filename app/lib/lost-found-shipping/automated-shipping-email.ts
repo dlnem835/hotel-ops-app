@@ -3,7 +3,10 @@ import "server-only";
 import { escapeHtml } from "@/app/lib/email/escape-html";
 import { EMAIL_THEME as T } from "@/app/lib/email/brand";
 import { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
-import { AUTOMATED_SHIPPING_EMAIL_CTA, AUTOMATED_SHIPPING_EMAIL_HEADING } from "@/app/lib/lost-found-shipping/email-copy";
+import {
+  AUTOMATED_SHIPPING_EMAIL_CTA,
+  AUTOMATED_SHIPPING_EMAIL_HEADING,
+} from "@/app/lib/lost-found-shipping/email-copy";
 
 export type AutomatedShippingEmailInput = {
   guestName?: string | null;
@@ -22,6 +25,10 @@ export type AutomatedShippingEmailContent = {
   html: string;
   text: string;
 };
+
+function darkFill(color: string): string {
+  return `background-color:${color} !important;background-image:linear-gradient(${color},${color}) !important;`;
+}
 
 function greeting(guestName?: string | null): { html: string; text: string } {
   const name = guestName?.trim();
@@ -49,6 +56,7 @@ function formatExpiry(expiresAt?: string | null): string | null {
 
 /**
  * Guest email for automated Shippo/Stripe shipping (single CTA — no carrier buttons).
+ * Body cells use the same dark One Eyrie fills as the shared shell (Gmail-safe).
  */
 export function buildAutomatedShippingEmail(
   input: AutomatedShippingEmailInput
@@ -62,51 +70,51 @@ export function buildAutomatedShippingEmail(
 
   const subject = `${propertyName} found your item — arrange return shipping`;
 
-  const cell = `font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${T.textMuted} !important;background-color:${T.card};`;
-  const contactCell = `font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted} !important;background-color:${T.charcoal};`;
+  const para = `padding:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${T.textMuted} !important;${darkFill(T.card)}`;
+  const contactLine = `padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted} !important;${darkFill(T.charcoal)}`;
 
   const contactLinesHtml = [
     phone
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:6px;${contactCell}">Phone: ${escapeHtml(phone)}</td></tr>`
+      ? `<tr><td bgcolor="${T.charcoal}" class="oe-inset oe-text oe-autolink" style="${contactLine}">Phone: ${escapeHtml(phone)}</td></tr>`
       : "",
     address
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:8px;${contactCell}">${escapeHtml(address)}</td></tr>`
+      ? `<tr><td bgcolor="${T.charcoal}" class="oe-inset oe-text oe-autolink" style="padding-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted} !important;${darkFill(T.charcoal)}"><span class="oe-autolink" style="color:${T.textMuted} !important;text-decoration:none;">${escapeHtml(address)}</span></td></tr>`
       : "",
   ].join("");
 
   const bodyHtml = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="width:100%;background-color:${T.card};">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" class="oe-card" style="width:100%;${darkFill(T.card)}">
       <tr>
-        <td bgcolor="${T.card}" style="padding:0 0 14px;${cell}">
+        <td bgcolor="${T.card}" class="oe-text oe-body-copy" style="${para}">
           ${hello.html}
         </td>
       </tr>
       <tr>
-        <td bgcolor="${T.card}" style="padding:0 0 14px;${cell}">
+        <td bgcolor="${T.card}" class="oe-text oe-body-copy" style="${para}">
           Good news — <strong style="color:${T.text} !important;">${escapeHtml(propertyName)}</strong>
           has located <strong style="color:${T.text} !important;">${escapeHtml(itemName)}</strong>
           and can ship it back to you.
         </td>
       </tr>
       <tr>
-        <td bgcolor="${T.card}" style="padding:0 0 14px;${cell}">
+        <td bgcolor="${T.card}" class="oe-text oe-body-copy" style="${para}">
           Use the secure link below to confirm your address, choose a shipping option,
           and pay for return shipping. You&rsquo;ll pick the carrier and service on the next page.
         </td>
       </tr>
       <tr>
-        <td bgcolor="${T.card}" style="padding:0 0 4px;background-color:${T.card};">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="width:100%;background-color:${T.charcoal};border:1px solid ${T.border};border-radius:12px;">
+        <td bgcolor="${T.card}" class="oe-card" style="padding:0 0 4px;${darkFill(T.card)}">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" class="oe-inset" style="width:100%;${darkFill(T.charcoal)}border:1px solid ${T.border};border-radius:12px;">
             <tr>
-              <td bgcolor="${T.charcoal}" style="padding:14px;background-color:${T.charcoal};">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="background-color:${T.charcoal};">
+              <td bgcolor="${T.charcoal}" class="oe-inset" style="padding:14px;${darkFill(T.charcoal)}">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="${darkFill(T.charcoal)}">
                   <tr>
-                    <td bgcolor="${T.charcoal}" style="background-color:${T.charcoal};color:${T.gold} !important;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
+                    <td bgcolor="${T.charcoal}" class="oe-label" style="${darkFill(T.charcoal)}color:${T.gold} !important;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
                       Hotel contact
                     </td>
                   </tr>
                   <tr>
-                    <td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.text} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
+                    <td bgcolor="${T.charcoal}" class="oe-heading" style="padding-top:6px;${darkFill(T.charcoal)}color:${T.text} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
                       ${escapeHtml(propertyName)}
                     </td>
                   </tr>
@@ -119,7 +127,7 @@ export function buildAutomatedShippingEmail(
       </tr>
       ${
         expiryLabel
-          ? `<tr><td bgcolor="${T.card}" style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${T.textSubtle} !important;background-color:${T.card};">This link remains available until ${escapeHtml(expiryLabel)}.</td></tr>`
+          ? `<tr><td bgcolor="${T.card}" class="oe-subtle" style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${T.textSubtle} !important;${darkFill(T.card)}">This link remains available until ${escapeHtml(expiryLabel)}.</td></tr>`
           : ""
       }
     </table>
