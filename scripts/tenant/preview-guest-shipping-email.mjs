@@ -68,13 +68,13 @@ if (jsonStart < 0) {
 
 const content = JSON.parse(stdout.slice(jsonStart));
 
+/** Checks for restored 598bc6c dark shell + current heading/CTA. */
 function diagnose(html) {
   const findings = [];
   const whitePatterns = [
     /background(?:-color)?\s*:\s*#fff(?:fff)?\b/gi,
     /background(?:-color)?\s*:\s*white\b/gi,
     /background(?:-color)?\s*:\s*rgb\s*\(\s*255\s*,\s*255\s*,\s*255\s*\)/gi,
-    /background(?:-color)?\s*:\s*transparent\b/gi,
     /bgcolor\s*=\s*["']#fff(?:fff)?["']/gi,
     /bgcolor\s*=\s*["']white["']/gi,
   ];
@@ -90,147 +90,53 @@ function diagnose(html) {
     }
   }
 
-  if (/color-scheme|prefers-color-scheme/i.test(html)) {
-    findings.push({ severity: "error", issue: "color_scheme_meta_or_css" });
+  if (!/Your Lost Item Has Been Found/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_current_heading" });
   }
-  if (/@media/i.test(html)) {
-    findings.push({ severity: "error", issue: "media_query_present" });
+  if (!/Choose Shipping and Pay/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_current_cta" });
   }
-  if (/min-width\s*:/i.test(html)) {
-    findings.push({ severity: "error", issue: "min_width_present" });
-  }
-
-  const attrWidths = [...html.matchAll(/\bwidth\s*=\s*["'](\d+)["']/gi)].map(
-    (m) => Number(m[1])
-  );
-  const styleWidths = [
-    ...html.matchAll(/(?:^|[^a-z-])width\s*:\s*(\d+)px/gi),
-  ].map((m) => Number(m[1]));
-  const over = [...attrWidths, ...styleWidths].filter((n) => n > 600);
-  if (over.length) {
+  if (/We['’]ve Located Your Item/i.test(html)) {
     findings.push({
       severity: "error",
-      issue: "width_over_600",
-      values: over,
-    });
-  }
-
-  const withoutMso = html.replace(
-    /<!--\[if mso\]>[\s\S]*?<!\[endif\]-->/gi,
-    ""
-  );
-  if (/\bwidth\s*=\s*["']600["']/i.test(withoutMso)) {
-    findings.push({
-      severity: "error",
-      issue: "fixed_width_600_attr_outside_mso",
-    });
-  }
-  if (/(?:^|[^a-z-])width\s*:\s*600px/i.test(withoutMso)) {
-    findings.push({
-      severity: "error",
-      issue: "fixed_width_600_style_outside_mso",
-    });
-  }
-
-  const riskyDivs = [...html.matchAll(/<div\b([^>]*)>/gi)].filter((m) => {
-    const attrs = m[1] || "";
-    const hasColor = /color\s*:/i.test(attrs);
-    const hasBg = /background-color\s*:|bgcolor\s*=/i.test(attrs);
-    const isHidden = /display\s*:\s*none/i.test(attrs);
-    return hasColor && !hasBg && !isHidden;
-  });
-  if (riskyDivs.length) {
-    findings.push({
-      severity: "error",
-      issue: "div_text_without_background",
-      count: riskyDivs.length,
+      issue: "old_598bc6c_heading_still_present",
     });
   }
 
   const hasBlackOuter =
     /bgcolor\s*=\s*["']#111111["']/i.test(html) &&
     /background-color\s*:\s*#111111/i.test(html);
-
-  const hasFluidInner = /max-width\s*:\s*600px/i.test(html);
-
-  // Greeting/body must sit on continuous #1a1a1a (not a separate card surface).
-  const helloIdx = html.search(/Hello\s+/i);
-  const goodNewsIdx = html.search(/Good news/i);
-  const instructionsIdx = html.search(/Use the secure link below/i);
-  const headingIdx = html.search(
-    /<td\b[^>]*>[\s\S]{0,80}?Your Lost Item Has Been Found/i
-  );
-
-  function nearHasSurface(idx, label) {
-    if (idx < 0) return;
-    const window = html.slice(Math.max(0, idx - 500), idx + 120);
-    if (!/#1a1a1a/i.test(window)) {
-      findings.push({
-        severity: "error",
-        issue: `${label}_missing_1a1a1a_near_context`,
-      });
-    }
-    if (!/background\s*:\s*#1a1a1a/i.test(window) || !/background-color\s*:\s*#1a1a1a/i.test(window)) {
-      findings.push({
-        severity: "error",
-        issue: `${label}_missing_dual_background_shorthand`,
-      });
-    }
+  if (!hasBlackOuter) {
+    findings.push({ severity: "error", issue: "missing_black_outer" });
   }
 
-  nearHasSurface(helloIdx, "greeting");
-  nearHasSurface(goodNewsIdx, "good_news");
-  nearHasSurface(instructionsIdx, "instructions");
-  nearHasSurface(headingIdx, "heading");
+  const hasCard =
+    /class="oe-email-card"/i.test(html) &&
+    /max-width\s*:\s*560px/i.test(html) &&
+    /border:\s*1px solid/i.test(html);
+  if (!hasCard) {
+    findings.push({ severity: "error", issue: "missing_598bc6c_card_shell" });
+  }
 
-  if (!/<tbody\b[^>]*bgcolor\s*=\s*["']#1a1a1a["']/i.test(html)) {
+  if (!/alt="One Eyrie"/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_logo_header" });
+  }
+
+  if (!/color-scheme:\s*dark light/i.test(html)) {
     findings.push({
       severity: "error",
-      issue: "missing_tbody_bgcolor_1a1a1a",
+      issue: "missing_598bc6c_color_scheme",
     });
   }
 
-  // Body copy must not be split across multiple sibling paragraph rows
-  // (that pattern produced white bands in Gmail Mobile).
-  const bodyRowSplits = (
-    html.match(/padding:0 0 14px;background[^>]*>[\s\S]*?(?:Hello|Good news|Use the secure)/gi) ||
-    []
-  ).length;
-  if (bodyRowSplits > 1) {
-    findings.push({
-      severity: "error",
-      issue: "body_still_split_across_multiple_painted_rows",
-      count: bodyRowSplits,
-    });
-  }
-
-  if (/#211F1B/i.test(html)) {
-    findings.push({
-      severity: "error",
-      issue: "legacy_211F1B_surface_present",
-      count: (html.match(/#211F1B/gi) || []).length,
-    });
-  }
-
-  // Every <td> should carry bgcolor (except none expected).
-  const tds = html.match(/<td\b[^>]*>/gi) || [];
-  const tdsMissingBgcolor = tds.filter((t) => !/bgcolor\s*=/i.test(t));
-  if (tdsMissingBgcolor.length) {
-    findings.push({
-      severity: "error",
-      issue: "td_missing_bgcolor",
-      count: tdsMissingBgcolor.length,
-      samples: tdsMissingBgcolor.slice(0, 3),
-    });
+  if (!/Hotel contact/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_hotel_contact_block" });
   }
 
   return {
-    ok:
-      findings.filter((f) => f.severity === "error").length === 0 &&
-      hasBlackOuter &&
-      hasFluidInner,
+    ok: findings.filter((f) => f.severity === "error").length === 0,
     hasBlackOuter,
-    hasFluidInner,
+    hasCard,
     htmlBytes: Buffer.byteLength(html, "utf8"),
     findings,
   };
