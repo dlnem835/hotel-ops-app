@@ -72,8 +72,8 @@ export async function sendGuestPaymentConfirmationEmail(input: {
               Tracking number: <strong style="color:${T.text} !important;">${escapeHtml(String(input.trackingNumber))}</strong>
               ${input.carrier ? `<br/>Carrier: ${escapeHtml(String(input.carrier))}${input.service ? ` · ${escapeHtml(String(input.service))}` : ""}` : ""}
             </td></tr>`
-          : `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">
-              The hotel is preparing your shipping label. Use your secure link anytime to check status and tracking.
+          : `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;">
+              Payment received — preparing shipping label. Use your secure link anytime to check status and tracking.
             </td></tr>`
       }
     </table>
@@ -102,7 +102,7 @@ export async function sendGuestPaymentConfirmationEmail(input: {
     `We received your payment${amountLabel ? ` of ${amountLabel}` : ""} for return shipping of ${input.itemName} from ${input.propertyName}.`,
     hasTracking
       ? `Tracking number: ${input.trackingNumber}`
-      : "The hotel is preparing your shipping label. Check status with the secure link from your original shipping email.",
+      : "Payment received — preparing shipping label. Check status with the secure link from your original shipping email.",
     trackingLink ? `\n${trackingLink}` : "",
     "",
     "One Eyrie — Hotel Operations Platform",

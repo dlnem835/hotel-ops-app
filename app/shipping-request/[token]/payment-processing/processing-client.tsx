@@ -93,7 +93,7 @@ export default function ShippingPaymentProcessingClient() {
             goToSuccess(
               labelReady
                 ? "Payment confirmed. Opening your shipment tracking…"
-                : "Payment confirmed. Opening your shipping request…"
+                : "Payment received — preparing shipping label."
             );
             return;
           }
@@ -109,7 +109,7 @@ export default function ShippingPaymentProcessingClient() {
               next.state === "in_transit" ||
               next.state === "delivered"
               ? "Payment confirmed. Opening your shipment tracking…"
-              : "Payment confirmed. Opening your shipping request…"
+              : "Payment received — preparing shipping label."
           );
           return;
         }
@@ -169,7 +169,9 @@ export default function ShippingPaymentProcessingClient() {
                 aria-label="Processing payment"
               />
             ) : null}
-            <h3>{done ? "All set" : "Processing payment"}</h3>
+            <h3>
+              {done ? "Payment received — preparing shipping label." : "Processing payment"}
+            </h3>
             <p>{message}</p>
             {!done ? (
               <div className="shipping-request-processing-dots" aria-hidden="true">

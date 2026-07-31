@@ -716,11 +716,15 @@ export default function ShippingRequestGuestPage() {
             <GuestShipmentTrackingCard view={view} />
           ) : (
             <div className="shipping-request-status-card">
-              <h3>Payment received</h3>
+              <h3>
+                {view.fulfillmentStatus === "needs_manual_review"
+                  ? "Payment received — label creation failed. Hotel has been notified."
+                  : "Payment received — preparing shipping label."}
+              </h3>
               <p>
                 {view.fulfillmentStatus === "needs_manual_review"
-                  ? "Your payment is confirmed. The hotel is finishing your shipping label — this page updates automatically when tracking is available."
-                  : "We are preparing your shipping label. This usually takes a moment — this page updates automatically."}
+                  ? "This page updates automatically when tracking is available. You will not be charged again."
+                  : "This usually takes a moment — this page updates automatically."}
               </p>
             </div>
           )}

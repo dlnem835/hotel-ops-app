@@ -8,11 +8,10 @@ import {
 import type { TransactionalEmailLayoutInput } from "@/app/lib/email/types";
 
 /**
- * Gmail mobile (esp. dark theme) often ignores or inverts plain background-color.
- * Pair bgcolor + background-color + identical linear-gradient so the dark shell
- * survives mobile Gmail without changing desktop appearance.
+ * Email-safe solid background. Same colors on every client —
+ * no separate mobile palette or layout fork.
  */
-function gmailSafeBg(color: string): string {
+function solidBg(color: string): string {
   return `background-color:${color};background-image:linear-gradient(${color},${color});`;
 }
 
@@ -25,49 +24,47 @@ function renderHeader(): string {
       <td
         align="center"
         bgcolor="${T.charcoal}"
-        style="padding:36px 32px 28px;${gmailSafeBg(T.charcoal)}border-bottom:3px solid ${T.gold};"
+        class="oe-email-header-pad"
+        style="padding:20px 24px 16px;${solidBg(T.charcoal)}border-bottom:2px solid ${T.gold};"
       >
         <a href="${siteOrigin}" style="text-decoration:none;color:${T.gold};">
           <img
             src="${logoUrl}"
-            width="120"
+            width="96"
             alt="One Eyrie"
-            style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;max-width:120px;height:auto;"
+            style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;max-width:96px;height:auto;"
           />
         </a>
       </td>
     </tr>`;
 }
 
+/** Bulletproof CTA ~48–52px tall — same on desktop and mobile. */
 function renderCta(label: string, url: string): string {
   const safeLabel = escapeHtml(label);
   const safeUrl = escapeHtml(url);
 
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" width="100%" bgcolor="${T.card}" style="margin:8px auto 0;${gmailSafeBg(T.card)}">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:4px auto 0;">
       <tr>
-        <td
-          align="center"
-          bgcolor="${T.card}"
-          style="padding:0;${gmailSafeBg(T.card)}"
-        >
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="${T.gold}" style="${gmailSafeBg(T.gold)}border-radius:999px;">
-            <tr>
-              <td
-                align="center"
-                bgcolor="${T.gold}"
-                style="border-radius:999px;${gmailSafeBg(T.gold)}"
-              >
-                <a
-                  href="${safeUrl}"
-                  target="_blank"
-                  style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;line-height:1.2;color:${T.buttonText} !important;text-decoration:none;border-radius:999px;${gmailSafeBg(T.gold)}"
-                >
-                  ${safeLabel}
-                </a>
-              </td>
-            </tr>
-          </table>
+        <td align="center" bgcolor="${T.gold}" style="border-radius:8px;${solidBg(T.gold)}">
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="10%" stroke="f" fillcolor="${T.gold}">
+            <w:anchorlock/>
+            <center style="color:${T.buttonText};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;">
+              ${safeLabel}
+            </center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <a
+            href="${safeUrl}"
+            target="_blank"
+            style="display:inline-block;min-height:50px;line-height:50px;padding:0 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;color:${T.buttonText} !important;text-decoration:none;border-radius:8px;${solidBg(T.gold)}"
+          >
+            ${safeLabel}
+          </a>
+          <!--<![endif]-->
         </td>
       </tr>
     </table>`;
@@ -78,24 +75,18 @@ function renderSupportBlock(message: string): string {
 
   return `
     <tr>
-      <td
-        bgcolor="${T.card}"
-        style="padding:0 32px 28px;${gmailSafeBg(T.card)}"
-      >
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="${gmailSafeBg(T.card)}">
+      <td bgcolor="${T.card}" class="oe-email-pad" style="padding:0 24px 20px;${solidBg(T.card)}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="${solidBg(T.card)}">
           <tr>
-            <td
-              bgcolor="${T.card}"
-              style="border-top:1px solid ${T.divider};padding-top:24px;${gmailSafeBg(T.card)}"
-            >
-              <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold} !important;${gmailSafeBg(T.card)}">
+            <td style="border-top:1px solid ${T.divider};padding-top:16px;${solidBg(T.card)}">
+              <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold} !important;">
                 Need Help?
               </p>
-              <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:${T.textMuted} !important;${gmailSafeBg(T.card)}">
+              <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted} !important;">
                 ${escapeHtml(message)}
               </p>
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${T.goldLight} !important;${gmailSafeBg(T.card)}">
-                <a href="mailto:${support}" style="color:${T.goldLight} !important;text-decoration:none;${gmailSafeBg(T.card)}">${support}</a>
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${T.goldLight} !important;">
+                <a href="mailto:${support}" style="color:${T.goldLight} !important;text-decoration:none;">${support}</a>
               </p>
             </td>
           </tr>
@@ -107,22 +98,14 @@ function renderSupportBlock(message: string): string {
 function renderFooter(currentYear: number): string {
   return `
     <tr>
-      <td
-        align="center"
-        bgcolor="${T.card}"
-        style="padding:8px 32px 36px;${gmailSafeBg(T.card)}"
-      >
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="${gmailSafeBg(T.card)}">
+      <td align="center" bgcolor="${T.card}" class="oe-email-pad" style="padding:0 24px 24px;${solidBg(T.card)}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="${solidBg(T.card)}">
           <tr>
-            <td
-              align="center"
-              bgcolor="${T.card}"
-              style="border-top:1px solid ${T.divider};padding-top:22px;${gmailSafeBg(T.card)}"
-            >
-              <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle} !important;${gmailSafeBg(T.card)}">
+            <td align="center" style="border-top:1px solid ${T.divider};padding-top:16px;${solidBg(T.card)}">
+              <p style="margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle} !important;">
                 &copy; ${currentYear} One Eyrie
               </p>
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${T.textSubtle} !important;${gmailSafeBg(T.card)}">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle} !important;">
                 Hotel Operations Platform
               </p>
             </td>
@@ -133,10 +116,9 @@ function renderFooter(currentYear: number): string {
 }
 
 /**
- * Shared One Eyrie transactional email shell.
- * Dark charcoal card, gold accents — desktop appearance preserved.
- * Mobile Gmail: explicit bgcolor + linear-gradient backgrounds + inline text colors
- * so light text never sits on a forced white section.
+ * Single responsive transactional email for all devices.
+ * Dark charcoal card, gold accents — identical colors on desktop and mobile.
+ * Clients scale naturally; only horizontal padding tightens on small screens.
  */
 export function renderTransactionalEmailHtml(
   input: TransactionalEmailLayoutInput
@@ -154,7 +136,7 @@ export function renderTransactionalEmailHtml(
 
   const ctaHtml = input.cta ? renderCta(input.cta.label, input.cta.url) : "";
   const belowCta = input.belowCtaHtml
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="margin-top:20px;${gmailSafeBg(T.card)}"><tr><td bgcolor="${T.card}" style="${gmailSafeBg(T.card)}color:${T.textMuted};">${input.belowCtaHtml}</td></tr></table>`
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:12px;${solidBg(T.card)}"><tr><td style="${solidBg(T.card)}color:${T.textMuted} !important;">${input.belowCtaHtml}</td></tr></table>`
     : "";
 
   return `<!DOCTYPE html>
@@ -165,9 +147,17 @@ export function renderTransactionalEmailHtml(
   <meta name="color-scheme" content="dark" />
   <meta name="supported-color-schemes" content="dark" />
   <title>${escapeHtml(input.heading)}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
   <style type="text/css">
-    :root { color-scheme: dark; supported-color-schemes: dark; }
-    body, table, td, a, p, h1, h2, h3 { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    body, table, td, a, p, h1 { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
     img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
     body {
@@ -175,43 +165,12 @@ export function renderTransactionalEmailHtml(
       padding: 0 !important;
       width: 100% !important;
       background-color: ${T.black} !important;
-      background-image: linear-gradient(${T.black}, ${T.black}) !important;
     }
-    /* Reinforce dark shell for clients that partially invert (Gmail mobile). */
-    .oe-email-outer,
-    .oe-email-outer td {
-      background-color: ${T.black} !important;
-      background-image: linear-gradient(${T.black}, ${T.black}) !important;
-    }
-    .oe-email-card,
-    .oe-email-card td {
-      background-color: ${T.card} !important;
-      background-image: linear-gradient(${T.card}, ${T.card}) !important;
-    }
-    .oe-email-header td {
-      background-color: ${T.charcoal} !important;
-      background-image: linear-gradient(${T.charcoal}, ${T.charcoal}) !important;
-    }
-    .oe-email-heading { color: ${T.text} !important; }
-    .oe-email-body-copy,
-    .oe-email-body-copy p,
-    .oe-email-body-copy td { color: ${T.textMuted} !important; }
-    .oe-email-body-copy strong { color: ${T.text} !important; }
-    /* Mobile: spacing only — same colors as desktop (no transparent wrappers). */
+    /* Spacing only — same colors and typography as desktop. */
     @media only screen and (max-width: 620px) {
+      .oe-email-shell { padding: 16px 12px !important; }
       .oe-email-pad { padding-left: 16px !important; padding-right: 16px !important; }
-      .oe-email-shell-pad { padding: 16px 10px !important; }
-      .oe-email-heading { font-size: 22px !important; line-height: 1.3 !important; color: ${T.text} !important; }
-      .oe-email-outer,
-      .oe-email-outer td {
-        background-color: ${T.black} !important;
-        background-image: linear-gradient(${T.black}, ${T.black}) !important;
-      }
-      .oe-email-card,
-      .oe-email-card td {
-        background-color: ${T.card} !important;
-        background-image: linear-gradient(${T.card}, ${T.card}) !important;
-      }
+      .oe-email-header-pad { padding-left: 16px !important; padding-right: 16px !important; }
     }
   </style>
   <!--[if mso]>
@@ -220,78 +179,42 @@ export function renderTransactionalEmailHtml(
   </style>
   <![endif]-->
 </head>
-<body
-  class="oe-email-body"
-  bgcolor="${T.black}"
-  style="margin:0;padding:0;width:100%;${gmailSafeBg(T.black)}"
->
+<body bgcolor="${T.black}" style="margin:0;padding:0;width:100%;${solidBg(T.black)}">
   ${preheader}
-  <table
-    role="presentation"
-    class="oe-email-outer"
-    cellpadding="0"
-    cellspacing="0"
-    border="0"
-    width="100%"
-    bgcolor="${T.black}"
-    style="width:100%;${gmailSafeBg(T.black)}"
-  >
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.black}" style="width:100%;${solidBg(T.black)}">
     <tr>
-      <td
-        align="center"
-        bgcolor="${T.black}"
-        class="oe-email-shell-pad"
-        style="padding:28px 16px;${gmailSafeBg(T.black)}"
-      >
+      <td align="center" bgcolor="${T.black}" class="oe-email-shell" style="padding:24px 16px;${solidBg(T.black)}">
         <!--[if mso]>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" bgcolor="${T.card}"><tr><td bgcolor="${T.card}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="${T.card}"><tr><td bgcolor="${T.card}">
         <![endif]-->
         <table
           role="presentation"
-          class="oe-email-card"
           cellpadding="0"
           cellspacing="0"
           border="0"
           width="100%"
           bgcolor="${T.card}"
-          style="max-width:560px;width:100%;${gmailSafeBg(T.card)}border:1px solid ${T.gold};border-radius:18px;"
+          style="max-width:600px;width:100%;${solidBg(T.card)}border:1px solid ${T.gold};border-radius:14px;"
         >
-          <tbody class="oe-email-header">
-            ${renderHeader()}
-          </tbody>
+          ${renderHeader()}
           <tr>
-            <td
-              bgcolor="${T.card}"
-              class="oe-email-pad"
-              style="padding:36px 32px 8px;${gmailSafeBg(T.card)}"
-            >
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="${gmailSafeBg(T.card)}">
+            <td bgcolor="${T.card}" class="oe-email-pad" style="padding:24px 24px 8px;${solidBg(T.card)}">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="${solidBg(T.card)}">
                 <tr>
-                  <td
-                    align="center"
-                    bgcolor="${T.card}"
-                    style="padding:0 0 22px;${gmailSafeBg(T.card)}"
-                  >
-                    <h1
-                      class="oe-email-heading"
-                      style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;font-weight:800;color:${T.text} !important;text-align:center;${gmailSafeBg(T.card)}"
-                    >
+                  <td align="center" style="padding:0 0 16px;${solidBg(T.card)}">
+                    <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:800;color:${T.text} !important;text-align:center;">
                       ${escapeHtml(input.heading)}
                     </h1>
                   </td>
                 </tr>
                 <tr>
-                  <td
-                    bgcolor="${T.card}"
-                    class="oe-email-body-copy"
-                    style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:${T.textMuted} !important;${gmailSafeBg(T.card)}"
-                  >
+                  <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${T.textMuted} !important;${solidBg(T.card)}">
                     ${input.bodyHtml}
                   </td>
                 </tr>
                 ${
                   ctaHtml || belowCta
-                    ? `<tr><td bgcolor="${T.card}" align="center" style="padding:28px 0 8px;${gmailSafeBg(T.card)}">${ctaHtml}${belowCta}</td></tr>`
+                    ? `<tr><td align="center" style="padding:20px 0 4px;${solidBg(T.card)}">${ctaHtml}${belowCta}</td></tr>`
                     : ""
                 }
               </table>

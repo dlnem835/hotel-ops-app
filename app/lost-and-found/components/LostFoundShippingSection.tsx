@@ -97,7 +97,9 @@ function labelStatusLabel(request: ShippingRequestListItem): string {
   ) {
     return "Payment received — label creation failed";
   }
-  if (request.paymentStatus === "paid") return "Awaiting purchase";
+  if (request.paymentStatus === "paid") {
+    return "Payment received — preparing shipping label.";
+  }
   return "Not created";
 }
 
@@ -401,9 +403,9 @@ export default function LostFoundShippingSection({
               >
                 {activeRequest.paymentStatus === "paid" &&
                 activeRequest.fulfillmentStatus === "needs_manual_review"
-                  ? `Payment received — label creation failed${
+                  ? `Payment received — label creation failed. Hotel has been notified.${
                       activeRequest.errorMessage
-                        ? `: ${activeRequest.errorMessage}`
+                        ? ` ${activeRequest.errorMessage}`
                         : ""
                     }`
                   : activeRequest.returnedToSender

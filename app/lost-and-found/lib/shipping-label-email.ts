@@ -71,7 +71,7 @@ export function buildShippingLabelEmailHtml({
 
     <div style="padding:30px 28px;">
       <h2 style="text-align:center;margin:0 0 18px;font-size:24px;color:${ONE_EYRIE.text};font-weight:800;">
-        We&rsquo;ve Located Your Item
+        Your Lost Item Has Been Found
       </h2>
 
       <p style="line-height:1.6;color:${ONE_EYRIE.textMuted};margin-bottom:18px;">

@@ -60,7 +60,7 @@ export type ShippingCurrentStep =
   | "Awaiting Guest Address"
   | "Awaiting Shipping Selection"
   | "Awaiting Guest Payment"
-  | "Awaiting Label Purchase"
+  | "Payment received — preparing shipping label."
   | "Payment received — label creation failed"
   | "Ready to Ship"
   | "Shipped"
@@ -86,7 +86,9 @@ export function deriveShippingCurrentStep(
   ) {
     return "Ready to Ship";
   }
-  if (input.paymentStatus === "paid") return "Awaiting Label Purchase";
+  if (input.paymentStatus === "paid") {
+    return "Payment received — preparing shipping label.";
+  }
   if (input.shipmentStatus === "awaiting_payment") {
     const hasSelection = Boolean(
       input.providerRateId || input.selectedCarrier || input.selectedService
