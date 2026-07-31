@@ -8,47 +8,45 @@ import {
 import type { TransactionalEmailLayoutInput } from "@/app/lib/email/types";
 
 /**
- * Conservative One Eyrie transactional email shell.
+ * Gmail Mobile white bands (Outlook OK) came from nested row structure:
+ * separate <tr>/<td> for heading, instructions, and expiry were left as
+ * implicit white containers when Gmail stripped/overrode cell CSS.
  *
- * Root cause of Gmail mobile white gaps / shrink:
- * - Fixed width="600" + width:600px forced Gmail to scale the whole message
- *   and often letterbox with a white canvas.
- * - Content lived in <div> wrappers with text color but NO background, so when
- *   Gmail discarded inherited card backgrounds those sections painted white
- *   (white text on white when inversion also ran).
- *
- * Fix: full-width #111111 outer tables; fluid inner (width=100%, max-width:600px);
- * tables only (no content divs); every cell has bgcolor + background-color +
- * explicit text colors. No color-scheme, media queries, or class-based paint.
+ * Structure fix (not another CSS tweak):
+ * - One master outer table (#111111)
+ * - One inner content table (#1a1a1a) with explicit <tbody>
+ * - Every table/tbody/tr/td: bgcolor + style="background:;background-color:;"
+ * - Heading / body / CTA are direct rows of the inner table (no nested shell)
+ * - No reliance on inheritance
  */
 
 const BLACK = "#111111";
-const CARD = T.card; // #211F1B — dark surface, never white
-const PANEL = T.charcoal;
+/** Seamless content surface (Gmail + Outlook + Apple Mail). */
+const SURFACE = "#1a1a1a";
 const TEXT = T.text;
 const MUTED = T.textMuted;
 const SUBTLE = T.textSubtle;
 const GOLD = T.gold;
 const GOLD_LIGHT = T.goldLight;
 const BUTTON_TEXT = T.buttonText;
-const BORDER = T.border;
 const DIVIDER = T.divider;
 
 const WRAP =
   "word-break:break-word;overflow-wrap:anywhere;word-wrap:break-word;";
 
-function bg(color: string): string {
-  return `background-color:${color};`;
+/** bgcolor + dual inline background — required for Gmail Mobile. */
+function paint(color: string, extraStyle = ""): string {
+  return `bgcolor="${color}" style="background:${color};background-color:${color};${extraStyle}"`;
 }
 
-function renderHeader(): string {
+function renderHeaderRow(): string {
   const logoUrl = escapeHtml(getEmailLogoUrl());
   const siteOrigin = escapeHtml(getEmailSiteOrigin());
 
   return `
-    <tr bgcolor="${PANEL}" style="${bg(PANEL)}">
-      <td align="center" bgcolor="${PANEL}" style="padding:24px 20px 18px;${bg(PANEL)}border-bottom:3px solid ${GOLD};">
-        <a href="${siteOrigin}" style="text-decoration:none;color:${GOLD};">
+    <tr ${paint(SURFACE)}>
+      <td align="center" ${paint(SURFACE, `padding:24px 20px 18px;border-bottom:3px solid ${GOLD};`)}>
+        <a href="${siteOrigin}" style="text-decoration:none;color:${GOLD};background:${SURFACE};background-color:${SURFACE};">
           <img
             src="${logoUrl}"
             width="120"
@@ -60,82 +58,145 @@ function renderHeader(): string {
     </tr>`;
 }
 
-function renderCta(label: string, url: string): string {
+function renderHeadingRow(heading: string): string {
+  return `
+    <tr ${paint(SURFACE)}>
+      <td align="center" ${paint(
+        SURFACE,
+        `padding:24px 20px 12px;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:800;color:${TEXT};text-align:center;${WRAP}`
+      )}>
+        ${escapeHtml(heading)}
+      </td>
+    </tr>`;
+}
+
+function renderBodyRow(bodyHtml: string): string {
+  return `
+    <tr ${paint(SURFACE)}>
+      <td ${paint(
+        SURFACE,
+        `padding:0 20px 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:${MUTED};${WRAP}`
+      )}>
+        ${bodyHtml}
+      </td>
+    </tr>`;
+}
+
+function renderCtaRow(label: string, url: string, belowCtaHtml?: string): string {
   const safeLabel = escapeHtml(label);
   const safeUrl = escapeHtml(url);
+  const below = belowCtaHtml
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, "width:100%;margin-top:12px;")}>
+        <tbody ${paint(SURFACE)}>
+          <tr ${paint(SURFACE)}>
+            <td ${paint(
+              SURFACE,
+              `font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};${WRAP}`
+            )}>
+              ${belowCtaHtml}
+            </td>
+          </tr>
+        </tbody>
+      </table>`
+    : "";
 
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-      <tr bgcolor="${CARD}" style="${bg(CARD)}">
-        <td align="center" bgcolor="${CARD}" style="padding:8px 0;${bg(CARD)}">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="${GOLD}" style="${bg(GOLD)}">
-            <tr bgcolor="${GOLD}" style="${bg(GOLD)}">
-              <td align="center" bgcolor="${GOLD}" style="padding:14px 24px;${bg(GOLD)}">
-                <a href="${safeUrl}" target="_blank" style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.04em;line-height:1.25;color:${BUTTON_TEXT};text-decoration:none;${bg(GOLD)}${WRAP}">
+    <tr ${paint(SURFACE)}>
+      <td align="center" ${paint(SURFACE, "padding:16px 20px 8px;")}>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" ${paint(GOLD)}>
+          <tbody ${paint(GOLD)}>
+            <tr ${paint(GOLD)}>
+              <td align="center" ${paint(GOLD, "padding:14px 24px;")}>
+                <a href="${safeUrl}" target="_blank" style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.04em;line-height:1.25;color:${BUTTON_TEXT};text-decoration:none;background:${GOLD};background-color:${GOLD};${WRAP}">
                   ${safeLabel}
                 </a>
               </td>
             </tr>
-          </table>
-        </td>
-      </tr>
-    </table>`;
+          </tbody>
+        </table>
+        ${below}
+      </td>
+    </tr>`;
 }
 
-function renderSupportBlock(message: string): string {
+function renderSupportRow(message: string): string {
   const support = escapeHtml(EMAIL_SUPPORT_ADDRESS);
 
   return `
-    <tr bgcolor="${CARD}" style="${bg(CARD)}">
-      <td bgcolor="${CARD}" style="padding:0 20px 20px;${bg(CARD)}">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-          <tr bgcolor="${CARD}" style="${bg(CARD)}">
-            <td bgcolor="${CARD}" style="border-top:1px solid ${DIVIDER};padding-top:18px;${bg(CARD)}">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td bgcolor="${CARD}" style="padding:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${GOLD};${bg(CARD)}${WRAP}">
-                    Need Help?
-                  </td>
-                </tr>
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td bgcolor="${CARD}" style="padding:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};${bg(CARD)}${WRAP}">
-                    ${escapeHtml(message)}
-                  </td>
-                </tr>
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td bgcolor="${CARD}" style="padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${GOLD_LIGHT};${bg(CARD)}${WRAP}">
-                    <a href="mailto:${support}" style="color:${GOLD_LIGHT};text-decoration:none;">${support}</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+    <tr ${paint(SURFACE)}>
+      <td ${paint(SURFACE, "padding:16px 20px 8px;")}>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, "width:100%;")}>
+          <tbody ${paint(SURFACE)}>
+            <tr ${paint(SURFACE)}>
+              <td ${paint(SURFACE, `border-top:1px solid ${DIVIDER};padding-top:18px;`)}>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, "width:100%;")}>
+                  <tbody ${paint(SURFACE)}>
+                    <tr ${paint(SURFACE)}>
+                      <td ${paint(
+                        SURFACE,
+                        `padding:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${GOLD};${WRAP}`
+                      )}>
+                        Need Help?
+                      </td>
+                    </tr>
+                    <tr ${paint(SURFACE)}>
+                      <td ${paint(
+                        SURFACE,
+                        `padding:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};${WRAP}`
+                      )}>
+                        ${escapeHtml(message)}
+                      </td>
+                    </tr>
+                    <tr ${paint(SURFACE)}>
+                      <td ${paint(
+                        SURFACE,
+                        `padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${GOLD_LIGHT};${WRAP}`
+                      )}>
+                        <a href="mailto:${support}" style="color:${GOLD_LIGHT};text-decoration:none;background:${SURFACE};background-color:${SURFACE};">${support}</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </td>
     </tr>`;
 }
 
-function renderFooter(currentYear: number): string {
+function renderFooterRow(currentYear: number): string {
   return `
-    <tr bgcolor="${CARD}" style="${bg(CARD)}">
-      <td align="center" bgcolor="${CARD}" style="padding:0 20px 24px;${bg(CARD)}">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-          <tr bgcolor="${CARD}" style="${bg(CARD)}">
-            <td align="center" bgcolor="${CARD}" style="border-top:1px solid ${DIVIDER};padding-top:16px;${bg(CARD)}">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td align="center" bgcolor="${CARD}" style="padding:0 0 2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${SUBTLE};${bg(CARD)}${WRAP}">
-                    &copy; ${currentYear} One Eyrie
-                  </td>
-                </tr>
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td align="center" bgcolor="${CARD}" style="padding:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${SUBTLE};${bg(CARD)}${WRAP}">
-                    Hotel Operations Platform
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+    <tr ${paint(SURFACE)}>
+      <td align="center" ${paint(SURFACE, "padding:8px 20px 24px;")}>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, "width:100%;")}>
+          <tbody ${paint(SURFACE)}>
+            <tr ${paint(SURFACE)}>
+              <td align="center" ${paint(SURFACE, `border-top:1px solid ${DIVIDER};padding-top:16px;`)}>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, "width:100%;")}>
+                  <tbody ${paint(SURFACE)}>
+                    <tr ${paint(SURFACE)}>
+                      <td align="center" ${paint(
+                        SURFACE,
+                        `padding:0 0 2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${SUBTLE};${WRAP}`
+                      )}>
+                        &copy; ${currentYear} One Eyrie
+                      </td>
+                    </tr>
+                    <tr ${paint(SURFACE)}>
+                      <td align="center" ${paint(
+                        SURFACE,
+                        `padding:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${SUBTLE};${WRAP}`
+                      )}>
+                        Hotel Operations Platform
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </td>
     </tr>`;
@@ -150,13 +211,19 @@ export function renderTransactionalEmailHtml(
     input.supportMessage?.trim() ||
     "If you have questions about your account or One Eyrie, our team is happy to help.";
   const preheader = input.preheader
-    ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${BLACK};${bg(BLACK)}opacity:0;">${escapeHtml(input.preheader)}</div>`
+    ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${BLACK};background:${BLACK};background-color:${BLACK};opacity:0;">${escapeHtml(input.preheader)}</div>`
     : "";
 
-  const ctaHtml = input.cta ? renderCta(input.cta.label, input.cta.url) : "";
-  const belowCta = input.belowCtaHtml
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;margin-top:12px;${bg(CARD)}"><tr bgcolor="${CARD}" style="${bg(CARD)}"><td bgcolor="${CARD}" style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};${bg(CARD)}${WRAP}">${input.belowCtaHtml}</td></tr></table>`
-    : "";
+  const ctaRow = input.cta
+    ? renderCtaRow(input.cta.label, input.cta.url, input.belowCtaHtml)
+    : input.belowCtaHtml
+      ? `
+    <tr ${paint(SURFACE)}>
+      <td ${paint(SURFACE, "padding:12px 20px;")}>
+        ${input.belowCtaHtml}
+      </td>
+    </tr>`
+      : "";
 
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -170,55 +237,39 @@ export function renderTransactionalEmailHtml(
   </style>
   <![endif]-->
 </head>
-<body bgcolor="${BLACK}" style="margin:0;padding:0;width:100%;${bg(BLACK)}">
+<body ${paint(BLACK, "margin:0;padding:0;width:100%;")}>
   ${preheader}
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${BLACK}" style="width:100%;${bg(BLACK)}">
-    <tr bgcolor="${BLACK}" style="${bg(BLACK)}">
-      <td align="center" bgcolor="${BLACK}" style="padding:16px 12px;${bg(BLACK)}">
-        <!--[if mso]>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="${CARD}"><tr bgcolor="${CARD}" style="background-color:${CARD};"><td bgcolor="${CARD}" style="background-color:${CARD};">
-        <![endif]-->
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;max-width:600px;${bg(CARD)}border:1px solid ${GOLD};">
-          ${renderHeader()}
-          <tr bgcolor="${CARD}" style="${bg(CARD)}">
-            <td bgcolor="${CARD}" style="padding:24px 20px 12px;${bg(CARD)}">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${CARD}" style="width:100%;${bg(CARD)}">
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td align="center" bgcolor="${CARD}" style="padding:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:800;color:${TEXT};text-align:center;${bg(CARD)}${WRAP}">
-                    ${escapeHtml(input.heading)}
-                  </td>
-                </tr>
-                <tr bgcolor="${CARD}" style="${bg(CARD)}">
-                  <td bgcolor="${CARD}" style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:${MUTED};${bg(CARD)}${WRAP}">
-                    ${input.bodyHtml}
-                  </td>
-                </tr>
-                ${
-                  ctaHtml || belowCta
-                    ? `<tr bgcolor="${CARD}" style="${bg(CARD)}"><td bgcolor="${CARD}" style="padding:20px 0 4px;${bg(CARD)}">${ctaHtml}${belowCta}</td></tr>`
-                    : ""
-                }
-              </table>
-            </td>
-          </tr>
-          ${showSupport ? renderSupportBlock(supportMessage) : ""}
-          ${renderFooter(year)}
-        </table>
-        <!--[if mso]>
-        </td></tr></table>
-        <![endif]-->
-      </td>
-    </tr>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(BLACK, "width:100%;")}>
+    <tbody ${paint(BLACK)}>
+      <tr ${paint(BLACK)}>
+        <td align="center" ${paint(BLACK, "padding:16px 12px;")}>
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="${SURFACE}"><tr bgcolor="${SURFACE}" style="background:${SURFACE};background-color:${SURFACE};"><td bgcolor="${SURFACE}" style="background:${SURFACE};background-color:${SURFACE};">
+          <![endif]-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, `width:100%;max-width:600px;border:1px solid ${GOLD};`)}>
+            <tbody ${paint(SURFACE)}>
+              ${renderHeaderRow()}
+              ${renderHeadingRow(input.heading)}
+              ${renderBodyRow(input.bodyHtml)}
+              ${ctaRow}
+              ${showSupport ? renderSupportRow(supportMessage) : ""}
+              ${renderFooterRow(year)}
+            </tbody>
+          </table>
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
+        </td>
+      </tr>
+    </tbody>
   </table>
 </body>
 </html>`;
 }
 
-/** Exported for diagnostics / tests — One Eyrie dark tokens used by the shell. */
 export const TRANSACTIONAL_EMAIL_SURFACE = {
   black: BLACK,
-  card: CARD,
-  panel: PANEL,
+  surface: SURFACE,
   text: TEXT,
   muted: MUTED,
 } as const;

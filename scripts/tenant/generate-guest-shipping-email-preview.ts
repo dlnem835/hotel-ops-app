@@ -5,7 +5,7 @@
 import { buildAutomatedShippingEmail } from "../../app/lib/lost-found-shipping/automated-shipping-email";
 
 const content = buildAutomatedShippingEmail({
-  guestName: "NEMETH",
+  guestName: "test",
   itemName: "Black North Face Backpack",
   propertyName: "Springhill Suites Tampa Suncoast Parkway",
   propertyPhone: "8135361900",

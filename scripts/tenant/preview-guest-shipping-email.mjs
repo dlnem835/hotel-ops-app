@@ -49,7 +49,7 @@ const result = spawnSync(
   {
     encoding: "utf8",
     cwd: process.cwd(),
-    shell: false,
+    shell: true,
     env: process.env,
   }
 );
@@ -73,6 +73,8 @@ function diagnose(html) {
   const whitePatterns = [
     /background(?:-color)?\s*:\s*#fff(?:fff)?\b/gi,
     /background(?:-color)?\s*:\s*white\b/gi,
+    /background(?:-color)?\s*:\s*rgb\s*\(\s*255\s*,\s*255\s*,\s*255\s*\)/gi,
+    /background(?:-color)?\s*:\s*transparent\b/gi,
     /bgcolor\s*=\s*["']#fff(?:fff)?["']/gi,
     /bgcolor\s*=\s*["']white["']/gi,
   ];
@@ -150,6 +152,77 @@ function diagnose(html) {
     /background-color\s*:\s*#111111/i.test(html);
 
   const hasFluidInner = /max-width\s*:\s*600px/i.test(html);
+
+  // Greeting/body must sit on continuous #1a1a1a (not a separate card surface).
+  const helloIdx = html.search(/Hello\s+/i);
+  const goodNewsIdx = html.search(/Good news/i);
+  const instructionsIdx = html.search(/Use the secure link below/i);
+  const headingIdx = html.search(
+    /<td\b[^>]*>[\s\S]{0,80}?Your Lost Item Has Been Found/i
+  );
+
+  function nearHasSurface(idx, label) {
+    if (idx < 0) return;
+    const window = html.slice(Math.max(0, idx - 500), idx + 120);
+    if (!/#1a1a1a/i.test(window)) {
+      findings.push({
+        severity: "error",
+        issue: `${label}_missing_1a1a1a_near_context`,
+      });
+    }
+    if (!/background\s*:\s*#1a1a1a/i.test(window) || !/background-color\s*:\s*#1a1a1a/i.test(window)) {
+      findings.push({
+        severity: "error",
+        issue: `${label}_missing_dual_background_shorthand`,
+      });
+    }
+  }
+
+  nearHasSurface(helloIdx, "greeting");
+  nearHasSurface(goodNewsIdx, "good_news");
+  nearHasSurface(instructionsIdx, "instructions");
+  nearHasSurface(headingIdx, "heading");
+
+  if (!/<tbody\b[^>]*bgcolor\s*=\s*["']#1a1a1a["']/i.test(html)) {
+    findings.push({
+      severity: "error",
+      issue: "missing_tbody_bgcolor_1a1a1a",
+    });
+  }
+
+  // Body copy must not be split across multiple sibling paragraph rows
+  // (that pattern produced white bands in Gmail Mobile).
+  const bodyRowSplits = (
+    html.match(/padding:0 0 14px;background[^>]*>[\s\S]*?(?:Hello|Good news|Use the secure)/gi) ||
+    []
+  ).length;
+  if (bodyRowSplits > 1) {
+    findings.push({
+      severity: "error",
+      issue: "body_still_split_across_multiple_painted_rows",
+      count: bodyRowSplits,
+    });
+  }
+
+  if (/#211F1B/i.test(html)) {
+    findings.push({
+      severity: "error",
+      issue: "legacy_211F1B_surface_present",
+      count: (html.match(/#211F1B/gi) || []).length,
+    });
+  }
+
+  // Every <td> should carry bgcolor (except none expected).
+  const tds = html.match(/<td\b[^>]*>/gi) || [];
+  const tdsMissingBgcolor = tds.filter((t) => !/bgcolor\s*=/i.test(t));
+  if (tdsMissingBgcolor.length) {
+    findings.push({
+      severity: "error",
+      issue: "td_missing_bgcolor",
+      count: tdsMissingBgcolor.length,
+      samples: tdsMissingBgcolor.slice(0, 3),
+    });
+  }
 
   return {
     ok:
