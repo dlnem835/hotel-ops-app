@@ -8,26 +8,44 @@ import {
 import type { TransactionalEmailLayoutInput } from "@/app/lib/email/types";
 
 /**
- * Bulletproof dark fill for Gmail / Apple Mail / Outlook.
- * bgcolor + background-color + identical linear-gradient resists white inversion.
+ * Gmail strips `!important` from *inline* styles and can drop the whole
+ * background-color declaration. Use bgcolor + plain inline color + tiled PNG.
  */
-function darkFill(color: string): string {
-  return `background-color:${color} !important;background-image:linear-gradient(${color},${color}) !important;`;
+function surfaceAttrs(
+  color: string,
+  imageUrl: string
+): { bgcolor: string; background: string; style: string } {
+  return {
+    bgcolor: color,
+    background: imageUrl,
+    style: `background-color:${color};background-image:url('${imageUrl}');background-repeat:repeat;`,
+  };
 }
 
-function renderHeader(): string {
+function emailBgUrls() {
+  const origin = getEmailSiteOrigin();
+  return {
+    black: `${origin}/email/oe-bg-black.png`,
+    card: `${origin}/email/oe-bg-card.png`,
+    panel: `${origin}/email/oe-bg-panel.png`,
+  };
+}
+
+function renderHeader(bg: ReturnType<typeof emailBgUrls>): string {
   const logoUrl = escapeHtml(getEmailLogoUrl());
   const siteOrigin = escapeHtml(getEmailSiteOrigin());
+  const panel = surfaceAttrs(T.charcoal, bg.panel);
 
   return `
     <tr>
       <td
         align="center"
-        bgcolor="${T.charcoal}"
+        bgcolor="${panel.bgcolor}"
+        background="${panel.background}"
         class="oe-header"
-        style="padding:20px 24px 16px;${darkFill(T.charcoal)}border-bottom:2px solid ${T.gold};"
+        style="padding:20px 24px 16px;${panel.style}border-bottom:2px solid ${T.gold};"
       >
-        <a href="${siteOrigin}" style="text-decoration:none;color:${T.gold} !important;">
+        <a href="${siteOrigin}" style="text-decoration:none;color:${T.gold};">
           <img
             src="${logoUrl}"
             width="96"
@@ -39,17 +57,17 @@ function renderHeader(): string {
     </tr>`;
 }
 
-/** CTA ~50px — gold on dark, same on every client. */
-function renderCta(label: string, url: string): string {
+function renderCta(label: string, url: string, bg: ReturnType<typeof emailBgUrls>): string {
   const safeLabel = escapeHtml(label);
   const safeUrl = escapeHtml(url);
+  const card = surfaceAttrs(T.card, bg.card);
   const buttonFont =
     "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.04em;";
 
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="${T.card}" style="margin:4px auto 0;${darkFill(T.card)}">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="${card.bgcolor}" background="${card.background}" style="margin:4px auto 0;${card.style}">
       <tr>
-        <td align="center" bgcolor="${T.gold}" class="oe-cta" style="border-radius:8px;${darkFill(T.gold)}">
+        <td align="center" bgcolor="${T.gold}" class="oe-cta" style="border-radius:8px;background-color:${T.gold};">
           <!--[if mso]>
           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="10%" stroke="f" fillcolor="${T.gold}">
             <w:anchorlock/>
@@ -62,7 +80,7 @@ function renderCta(label: string, url: string): string {
           <a
             href="${safeUrl}"
             target="_blank"
-            style="display:inline-block;min-height:50px;line-height:50px;padding:0 28px;${buttonFont}color:${T.buttonText} !important;text-decoration:none;border-radius:8px;${darkFill(T.gold)}"
+            style="display:inline-block;min-height:50px;line-height:50px;padding:0 28px;${buttonFont}color:${T.buttonText};text-decoration:none;border-radius:8px;background-color:${T.gold};"
           >
             ${safeLabel}
           </a>
@@ -72,23 +90,28 @@ function renderCta(label: string, url: string): string {
     </table>`;
 }
 
-function renderSupportBlock(message: string): string {
+function renderSupportBlock(
+  message: string,
+  bg: ReturnType<typeof emailBgUrls>
+): string {
   const support = escapeHtml(EMAIL_SUPPORT_ADDRESS);
+  const card = surfaceAttrs(T.card, bg.card);
+  const panel = surfaceAttrs(T.charcoal, bg.panel);
 
   return `
     <tr>
-      <td bgcolor="${T.card}" class="oe-pad oe-card" style="padding:8px 24px 16px;${darkFill(T.card)}">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" class="oe-inset" style="width:100%;${darkFill(T.charcoal)}border:1px solid ${T.border};border-radius:12px;">
+      <td bgcolor="${card.bgcolor}" background="${card.background}" class="oe-pad oe-card" style="padding:8px 24px 16px;${card.style}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${panel.bgcolor}" background="${panel.background}" class="oe-inset" style="width:100%;${panel.style}border:1px solid ${T.border};border-radius:12px;">
           <tr>
-            <td bgcolor="${T.charcoal}" class="oe-inset" style="padding:14px;${darkFill(T.charcoal)}">
-              <p class="oe-label" style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold} !important;${darkFill(T.charcoal)}">
+            <td bgcolor="${panel.bgcolor}" background="${panel.background}" class="oe-inset" style="padding:14px;${panel.style}">
+              <p class="oe-label" style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${T.gold};">
                 Need Help?
               </p>
-              <p class="oe-text" style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted} !important;${darkFill(T.charcoal)}">
+              <p class="oe-text" style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${T.textMuted};">
                 ${escapeHtml(message)}
               </p>
-              <p class="oe-link" style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${T.goldLight} !important;${darkFill(T.charcoal)}">
-                <a href="mailto:${support}" style="color:${T.goldLight} !important;text-decoration:none;">${support}</a>
+              <p class="oe-link" style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:${T.goldLight};">
+                <a href="mailto:${support}" style="color:${T.goldLight};text-decoration:none;">${support}</a>
               </p>
             </td>
           </tr>
@@ -97,17 +120,22 @@ function renderSupportBlock(message: string): string {
     </tr>`;
 }
 
-function renderFooter(currentYear: number): string {
+function renderFooter(
+  currentYear: number,
+  bg: ReturnType<typeof emailBgUrls>
+): string {
+  const card = surfaceAttrs(T.card, bg.card);
+
   return `
     <tr>
-      <td align="center" bgcolor="${T.card}" class="oe-pad oe-card" style="padding:0 24px 24px;${darkFill(T.card)}">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="${darkFill(T.card)}">
+      <td align="center" bgcolor="${card.bgcolor}" background="${card.background}" class="oe-pad oe-card" style="padding:0 24px 24px;${card.style}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${card.bgcolor}" background="${card.background}" style="${card.style}">
           <tr>
-            <td align="center" bgcolor="${T.card}" style="border-top:1px solid ${T.divider};padding-top:16px;${darkFill(T.card)}">
-              <p class="oe-subtle" style="margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle} !important;${darkFill(T.card)}">
+            <td align="center" bgcolor="${card.bgcolor}" background="${card.background}" style="border-top:1px solid ${T.divider};padding-top:16px;${card.style}">
+              <p class="oe-subtle" style="margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle};">
                 &copy; ${currentYear} One Eyrie
               </p>
-              <p class="oe-subtle" style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle} !important;${darkFill(T.card)}">
+              <p class="oe-subtle" style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:${T.textSubtle};">
                 Hotel Operations Platform
               </p>
             </td>
@@ -118,8 +146,8 @@ function renderFooter(currentYear: number): string {
 }
 
 /**
- * One Eyrie dark transactional email — same look on desktop and mobile.
- * Built to resist Gmail mobile white-background inversion.
+ * One Eyrie dark transactional email.
+ * Gmail-mobile safe: no inline !important; bgcolor + tiled PNG backgrounds.
  */
 export function renderTransactionalEmailHtml(
   input: TransactionalEmailLayoutInput
@@ -129,15 +157,21 @@ export function renderTransactionalEmailHtml(
   const supportMessage =
     input.supportMessage?.trim() ||
     "If you have questions about your account or One Eyrie, our team is happy to help.";
+  const bg = emailBgUrls();
+  const black = surfaceAttrs(T.black, bg.black);
+  const card = surfaceAttrs(T.card, bg.card);
+
   const preheader = input.preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${T.black};opacity:0;">
         ${escapeHtml(input.preheader)}
       </div>`
     : "";
 
-  const ctaHtml = input.cta ? renderCta(input.cta.label, input.cta.url) : "";
+  const ctaHtml = input.cta
+    ? renderCta(input.cta.label, input.cta.url, bg)
+    : "";
   const belowCta = input.belowCtaHtml
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="margin-top:12px;${darkFill(T.card)}"><tr><td bgcolor="${T.card}" class="oe-text" style="${darkFill(T.card)}color:${T.textMuted} !important;">${input.belowCtaHtml}</td></tr></table>`
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${card.bgcolor}" background="${card.background}" style="margin-top:12px;${card.style}"><tr><td bgcolor="${card.bgcolor}" background="${card.background}" class="oe-text" style="${card.style}color:${T.textMuted};">${input.belowCtaHtml}</td></tr></table>`
     : "";
 
   return `<!DOCTYPE html>
@@ -181,67 +215,41 @@ export function renderTransactionalEmailHtml(
       padding: 0 !important;
       width: 100% !important;
       background-color: ${T.black} !important;
-      background-image: linear-gradient(${T.black}, ${T.black}) !important;
     }
-    /* Force One Eyrie dark surfaces — defeats Gmail mobile white bleach. */
-    .oe-root,
-    .oe-root > tbody > tr > td,
-    .oe-shell {
+    .oe-root, .oe-shell {
       background-color: ${T.black} !important;
-      background-image: linear-gradient(${T.black}, ${T.black}) !important;
     }
-    .oe-card,
-    .oe-card td,
-    .oe-pad,
-    .oe-body-copy,
-    .oe-body-copy td {
+    .oe-card, .oe-card td, .oe-pad, .oe-body-copy, .oe-body-copy td {
       background-color: ${T.card} !important;
-      background-image: linear-gradient(${T.card}, ${T.card}) !important;
     }
-    .oe-header,
-    .oe-header td,
-    .oe-inset,
-    .oe-inset td {
+    .oe-header, .oe-header td, .oe-inset, .oe-inset td {
       background-color: ${T.charcoal} !important;
-      background-image: linear-gradient(${T.charcoal}, ${T.charcoal}) !important;
-    }
-    .oe-cta,
-    .oe-cta a {
-      background-color: ${T.gold} !important;
-      background-image: linear-gradient(${T.gold}, ${T.gold}) !important;
-      color: ${T.buttonText} !important;
     }
     .oe-heading { color: ${T.text} !important; }
-    .oe-text,
-    .oe-text p,
-    .oe-text td,
-    .oe-body-copy,
-    .oe-body-copy p,
-    .oe-body-copy td { color: ${T.textMuted} !important; }
-    .oe-body-copy strong,
-    .oe-text strong { color: ${T.text} !important; }
+    .oe-text, .oe-text p, .oe-body-copy, .oe-body-copy p, .oe-body-copy td {
+      color: ${T.textMuted} !important;
+    }
+    .oe-body-copy strong, .oe-text strong { color: ${T.text} !important; }
     .oe-label { color: ${T.gold} !important; }
-    .oe-link,
-    .oe-link a { color: ${T.goldLight} !important; }
+    .oe-link, .oe-link a { color: ${T.goldLight} !important; }
     .oe-subtle { color: ${T.textSubtle} !important; }
-    /* Gmail dark-mode attribute variants */
+    .oe-cta, .oe-cta a {
+      background-color: ${T.gold} !important;
+      color: ${T.buttonText} !important;
+    }
     [data-ogsc] .oe-root,
     [data-ogsc] .oe-shell,
     [data-ogsb] .oe-root,
     [data-ogsb] .oe-shell {
       background-color: ${T.black} !important;
-      background-image: linear-gradient(${T.black}, ${T.black}) !important;
     }
     [data-ogsc] .oe-card,
     [data-ogsc] .oe-card td,
     [data-ogsc] .oe-body-copy,
-    [data-ogsc] .oe-body-copy td,
     [data-ogsb] .oe-card,
     [data-ogsb] .oe-card td,
-    [data-ogsb] .oe-body-copy,
-    [data-ogsb] .oe-body-copy td {
+    [data-ogsb] .oe-body-copy {
       background-color: ${T.card} !important;
-      background-image: linear-gradient(${T.card}, ${T.card}) !important;
     }
     [data-ogsc] .oe-heading,
     [data-ogsb] .oe-heading { color: ${T.text} !important; }
@@ -249,7 +257,6 @@ export function renderTransactionalEmailHtml(
     [data-ogsc] .oe-body-copy,
     [data-ogsb] .oe-text,
     [data-ogsb] .oe-body-copy { color: ${T.textMuted} !important; }
-    /* Stop auto-detected address/phone links from turning blue */
     a[x-apple-data-detectors],
     u + #body a,
     #MessageViewBody a,
@@ -276,8 +283,9 @@ export function renderTransactionalEmailHtml(
 <body
   id="body"
   class="oe-body"
-  bgcolor="${T.black}"
-  style="margin:0;padding:0;width:100%;${darkFill(T.black)}"
+  bgcolor="${black.bgcolor}"
+  background="${black.background}"
+  style="margin:0;padding:0;width:100%;${black.style}"
 >
   ${preheader}
   <table
@@ -287,15 +295,17 @@ export function renderTransactionalEmailHtml(
     cellspacing="0"
     border="0"
     width="100%"
-    bgcolor="${T.black}"
-    style="width:100%;${darkFill(T.black)}"
+    bgcolor="${black.bgcolor}"
+    background="${black.background}"
+    style="width:100%;${black.style}"
   >
     <tr>
       <td
         align="center"
-        bgcolor="${T.black}"
+        bgcolor="${black.bgcolor}"
+        background="${black.background}"
         class="oe-shell"
-        style="padding:24px 16px;${darkFill(T.black)}"
+        style="padding:24px 16px;${black.style}"
       >
         <!--[if mso]>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="${T.card}"><tr><td bgcolor="${T.card}">
@@ -307,18 +317,19 @@ export function renderTransactionalEmailHtml(
           cellspacing="0"
           border="0"
           width="100%"
-          bgcolor="${T.card}"
-          style="max-width:600px;width:100%;${darkFill(T.card)}border:1px solid ${T.gold};border-radius:14px;"
+          bgcolor="${card.bgcolor}"
+          background="${card.background}"
+          style="max-width:600px;width:100%;${card.style}border:1px solid ${T.gold};border-radius:14px;"
         >
-          ${renderHeader()}
+          ${renderHeader(bg)}
           <tr>
-            <td bgcolor="${T.card}" class="oe-pad oe-card" style="padding:24px 24px 8px;${darkFill(T.card)}">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="${darkFill(T.card)}">
+            <td bgcolor="${card.bgcolor}" background="${card.background}" class="oe-pad oe-card" style="padding:24px 24px 8px;${card.style}">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${card.bgcolor}" background="${card.background}" style="${card.style}">
                 <tr>
-                  <td align="center" bgcolor="${T.card}" style="padding:0 0 16px;${darkFill(T.card)}">
+                  <td align="center" bgcolor="${card.bgcolor}" background="${card.background}" style="padding:0 0 16px;${card.style}">
                     <h1
                       class="oe-heading"
-                      style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:800;color:${T.text} !important;text-align:center;${darkFill(T.card)}"
+                      style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:800;color:${T.text};text-align:center;"
                     >
                       ${escapeHtml(input.heading)}
                     </h1>
@@ -326,23 +337,24 @@ export function renderTransactionalEmailHtml(
                 </tr>
                 <tr>
                   <td
-                    bgcolor="${T.card}"
+                    bgcolor="${card.bgcolor}"
+                    background="${card.background}"
                     class="oe-body-copy oe-text"
-                    style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${T.textMuted} !important;${darkFill(T.card)}"
+                    style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${T.textMuted};${card.style}"
                   >
                     ${input.bodyHtml}
                   </td>
                 </tr>
                 ${
                   ctaHtml || belowCta
-                    ? `<tr><td align="center" bgcolor="${T.card}" style="padding:20px 0 4px;${darkFill(T.card)}">${ctaHtml}${belowCta}</td></tr>`
+                    ? `<tr><td align="center" bgcolor="${card.bgcolor}" background="${card.background}" style="padding:20px 0 4px;${card.style}">${ctaHtml}${belowCta}</td></tr>`
                     : ""
                 }
               </table>
             </td>
           </tr>
-          ${showSupport ? renderSupportBlock(supportMessage) : ""}
-          ${renderFooter(year)}
+          ${showSupport ? renderSupportBlock(supportMessage, bg) : ""}
+          ${renderFooter(year, bg)}
         </table>
         <!--[if mso]>
         </td></tr></table>
