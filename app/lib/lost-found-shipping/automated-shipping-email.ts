@@ -26,6 +26,9 @@ export type AutomatedShippingEmailContent = {
   text: string;
 };
 
+const WRAP =
+  "word-break:break-word;overflow-wrap:anywhere;word-wrap:break-word;";
+
 function greeting(guestName?: string | null): { html: string; text: string } {
   const name = guestName?.trim();
   if (name) {
@@ -51,8 +54,7 @@ function formatExpiry(expiresAt?: string | null): string | null {
 }
 
 /**
- * Guest email for automated Shippo/Stripe shipping (single CTA — no carrier buttons).
- * Body uses simple inline-styled paragraphs for the fixed 600px shell.
+ * Guest shipping email body — table cells only, explicit dark fills + text colors.
  */
 export function buildAutomatedShippingEmail(
   input: AutomatedShippingEmailInput
@@ -65,51 +67,67 @@ export function buildAutomatedShippingEmail(
   const address = input.propertyAddressLine?.trim() || "";
 
   const subject = `${propertyName} found your item — arrange return shipping`;
+  const card = T.card;
+  const panel = T.charcoal;
 
   const contactLinesHtml = [
     phone
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">Phone: ${escapeHtml(phone)}</td></tr>`
+      ? `<tr bgcolor="${panel}" style="background-color:${panel};"><td bgcolor="${panel}" style="padding-top:6px;background-color:${panel};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;${WRAP}">Phone: ${escapeHtml(phone)}</td></tr>`
       : "",
     address
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:8px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">${escapeHtml(address)}</td></tr>`
+      ? `<tr bgcolor="${panel}" style="background-color:${panel};"><td bgcolor="${panel}" style="padding-top:8px;background-color:${panel};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;${WRAP}">${escapeHtml(address)}</td></tr>`
       : "",
   ].join("");
 
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;">${hello.html}</p>
-    <p style="margin:0 0 16px;color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;">
-      Good news — <strong style="color:${T.text};">${escapeHtml(propertyName)}</strong>
-      has located <strong style="color:${T.text};">${escapeHtml(itemName)}</strong>
-      and can ship it back to you.
-    </p>
-    <p style="margin:0 0 16px;color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;">
-      Use the secure link below to confirm your address, choose a shipping option,
-      and pay for return shipping. You&rsquo;ll pick the carrier and service on the next page.
-    </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="width:100%;background-color:${T.charcoal};border:1px solid ${T.border};">
-      <tr>
-        <td bgcolor="${T.charcoal}" style="padding:16px;background-color:${T.charcoal};">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="background-color:${T.charcoal};">
-            <tr>
-              <td bgcolor="${T.charcoal}" style="background-color:${T.charcoal};color:${T.gold};font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
-                Hotel contact
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${card}" style="width:100%;background-color:${card};">
+      <tr bgcolor="${card}" style="background-color:${card};">
+        <td bgcolor="${card}" style="padding:0 0 14px;background-color:${card};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;${WRAP}">
+          ${hello.html}
+        </td>
+      </tr>
+      <tr bgcolor="${card}" style="background-color:${card};">
+        <td bgcolor="${card}" style="padding:0 0 14px;background-color:${card};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;${WRAP}">
+          Good news — <strong style="color:${T.text};">${escapeHtml(propertyName)}</strong>
+          has located <strong style="color:${T.text};">${escapeHtml(itemName)}</strong>
+          and can ship it back to you.
+        </td>
+      </tr>
+      <tr bgcolor="${card}" style="background-color:${card};">
+        <td bgcolor="${card}" style="padding:0 0 14px;background-color:${card};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;${WRAP}">
+          Use the secure link below to confirm your address, choose a shipping option,
+          and pay for return shipping. You&rsquo;ll pick the carrier and service on the next page.
+        </td>
+      </tr>
+      <tr bgcolor="${card}" style="background-color:${card};">
+        <td bgcolor="${card}" style="padding:0 0 4px;background-color:${card};">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${panel}" style="width:100%;background-color:${panel};border:1px solid ${T.border};">
+            <tr bgcolor="${panel}" style="background-color:${panel};">
+              <td bgcolor="${panel}" style="padding:14px;background-color:${panel};">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${panel}" style="width:100%;background-color:${panel};">
+                  <tr bgcolor="${panel}" style="background-color:${panel};">
+                    <td bgcolor="${panel}" style="background-color:${panel};color:${T.gold};font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;${WRAP}">
+                      Hotel contact
+                    </td>
+                  </tr>
+                  <tr bgcolor="${panel}" style="background-color:${panel};">
+                    <td bgcolor="${panel}" style="padding-top:6px;background-color:${panel};color:${T.text};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;${WRAP}">
+                      ${escapeHtml(propertyName)}
+                    </td>
+                  </tr>
+                  ${contactLinesHtml}
+                </table>
               </td>
             </tr>
-            <tr>
-              <td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.text};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
-                ${escapeHtml(propertyName)}
-              </td>
-            </tr>
-            ${contactLinesHtml}
           </table>
         </td>
       </tr>
+      ${
+        expiryLabel
+          ? `<tr bgcolor="${card}" style="background-color:${card};"><td bgcolor="${card}" style="padding:14px 0 0;background-color:${card};color:${T.textSubtle};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;${WRAP}">This link remains available until ${escapeHtml(expiryLabel)}.</td></tr>`
+          : ""
+      }
     </table>
-    ${
-      expiryLabel
-        ? `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${T.textSubtle};">This link remains available until ${escapeHtml(expiryLabel)}.</p>`
-        : ""
-    }
   `;
 
   const html = renderTransactionalEmailHtml({
