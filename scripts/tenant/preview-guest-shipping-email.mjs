@@ -68,7 +68,7 @@ if (jsonStart < 0) {
 
 const content = JSON.parse(stdout.slice(jsonStart));
 
-/** Checks for restored 598bc6c dark shell + current heading/CTA. */
+/** Pre-Shippo dark visual + single Shippo CTA (no carrier buttons). */
 function diagnose(html) {
   const findings = [];
   const whitePatterns = [
@@ -96,11 +96,19 @@ function diagnose(html) {
   if (!/Choose Shipping and Pay/i.test(html)) {
     findings.push({ severity: "error", issue: "missing_current_cta" });
   }
-  if (/We['’]ve Located Your Item/i.test(html)) {
+
+  const carrierButtons = [
+    ...html.matchAll(/>\s*(UPS|FedEx|USPS)\s*</gi),
+  ].map((m) => m[1]);
+  if (carrierButtons.length) {
     findings.push({
       severity: "error",
-      issue: "old_598bc6c_heading_still_present",
+      issue: "carrier_buttons_present",
+      values: carrierButtons,
     });
+  }
+  if (/Upload Shipping Label/i.test(html)) {
+    findings.push({ severity: "error", issue: "legacy_upload_cta_present" });
   }
 
   const hasBlackOuter =
@@ -110,33 +118,38 @@ function diagnose(html) {
     findings.push({ severity: "error", issue: "missing_black_outer" });
   }
 
-  const hasCard =
-    /class="oe-email-card"/i.test(html) &&
-    /max-width\s*:\s*560px/i.test(html) &&
-    /border:\s*1px solid/i.test(html);
-  if (!hasCard) {
-    findings.push({ severity: "error", issue: "missing_598bc6c_card_shell" });
-  }
-
-  if (!/alt="One Eyrie"/i.test(html)) {
-    findings.push({ severity: "error", issue: "missing_logo_header" });
-  }
-
-  if (!/color-scheme:\s*dark light/i.test(html)) {
+  const hasLegacyShell =
+    /max-width\s*:\s*600px/i.test(html) &&
+    />\s*ONE\s*</i.test(html) &&
+    />\s*EYRIE\s*</i.test(html) &&
+    /Lost\s*&amp;\s*Found Shipping Request/i.test(html);
+  if (!hasLegacyShell) {
     findings.push({
       severity: "error",
-      issue: "missing_598bc6c_color_scheme",
+      issue: "missing_pre_shippo_visual_shell",
     });
   }
 
-  if (!/Hotel contact/i.test(html)) {
-    findings.push({ severity: "error", issue: "missing_hotel_contact_block" });
+  if (!/Ship From/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_ship_from_block" });
+  }
+  if (!/>Item</i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_item_block" });
+  }
+
+  if (!/color-scheme:\s*dark only/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_dark_only_color_scheme" });
+  }
+
+  const ctaMatches = html.match(/Choose Shipping and Pay/gi) || [];
+  if (ctaMatches.length < 1) {
+    findings.push({ severity: "error", issue: "missing_shippo_cta" });
   }
 
   return {
     ok: findings.filter((f) => f.severity === "error").length === 0,
     hasBlackOuter,
-    hasCard,
+    hasLegacyShell,
     htmlBytes: Buffer.byteLength(html, "utf8"),
     findings,
   };

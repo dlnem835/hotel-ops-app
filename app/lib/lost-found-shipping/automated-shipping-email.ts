@@ -1,8 +1,11 @@
 import "server-only";
 
 import { escapeHtml } from "@/app/lib/email/escape-html";
-import { EMAIL_THEME as T } from "@/app/lib/email/brand";
-import { renderGuestShippingRequestEmailHtml } from "@/app/lib/lost-found-shipping/guest-shipping-request-email-layout";
+import { ONE_EYRIE as C } from "@/app/lib/oneEyrieColors";
+import {
+  darkFill,
+  renderGuestShippingRequestEmailHtml,
+} from "@/app/lib/lost-found-shipping/guest-shipping-request-email-layout";
 import {
   AUTOMATED_SHIPPING_EMAIL_CTA,
   AUTOMATED_SHIPPING_EMAIL_HEADING,
@@ -50,9 +53,43 @@ function formatExpiry(expiresAt?: string | null): string | null {
   });
 }
 
+function formatMultilineHtml(value: string): string {
+  return escapeHtml(value).replace(/\n/g, "<br/>");
+}
+
+function buildShipFromBlock(
+  propertyName: string,
+  phone: string,
+  address: string
+): string {
+  const hasAddressInfo = Boolean(propertyName || address);
+
+  const nameLine = propertyName
+    ? `<div style="color:${C.text} !important;font-weight:700;margin-top:8px;${darkFill(C.surfacePanel)}">${escapeHtml(propertyName)}</div>`
+    : "";
+
+  const addressLine = address
+    ? `<div style="margin-top:8px;line-height:1.6;color:${C.textMuted} !important;${darkFill(C.surfacePanel)}">${formatMultilineHtml(address)}</div>`
+    : hasAddressInfo
+      ? ""
+      : `<div style="margin-top:8px;color:${C.textSubtle} !important;line-height:1.6;${darkFill(C.surfacePanel)}">Please contact the front desk for the hotel return address.</div>`;
+
+  const phoneLine = phone
+    ? `<div style="margin-top:8px;color:${C.textMuted} !important;${darkFill(C.surfacePanel)}">Phone: ${escapeHtml(phone)}</div>`
+    : "";
+
+  return `
+      <div style="${darkFill(C.surfacePanel)}border:1px solid ${C.border};border-radius:12px;padding:16px;margin:20px 0;">
+        <p style="margin:0;color:${C.gold} !important;font-weight:800;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;${darkFill(C.surfacePanel)}">Ship From</p>
+        ${nameLine}
+        ${addressLine}
+        ${phoneLine}
+      </div>`;
+}
+
 /**
- * Guest email for automated Shippo/Stripe shipping (single CTA — no carrier buttons).
- * Body markup restored from 598bc6c; heading/CTA from current email-copy.
+ * Guest email for automated Shippo/Stripe shipping.
+ * Pre-Shippo dark visual format; single CTA to guest shipping URL (no carrier buttons).
  */
 export function buildAutomatedShippingEmail(
   input: AutomatedShippingEmailInput
@@ -66,50 +103,39 @@ export function buildAutomatedShippingEmail(
 
   const subject = `${propertyName} found your item — arrange return shipping`;
 
-  const contactLinesHtml = [
-    phone
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">Phone: ${escapeHtml(phone)}</td></tr>`
-      : "",
-    address
-      ? `<tr><td bgcolor="${T.charcoal}" style="padding-top:8px;background-color:${T.charcoal};color:${T.textMuted};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;">${escapeHtml(address)}</td></tr>`
-      : "",
-  ].join("");
-
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:${T.textMuted};">${hello.html}</p>
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      Good news — <strong style="color:${T.text};">${escapeHtml(propertyName)}</strong>
-      has located <strong style="color:${T.text};">${escapeHtml(itemName)}</strong>
-      and can ship it back to you.
-    </p>
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      Use the secure link below to confirm your address, choose a shipping option,
-      and pay for return shipping. You&rsquo;ll pick the carrier and service on the next page.
-    </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="width:100%;background-color:${T.charcoal};border:1px solid ${T.border};border-radius:14px;margin:0 0 8px;">
-      <tr>
-        <td bgcolor="${T.charcoal}" style="padding:16px;background-color:${T.charcoal};">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.charcoal}" style="background-color:${T.charcoal};">
-            <tr>
-              <td bgcolor="${T.charcoal}" style="background-color:${T.charcoal};color:${T.gold};font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">
-                Hotel contact
-              </td>
-            </tr>
-            <tr>
-              <td bgcolor="${T.charcoal}" style="padding-top:6px;background-color:${T.charcoal};color:${T.text};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
-                ${escapeHtml(propertyName)}
-              </td>
-            </tr>
-            ${contactLinesHtml}
-          </table>
-        </td>
-      </tr>
-    </table>
-    ${
-      expiryLabel
-        ? `<p style="margin:16px 0 0;font-size:13px;color:${T.textSubtle};">This link remains available until ${escapeHtml(expiryLabel)}.</p>`
-        : ""
-    }
+      <p style="line-height:1.6;color:${C.textMuted} !important;margin:0 0 14px;${darkFill(C.surface)}">
+        ${hello.html}
+      </p>
+
+      <p style="line-height:1.6;color:${C.textMuted} !important;margin:0;${darkFill(C.surface)}">
+        Good news — <strong style="color:${C.text} !important;">${escapeHtml(propertyName)}</strong>
+        has located <strong style="color:${C.text} !important;">${escapeHtml(itemName)}</strong>
+        and can ship it back to you.
+      </p>
+
+      ${buildShipFromBlock(propertyName, phone, address)}
+
+      <div style="${darkFill(C.surfacePanel)}border:1px solid ${C.border};border-radius:12px;padding:16px;margin:0 0 20px;">
+        <p style="margin:0 0 8px;color:${C.gold} !important;font-weight:800;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;${darkFill(C.surfacePanel)}">Item</p>
+        <p style="margin:0;color:${C.text} !important;font-weight:700;line-height:1.5;${darkFill(C.surfacePanel)}">${escapeHtml(itemName)}</p>
+      </div>
+
+      <div style="${darkFill(C.surfacePanel)}border:1px solid ${C.borderDivider};border-radius:12px;padding:16px;margin:0 0 20px;">
+        <p style="margin:0 0 12px;color:${C.text} !important;font-weight:700;${darkFill(C.surfacePanel)}">Instructions</p>
+        <ol style="margin:0;padding-left:20px;color:${C.textMuted} !important;line-height:1.7;">
+          <li>Click <strong style="color:${C.text} !important;">${escapeHtml(AUTOMATED_SHIPPING_EMAIL_CTA)}</strong> below.</li>
+          <li>Confirm your address and choose a shipping option.</li>
+          <li>Pay for return shipping securely on the next page.</li>
+          <li>You&rsquo;ll pick the carrier and service there.</li>
+        </ol>
+      </div>
+
+      ${
+        expiryLabel
+          ? `<p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:${C.textSubtle} !important;${darkFill(C.surface)}">This link remains available until ${escapeHtml(expiryLabel)}.</p>`
+          : ""
+      }
   `;
 
   const html = renderGuestShippingRequestEmailHtml({
@@ -120,9 +146,6 @@ export function buildAutomatedShippingEmail(
       label: AUTOMATED_SHIPPING_EMAIL_CTA,
       url: input.guestShippingUrl,
     },
-    supportMessage: phone
-      ? `Questions about your item? Contact ${propertyName} at ${phone}.`
-      : `Questions about your item? Contact the front desk at ${propertyName}.`,
   });
 
   const textLines = [
