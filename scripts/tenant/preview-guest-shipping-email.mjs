@@ -68,26 +68,15 @@ if (jsonStart < 0) {
 
 const content = JSON.parse(stdout.slice(jsonStart));
 
-/** Pre-Shippo dark visual + single Shippo CTA (no carrier buttons). */
+/** Light guest shipping-request email + single Shippo CTA. */
 function diagnose(html) {
   const findings = [];
-  const whitePatterns = [
-    /background(?:-color)?\s*:\s*#fff(?:fff)?\b/gi,
-    /background(?:-color)?\s*:\s*white\b/gi,
-    /background(?:-color)?\s*:\s*rgb\s*\(\s*255\s*,\s*255\s*,\s*255\s*\)/gi,
-    /bgcolor\s*=\s*["']#fff(?:fff)?["']/gi,
-    /bgcolor\s*=\s*["']white["']/gi,
-  ];
-  for (const re of whitePatterns) {
-    const matches = html.match(re);
-    if (matches?.length) {
-      findings.push({
-        severity: "error",
-        issue: "white_background",
-        count: matches.length,
-        samples: matches.slice(0, 5),
-      });
-    }
+
+  if (/color-scheme|prefers-color-scheme/i.test(html)) {
+    findings.push({ severity: "error", issue: "color_scheme_present" });
+  }
+  if (/@media[^{]*prefers-color-scheme/i.test(html)) {
+    findings.push({ severity: "error", issue: "prefers_color_scheme_media" });
   }
 
   if (!/Your Lost Item Has Been Found/i.test(html)) {
@@ -111,45 +100,64 @@ function diagnose(html) {
     findings.push({ severity: "error", issue: "legacy_upload_cta_present" });
   }
 
-  const hasBlackOuter =
-    /bgcolor\s*=\s*["']#111111["']/i.test(html) &&
-    /background-color\s*:\s*#111111/i.test(html);
-  if (!hasBlackOuter) {
-    findings.push({ severity: "error", issue: "missing_black_outer" });
+  const hasWhiteOuter =
+    /bgcolor\s*=\s*["']#FFFFFF["']/i.test(html) &&
+    /background-color\s*:\s*#FFFFFF/i.test(html);
+  if (!hasWhiteOuter) {
+    findings.push({ severity: "error", issue: "missing_white_outer" });
   }
 
-  const hasLegacyShell =
-    /max-width\s*:\s*600px/i.test(html) &&
-    />\s*ONE\s*</i.test(html) &&
-    />\s*EYRIE\s*</i.test(html) &&
-    /Lost\s*&amp;\s*Found Shipping Request/i.test(html);
-  if (!hasLegacyShell) {
+  if (!/#111111/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_primary_text_color" });
+  }
+  if (!/#4A4A4A/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_secondary_text_color" });
+  }
+  if (!/#D4AF37/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_gold_accent" });
+  }
+  if (!/#F7F7F5/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_card_background" });
+  }
+
+  // Large dark content sections should not exist (header-only black is OK).
+  const darkBodyHits = (
+    html.match(/#211F1B|#1[Aa]1815|#1a1a1a/gi) || []
+  ).length;
+  if (darkBodyHits > 0) {
     findings.push({
       severity: "error",
-      issue: "missing_pre_shippo_visual_shell",
+      issue: "dark_content_surface_present",
+      count: darkBodyHits,
     });
   }
 
-  if (!/Ship From/i.test(html)) {
-    findings.push({ severity: "error", issue: "missing_ship_from_block" });
+  const hasLightShell =
+    /max-width\s*:\s*600px/i.test(html) &&
+    />\s*ONE\s*</i.test(html) &&
+    /EYRIE/i.test(html) &&
+    /Lost\s*&amp;\s*Found Shipping Request/i.test(html);
+  if (!hasLightShell) {
+    findings.push({ severity: "error", issue: "missing_light_shell" });
   }
-  if (!/>Item</i.test(html)) {
+
+  if (!/Hotel/i.test(html)) {
+    findings.push({ severity: "error", issue: "missing_hotel_block" });
+  }
+  if (/Ship From/i.test(html)) {
+    findings.push({ severity: "error", issue: "legacy_ship_from_label_present" });
+  }
+  if (/Instructions/i.test(html)) {
+    findings.push({ severity: "error", issue: "instructions_card_still_present" });
+  }
+  if (!/<span[^>]*>Item<\/span>/i.test(html)) {
     findings.push({ severity: "error", issue: "missing_item_block" });
-  }
-
-  if (!/color-scheme:\s*dark only/i.test(html)) {
-    findings.push({ severity: "error", issue: "missing_dark_only_color_scheme" });
-  }
-
-  const ctaMatches = html.match(/Choose Shipping and Pay/gi) || [];
-  if (ctaMatches.length < 1) {
-    findings.push({ severity: "error", issue: "missing_shippo_cta" });
   }
 
   return {
     ok: findings.filter((f) => f.severity === "error").length === 0,
-    hasBlackOuter,
-    hasLegacyShell,
+    hasWhiteOuter,
+    hasLightShell,
     htmlBytes: Buffer.byteLength(html, "utf8"),
     findings,
   };
