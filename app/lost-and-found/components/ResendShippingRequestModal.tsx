@@ -167,6 +167,8 @@ export default function ResendShippingRequestModal({
     initialGuestName,
   ]);
 
+  // Focus/select only when the modal becomes ready — not on every guestEmail
+  // keystroke (that re-selected the whole field and wiped typing).
   useEffect(() => {
     if (!open || !ready || loading) return;
     const timer = window.setTimeout(() => {
@@ -178,7 +180,7 @@ export default function ResendShippingRequestModal({
       }
     }, 40);
     return () => window.clearTimeout(timer);
-  }, [open, ready, loading, guestEmail]);
+  }, [open, ready, loading]);
 
   async function handleSaveAndResend() {
     const email = guestEmail.trim().toLowerCase();
