@@ -75,6 +75,8 @@ export class ShippoShippingProvider implements ShippingProvider {
     parcel: ShippingPackage;
   }): Promise<ShippingRate[]> {
     const client = getShippoClient();
+    // No carrier_accounts / carriers filter — Shippo quotes every active
+    // carrier account on the API token.
     const shipment = await client.shipments.create({
       addressFrom: toShippoAddress(input.shipFrom),
       addressTo: toShippoAddress(input.shipTo),
@@ -83,11 +85,57 @@ export class ShippoShippingProvider implements ShippingProvider {
     });
 
     const rates = shipment.rates || [];
-    return dedupeRates(
-      rates
-        .map((rate) => mapShippoRate(rate))
-        .filter((rate): rate is ShippingRate => rate != null)
-    ).sort((a, b) => a.amount - b.amount);
+    const shipmentMessages = (shipment.messages || []).map((message) => ({
+      source: message.source != null ? String(message.source) : null,
+      code: message.code != null ? String(message.code) : null,
+      text: message.text != null ? String(message.text) : null,
+    }));
+
+    // Full Shippo rates payload (no address PII — rates array only).
+    logShippoRates("shippo.rates.raw_response", {
+      shipmentObjectId: shipment.objectId ?? null,
+      shipmentStatus: shipment.status ?? null,
+      rawRateCount: rates.length,
+      shipmentMessages,
+      rates: rates.map((rate) => serializeShippoRateForLog(rate)),
+    });
+
+    const mapped: ShippingRate[] = [];
+    const dropped: Array<Record<string, unknown>> = [];
+    for (const rate of rates) {
+      const next = mapShippoRate(rate);
+      if (next) {
+        mapped.push(next);
+      } else {
+        dropped.push({
+          objectId: rateObjectId(rate),
+          provider: rate.provider ?? null,
+          amount: rate.amount ?? null,
+          reason: "mapShippoRate_returned_null",
+        });
+      }
+    }
+
+    const deduped = dedupeRates(mapped).sort((a, b) => a.amount - b.amount);
+
+    logShippoRates("shippo.rates.mapped_summary", {
+      shipmentObjectId: shipment.objectId ?? null,
+      rawRateCount: rates.length,
+      mappedCount: mapped.length,
+      droppedCount: dropped.length,
+      dropped,
+      dedupedCount: deduped.length,
+      providersRaw: uniqueStrings(rates.map((rate) => String(rate.provider || ""))),
+      providersReturned: uniqueStrings(deduped.map((rate) => rate.carrier)),
+      servicesReturned: deduped.map((rate) => ({
+        carrier: rate.carrier,
+        service: rate.service,
+        amount: rate.amount,
+        providerRateId: rate.providerRateId,
+      })),
+    });
+
+    return deduped;
   }
 
   async purchaseLabel(input: {
@@ -192,9 +240,21 @@ function toShippoParcel(parcel: ShippingPackage) {
   };
 }
 
+function rateObjectId(rate: Rate): string {
+  const raw = rate as Rate & { object_id?: string };
+  return String(rate.objectId || raw.object_id || "").trim();
+}
+
+function rateAmount(rate: Rate): number {
+  const raw = rate as Rate & { amount_local?: string | number };
+  const amount = Number(rate.amount ?? raw.amount_local);
+  return amount;
+}
+
 function mapShippoRate(rate: Rate): ShippingRate | null {
-  const amount = Number(rate.amount);
-  if (!rate.objectId || !Number.isFinite(amount)) return null;
+  const objectId = rateObjectId(rate);
+  const amount = rateAmount(rate);
+  if (!objectId || !Number.isFinite(amount)) return null;
 
   const days = rate.estimatedDays;
   const serviceName =
@@ -229,8 +289,9 @@ function mapShippoRate(rate: Rate): ShippingRate | null {
       ? String(rate.providerImage75 || rate.providerImage200)
       : null;
 
+  // Carrier/service come straight from Shippo — never hardcode brand names.
   return {
-    providerRateId: rate.objectId,
+    providerRateId: objectId,
     carrier: String(rate.provider || "Carrier"),
     service: String(serviceName),
     amount: Math.round(amount * 100) / 100,
@@ -244,6 +305,53 @@ function mapShippoRate(rate: Rate): ShippingRate | null {
     badges,
     highlight,
   };
+}
+
+function serializeShippoRateForLog(rate: Rate): Record<string, unknown> {
+  // Prefer a structured subset, then attach the full rate object for diagnosis.
+  return {
+    objectId: rateObjectId(rate),
+    provider: rate.provider ?? null,
+    servicelevel: rate.servicelevel ?? null,
+    amount: rate.amount ?? null,
+    currency: rate.currency ?? null,
+    estimatedDays: rate.estimatedDays ?? null,
+    durationTerms: rate.durationTerms ?? null,
+    attributes: rate.attributes ?? null,
+    carrierAccount: (rate as Rate & { carrierAccount?: unknown }).carrierAccount ?? null,
+    zone: (rate as Rate & { zone?: unknown }).zone ?? null,
+    messages: (rate as Rate & { messages?: unknown }).messages ?? null,
+    fullRate: rate,
+  };
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function logShippoRates(
+  step: string,
+  fields: Record<string, unknown>
+): void {
+  console.info(
+    JSON.stringify({
+      scope: "shippo-rates",
+      step,
+      at: new Date().toISOString(),
+      vercelEnv: process.env.VERCEL_ENV || null,
+      ...fields,
+    })
+  );
 }
 
 function projectBusinessDateIso(businessDays: number, from = new Date()): string {

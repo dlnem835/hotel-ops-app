@@ -218,6 +218,14 @@ export async function POST(request: Request, context: RouteContext) {
         .eq("organization_id", Number(row.organization_id))
         .eq("property_id", Number(row.property_id));
 
+      const providersReturned = Array.from(
+        new Set(
+          rates
+            .map((rate) => String(rate.carrier || "").trim())
+            .filter(Boolean)
+        )
+      );
+
       await appendShippingEvent(supabase, {
         ...ctx,
         eventType: SHIPPING_TIMELINE_EVENTS.ratesRetrieved,
@@ -226,6 +234,7 @@ export async function POST(request: Request, context: RouteContext) {
           notes: `${rates.length} rate(s) retrieved`,
           provider: provider.id,
           rateCount: rates.length,
+          providersReturned,
         },
       });
 
