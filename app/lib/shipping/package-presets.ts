@@ -22,7 +22,8 @@ export const PACKAGE_PRESETS: PackagePreset[] = [
     label: "Document Envelope",
     lengthIn: 12,
     widthIn: 10,
-    heightIn: 0.5,
+    // FedEx Ground Economy requires min 6×4×1 in; 0.5 in excluded FedEx quotes.
+    heightIn: 1,
     weightOz: 3,
   },
   {

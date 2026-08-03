@@ -76,10 +76,14 @@ export class ShippoShippingProvider implements ShippingProvider {
   }): Promise<ShippingRate[]> {
     const client = getShippoClient();
     // No carrier_accounts / carriers filter — Shippo quotes every active
-    // carrier account on the API token.
+    // carrier account on the API token. Missing FedEx/UPS is almost always
+    // inactive/restricted accounts on the Shippo side, not app filtering.
+    await logActiveCarrierAccounts(client);
+
     const shipment = await client.shipments.create({
       addressFrom: toShippoAddress(input.shipFrom),
-      addressTo: toShippoAddress(input.shipTo),
+      // Guest destinations are residential return addresses.
+      addressTo: toShippoAddress(input.shipTo, { isResidential: true }),
       parcels: [toShippoParcel(input.parcel)],
       async: false,
     });
@@ -196,7 +200,10 @@ export class ShippoShippingProvider implements ShippingProvider {
   }
 }
 
-function toShippoAddress(address: ShippingAddress) {
+function toShippoAddress(
+  address: ShippingAddress,
+  options?: { isResidential?: boolean }
+) {
   return {
     name: String(address.name || "").trim(),
     street1: String(address.line1 || "").trim(),
@@ -207,7 +214,42 @@ function toShippoAddress(address: ShippingAddress) {
     country: String(address.country || "US").trim().toUpperCase(),
     phone: address.phone?.trim() || undefined,
     email: address.email?.trim() || undefined,
+    ...(options?.isResidential != null
+      ? { isResidential: options.isResidential }
+      : {}),
   };
+}
+
+/** Log which Shippo carrier accounts are active (explains USPS-only quotes). */
+async function logActiveCarrierAccounts(client: ReturnType<typeof getShippoClient>) {
+  try {
+    const listed = await client.carrierAccounts.list({ results: 100 });
+    const accounts = (listed.results || []).map((account) => ({
+      carrier: String(account.carrier || ""),
+      active: account.active !== false,
+      isShippoAccount: Boolean(account.isShippoAccount),
+      test: Boolean(account.test),
+      objectId: account.objectId ?? null,
+    }));
+    const activeCarriers = uniqueStrings(
+      accounts.filter((row) => row.active).map((row) => row.carrier)
+    );
+    logShippoRates("shippo.carrier_accounts", {
+      accountCount: accounts.length,
+      activeCarriers,
+      hasFedEx: activeCarriers.some((carrier) =>
+        carrier.toLowerCase().includes("fedex")
+      ),
+      hasUps: activeCarriers.some((carrier) =>
+        carrier.toLowerCase().includes("ups")
+      ),
+      accounts,
+    });
+  } catch (error) {
+    logShippoRates("shippo.carrier_accounts_error", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function fromShippoAddress(
