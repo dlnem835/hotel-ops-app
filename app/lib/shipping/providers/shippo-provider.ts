@@ -477,16 +477,23 @@ function mapPurchasedLabel(transaction: Transaction): PurchasedLabel {
 }
 
 function mapTrackingStatus(raw: string): TrackingStatus {
-  switch (raw.toUpperCase()) {
+  switch (raw.toUpperCase().replace(/[\s-]+/g, "_")) {
     case "PRE_TRANSIT":
+    case "PRETRANSIT":
       return "pre_transit";
     case "TRANSIT":
+    case "IN_TRANSIT":
+    case "OUT_FOR_DELIVERY":
+    case "ACCEPTED":
       return "in_transit";
     case "DELIVERED":
       return "delivered";
     case "RETURNED":
+    case "RETURN_TO_SENDER":
       return "returned";
     case "FAILURE":
+    case "ERROR":
+    case "FAILED":
       return "exception";
     default:
       return "unknown";

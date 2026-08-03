@@ -112,10 +112,6 @@ export default function GuestShipmentTrackingCard({
           <dd>{displayCarrierService(view.selectedCarrier)}</dd>
         </div>
         <div>
-          <dt>Service</dt>
-          <dd>{displayCarrierService(view.selectedService)}</dd>
-        </div>
-        <div>
           <dt>Tracking number</dt>
           <dd>
             {view.trackingNumber ? (

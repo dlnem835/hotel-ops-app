@@ -267,23 +267,82 @@ export function trackingStatusToOperationalLostItemStatus(
 }
 
 export function mapShippoRawTrackingStatus(raw: string): TrackingStatus {
-  const upper = (raw || "").trim().toUpperCase();
+  const upper = (raw || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
   switch (upper) {
     case "PRE_TRANSIT":
+    case "PRETRANSIT":
       return "pre_transit";
     case "TRANSIT":
+    case "IN_TRANSIT":
     case "OUT_FOR_DELIVERY":
+    case "ACCEPTED":
       return "in_transit";
     case "DELIVERED":
       return "delivered";
     case "RETURNED":
+    case "RETURN_TO_SENDER":
       return "returned";
     case "FAILURE":
     case "ERROR":
+    case "FAILED":
       return "exception";
     default:
       return "unknown";
   }
+}
+
+/**
+ * Prefer top-level Shippo status; fall back to substatus codes that mean
+ * the carrier has accepted / moved the package (USPS "Accepted", etc.).
+ */
+export function resolveShippoTrackingStatus(
+  rawStatus: string,
+  substatusCode?: string | null
+): TrackingStatus {
+  const primary = mapShippoRawTrackingStatus(rawStatus);
+  if (primary !== "unknown") return primary;
+
+  const code = String(substatusCode || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (!code) return "unknown";
+
+  if (
+    code === "package_accepted" ||
+    code === "package_arrived" ||
+    code === "package_departed" ||
+    code === "package_forwarded" ||
+    code === "package_processed" ||
+    code === "out_for_delivery" ||
+    code === "delivery_scheduled" ||
+    code === "picked_up"
+  ) {
+    return "in_transit";
+  }
+  if (code === "delivered" || code.startsWith("delivered_")) {
+    return "delivered";
+  }
+  if (
+    code === "return_to_sender" ||
+    code === "package_returned" ||
+    code === "returned_to_sender"
+  ) {
+    return "returned";
+  }
+  if (
+    code === "delivery_attempted" ||
+    code === "package_undeliverable" ||
+    code === "package_damaged" ||
+    code === "package_lost" ||
+    code === "delivery_failure"
+  ) {
+    return "exception";
+  }
+  if (code === "information_received" || code === "label_created") {
+    return "pre_transit";
+  }
+  return "unknown";
 }
 
 export function carrierTrackingStatusLabel(status: string | null | undefined): string {

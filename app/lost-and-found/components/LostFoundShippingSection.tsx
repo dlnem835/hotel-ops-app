@@ -420,8 +420,8 @@ export default function LostFoundShippingSection({
                 value={displayCarrierOrService(activeRequest.selectedCarrier)}
               />
               <SummaryField
-                label="Service"
-                value={displayCarrierOrService(activeRequest.selectedService)}
+                label="Estimated delivery"
+                value={formatLocalDate(activeRequest.estimatedDeliveryAt)}
               />
               <SummaryField
                 label="Shipping cost"
@@ -466,10 +466,6 @@ export default function LostFoundShippingSection({
                     "Not available"
                   )
                 }
-              />
-              <SummaryField
-                label="Estimated delivery"
-                value={formatLocalDate(activeRequest.estimatedDeliveryAt)}
               />
               <SummaryField
                 label="Delivered date"

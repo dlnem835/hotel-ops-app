@@ -11,12 +11,14 @@ import {
 import {
   canApplyAutomatedLostItemStatus,
   LOST_ITEM_STATUS,
-  mapShippoRawTrackingStatus,
+  resolveShippoTrackingStatus,
   trackingStatusToOperationalLostItemStatus,
   type AutomatedLostItemStatusTarget,
 } from "@/app/lib/lost-found-shipping/status";
+import { logTrackingSync } from "@/app/lib/lost-found-shipping/tracking-log";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { laterTokenExpiry } from "@/app/lib/lost-found-shipping/token";
+import { normalizeCarrierSlug } from "@/app/lib/shipping/register-shippo-tracking";
 
 export class ShippoWebhookVerifyError extends Error {
   constructor(message: string) {
@@ -34,10 +36,12 @@ export type ShippoTrackingWebhookResult = {
   appliedLostItemStatus: string | null;
 };
 
-type ParsedTrackPayload = {
+export type ParsedTrackPayload = {
   trackingNumber: string;
   carrier: string | null;
   rawStatus: string;
+  substatusCode: string | null;
+  substatusText: string | null;
   trackingStatus: TrackingStatus;
   statusDetails: string | null;
   statusDate: string | null;
@@ -68,6 +72,7 @@ export function verifyShippoWebhookRequest(input: {
 }): void {
   const secret = getShippoWebhookSecret();
   if (!secret) {
+    logTrackingSync("error", "webhook.auth_missing_secret", {});
     throw new ShippoWebhookVerifyError(
       "SHIPPO_WEBHOOK_SECRET is not configured"
     );
@@ -77,6 +82,7 @@ export function verifyShippoWebhookRequest(input: {
     input.url.searchParams.get("token") ||
     input.url.searchParams.get("shippo_token");
   if (queryToken && safeEqualString(queryToken, secret)) {
+    logTrackingSync("info", "webhook.auth_ok", { method: "query_token" });
     return;
   }
 
@@ -84,6 +90,9 @@ export function verifyShippoWebhookRequest(input: {
     input.signatureHeader ||
     "";
   if (!sigHeader) {
+    logTrackingSync("warn", "webhook.auth_failed", {
+      reason: "missing_token_or_signature",
+    });
     throw new ShippoWebhookVerifyError(
       "Missing Shippo webhook token or signature"
     );
@@ -100,7 +109,13 @@ export function verifyShippoWebhookRequest(input: {
   const signature = parts.v1;
   if (!timestamp || !signature) {
     // Some setups send a bare token in the header
-    if (safeEqualString(sigHeader.trim(), secret)) return;
+    if (safeEqualString(sigHeader.trim(), secret)) {
+      logTrackingSync("info", "webhook.auth_ok", { method: "header_token" });
+      return;
+    }
+    logTrackingSync("warn", "webhook.auth_failed", {
+      reason: "invalid_signature_format",
+    });
     throw new ShippoWebhookVerifyError("Invalid Shippo signature format");
   }
 
@@ -110,8 +125,12 @@ export function verifyShippoWebhookRequest(input: {
     .digest("hex");
 
   if (!safeEqualString(expected, signature)) {
+    logTrackingSync("warn", "webhook.auth_failed", {
+      reason: "hmac_mismatch",
+    });
     throw new ShippoWebhookVerifyError("Invalid Shippo webhook signature");
   }
+  logTrackingSync("info", "webhook.auth_ok", { method: "hmac" });
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -150,22 +169,47 @@ export function parseShippoTrackPayload(body: unknown): ParsedTrackPayload | nul
   const rawStatus = String(
     statusObj?.status || data.status || "UNKNOWN"
   ).trim();
+
+  const substatusObj =
+    asRecord(statusObj?.substatus) ||
+    asRecord(statusObj?.subStatus) ||
+    null;
+  const substatusCode = substatusObj?.code
+    ? String(substatusObj.code)
+    : substatusObj?.Code
+      ? String(substatusObj.Code)
+      : null;
+  const substatusText = substatusObj?.text
+    ? String(substatusObj.text)
+    : substatusObj?.Text
+      ? String(substatusObj.Text)
+      : null;
+
   const statusDetails = statusObj?.status_details
     ? String(statusObj.status_details)
     : statusObj?.statusDetails
       ? String(statusObj.statusDetails)
       : null;
-  const statusDate = statusObj?.status_date
-    ? String(statusObj.status_date)
-    : statusObj?.statusDate
-      ? String(statusObj.statusDate)
-      : null;
+  const statusDateRaw =
+    statusObj?.status_date ||
+    statusObj?.statusDate ||
+    null;
+  const statusDate = statusDateRaw
+    ? statusDateRaw instanceof Date
+      ? statusDateRaw.toISOString()
+      : String(statusDateRaw)
+    : null;
 
   const eta =
     data.eta ||
     data.estimated_delivery ||
     data.estimatedDelivery ||
     null;
+  const estimatedDelivery = eta
+    ? eta instanceof Date
+      ? eta.toISOString()
+      : String(eta)
+    : null;
 
   const transactionId = data.transaction
     ? String(data.transaction)
@@ -179,7 +223,9 @@ export function parseShippoTrackPayload(body: unknown): ParsedTrackPayload | nul
     trackingNumber,
     carrier: data.carrier ? String(data.carrier) : null,
     rawStatus,
-    trackingStatus: mapShippoRawTrackingStatus(rawStatus),
+    substatusCode,
+    substatusText,
+    trackingStatus: resolveShippoTrackingStatus(rawStatus, substatusCode),
     statusDetails,
     statusDate,
     trackingUrl: data.tracking_url_provider
@@ -187,7 +233,7 @@ export function parseShippoTrackPayload(body: unknown): ParsedTrackPayload | nul
       : data.trackingUrlProvider
         ? String(data.trackingUrlProvider)
         : null,
-    estimatedDelivery: eta ? String(eta) : null,
+    estimatedDelivery,
     objectId: data.object_id
       ? String(data.object_id)
       : data.objectId
@@ -290,20 +336,40 @@ async function resolveShippingRequestForTrack(
     .is("cancelled_at", null);
 
   if (error) throw new Error(error.message);
-  const matches = (rows || []) as ShippingRequestRow[];
+  let matches = (rows || []) as ShippingRequestRow[];
   if (matches.length === 0) {
     return { request: null, ambiguous: false, matchKey: null };
   }
-  if (matches.length > 1) {
-    console.error(
-      "[shippo-webhook] Ambiguous tracking_number match; refusing update",
-      {
-        trackingNumber: parsed.trackingNumber,
-        requestIds: matches.map((r) => r.id),
-        propertyIds: matches.map((r) => r.property_id),
-        organizationIds: matches.map((r) => r.organization_id),
+
+  // When multiple rows share a tracking number, prefer matching carrier.
+  if (matches.length > 1 && parsed.carrier) {
+    const wanted = normalizeCarrierSlug(parsed.carrier);
+    if (wanted) {
+      const byCarrier = matches.filter((row) => {
+        const rowCarrier = normalizeCarrierSlug(
+          row.selected_carrier != null ? String(row.selected_carrier) : null
+        );
+        return rowCarrier === wanted;
+      });
+      if (byCarrier.length === 1) {
+        return {
+          request: byCarrier[0],
+          ambiguous: false,
+          matchKey: "tracking_number",
+        };
       }
-    );
+      if (byCarrier.length > 1) matches = byCarrier;
+    }
+  }
+
+  if (matches.length > 1) {
+    logTrackingSync("error", "webhook.ambiguous_tracking_match", {
+      trackingNumber: parsed.trackingNumber,
+      carrier: parsed.carrier,
+      requestIds: matches.map((r) => Number(r.id)),
+      propertyIds: matches.map((r) => Number(r.property_id)),
+      organizationIds: matches.map((r) => Number(r.organization_id)),
+    });
     return { request: null, ambiguous: true, matchKey: null };
   }
 
@@ -318,7 +384,7 @@ async function applyLostItemStatusIfAllowed(
   supabase: SupabaseClient,
   row: ShippingRequestRow,
   nextStatus: AutomatedLostItemStatusTarget
-): Promise<string | null> {
+): Promise<{ applied: string | null; previous: string | null }> {
   const lostItemId = Number(row.lost_item_id);
   const { data: item, error } = await supabase
     .from("lost_items")
@@ -329,11 +395,11 @@ async function applyLostItemStatusIfAllowed(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!item) return null;
+  if (!item) return { applied: null, previous: null };
 
   const current = String(item.status || "");
   if (!canApplyAutomatedLostItemStatus(current, nextStatus)) {
-    return null;
+    return { applied: null, previous: current };
   }
 
   const { error: updateError } = await supabase
@@ -344,7 +410,7 @@ async function applyLostItemStatusIfAllowed(
     .eq("property_id", Number(row.property_id));
 
   if (updateError) throw new Error(updateError.message);
-  return nextStatus;
+  return { applied: nextStatus, previous: current };
 }
 
 /**
@@ -358,6 +424,12 @@ export async function applyCarrierTrackingUpdate(
 ): Promise<{ appliedLostItemStatus: string | null }> {
   const requestId = Number(row.id);
   const nowIso = new Date().toISOString();
+  const previousCarrierStatus = row.carrier_tracking_status
+    ? String(row.carrier_tracking_status)
+    : null;
+  const previousRaw = row.carrier_tracking_raw
+    ? String(row.carrier_tracking_raw)
+    : null;
 
   if (
     isStaleTrackingEvent(
@@ -365,6 +437,14 @@ export async function applyCarrierTrackingUpdate(
       parsed.statusDate
     )
   ) {
+    logTrackingSync("info", "tracking.update_ignored_stale", {
+      shippingRequestId: requestId,
+      trackingNumber: parsed.trackingNumber,
+      carrier: parsed.carrier,
+      previousShippoStatus: previousRaw,
+      newShippoStatus: parsed.rawStatus,
+      substatus: parsed.substatusCode,
+    });
     await appendShippingEvent(supabase, {
       organizationId: Number(row.organization_id),
       propertyId: Number(row.property_id),
@@ -375,6 +455,7 @@ export async function applyCarrierTrackingUpdate(
       eventData: {
         notes: "Ignored stale tracking webhook (older than last event)",
         rawStatus: parsed.rawStatus,
+        substatusCode: parsed.substatusCode,
         statusDate: parsed.statusDate,
         trackingNumber: parsed.trackingNumber,
       },
@@ -382,9 +463,8 @@ export async function applyCarrierTrackingUpdate(
     return { appliedLostItemStatus: null };
   }
 
-  const isException =
-    parsed.trackingStatus === "exception" ||
-    parsed.trackingStatus === "unknown";
+  const isException = parsed.trackingStatus === "exception";
+  const isUnknown = parsed.trackingStatus === "unknown";
   const isReturned = parsed.trackingStatus === "returned";
 
   const shipmentStatusPatch =
@@ -401,6 +481,7 @@ export async function applyCarrierTrackingUpdate(
   const patch: Record<string, unknown> = {
     carrier_tracking_status: parsed.trackingStatus,
     carrier_tracking_raw: parsed.rawStatus,
+    carrier_tracking_substatus: parsed.substatusCode,
     carrier_tracking_updated_at: nowIso,
     last_tracking_event_at: parsed.statusDate || nowIso,
     updated_at: nowIso,
@@ -446,12 +527,16 @@ export async function applyCarrierTrackingUpdate(
     patch.returned_to_sender = true;
     patch.shipping_exception_code = "returned_to_sender";
     patch.shipping_exception_message =
-      parsed.statusDetails || "Carrier reported returned to sender";
+      parsed.statusDetails ||
+      parsed.substatusText ||
+      "Carrier reported returned to sender";
     patch.shipping_exception_at = parsed.statusDate || nowIso;
   } else if (isException) {
     patch.shipping_exception_code = "carrier_exception";
     patch.shipping_exception_message =
-      parsed.statusDetails || `Carrier status: ${parsed.rawStatus}`;
+      parsed.statusDetails ||
+      parsed.substatusText ||
+      `Carrier status: ${parsed.rawStatus}`;
     patch.shipping_exception_at = parsed.statusDate || nowIso;
   }
 
@@ -462,7 +547,27 @@ export async function applyCarrierTrackingUpdate(
     .eq("organization_id", Number(row.organization_id))
     .eq("property_id", Number(row.property_id));
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) {
+    logTrackingSync("error", "tracking.db_update_failed", {
+      shippingRequestId: requestId,
+      trackingNumber: parsed.trackingNumber,
+      message: updateError.message,
+    });
+    throw new Error(updateError.message);
+  }
+
+  logTrackingSync("info", "tracking.db_update_ok", {
+    shippingRequestId: requestId,
+    trackingNumber: parsed.trackingNumber,
+    carrier: parsed.carrier,
+    previousShippoStatus: previousRaw,
+    newShippoStatus: parsed.rawStatus,
+    previousCarrierStatus,
+    newCarrierStatus: parsed.trackingStatus,
+    substatus: parsed.substatusCode,
+    shipmentStatusPatch,
+    isUnknown,
+  });
 
   let timelineEvent: string = SHIPPING_TIMELINE_EVENTS.trackingUpdateReceived;
   if (parsed.trackingStatus === "delivered") {
@@ -483,10 +588,15 @@ export async function applyCarrierTrackingUpdate(
     eventType: timelineEvent,
     eventSource: "shippo",
     eventData: {
-      notes: parsed.statusDetails || `Carrier status: ${parsed.rawStatus}`,
+      notes:
+        parsed.statusDetails ||
+        parsed.substatusText ||
+        `Carrier status: ${parsed.rawStatus}`,
       trackingNumber: parsed.trackingNumber,
       carrier: parsed.carrier,
       rawStatus: parsed.rawStatus,
+      substatusCode: parsed.substatusCode,
+      substatusText: parsed.substatusText,
       trackingStatus: parsed.trackingStatus,
       statusDate: parsed.statusDate,
       returnedToSender: isReturned,
@@ -500,19 +610,36 @@ export async function applyCarrierTrackingUpdate(
   let proposed = trackingStatusToOperationalLostItemStatus(
     parsed.trackingStatus
   );
-  // Exceptions: keep current operational status (usually Shipped); do not propose change
-  if (isException) {
+  // Exceptions / unknown: keep current operational status; flag exception only.
+  if (isException || isUnknown) {
     proposed = null;
   }
-  // Returned: propose Shipped (never Delivered) — trackingStatusToOperational already does
   if (isReturned) {
     proposed = LOST_ITEM_STATUS.shipped;
   }
 
   let applied: string | null = null;
+  let previousLostItemStatus: string | null = null;
   if (proposed) {
-    applied = await applyLostItemStatusIfAllowed(supabase, row, proposed);
+    const result = await applyLostItemStatusIfAllowed(supabase, row, proposed);
+    applied = result.applied;
+    previousLostItemStatus = result.previous;
+  } else {
+    const { data: item } = await supabase
+      .from("lost_items")
+      .select("status")
+      .eq("id", Number(row.lost_item_id))
+      .maybeSingle();
+    previousLostItemStatus = item?.status ? String(item.status) : null;
   }
+
+  logTrackingSync("info", "tracking.lost_item_status", {
+    shippingRequestId: requestId,
+    trackingNumber: parsed.trackingNumber,
+    previousLostItemStatus,
+    newLostItemStatus: applied,
+    proposed,
+  });
 
   return { appliedLostItemStatus: applied };
 }
@@ -523,6 +650,11 @@ export async function processShippoTrackingWebhook(
   requestUrl: URL,
   signatureHeader: string | null
 ): Promise<ShippoTrackingWebhookResult> {
+  logTrackingSync("info", "webhook.received", {
+    bodyBytes: rawBody.length,
+    hasSignature: Boolean(signatureHeader),
+  });
+
   verifyShippoWebhookRequest({
     rawBody,
     url: requestUrl,
@@ -533,11 +665,13 @@ export async function processShippoTrackingWebhook(
   try {
     body = JSON.parse(rawBody);
   } catch {
+    logTrackingSync("error", "webhook.invalid_json", {});
     throw new ShippoWebhookVerifyError("Invalid JSON body");
   }
 
   const parsed = parseShippoTrackPayload(body);
   if (!parsed) {
+    logTrackingSync("warn", "webhook.no_tracking_payload", {});
     return {
       ok: true,
       duplicate: false,
@@ -548,8 +682,21 @@ export async function processShippoTrackingWebhook(
     };
   }
 
+  logTrackingSync("info", "webhook.parsed", {
+    trackingNumber: parsed.trackingNumber,
+    carrier: parsed.carrier,
+    newShippoStatus: parsed.rawStatus,
+    substatus: parsed.substatusCode,
+    trackingStatus: parsed.trackingStatus,
+    transactionId: parsed.transactionId,
+  });
+
   const resolved = await resolveShippingRequestForTrack(supabase, parsed);
   if (resolved.ambiguous) {
+    logTrackingSync("error", "webhook.unmatched_ambiguous", {
+      trackingNumber: parsed.trackingNumber,
+      carrier: parsed.carrier,
+    });
     return {
       ok: true,
       duplicate: false,
@@ -560,6 +707,11 @@ export async function processShippoTrackingWebhook(
     };
   }
   if (!resolved.request) {
+    logTrackingSync("warn", "webhook.unmatched", {
+      trackingNumber: parsed.trackingNumber,
+      carrier: parsed.carrier,
+      transactionId: parsed.transactionId,
+    });
     return {
       ok: true,
       duplicate: false,
@@ -571,6 +723,17 @@ export async function processShippoTrackingWebhook(
   }
 
   const row = resolved.request;
+  logTrackingSync("info", "webhook.request_matched", {
+    shippingRequestId: Number(row.id),
+    matchKey: resolved.matchKey,
+    trackingNumber: parsed.trackingNumber,
+    carrier: parsed.carrier,
+    previousShippoStatus: row.carrier_tracking_raw
+      ? String(row.carrier_tracking_raw)
+      : null,
+    newShippoStatus: parsed.rawStatus,
+  });
+
   const providerEventId = buildProviderEventId(parsed, rawBody);
   const payloadHash = createHash("sha256").update(rawBody).digest("hex");
   const claim = await claimShippingWebhookEvent(supabase, {
@@ -584,6 +747,11 @@ export async function processShippoTrackingWebhook(
   });
 
   if (!claim.claimed) {
+    logTrackingSync("info", "webhook.duplicate", {
+      shippingRequestId: Number(row.id),
+      trackingNumber: parsed.trackingNumber,
+      providerEventId,
+    });
     return {
       ok: true,
       duplicate: true,
@@ -595,6 +763,15 @@ export async function processShippoTrackingWebhook(
   }
 
   const result = await applyCarrierTrackingUpdate(supabase, row, parsed);
+
+  logTrackingSync("info", "webhook.handled", {
+    shippingRequestId: Number(row.id),
+    trackingNumber: parsed.trackingNumber,
+    carrier: parsed.carrier,
+    newShippoStatus: parsed.rawStatus,
+    newLostItemStatus: result.appliedLostItemStatus,
+    matchKey: resolved.matchKey,
+  });
 
   return {
     ok: true,
@@ -687,5 +864,5 @@ export async function markShippingLabelReady(
     LOST_ITEM_STATUS.readyToShip
   );
 
-  return { appliedLostItemStatus: applied };
+  return { appliedLostItemStatus: applied.applied };
 }

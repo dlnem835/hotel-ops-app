@@ -17,8 +17,10 @@ import {
 } from "@/app/lib/lost-found-shipping/carrier-display";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { ensureShippoTrackUpdatedWebhook } from "@/app/lib/shipping/shippo-ensure-webhooks";
+import { registerShippoTracking } from "@/app/lib/shipping/register-shippo-tracking";
 import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import { redactStripeId } from "@/app/lib/payments/types";
+import { logTrackingSync } from "@/app/lib/lost-found-shipping/tracking-log";
 
 const LOCK_STALE_MS = 2 * 60 * 1000;
 
@@ -310,7 +312,26 @@ export async function purchaseLabelForPaidShippingRequest(
       .eq("id", shippingRequestId);
 
     if (getShippingProviderMode() === "shippo") {
-      await ensureShippoTrackUpdatedWebhook();
+      const webhookEnsure = await ensureShippoTrackUpdatedWebhook();
+      logTrackingSync(
+        webhookEnsure.ok ? "info" : "warn",
+        "webhook.ensure_after_label",
+        {
+          shippingRequestId,
+          action: webhookEnsure.action,
+          message: webhookEnsure.message,
+          webhookUrl: webhookEnsure.webhookUrl
+            ? webhookEnsure.webhookUrl.replace(/token=[^&]+/i, "token=***")
+            : null,
+        }
+      );
+
+      await registerShippoTracking({
+        trackingNumber: purchased.trackingNumber,
+        carrier: resolved.carrier,
+        shippingRequestId,
+        metadata: `lf_sr_${shippingRequestId}`,
+      });
     }
 
     logFulfillment("info", "label.purchase_complete", {

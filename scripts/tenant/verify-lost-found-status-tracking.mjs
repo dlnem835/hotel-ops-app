@@ -53,21 +53,49 @@ function canApply(current, next) {
 }
 
 function mapShippo(raw) {
-  switch (String(raw || "").toUpperCase()) {
+  const upper = String(raw || "").toUpperCase().replace(/[\s-]+/g, "_");
+  switch (upper) {
     case "PRE_TRANSIT":
+    case "PRETRANSIT":
       return "pre_transit";
     case "TRANSIT":
+    case "IN_TRANSIT":
     case "OUT_FOR_DELIVERY":
+    case "ACCEPTED":
       return "in_transit";
     case "DELIVERED":
       return "delivered";
     case "RETURNED":
+    case "RETURN_TO_SENDER":
       return "returned";
     case "FAILURE":
+    case "ERROR":
+    case "FAILED":
       return "exception";
     default:
       return "unknown";
   }
+}
+
+function resolveShippo(raw, substatus) {
+  const primary = mapShippo(raw);
+  if (primary !== "unknown") return primary;
+  const code = String(substatus || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (
+    [
+      "package_accepted",
+      "package_arrived",
+      "package_departed",
+      "out_for_delivery",
+      "picked_up",
+    ].includes(code)
+  ) {
+    return "in_transit";
+  }
+  return "unknown";
 }
 
 function trackingToStatus(tracking) {
@@ -159,6 +187,11 @@ check("Shippo tracking → operational status", () => {
   assert.strictEqual(trackingToStatus(mapShippo("PRE_TRANSIT")), "Ready to Ship");
   assert.strictEqual(trackingToStatus(mapShippo("TRANSIT")), "Shipped");
   assert.strictEqual(trackingToStatus(mapShippo("OUT_FOR_DELIVERY")), "Shipped");
+  assert.strictEqual(trackingToStatus(mapShippo("ACCEPTED")), "Shipped");
+  assert.strictEqual(
+    trackingToStatus(resolveShippo("UNKNOWN", "package_accepted")),
+    "Shipped"
+  );
   assert.strictEqual(trackingToStatus(mapShippo("DELIVERED")), "Delivered");
   assert.strictEqual(trackingToStatus(mapShippo("RETURNED")), "Shipped");
   assert.strictEqual(trackingToStatus(mapShippo("FAILURE")), null);
