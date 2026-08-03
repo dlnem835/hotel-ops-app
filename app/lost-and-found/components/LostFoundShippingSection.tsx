@@ -7,8 +7,6 @@ import {
   normalizeLostItemStatus,
 } from "@/app/lib/lost-found-shipping/status";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-import SendLabelRequestForm from "@/app/SendLabelRequestForm";
-
 type LostFoundShippingSectionProps = {
   itemId: number;
   itemName?: string;
@@ -74,6 +72,14 @@ function formatLocalDate(value: string | null | undefined): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+/** Hide Shippo placeholder strings that were stored when rate expand failed. */
+function displayCarrierOrService(value: string | null | undefined): string {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "Not available";
+  if (/^(carrier|service)$/i.test(trimmed)) return "Not available";
+  return trimmed;
 }
 
 function paymentLabel(status: string): string {
@@ -247,13 +253,6 @@ export default function LostFoundShippingSection({
 
   async function copyGuestLink(requestId: number) {
     try {
-      const request = requests.find((row) => row.id === requestId);
-      if (request && request.paymentStatus === "paid" && !guestLinks[requestId]) {
-        setError(
-          "The guest link cannot be re-issued after payment. Guests should keep using their original link."
-        );
-        return;
-      }
       const url = await ensureGuestLink(requestId);
       await navigator.clipboard.writeText(url);
       setCopiedId(requestId);
@@ -270,26 +269,16 @@ export default function LostFoundShippingSection({
     }
   }
 
-  async function openGuestPage(requestId: number) {
+  async function openGuestTrackingPage(requestId: number) {
     try {
-      const request = requests.find((row) => row.id === requestId);
-      if (request && request.paymentStatus === "paid" && !guestLinks[requestId]) {
-        if (request.trackingUrl) {
-          window.open(request.trackingUrl, "_blank", "noopener,noreferrer");
-          return;
-        }
-        setError(
-          "The guest link cannot be re-issued after payment. Guests should keep using their original link."
-        );
-        return;
-      }
+      // Always open the One Eyrie guest tracking page — never the carrier site.
       const url = await ensureGuestLink(requestId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (openError) {
       setError(
         openError instanceof Error
           ? openError.message
-          : "Unable to open guest page"
+          : "Unable to open shipment tracking"
       );
     }
   }
@@ -428,11 +417,11 @@ export default function LostFoundShippingSection({
               <SummaryField label="Destination" value={destination} />
               <SummaryField
                 label="Carrier"
-                value={activeRequest.selectedCarrier || "Not available"}
+                value={displayCarrierOrService(activeRequest.selectedCarrier)}
               />
               <SummaryField
                 label="Service"
-                value={activeRequest.selectedService || "Not available"}
+                value={displayCarrierOrService(activeRequest.selectedService)}
               />
               <SummaryField
                 label="Shipping cost"
@@ -499,9 +488,9 @@ export default function LostFoundShippingSection({
                 type="button"
                 style={linkButtonStyle()}
                 disabled={linkBusy}
-                onClick={() => void openGuestPage(activeRequest.id)}
+                onClick={() => void openGuestTrackingPage(activeRequest.id)}
               >
-                Open Guest Page
+                View Shipment Tracking
               </button>
               <button
                 type="button"
@@ -584,18 +573,6 @@ export default function LostFoundShippingSection({
           </div>
         )}
       </div>
-
-      <details className="lnf-manual-label-fallback">
-        <summary className="lnf-manual-label-fallback__summary">
-          Manual Label Upload
-        </summary>
-        <p className="lnf-manual-label-fallback__copy">
-          Secondary option for prepaid labels. Guests create their own carrier
-          label and upload the PDF. Prefer Guest Shipping above when automated
-          shipping is enabled.
-        </p>
-        <SendLabelRequestForm itemId={itemId} />
-      </details>
     </section>
   );
 }

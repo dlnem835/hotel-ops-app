@@ -2,7 +2,10 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
-import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
+import {
+  appendShippingEvent,
+  getStoredGuestShippingUrl,
+} from "@/app/lib/lost-found-shipping/shipping-requests";
 import { purchaseLabelForPaidShippingRequest } from "@/app/lib/lost-found-shipping/purchase-label-for-request";
 import {
   alertLabelCreationFailed,
@@ -646,7 +649,6 @@ async function notifyGuestAndStaffAfterPayment(
   const trackingNumber = row.tracking_number
     ? String(row.tracking_number)
     : null;
-  const trackingUrl = row.tracking_url ? String(row.tracking_url) : null;
 
   if (input.newlyPaid || input.labelPurchased) {
     logFulfillment("info", "notify.guest_payment_email_start", {
@@ -654,6 +656,17 @@ async function notifyGuestAndStaffAfterPayment(
       hasTracking: Boolean(trackingNumber),
       labelPurchased: input.labelPurchased,
     });
+    // CTA must be the One Eyrie guest tracking page — not the carrier site.
+    const guestTrackingUrl = await getStoredGuestShippingUrl(
+      supabase,
+      input.shippingRequestId
+    );
+    const carrierRaw = row.selected_carrier
+      ? String(row.selected_carrier).trim()
+      : "";
+    const serviceRaw = row.selected_service
+      ? String(row.selected_service).trim()
+      : "";
     const emailed = await sendGuestPaymentConfirmationEmail({
       guestEmail: String(row.guest_email || ""),
       guestName: row.guest_name ? String(row.guest_name) : null,
@@ -661,10 +674,16 @@ async function notifyGuestAndStaffAfterPayment(
       itemName,
       amount,
       currency: input.currency,
-      guestTrackingUrl: trackingUrl,
+      guestTrackingUrl,
       trackingNumber,
-      carrier: row.selected_carrier ? String(row.selected_carrier) : null,
-      service: row.selected_service ? String(row.selected_service) : null,
+      carrier:
+        carrierRaw && !/^(carrier|service)$/i.test(carrierRaw)
+          ? carrierRaw
+          : null,
+      service:
+        serviceRaw && !/^(carrier|service)$/i.test(serviceRaw)
+          ? serviceRaw
+          : null,
     });
     if (!emailed.ok) {
       logFulfillment("error", "notify.guest_payment_email_failed", {

@@ -37,4 +37,10 @@ export type TransactionalEmailLayoutInput = {
   supportMessage?: string;
   /** Override © year (defaults to current UTC year) */
   currentYear?: number;
+  /**
+   * Header brand treatment.
+   * - logo (default): stacked image logo
+   * - text: ONE / EYRIE wordmark (guest payment confirmation)
+   */
+  headerVariant?: "logo" | "text";
 };

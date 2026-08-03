@@ -258,6 +258,19 @@ export async function retryLabelForPaidShippingRequest(
       const itemName =
         String(fresh?.item_description_public || "").trim() || "your item";
       if (fresh?.guest_email) {
+        const { getStoredGuestShippingUrl } = await import(
+          "@/app/lib/lost-found-shipping/shipping-requests"
+        );
+        const guestTrackingUrl = await getStoredGuestShippingUrl(
+          supabase,
+          shippingRequestId
+        );
+        const carrierRaw = fresh.selected_carrier
+          ? String(fresh.selected_carrier).trim()
+          : "";
+        const serviceRaw = fresh.selected_service
+          ? String(fresh.selected_service).trim()
+          : "";
         await sendGuestPaymentConfirmationEmail({
           guestEmail: String(fresh.guest_email),
           guestName: fresh.guest_name ? String(fresh.guest_name) : null,
@@ -265,18 +278,18 @@ export async function retryLabelForPaidShippingRequest(
           itemName,
           amount: Number(fresh.total_amount),
           currency: String(fresh.currency || "usd"),
-          guestTrackingUrl: fresh.tracking_url
-            ? String(fresh.tracking_url)
-            : null,
+          guestTrackingUrl,
           trackingNumber: fresh.tracking_number
             ? String(fresh.tracking_number)
             : purchased.trackingNumber,
-          carrier: fresh.selected_carrier
-            ? String(fresh.selected_carrier)
-            : null,
-          service: fresh.selected_service
-            ? String(fresh.selected_service)
-            : null,
+          carrier:
+            carrierRaw && !/^(carrier|service)$/i.test(carrierRaw)
+              ? carrierRaw
+              : null,
+          service:
+            serviceRaw && !/^(carrier|service)$/i.test(serviceRaw)
+              ? serviceRaw
+              : null,
         });
       }
       if (fresh?.label_storage_path) {

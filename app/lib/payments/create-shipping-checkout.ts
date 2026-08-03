@@ -273,8 +273,8 @@ async function createOrReuseShippingCheckoutSessionInner(
     );
   }
 
-  const carrier = String(row.selected_carrier || selected.carrier || "Carrier");
-  const service = String(row.selected_service || selected.service || "Service");
+  const carrier = String(row.selected_carrier || selected.carrier || "").trim();
+  const service = String(row.selected_service || selected.service || "").trim();
 
   let propertyName = "Hotel";
   const { data: property } = await supabase
@@ -353,7 +353,10 @@ async function createOrReuseShippingCheckoutSessionInner(
   )}/payment-cancelled`;
 
   const lineName = "Lost Item Return Shipping";
-  const lineDescription = `${carrier} ${service} return shipping from ${propertyName}`;
+  const carrierServiceLabel = [carrier, service].filter(Boolean).join(" ");
+  const lineDescription = `${
+    carrierServiceLabel || "Return"
+  } shipping from ${propertyName}`;
   const amountCents = payment.amount_cents;
 
   const idempotencyKey = `lf-checkout-payment-${payment.id}`;

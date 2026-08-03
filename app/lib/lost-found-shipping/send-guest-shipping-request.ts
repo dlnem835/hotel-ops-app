@@ -363,6 +363,7 @@ export async function sendGuestShippingRequest(
         : `Guest shipping request email sent to ${guestEmail}`,
       guestEmail,
       guestEmailDomain: guestEmail.split("@")[1] || null,
+      guestUrl,
       resendMessageId: emailed.messageId,
       emailFrom: emailed.from,
       created,

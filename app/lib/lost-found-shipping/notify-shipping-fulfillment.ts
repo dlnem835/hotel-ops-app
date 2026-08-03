@@ -82,6 +82,7 @@ export async function sendGuestPaymentConfirmationEmail(input: {
   const trackingLink = String(input.guestTrackingUrl || "").trim();
   const html = renderTransactionalEmailHtml({
     kind: "guest-shipping",
+    headerVariant: "text",
     heading,
     preheader: hasTracking
       ? `Tracking ${input.trackingNumber}`
@@ -89,7 +90,7 @@ export async function sendGuestPaymentConfirmationEmail(input: {
     bodyHtml,
     cta: trackingLink
       ? {
-          label: hasTracking ? "View shipment tracking" : "View shipping status",
+          label: hasTracking ? "View Shipment Tracking" : "View shipping status",
           url: trackingLink,
         }
       : undefined,

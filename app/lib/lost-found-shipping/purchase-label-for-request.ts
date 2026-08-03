@@ -18,6 +18,47 @@ import { redactStripeId } from "@/app/lib/payments/types";
 
 const LOCK_STALE_MS = 2 * 60 * 1000;
 
+function isPlaceholderCarrierOrService(value: string | null | undefined): boolean {
+  const trimmed = String(value || "").trim();
+  return !trimmed || /^(carrier|service)$/i.test(trimmed);
+}
+
+/** Prefer Shippo purchase fields, then selected_* columns, then rate snapshot. */
+function resolveCarrierService(
+  purchased: { carrier?: string | null; service?: string | null },
+  row: ShippingRequestRow,
+  providerRateId: string
+): { carrier: string; service: string } {
+  const snapshot = Array.isArray(row.rate_snapshot_json)
+    ? (row.rate_snapshot_json as Array<Record<string, unknown>>)
+    : [];
+  const fromSnapshot = snapshot.find(
+    (rate) => String(rate.providerRateId || "") === providerRateId
+  );
+
+  const carrierCandidates = [
+    purchased.carrier,
+    row.selected_carrier,
+    fromSnapshot?.carrier,
+  ];
+  const serviceCandidates = [
+    purchased.service,
+    row.selected_service,
+    fromSnapshot?.service,
+  ];
+
+  const carrier =
+    carrierCandidates
+      .map((value) => String(value || "").trim())
+      .find((value) => !isPlaceholderCarrierOrService(value)) || "";
+  const service =
+    serviceCandidates
+      .map((value) => String(value || "").trim())
+      .find((value) => !isPlaceholderCarrierOrService(value)) || "";
+
+  return { carrier, service };
+}
+
 function asPackage(row: ShippingRequestRow): ShippingPackage | null {
   const lengthIn = Number(row.length_in);
   const widthIn = Number(row.width_in);
@@ -264,6 +305,8 @@ export async function purchaseLabelForPaidShippingRequest(
       labelStoragePath: labelStoragePath || null,
     });
 
+    const resolved = resolveCarrierService(purchased, row, providerRateId);
+
     await markShippingLabelReady(supabase, {
       shippingRequestId,
       organizationId,
@@ -273,8 +316,8 @@ export async function purchaseLabelForPaidShippingRequest(
       trackingUrl: purchased.trackingUrl,
       labelStoragePath,
       providerTransactionId: purchased.providerTransactionId,
-      selectedCarrier: purchased.carrier || String(row.selected_carrier || ""),
-      selectedService: purchased.service || String(row.selected_service || ""),
+      selectedCarrier: resolved.carrier,
+      selectedService: resolved.service,
       eventSource: getShippingProviderMode() === "shippo" ? "shippo" : "system",
     });
 

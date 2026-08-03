@@ -406,15 +406,19 @@ function mapPurchasedLabel(transaction: Transaction): PurchasedLabel {
     throw new Error("Shippo transaction missing object id or tracking number.");
   }
 
-  let carrier = "Carrier";
-  let service = "Service";
+  // Empty when Shippo does not expand the rate object — callers fall back to
+  // the selected rate snapshot / selected_carrier fields (never "Carrier"/"Service").
+  let carrier = "";
+  let service = "";
   if (transaction.rate && typeof transaction.rate === "object") {
     const rate = transaction.rate as {
       provider?: string;
       servicelevel?: { name?: string; token?: string };
     };
-    carrier = String(rate.provider || carrier);
-    service = String(rate.servicelevel?.name || rate.servicelevel?.token || service);
+    carrier = String(rate.provider || "").trim();
+    service = String(
+      rate.servicelevel?.name || rate.servicelevel?.token || ""
+    ).trim();
   }
 
   return {

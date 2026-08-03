@@ -369,6 +369,8 @@ export async function createShippingRequest(
     .eq("organization_id", scope.organizationId)
     .eq("property_id", scope.propertyId);
 
+  const guestUrl = `${resolveAppUrl()}/shipping-request/${rawToken}`;
+
   await appendShippingEvent(supabase, {
     organizationId: scope.organizationId,
     propertyId: scope.propertyId,
@@ -382,12 +384,26 @@ export async function createShippingRequest(
         : null,
       packagePreset: presetKey,
       tokenExpiresAt: expiresAt,
+      guestUrl,
       notes: "Automated shipping request created",
     },
     createdBy: input.createdBy,
   });
 
-  const guestUrl = `${resolveAppUrl()}/shipping-request/${rawToken}`;
+  await appendShippingEvent(supabase, {
+    organizationId: scope.organizationId,
+    propertyId: scope.propertyId,
+    lostItemId: input.lostItemId,
+    shippingRequestId: requestId,
+    eventType: SHIPPING_TIMELINE_EVENTS.guestLinkIssued,
+    eventSource: "system",
+    eventData: {
+      notes: "Guest shipping link created with request",
+      guestUrl,
+      tokenExpiresAt: expiresAt,
+    },
+    createdBy: input.createdBy,
+  });
 
   return {
     request: toStaffShippingRequestView(data as ShippingRequestRow),
@@ -396,8 +412,41 @@ export async function createShippingRequest(
 }
 
 /**
+ * Recover the One Eyrie guest tracking URL previously issued for a request.
+ * Tokens are stored hashed; the plaintext URL is kept in shipping event data.
+ */
+export async function getStoredGuestShippingUrl(
+  supabase: SupabaseClient,
+  shippingRequestId: number
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("lost_found_shipping_events")
+    .select("event_data")
+    .eq("shipping_request_id", shippingRequestId)
+    .order("created_at", { ascending: false })
+    .limit(80);
+
+  if (error) throw new Error(error.message);
+
+  for (const row of data || []) {
+    const eventData =
+      row.event_data && typeof row.event_data === "object"
+        ? (row.event_data as Record<string, unknown>)
+        : null;
+    const guestUrl = eventData?.guestUrl;
+    if (
+      typeof guestUrl === "string" &&
+      guestUrl.includes("/shipping-request/")
+    ) {
+      return guestUrl.trim();
+    }
+  }
+  return null;
+}
+
+/**
  * Issue (or re-issue) a guest shipping URL for staff copy/open.
- * Rotates the secure token so prior links stop working.
+ * Rotates the secure token so prior links stop working (pre-payment only).
  */
 export async function issueGuestShippingLink(
   supabase: SupabaseClient,
@@ -422,10 +471,19 @@ export async function issueGuestShippingLink(
   if (row.cancelled_at) {
     throw new TenantRequestError(410, "Shipping request is cancelled.");
   }
+  // After payment, never rotate the token (guest email link must keep working).
+  // Return the previously issued One Eyrie guest URL when available.
   if (String(row.payment_status) === "paid") {
+    const stored = await getStoredGuestShippingUrl(
+      supabase,
+      input.shippingRequestId
+    );
+    if (stored) {
+      return { guestUrl: stored };
+    }
     throw new TenantRequestError(
       400,
-      "Guest link cannot be rotated after payment."
+      "Guest link cannot be re-issued after payment. Use the original link from the guest email."
     );
   }
 
@@ -434,6 +492,7 @@ export async function issueGuestShippingLink(
   const rawToken = generateShippingGuestToken();
   const tokenHash = hashShippingGuestToken(rawToken);
   const expiresAt = tokenExpiresAt(ttlHours).toISOString();
+  const guestUrl = `${resolveAppUrl()}/shipping-request/${rawToken}`;
 
   const { error: updateError } = await supabase
     .from("lost_found_shipping_requests")
@@ -458,13 +517,12 @@ export async function issueGuestShippingLink(
     eventData: {
       notes: "Staff issued a guest shipping link",
       tokenExpiresAt: expiresAt,
+      guestUrl,
     },
     createdBy: input.createdBy,
   });
 
-  return {
-    guestUrl: `${resolveAppUrl()}/shipping-request/${rawToken}`,
-  };
+  return { guestUrl };
 }
 
 export type GuestShippingPackageView = {

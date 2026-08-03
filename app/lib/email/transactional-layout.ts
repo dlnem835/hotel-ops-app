@@ -39,9 +39,40 @@ function paint(color: string, extraStyle = ""): string {
   return `bgcolor="${color}" style="background:${color};background-color:${color};${extraStyle}"`;
 }
 
-function renderHeaderRow(): string {
-  const logoUrl = escapeHtml(getEmailLogoUrl());
+function renderHeaderRow(variant: "logo" | "text" = "logo"): string {
   const siteOrigin = escapeHtml(getEmailSiteOrigin());
+
+  if (variant === "text") {
+    return `
+    <tr ${paint(SURFACE)}>
+      <td align="center" ${paint(SURFACE, `padding:24px 20px 18px;border-bottom:3px solid ${GOLD};`)}>
+        <a href="${siteOrigin}" style="text-decoration:none;background:${SURFACE};background-color:${SURFACE};">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" ${paint(SURFACE)}>
+            <tbody ${paint(SURFACE)}>
+              <tr ${paint(SURFACE)}>
+                <td align="center" ${paint(
+                  SURFACE,
+                  `font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.28em;line-height:1.25;text-transform:uppercase;color:${TEXT};`
+                )}>
+                  <span style="color:${TEXT};">ONE</span>
+                </td>
+              </tr>
+              <tr ${paint(SURFACE)}>
+                <td align="center" ${paint(
+                  SURFACE,
+                  `padding-top:2px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.28em;line-height:1.25;text-transform:uppercase;color:${GOLD};`
+                )}>
+                  <span style="color:${GOLD};">EYRIE</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </a>
+      </td>
+    </tr>`;
+  }
+
+  const logoUrl = escapeHtml(getEmailLogoUrl());
 
   return `
     <tr ${paint(SURFACE)}>
@@ -248,7 +279,7 @@ export function renderTransactionalEmailHtml(
           <![endif]-->
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" ${paint(SURFACE, `width:100%;max-width:600px;border:1px solid ${GOLD};`)}>
             <tbody ${paint(SURFACE)}>
-              ${renderHeaderRow()}
+              ${renderHeaderRow(input.headerVariant === "text" ? "text" : "logo")}
               ${renderHeadingRow(input.heading)}
               ${renderBodyRow(input.bodyHtml)}
               ${ctaRow}
