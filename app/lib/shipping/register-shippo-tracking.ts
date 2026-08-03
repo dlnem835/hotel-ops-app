@@ -15,7 +15,10 @@ export async function registerShippoTracking(input: {
   shippingRequestId?: number | null;
 }): Promise<{ ok: boolean; message: string; carrier: string | null }> {
   const trackingNumber = String(input.trackingNumber || "").trim();
-  const carrier = normalizeCarrierSlug(input.carrier);
+  const carrier = resolveCarrierSlugForTracking({
+    carrier: input.carrier,
+    trackingNumber,
+  });
   if (!trackingNumber) {
     return { ok: false, message: "Missing tracking number", carrier: null };
   }
@@ -81,13 +84,41 @@ export function normalizeCarrierSlug(
   if (!carrier) return null;
   const value = carrier.trim().toLowerCase();
   if (!value) return null;
+  // Reject Shippo/SDK placeholder labels that were stored as selected_carrier.
+  if (value === "carrier" || value === "service") return null;
   if (value.includes("usps") || value.includes("united states postal")) {
     return "usps";
   }
   if (value.includes("ups")) return "ups";
   if (value.includes("fedex")) return "fedex";
   if (value.includes("dhl")) return "dhl_express";
-  // Already a Shippo slug
+  // Already a Shippo slug (but not a placeholder)
   if (/^[a-z0-9_]+$/.test(value)) return value;
   return null;
+}
+
+/**
+ * Infer a Shippo carrier slug when selected_carrier is missing/placeholder.
+ * USPS IMpb tracking is typically a 20–22 digit number starting with 9.
+ */
+export function inferCarrierFromTrackingNumber(
+  trackingNumber: string | null | undefined
+): string | null {
+  const value = String(trackingNumber || "").trim();
+  if (!value) return null;
+  if (/^9\d{19,25}$/.test(value)) return "usps";
+  if (/^1Z[A-Z0-9]{16}$/i.test(value)) return "ups";
+  // FedEx Express often 12 digits; Ground/Economy can vary — keep conservative.
+  if (/^\d{12,15}$/.test(value)) return "fedex";
+  return null;
+}
+
+export function resolveCarrierSlugForTracking(input: {
+  carrier?: string | null;
+  trackingNumber?: string | null;
+}): string | null {
+  return (
+    normalizeCarrierSlug(input.carrier) ||
+    inferCarrierFromTrackingNumber(input.trackingNumber)
+  );
 }

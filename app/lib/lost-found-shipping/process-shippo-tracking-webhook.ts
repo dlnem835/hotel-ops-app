@@ -493,6 +493,20 @@ export async function applyCarrierTrackingUpdate(
   if (parsed.estimatedDelivery) {
     patch.estimated_delivery_at = parsed.estimatedDelivery;
   }
+  // Backfill real carrier when DB still has Shippo placeholder "Carrier".
+  if (parsed.carrier) {
+    const incoming = String(parsed.carrier).trim();
+    const current = row.selected_carrier
+      ? String(row.selected_carrier).trim()
+      : "";
+    if (
+      incoming &&
+      !/^(carrier|service)$/i.test(incoming) &&
+      (!current || /^(carrier|service)$/i.test(current))
+    ) {
+      patch.selected_carrier = incoming;
+    }
+  }
   if (shipmentStatusPatch) {
     // Never downgrade shipment_status from delivered / in_transit via delayed pre_transit
     const currentShipment = String(row.shipment_status || "");

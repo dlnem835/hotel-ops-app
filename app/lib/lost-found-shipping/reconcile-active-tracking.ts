@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Track } from "shippo";
 import { getShippoClient } from "@/app/lib/shipping/shippo-client";
 import { getShippingProviderMode } from "@/app/lib/shipping/env";
-import { normalizeCarrierSlug } from "@/app/lib/shipping/register-shippo-tracking";
+import { resolveCarrierSlugForTracking } from "@/app/lib/shipping/register-shippo-tracking";
 import {
   applyCarrierTrackingUpdate,
   type ParsedTrackPayload,
@@ -126,10 +126,11 @@ export async function reconcileActiveShippingTracking(
     const row = raw as ShippingRequestRow;
     const shippingRequestId = Number(row.id);
     const trackingNumber = String(row.tracking_number || "").trim();
-    const carrier =
-      normalizeCarrierSlug(
-        row.selected_carrier != null ? String(row.selected_carrier) : null
-      ) || null;
+    const carrier = resolveCarrierSlugForTracking({
+      carrier:
+        row.selected_carrier != null ? String(row.selected_carrier) : null,
+      trackingNumber,
+    });
 
     if (!trackingNumber || !carrier) {
       skipped += 1;
