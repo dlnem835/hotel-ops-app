@@ -17,10 +17,14 @@ function formatDateTime(value: string | null | undefined): string | null {
   });
 }
 
-function displayCarrierOrService(value: string | null | undefined): string {
-  const trimmed = String(value || "").trim();
-  if (!trimmed || /^(carrier|service)$/i.test(trimmed)) return "—";
-  return trimmed;
+function displayCarrierService(value: string | null | undefined): string {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized || normalized === "carrier" || normalized === "service") {
+    return "—";
+  }
+  return String(value).trim();
 }
 
 function guestHeadline(view: GuestShippingRequestView): {
@@ -105,11 +109,11 @@ export default function GuestShipmentTrackingCard({
         </div>
         <div>
           <dt>Carrier</dt>
-          <dd>{displayCarrierOrService(view.selectedCarrier)}</dd>
+          <dd>{displayCarrierService(view.selectedCarrier)}</dd>
         </div>
         <div>
           <dt>Service</dt>
-          <dd>{displayCarrierOrService(view.selectedService)}</dd>
+          <dd>{displayCarrierService(view.selectedService)}</dd>
         </div>
         <div>
           <dt>Tracking number</dt>

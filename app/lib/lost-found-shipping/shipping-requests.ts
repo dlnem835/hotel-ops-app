@@ -20,11 +20,19 @@ import {
 } from "./property-shipping-settings";
 import { LOST_ITEM_STATUS } from "./status";
 import { SHIPPING_TIMELINE_EVENTS } from "./timeline";
+import { isGenericCarrierLabel } from "./carrier-display";
 import {
   generateShippingGuestToken,
   hashShippingGuestToken,
   tokenExpiresAt,
 } from "./token";
+
+function storedCarrierLabel(value: unknown): string | null {
+  if (value == null) return null;
+  const text = String(value).trim();
+  if (isGenericCarrierLabel(text)) return null;
+  return text;
+}
 
 export type LostFoundShippingScope = {
   organizationId: number;
@@ -176,8 +184,8 @@ export function toStaffShippingRequestView(row: ShippingRequestRow) {
     fulfillmentStatus: String(row.fulfillment_status || "pending"),
     shipmentStatus: String(row.shipment_status || "awaiting_guest"),
     providerRateId: row.provider_rate_id ? String(row.provider_rate_id) : null,
-    selectedCarrier: row.selected_carrier ? String(row.selected_carrier) : null,
-    selectedService: row.selected_service ? String(row.selected_service) : null,
+    selectedCarrier: storedCarrierLabel(row.selected_carrier),
+    selectedService: storedCarrierLabel(row.selected_service),
     totalAmount: row.total_amount == null ? null : Number(row.total_amount),
     currency: String(row.currency || "usd"),
     destinationCity: recipient?.city || null,
@@ -317,6 +325,7 @@ export async function createShippingRequest(
   const rawToken = generateShippingGuestToken();
   const tokenHash = hashShippingGuestToken(rawToken);
   const expiresAt = tokenExpiresAt(settings.tokenTtlHours).toISOString();
+  const guestUrl = `${resolveAppUrl()}/shipping-request/${rawToken}`;
 
   const { data, error } = await supabase
     .from("lost_found_shipping_requests")
@@ -368,8 +377,6 @@ export async function createShippingRequest(
     .eq("id", input.lostItemId)
     .eq("organization_id", scope.organizationId)
     .eq("property_id", scope.propertyId);
-
-  const guestUrl = `${resolveAppUrl()}/shipping-request/${rawToken}`;
 
   await appendShippingEvent(supabase, {
     organizationId: scope.organizationId,
@@ -471,7 +478,6 @@ export async function issueGuestShippingLink(
   if (row.cancelled_at) {
     throw new TenantRequestError(410, "Shipping request is cancelled.");
   }
-  // After payment, never rotate the token (guest email link must keep working).
   // Return the previously issued One Eyrie guest URL when available.
   if (String(row.payment_status) === "paid") {
     const stored = await getStoredGuestShippingUrl(
@@ -741,8 +747,8 @@ export async function resolveGuestShippingRequestByToken(
     selectedProviderRateId: row.provider_rate_id
       ? String(row.provider_rate_id)
       : null,
-    selectedCarrier: row.selected_carrier ? String(row.selected_carrier) : null,
-    selectedService: row.selected_service ? String(row.selected_service) : null,
+    selectedCarrier: storedCarrierLabel(row.selected_carrier),
+    selectedService: storedCarrierLabel(row.selected_service),
     totalAmount: row.total_amount == null ? null : Number(row.total_amount),
     currency: String(row.currency || "usd"),
     recipientSummary: formatRecipientSummary(row.recipient_address_json),

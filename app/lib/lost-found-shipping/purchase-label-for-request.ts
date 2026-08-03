@@ -11,53 +11,16 @@ import {
   type ShippingRequestRow,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { markShippingLabelReady } from "@/app/lib/lost-found-shipping/process-shippo-tracking-webhook";
+import {
+  carrierServiceFromRateSnapshot,
+  resolveStoredCarrierService,
+} from "@/app/lib/lost-found-shipping/carrier-display";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { ensureShippoTrackUpdatedWebhook } from "@/app/lib/shipping/shippo-ensure-webhooks";
 import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import { redactStripeId } from "@/app/lib/payments/types";
 
 const LOCK_STALE_MS = 2 * 60 * 1000;
-
-function isPlaceholderCarrierOrService(value: string | null | undefined): boolean {
-  const trimmed = String(value || "").trim();
-  return !trimmed || /^(carrier|service)$/i.test(trimmed);
-}
-
-/** Prefer Shippo purchase fields, then selected_* columns, then rate snapshot. */
-function resolveCarrierService(
-  purchased: { carrier?: string | null; service?: string | null },
-  row: ShippingRequestRow,
-  providerRateId: string
-): { carrier: string; service: string } {
-  const snapshot = Array.isArray(row.rate_snapshot_json)
-    ? (row.rate_snapshot_json as Array<Record<string, unknown>>)
-    : [];
-  const fromSnapshot = snapshot.find(
-    (rate) => String(rate.providerRateId || "") === providerRateId
-  );
-
-  const carrierCandidates = [
-    purchased.carrier,
-    row.selected_carrier,
-    fromSnapshot?.carrier,
-  ];
-  const serviceCandidates = [
-    purchased.service,
-    row.selected_service,
-    fromSnapshot?.service,
-  ];
-
-  const carrier =
-    carrierCandidates
-      .map((value) => String(value || "").trim())
-      .find((value) => !isPlaceholderCarrierOrService(value)) || "";
-  const service =
-    serviceCandidates
-      .map((value) => String(value || "").trim())
-      .find((value) => !isPlaceholderCarrierOrService(value)) || "";
-
-  return { carrier, service };
-}
 
 function asPackage(row: ShippingRequestRow): ShippingPackage | null {
   const lengthIn = Number(row.length_in);
@@ -287,8 +250,8 @@ export async function purchaseLabelForPaidShippingRequest(
     logFulfillment("info", "label.provider_purchase_ok", {
       shippingRequestId,
       trackingNumber: purchased.trackingNumber,
-      carrier: purchased.carrier,
-      service: purchased.service,
+      carrier: purchased.carrier || null,
+      service: purchased.service || null,
       providerTransactionId: redactStripeId(purchased.providerTransactionId),
       hasLabelUrl: Boolean(purchased.labelUrl),
     });
@@ -305,7 +268,20 @@ export async function purchaseLabelForPaidShippingRequest(
       labelStoragePath: labelStoragePath || null,
     });
 
-    const resolved = resolveCarrierService(purchased, row, providerRateId);
+    const fromSnapshot = carrierServiceFromRateSnapshot(
+      row.rate_snapshot_json,
+      providerRateId
+    );
+    const resolved = resolveStoredCarrierService({
+      purchasedCarrier: purchased.carrier,
+      purchasedService: purchased.service,
+      selectedCarrier:
+        row.selected_carrier != null ? String(row.selected_carrier) : null,
+      selectedService:
+        row.selected_service != null ? String(row.selected_service) : null,
+      snapshotCarrier: fromSnapshot.carrier,
+      snapshotService: fromSnapshot.service,
+    });
 
     await markShippingLabelReady(supabase, {
       shippingRequestId,

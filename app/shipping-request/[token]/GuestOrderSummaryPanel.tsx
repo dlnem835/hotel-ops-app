@@ -1,6 +1,7 @@
 "use client";
 
 import type { GuestShippingRequestView } from "@/app/lib/lost-found-shipping/shipping-requests";
+import { displayCarrierServiceLabel } from "@/app/lib/lost-found-shipping/carrier-display";
 import type { ShippingRate } from "@/app/lib/shipping/types";
 
 export const CHECKOUT_UNAVAILABLE_MESSAGE =
@@ -88,13 +89,19 @@ export default function GuestOrderSummaryPanel({
           <div className="shipping-request-order-summary__row">
             <span>Carrier</span>
             <strong>
-              {selectedRate?.carrier || view.selectedCarrier || "—"}
+              {displayCarrierServiceLabel(
+                selectedRate?.carrier || view.selectedCarrier,
+                "—"
+              )}
             </strong>
           </div>
           <div className="shipping-request-order-summary__row">
             <span>Service</span>
             <strong>
-              {selectedRate?.service || view.selectedService || "—"}
+              {displayCarrierServiceLabel(
+                selectedRate?.service || view.selectedService,
+                "—"
+              )}
             </strong>
           </div>
           <div className="shipping-request-order-summary__row">

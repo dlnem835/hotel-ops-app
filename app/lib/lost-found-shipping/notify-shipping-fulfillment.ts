@@ -6,6 +6,7 @@ import { sendBrandedEmailViaResend } from "@/app/lib/email/send-branded-email";
 import { escapeHtml } from "@/app/lib/email/escape-html";
 import { EMAIL_THEME as T } from "@/app/lib/email/brand";
 import { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
+import { displayCarrierServiceLabel } from "@/app/lib/lost-found-shipping/carrier-display";
 import { fetchPropertyShippingSettings } from "@/app/lib/lost-found-shipping/property-shipping-settings";
 import { appendShippingEvent } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
@@ -56,6 +57,14 @@ export async function sendGuestPaymentConfirmationEmail(input: {
   const greeting = input.guestName?.trim()
     ? `Hello ${escapeHtml(input.guestName.trim())},`
     : "Hello,";
+  const carrierLabel = displayCarrierServiceLabel(input.carrier, "");
+  const serviceLabel = displayCarrierServiceLabel(input.service, "");
+  const carrierServiceLine =
+    carrierLabel && serviceLabel
+      ? `Carrier: ${escapeHtml(carrierLabel)} · ${escapeHtml(serviceLabel)}`
+      : carrierLabel
+        ? `Carrier: ${escapeHtml(carrierLabel)}`
+        : "";
 
   const heading = hasTracking
     ? "Payment confirmed — your item is on the way"
@@ -70,7 +79,7 @@ export async function sendGuestPaymentConfirmationEmail(input: {
         hasTracking
           ? `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">
               Tracking number: <strong style="color:${T.text} !important;">${escapeHtml(String(input.trackingNumber))}</strong>
-              ${input.carrier ? `<br/>Carrier: ${escapeHtml(String(input.carrier))}${input.service ? ` · ${escapeHtml(String(input.service))}` : ""}` : ""}
+              ${carrierServiceLine ? `<br/>${carrierServiceLine}` : ""}
             </td></tr>`
           : `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;">
               Payment received — preparing shipping label. Use your secure link anytime to check status and tracking.

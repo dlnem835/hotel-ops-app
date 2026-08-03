@@ -15,6 +15,7 @@ import {
 import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { laterTokenExpiry } from "@/app/lib/lost-found-shipping/token";
+import { displayCarrierServiceLabel } from "@/app/lib/lost-found-shipping/carrier-display";
 import {
   claimWebhookEvent,
   findPaymentByCheckoutSessionId,
@@ -661,12 +662,6 @@ async function notifyGuestAndStaffAfterPayment(
       supabase,
       input.shippingRequestId
     );
-    const carrierRaw = row.selected_carrier
-      ? String(row.selected_carrier).trim()
-      : "";
-    const serviceRaw = row.selected_service
-      ? String(row.selected_service).trim()
-      : "";
     const emailed = await sendGuestPaymentConfirmationEmail({
       guestEmail: String(row.guest_email || ""),
       guestName: row.guest_name ? String(row.guest_name) : null,
@@ -676,14 +671,14 @@ async function notifyGuestAndStaffAfterPayment(
       currency: input.currency,
       guestTrackingUrl,
       trackingNumber,
-      carrier:
-        carrierRaw && !/^(carrier|service)$/i.test(carrierRaw)
-          ? carrierRaw
-          : null,
-      service:
-        serviceRaw && !/^(carrier|service)$/i.test(serviceRaw)
-          ? serviceRaw
-          : null,
+      carrier: displayCarrierServiceLabel(
+        row.selected_carrier != null ? String(row.selected_carrier) : null,
+        ""
+      ) || null,
+      service: displayCarrierServiceLabel(
+        row.selected_service != null ? String(row.selected_service) : null,
+        ""
+      ) || null,
     });
     if (!emailed.ok) {
       logFulfillment("error", "notify.guest_payment_email_failed", {
@@ -712,8 +707,14 @@ async function notifyGuestAndStaffAfterPayment(
       propertyName,
       itemName,
       trackingNumber,
-      carrier: row.selected_carrier ? String(row.selected_carrier) : null,
-      service: row.selected_service ? String(row.selected_service) : null,
+      carrier: displayCarrierServiceLabel(
+        row.selected_carrier != null ? String(row.selected_carrier) : null,
+        ""
+      ) || null,
+      service: displayCarrierServiceLabel(
+        row.selected_service != null ? String(row.selected_service) : null,
+        ""
+      ) || null,
       labelStoragePath: String(row.label_storage_path),
     });
     if (!hotelMail.ok) {

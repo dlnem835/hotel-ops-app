@@ -10,6 +10,7 @@ import {
   type ShippingRequestRow,
 } from "@/app/lib/lost-found-shipping/shipping-requests";
 import { purchaseLabelForPaidShippingRequest } from "@/app/lib/lost-found-shipping/purchase-label-for-request";
+import { displayCarrierServiceLabel } from "@/app/lib/lost-found-shipping/carrier-display";
 import { SHIPPING_TIMELINE_EVENTS } from "@/app/lib/lost-found-shipping/timeline";
 import { assertShippingProviderEnvReady } from "@/app/lib/shipping/env";
 
@@ -265,12 +266,6 @@ export async function retryLabelForPaidShippingRequest(
           supabase,
           shippingRequestId
         );
-        const carrierRaw = fresh.selected_carrier
-          ? String(fresh.selected_carrier).trim()
-          : "";
-        const serviceRaw = fresh.selected_service
-          ? String(fresh.selected_service).trim()
-          : "";
         await sendGuestPaymentConfirmationEmail({
           guestEmail: String(fresh.guest_email),
           guestName: fresh.guest_name ? String(fresh.guest_name) : null,
@@ -282,14 +277,18 @@ export async function retryLabelForPaidShippingRequest(
           trackingNumber: fresh.tracking_number
             ? String(fresh.tracking_number)
             : purchased.trackingNumber,
-          carrier:
-            carrierRaw && !/^(carrier|service)$/i.test(carrierRaw)
-              ? carrierRaw
+          carrier: displayCarrierServiceLabel(
+            fresh.selected_carrier != null
+              ? String(fresh.selected_carrier)
               : null,
-          service:
-            serviceRaw && !/^(carrier|service)$/i.test(serviceRaw)
-              ? serviceRaw
+            ""
+          ) || null,
+          service: displayCarrierServiceLabel(
+            fresh.selected_service != null
+              ? String(fresh.selected_service)
               : null,
+            ""
+          ) || null,
         });
       }
       if (fresh?.label_storage_path) {
@@ -302,12 +301,18 @@ export async function retryLabelForPaidShippingRequest(
           propertyName,
           itemName,
           trackingNumber: purchased.trackingNumber,
-          carrier: fresh.selected_carrier
-            ? String(fresh.selected_carrier)
-            : null,
-          service: fresh.selected_service
-            ? String(fresh.selected_service)
-            : null,
+          carrier: displayCarrierServiceLabel(
+            fresh.selected_carrier != null
+              ? String(fresh.selected_carrier)
+              : null,
+            ""
+          ) || null,
+          service: displayCarrierServiceLabel(
+            fresh.selected_service != null
+              ? String(fresh.selected_service)
+              : null,
+            ""
+          ) || null,
           labelStoragePath: String(fresh.label_storage_path),
         });
       }
