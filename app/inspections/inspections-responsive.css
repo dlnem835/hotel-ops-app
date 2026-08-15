@@ -1,6 +1,29 @@
 /* Mobile-only overrides for One Eyrie inspections.
    Desktop (768px+) keeps original inline layouts unchanged. */
 
+.inspection-guidance-card {
+  --inspection-guidance-card-bg: #302d28;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.inspection-guidance-card:hover {
+  --inspection-guidance-card-bg: #38342f;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+.inspection-guidance-card--expanded {
+  --inspection-guidance-card-bg: #3b3833;
+  box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.1);
+}
+
+.inspection-guidance-card--expanded:hover {
+  --inspection-guidance-card-bg: #403c36;
+}
+
 .inspection-room-grid-search-wrap {
   position: relative;
   min-width: 180px;

@@ -38,6 +38,7 @@ export default function MobileInspectionCategoryPage() {
     photos,
     uploadingKeys,
     setOutcome,
+    clearOutcome,
     setItemNotes,
     uploadItemPhoto,
     removeItemPhoto,
@@ -57,6 +58,10 @@ export default function MobileInspectionCategoryPage() {
 
   const items = category?.items ?? [];
   const progress = categoryProgress(categoryKey);
+  const isVacantReady = isHousekeepingVacantReadyTemplate(
+    templateStandardKey,
+    templateName
+  );
 
   if (loading) {
     return (
@@ -103,10 +108,7 @@ export default function MobileInspectionCategoryPage() {
         {items.map((item) => {
           const responseKey = itemResponseKey(categoryKey, item.key);
           const outcome = responses[responseKey];
-          const guidance = isHousekeepingVacantReadyTemplate(
-            templateStandardKey,
-            templateName
-          )
+          const guidance = isVacantReady
             ? getHousekeepingVacantReadyItemGuidance(categoryKey, item.key)
             : null;
 
@@ -134,7 +136,13 @@ export default function MobileInspectionCategoryPage() {
                     }
                   : undefined
               }
-              onOutcomeChange={(value) => setOutcome(categoryKey, item.key, value)}
+              onOutcomeChange={(value) => {
+                if (isVacantReady && outcome === value) {
+                  clearOutcome(categoryKey, item.key);
+                  return;
+                }
+                setOutcome(categoryKey, item.key, value);
+              }}
               onNotesChange={(value) => setItemNotes(categoryKey, item.key, value)}
               onPhotoSelect={(file) => void uploadItemPhoto(categoryKey, item.key, file)}
               onPhotoRemove={() => removeItemPhoto(categoryKey, item.key)}

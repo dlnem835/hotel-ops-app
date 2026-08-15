@@ -67,8 +67,27 @@ export default function MobileInspectionItemCard({
   onPhotoRemove,
   workOrderButton,
 }: MobileInspectionItemCardProps) {
+  const guidanceExpanded = Boolean(displayGuidance?.expanded);
+
+  function handleCardClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (!displayGuidance) return;
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest("button, a, input, textarea, select, label, [data-inspection-card-control]")
+    ) {
+      return;
+    }
+    displayGuidance.onToggle();
+  }
+
   return (
-    <div className="one-eyrie-mobile-inspection-item">
+    <div
+      className={`one-eyrie-mobile-inspection-item${
+        displayGuidance ? " one-eyrie-mobile-inspection-item--expandable" : ""
+      }${guidanceExpanded ? " one-eyrie-mobile-inspection-item--expanded" : ""}`}
+      onClick={displayGuidance ? handleCardClick : undefined}
+    >
       <div className="one-eyrie-mobile-inspection-item__prompt">
         <div className="one-eyrie-mobile-inspection-item__label">
           {displayGuidance ? (
@@ -105,7 +124,10 @@ export default function MobileInspectionItemCard({
                 key={value}
                 type="button"
                 className="one-eyrie-mobile-inspection-outcome-btn"
-                onClick={() => onOutcomeChange(value)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOutcomeChange(value);
+                }}
                 style={{
                   ...SETTINGS_BUTTON_BASE,
                   border: `1.5px solid ${active ? ONE_EYRIE.gold : palette.border}`,
@@ -136,7 +158,7 @@ export default function MobileInspectionItemCard({
       ) : null}
 
       {outcome === "fail" ? (
-        <>
+        <div data-inspection-card-control onClick={(event) => event.stopPropagation()}>
           <FailedItemDetails
             notes={notes}
             photoUrl={photoUrl}
@@ -149,7 +171,7 @@ export default function MobileInspectionItemCard({
           {workOrderButton ? (
             <div className="one-eyrie-mobile-inspection-item__work-order">{workOrderButton}</div>
           ) : null}
-        </>
+        </div>
       ) : null}
     </div>
   );

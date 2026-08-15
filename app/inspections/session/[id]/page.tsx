@@ -507,16 +507,49 @@ export default function InspectionSessionPage() {
                 const guidance = showVacantReadyGuidance
                   ? getHousekeepingVacantReadyItemGuidance(category.key, item.key)
                   : null;
+                const guidanceExpanded = expandedGuidanceItemKey === key;
                 return (
                   <div key={item.key} style={{ marginBottom: "8px" }}>
                     <div
-                      className={isMobileLayout ? "inspection-mobile-item-card" : undefined}
+                      className={[
+                        isMobileLayout ? "inspection-mobile-item-card" : "",
+                        guidance ? "inspection-guidance-card" : "",
+                        guidanceExpanded ? "inspection-guidance-card--expanded" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={
+                        guidance
+                          ? (event) => {
+                              const target = event.target;
+                              if (
+                                target instanceof Element &&
+                                target.closest(
+                                  "button, a, input, textarea, select, label, [data-inspection-card-control]"
+                                )
+                              ) {
+                                return;
+                              }
+                              setExpandedGuidanceItemKey((current) =>
+                                current === key ? null : key
+                              );
+                            }
+                          : undefined
+                      }
                       style={{
                         padding: "12px",
                         borderRadius: "8px",
-                        background: index % 2 === 0 ? ONE_EYRIE.row : ONE_EYRIE.surfaceInset,
+                        background: guidance
+                          ? "var(--inspection-guidance-card-bg)"
+                          : index % 2 === 0
+                            ? ONE_EYRIE.row
+                            : ONE_EYRIE.surfaceInset,
                         border: `1px solid ${
-                          outcome === "fail" ? "#8B5252" : ONE_EYRIE.borderDivider
+                          outcome === "fail"
+                            ? "#8B5252"
+                            : guidanceExpanded
+                              ? "rgba(200, 169, 106, 0.58)"
+                              : ONE_EYRIE.borderDivider
                         }`,
                       }}
                     >
@@ -539,7 +572,7 @@ export default function InspectionSessionPage() {
                             <InspectionItemGuidanceHeading
                               label={guidance.label}
                               inspect={guidance.inspect}
-                              expanded={expandedGuidanceItemKey === key}
+                              expanded={guidanceExpanded}
                               onToggle={() =>
                                 setExpandedGuidanceItemKey((current) =>
                                   current === key ? null : key
@@ -576,7 +609,10 @@ export default function InspectionSessionPage() {
                                 key={value}
                                 type="button"
                                 className={isMobileLayout ? "inspection-mobile-outcome-btn" : undefined}
-                                onClick={() => setOutcome(category.key, item.key, value)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setOutcome(category.key, item.key, value);
+                                }}
                                 style={{
                                   ...SETTINGS_BUTTON_BASE,
                                   minWidth: "64px",

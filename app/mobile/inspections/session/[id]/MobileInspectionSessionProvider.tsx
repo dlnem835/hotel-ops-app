@@ -61,12 +61,14 @@ type MobileInspectionSessionContextValue = {
   countAnsweredInCategory: (categoryKey: string) => number;
   categoryProgress: (categoryKey: string) => { answered: number; total: number; complete: boolean };
   setOutcome: (categoryKey: string, itemKey: string, outcome: Outcome) => void;
+  clearOutcome: (categoryKey: string, itemKey: string) => void;
   setItemNotes: (categoryKey: string, itemKey: string, value: string) => void;
   uploadItemPhoto: (categoryKey: string, itemKey: string, file: File) => Promise<void>;
   removeItemPhoto: (categoryKey: string, itemKey: string) => void;
   saveProgress: () => Promise<boolean>;
   completeInspection: () => Promise<boolean>;
   categoryKeys: string[];
+  getPreviousCategoryKey: (currentKey: string) => string | null;
   getNextCategoryKey: (currentKey: string) => string | null;
   validateCategorySection: (categoryKey: string) => {
     valid: boolean;
@@ -284,6 +286,15 @@ export function MobileInspectionSessionProvider({
     [categoryKeys]
   );
 
+  const getPreviousCategoryKey = useCallback(
+    (currentKey: string) => {
+      const index = categoryKeys.indexOf(currentKey);
+      if (index <= 0) return null;
+      return categoryKeys[index - 1] ?? null;
+    },
+    [categoryKeys]
+  );
+
   const validateCategorySection = useCallback(
     (categoryKeyValue: string) => {
       if (!content) {
@@ -349,6 +360,15 @@ export function MobileInspectionSessionProvider({
         return next;
       });
     }
+  }
+
+  function clearOutcome(categoryKeyValue: string, itemKeyValue: string) {
+    const key = itemResponseKey(categoryKeyValue, itemKeyValue);
+    setResponses((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }
 
   async function uploadItemPhoto(
@@ -487,12 +507,14 @@ export function MobileInspectionSessionProvider({
     countAnsweredInCategory,
     categoryProgress,
     setOutcome,
+    clearOutcome,
     setItemNotes,
     uploadItemPhoto,
     removeItemPhoto,
     saveProgress,
     completeInspection,
     categoryKeys,
+    getPreviousCategoryKey,
     getNextCategoryKey,
     validateCategorySection,
     isInspectionReadyToComplete,
