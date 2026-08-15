@@ -78,13 +78,27 @@ export class ShippoShippingProvider implements ShippingProvider {
     // No carrier_accounts / carriers filter — Shippo quotes every active
     // carrier account on the API token. Missing FedEx/UPS is almost always
     // inactive/restricted accounts on the Shippo side, not app filtering.
-    await logActiveCarrierAccounts(client);
+    const carrierAccountsSnapshot = await logActiveCarrierAccounts(client);
+
+    const addressFrom = toShippoAddress(input.shipFrom);
+    // Guest destinations are residential return addresses.
+    const addressTo = toShippoAddress(input.shipTo, { isResidential: true });
+    const parcel = toShippoParcel(input.parcel);
+
+    logShippoRates("shippo.rates.request_payload", {
+      addressFrom,
+      addressTo,
+      destinationIsResidential: addressTo.isResidential === true,
+      parcels: [parcel],
+      carrierAccountsFilter: null,
+      carriersFilter: null,
+      async: false,
+    });
 
     const shipment = await client.shipments.create({
-      addressFrom: toShippoAddress(input.shipFrom),
-      // Guest destinations are residential return addresses.
-      addressTo: toShippoAddress(input.shipTo, { isResidential: true }),
-      parcels: [toShippoParcel(input.parcel)],
+      addressFrom,
+      addressTo,
+      parcels: [parcel],
       async: false,
     });
 
@@ -95,13 +109,46 @@ export class ShippoShippingProvider implements ShippingProvider {
       text: message.text != null ? String(message.text) : null,
     }));
 
-    // Full Shippo rates payload (no address PII — rates array only).
+    const providersRaw = uniqueStrings(
+      rates.map((rate) => String(rate.provider || ""))
+    );
+    const fedExMessages = shipmentMessages.filter((message) => {
+      const haystack = `${message.source || ""} ${message.code || ""} ${message.text || ""}`.toLowerCase();
+      return haystack.includes("fedex") || haystack.includes("fed ex");
+    });
+    const activeFedExAccounts = (carrierAccountsSnapshot?.accounts || []).filter(
+      (account) =>
+        account.active &&
+        String(account.carrier || "")
+          .toLowerCase()
+          .includes("fedex")
+    );
+
+    // Complete Shippo rates payload for FedEx / multi-carrier diagnosis.
     logShippoRates("shippo.rates.raw_response", {
       shipmentObjectId: shipment.objectId ?? null,
       shipmentStatus: shipment.status ?? null,
       rawRateCount: rates.length,
+      addressFrom,
+      addressTo,
+      destinationIsResidential: addressTo.isResidential === true,
+      parcels: [parcel],
       shipmentMessages,
+      fedExConsidered:
+        Boolean(carrierAccountsSnapshot?.hasFedEx) ||
+        providersRaw.some((provider) =>
+          provider.toLowerCase().includes("fedex")
+        ) ||
+        fedExMessages.length > 0,
+      fedExRatesReturned: providersRaw.filter((provider) =>
+        provider.toLowerCase().includes("fedex")
+      ),
+      fedExRejectionOrWarningMessages: fedExMessages,
+      activeFedExCarrierAccountIds: activeFedExAccounts.map(
+        (account) => account.objectId
+      ),
       rates: rates.map((rate) => serializeShippoRateForLog(rate)),
+      fullShipment: shipment,
     });
 
     const mapped: ShippingRate[] = [];
@@ -220,21 +267,41 @@ function toShippoAddress(
   };
 }
 
+type CarrierAccountLogRow = {
+  carrier: string;
+  active: boolean;
+  isShippoAccount: boolean;
+  test: boolean;
+  objectId: string | null;
+};
+
+type CarrierAccountsSnapshot = {
+  accountCount: number;
+  activeCarriers: string[];
+  hasFedEx: boolean;
+  hasUps: boolean;
+  accounts: CarrierAccountLogRow[];
+};
+
 /** Log which Shippo carrier accounts are active (explains USPS-only quotes). */
-async function logActiveCarrierAccounts(client: ReturnType<typeof getShippoClient>) {
+async function logActiveCarrierAccounts(
+  client: ReturnType<typeof getShippoClient>
+): Promise<CarrierAccountsSnapshot | null> {
   try {
     const listed = await client.carrierAccounts.list({ results: 100 });
-    const accounts = (listed.results || []).map((account) => ({
-      carrier: String(account.carrier || ""),
-      active: account.active !== false,
-      isShippoAccount: Boolean(account.isShippoAccount),
-      test: Boolean(account.test),
-      objectId: account.objectId ?? null,
-    }));
+    const accounts: CarrierAccountLogRow[] = (listed.results || []).map(
+      (account) => ({
+        carrier: String(account.carrier || ""),
+        active: account.active !== false,
+        isShippoAccount: Boolean(account.isShippoAccount),
+        test: Boolean(account.test),
+        objectId: account.objectId ?? null,
+      })
+    );
     const activeCarriers = uniqueStrings(
       accounts.filter((row) => row.active).map((row) => row.carrier)
     );
-    logShippoRates("shippo.carrier_accounts", {
+    const snapshot: CarrierAccountsSnapshot = {
       accountCount: accounts.length,
       activeCarriers,
       hasFedEx: activeCarriers.some((carrier) =>
@@ -244,11 +311,14 @@ async function logActiveCarrierAccounts(client: ReturnType<typeof getShippoClien
         carrier.toLowerCase().includes("ups")
       ),
       accounts,
-    });
+    };
+    logShippoRates("shippo.carrier_accounts", snapshot);
+    return snapshot;
   } catch (error) {
     logShippoRates("shippo.carrier_accounts_error", {
       message: error instanceof Error ? error.message : String(error),
     });
+    return null;
   }
 }
 

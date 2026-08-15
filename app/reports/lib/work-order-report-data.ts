@@ -10,6 +10,7 @@ import {
   resolveWorkOrderReportCreatedByLabel,
   type WorkOrderReportRow,
 } from "@/app/reports/lib/work-order-report-types";
+import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 
 function formatDisplayDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -65,9 +66,15 @@ export function mapWorkOrderRowToReportItem(
   return {
     id: String(row.id),
     title: row.subject?.trim() || "—",
+    description: row.description?.trim() || null,
     area: row.area_label?.trim() || "—",
     areaId: row.area_id != null ? Number(row.area_id) : null,
     category: row.category?.trim() || "Uncategorized",
+    itemIssue: classifyWorkOrderItemIssue({
+      structuredItem: row.item,
+      description: row.description,
+      details: row.source_note,
+    }),
     priority: row.priority?.trim() || "Normal",
     status: row.status?.trim() || "Open",
     createdBy: resolveWorkOrderReportCreatedByLabel({
@@ -79,7 +86,9 @@ export function mapWorkOrderRowToReportItem(
     completedBy: completedByStored?.trim() || null,
     completedAt: completedAt ? formatDisplayDateTime(completedAt) : null,
     completedAtIso: completedAt ? toDateOnly(completedAt) : null,
+    assignedTo: null,
     comments: row.comments?.trim() || "—",
+    resolution: row.comments?.trim() || "—",
     daysOpen: computeDaysOpen(hoursOpen),
     hoursOpen,
   };

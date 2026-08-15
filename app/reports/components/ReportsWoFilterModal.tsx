@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { WORK_ORDER_CATEGORIES } from "@/app/maintenance/lib/work-order-categories";
+import { WORK_ORDER_ITEM_ISSUES } from "@/app/maintenance/lib/work-order-item-issues";
 import {
   ONE_EYRIE_MODAL_BOX,
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -40,6 +41,7 @@ import {
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
+import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
 
 type ReportsWoFilterModalProps = {
   open: boolean;
@@ -68,6 +70,7 @@ export default function ReportsWoFilterModal({
   const [locationOptions, setLocationOptions] = useState(
     buildWorkOrderLocationOptions([])
   );
+  const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
 
   const syncPropertyName = useCallback((name: string) => {
@@ -105,6 +108,19 @@ export default function ReportsWoFilterModal({
     }
 
     void loadLocationOptions();
+    void fetchWorkOrderReportSource()
+      .then((rows) => {
+        if (cancelled) return;
+        setCompletedByOptions([
+          "All",
+          ...Array.from(
+            new Set(rows.map((row) => row.completedBy).filter((name): name is string => Boolean(name)))
+          ).sort((a, b) => a.localeCompare(b)),
+        ]);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletedByOptions(["All"]);
+      });
 
     return () => {
       cancelled = true;
@@ -114,15 +130,25 @@ export default function ReportsWoFilterModal({
   if (!open || !reportId) return null;
 
   const isBySourceReport = reportId === "work-orders-by-source";
+  const isResolutionReport = reportId === "resolution-report";
+  const isHistoricalCategoryReport = reportId === "work-orders-by-category";
   const showSourceFilter = reportId === "all-work-orders" || isBySourceReport;
   const showExtendedFilters = !isBySourceReport;
   const woFilterLines = [
-    `Status: ${filters.status}`,
+    `Status: ${isResolutionReport ? "Completed" : filters.status}`,
+    ...(isResolutionReport && filters.search.trim()
+      ? [`Search: ${filters.search.trim()}`]
+      : []),
     ...(showSourceFilter ? [`Source: ${filters.source}`] : []),
     ...(showExtendedFilters
       ? [
           `Room / Area: ${filters.areaLabel || "All"}`,
-          `Category: ${filters.category}`,
+          isHistoricalCategoryReport
+            ? `Category: ${filters.category}`
+            : `Item / Issue: ${filters.itemIssue}`,
+          ...(isResolutionReport
+            ? [`Assigned / Completed By: ${filters.completedBy}`]
+            : []),
         ]
       : []),
   ];
@@ -201,6 +227,18 @@ export default function ReportsWoFilterModal({
             loading={propertyLoading}
           />
 
+          {isResolutionReport ? (
+            <label className="reports-pm-modal__field">
+              <span style={fieldLabel}>Search</span>
+              <input
+                className="one-eyrie-field"
+                value={filters.search}
+                onChange={(event) => updateFilter("search", event.target.value)}
+                placeholder="Work order, issue, location, or resolution"
+              />
+            </label>
+          ) : null}
+
           {isBySourceReport ? (
             <label className="reports-pm-modal__field">
               <span style={fieldLabel}>Source</span>
@@ -223,7 +261,7 @@ export default function ReportsWoFilterModal({
             </label>
           ) : null}
 
-          <label className="reports-pm-modal__field">
+          {!isResolutionReport ? <label className="reports-pm-modal__field">
             <span style={fieldLabel}>Status</span>
             <select
               className="one-eyrie-field"
@@ -241,7 +279,7 @@ export default function ReportsWoFilterModal({
                 </option>
               ))}
             </select>
-          </label>
+          </label> : null}
 
           {showSourceFilter && !isBySourceReport ? (
             <label className="reports-pm-modal__field">
@@ -301,20 +339,53 @@ export default function ReportsWoFilterModal({
               </div>
 
               <label className="reports-pm-modal__field">
-                <span style={fieldLabel}>Category</span>
+                <span style={fieldLabel}>
+                  {isHistoricalCategoryReport ? "Category" : "Item / Issue"}
+                </span>
                 <select
                   className="one-eyrie-field"
-                  value={filters.category}
-                  onChange={(event) => updateFilter("category", event.target.value)}
+                  value={
+                    isHistoricalCategoryReport
+                      ? filters.category
+                      : filters.itemIssue
+                  }
+                  onChange={(event) =>
+                    updateFilter(
+                      isHistoricalCategoryReport ? "category" : "itemIssue",
+                      event.target.value
+                    )
+                  }
                 >
                   <option value="All">All</option>
-                  {WORK_ORDER_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                  {(isHistoricalCategoryReport
+                    ? WORK_ORDER_CATEGORIES
+                    : WORK_ORDER_ITEM_ISSUES
+                  ).map((entry) => (
+                    <option key={entry} value={entry}>
+                      {entry}
                     </option>
                   ))}
                 </select>
               </label>
+
+              {isResolutionReport ? (
+                <label className="reports-pm-modal__field">
+                  <span style={fieldLabel}>Assigned / Completed By</span>
+                  <select
+                    className="one-eyrie-field"
+                    value={filters.completedBy}
+                    onChange={(event) =>
+                      updateFilter("completedBy", event.target.value)
+                    }
+                  >
+                    {completedByOptions.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </>
           ) : null}
 
@@ -377,6 +448,9 @@ export default function ReportsWoFilterModal({
                   areaId: filters.areaId,
                   areaLabel: filters.areaLabel,
                   category: filters.category,
+                  itemIssue: filters.itemIssue,
+                  search: filters.search,
+                  completedBy: filters.completedBy,
                 },
               }}
             >

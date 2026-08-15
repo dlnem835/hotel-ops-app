@@ -5,7 +5,10 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import DashboardWorkOrderDetailModal from "@/app/dashboard/components/DashboardWorkOrderDetailModal";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
-import { buildWorkOrdersByCategoryRows } from "@/app/reports/lib/work-order-report-filters";
+import {
+  buildWorkOrdersByCategoryRows,
+  buildWorkOrdersByItemIssueRows,
+} from "@/app/reports/lib/work-order-report-filters";
 import {
   resolveWorkOrderReportCreatedByLabel,
   type WorkOrderReportRow,
@@ -14,6 +17,7 @@ import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type ReportsTopCategoriesResultsProps = {
   rows: WorkOrderReportRow[];
+  groupBy?: "category" | "itemIssue";
 };
 
 const supabase = createClient(
@@ -37,6 +41,7 @@ function getScrollContainer(element: HTMLElement | null): HTMLElement | null {
 
 export default function ReportsTopCategoriesResults({
   rows,
+  groupBy = "category",
 }: ReportsTopCategoriesResultsProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const savedScrollTopRef = useRef(0);
@@ -48,15 +53,22 @@ export default function ReportsTopCategoriesResults({
   const [openError, setOpenError] = useState<string | null>(null);
   const [createdByName, setCreatedByName] = useState<string | null>(null);
 
-  const categoryRows = useMemo(() => buildWorkOrdersByCategoryRows(rows), [rows]);
+  const categoryRows = useMemo(
+    () =>
+      groupBy === "itemIssue"
+        ? buildWorkOrdersByItemIssueRows(rows)
+        : buildWorkOrdersByCategoryRows(rows),
+    [rows, groupBy]
+  );
 
   const workOrdersByCategory = useMemo(() => {
     const grouped = new Map<string, WorkOrderReportRow[]>();
 
     for (const row of rows) {
-      const existing = grouped.get(row.category) ?? [];
+      const groupLabel = groupBy === "itemIssue" ? row.itemIssue : row.category;
+      const existing = grouped.get(groupLabel) ?? [];
       existing.push(row);
-      grouped.set(row.category, existing);
+      grouped.set(groupLabel, existing);
     }
 
     for (const [category, categoryRowsForGroup] of grouped.entries()) {
@@ -69,7 +81,7 @@ export default function ReportsTopCategoriesResults({
     }
 
     return grouped;
-  }, [rows]);
+  }, [rows, groupBy]);
 
   useEffect(() => {
     async function loadCreatedByName() {
@@ -144,7 +156,8 @@ export default function ReportsTopCategoriesResults({
     <>
       <div ref={rootRef} className="reports-wo-results reports-wo-top-categories">
         <p className="reports-pm-results__lead">
-          Top work order categories matching the selected filters.
+          Top work order {groupBy === "itemIssue" ? "items / issues" : "categories"} matching
+          the selected filters.
         </p>
         {openError ? (
           <p className="reports-wo-top-categories__error" role="alert">

@@ -7,7 +7,9 @@ import {
   createPassOnEntry,
   getLocalDateString,
   resolveCurrentUserName,
+  uploadPassOnAttachment,
 } from "./lib/pass-on-shared";
+import PassOnAttachments from "@/app/pass-on-log/components/PassOnAttachments";
 
 export default function MobilePassOnLogNew() {
   const [subject, setSubject] = useState("");
@@ -17,6 +19,7 @@ export default function MobilePassOnLogNew() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [author, setAuthor] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     void resolveCurrentUserName().then(setAuthor);
@@ -42,13 +45,24 @@ export default function MobilePassOnLogNew() {
 
     setSaving(true);
     try {
-      await createPassOnEntry({
+      const entry = await createPassOnEntry({
         subject: subject.trim(),
         message: message.trim(),
         priority,
         entryDate,
         author: currentAuthor,
       });
+      try {
+        for (const file of attachments) {
+          await uploadPassOnAttachment(entry.id, file);
+        }
+      } catch (uploadError) {
+        window.alert(
+          uploadError instanceof Error
+            ? `Pass-on posted, but an attachment failed: ${uploadError.message}`
+            : "Pass-on posted, but an attachment failed to upload."
+        );
+      }
       window.location.assign("/mobile/pass-on-log");
     } catch (saveError) {
       setSaving(false);
@@ -114,6 +128,12 @@ export default function MobilePassOnLogNew() {
             required
           />
         </div>
+
+        <PassOnAttachments
+          pendingFiles={attachments}
+          onPendingFilesChange={setAttachments}
+          disabled={saving}
+        />
 
         <div className="one-eyrie-mobile-actions">
           <button

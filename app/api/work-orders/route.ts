@@ -4,7 +4,10 @@ import {
   fetchWorkOrders,
 } from "@/app/maintenance/lib/work-order-db";
 import { WorkOrderInput } from "@/app/maintenance/lib/maintenance-types";
-import { isWorkOrderCategory } from "@/app/maintenance/lib/work-order-categories";
+import {
+  classifyWorkOrderItemIssue,
+  isWorkOrderItemIssue,
+} from "@/app/maintenance/lib/work-order-item-issues";
 import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import {
   resolveTenantRequest,
@@ -52,9 +55,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (!body.category || !isWorkOrderCategory(body.category)) {
-      return NextResponse.json({ error: "Category is required." }, { status: 400 });
-    }
     const hasLocation =
       body.area_id != null || Boolean(body.area_label?.trim());
     if (!hasLocation) {
@@ -66,6 +66,13 @@ export async function POST(request: Request) {
     if (!body.description?.trim()) {
       return NextResponse.json({ error: "Details are required." }, { status: 400 });
     }
+    body.item = isWorkOrderItemIssue(String(body.item || ""))
+      ? body.item
+      : classifyWorkOrderItemIssue({
+          structuredItem: body.item,
+          description: body.description,
+          details: body.source_note,
+        });
 
     const workOrder = await createWorkOrder(supabase, body, {
       organizationId,

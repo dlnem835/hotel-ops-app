@@ -15,8 +15,10 @@ import {
   PassOnEntry,
   resolveCurrentUserName,
   resolvePassOnAuthorDisplay,
+  uploadPassOnAttachment,
 } from "./lib/pass-on-shared";
 import { priorityClassName } from "./lib/pass-on-priority";
+import PassOnAttachments from "@/app/pass-on-log/components/PassOnAttachments";
 
 type MobilePassOnLogDetailProps = {
   entry: PassOnEntry;
@@ -30,6 +32,7 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
   const [navEntries, setNavEntries] = useState<PassOnEntry[]>([]);
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     setReplyText("");
@@ -67,7 +70,7 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
   );
 
   function confirmLeaveIfNeeded(): boolean {
-    if (!replyText.trim()) return true;
+    if (!replyText.trim() && replyAttachments.length === 0) return true;
     return window.confirm(
       "You have an unsaved reply. Leave this entry without sending it?"
     );
@@ -107,7 +110,18 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
 
     setSaving(true);
     try {
-      await addPassOnReply(entry.id, author, text);
+      const reply = await addPassOnReply(entry.id, author, text);
+      try {
+        for (const file of replyAttachments) {
+          await uploadPassOnAttachment(entry.id, file, reply.id);
+        }
+      } catch (uploadError) {
+        window.alert(
+          uploadError instanceof Error
+            ? `Reply sent, but an attachment failed: ${uploadError.message}`
+            : "Reply sent, but an attachment failed to upload."
+        );
+      }
       window.location.assign(`/mobile/pass-on-log/${entry.id}`);
     } catch (replyError) {
       setSaving(false);
@@ -144,6 +158,14 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
         <p>{entry.message}</p>
       </div>
 
+      <PassOnAttachments
+        entryId={entry.id}
+        attachments={(entry.pass_on_log_attachments || []).filter(
+          (attachment) => !attachment.reply_id
+        )}
+        allowUpload={false}
+      />
+
       {replies.length > 0 ? (
         <section className="one-eyrie-mobile-pass-on-replies">
           <h2 className="one-eyrie-mobile-pass-on-replies__title">
@@ -155,6 +177,14 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
                 <strong>{resolvePassOnAuthorDisplay(teamMembers, reply.reply_author)}:</strong>{" "}
                 {reply.reply_message}
               </p>
+              <PassOnAttachments
+                entryId={entry.id}
+                attachments={(entry.pass_on_log_attachments || []).filter(
+                  (attachment) =>
+                    Number(attachment.reply_id) === Number(reply.id)
+                )}
+                allowUpload={false}
+              />
             </div>
           ))}
         </section>
@@ -179,6 +209,11 @@ export default function MobilePassOnLogDetail({ entry }: MobilePassOnLogDetailPr
         >
           {saving ? "Sending…" : "Send Reply"}
         </button>
+        <PassOnAttachments
+          pendingFiles={replyAttachments}
+          onPendingFilesChange={setReplyAttachments}
+          disabled={saving}
+        />
       </form>
 
       <div className="one-eyrie-mobile-pass-on-nav" role="navigation" aria-label="Pass-on entry">

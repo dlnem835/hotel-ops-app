@@ -6,10 +6,11 @@ export type PassOnScope = {
   propertyId: number;
 };
 
-const ENTRY_SELECT = "*, pass_on_log_replies(*), pass_on_log_views(*)";
+const ENTRY_SELECT =
+  "*, pass_on_log_replies(*), pass_on_log_views(*), pass_on_log_attachments(id, entry_id, reply_id, original_filename, content_type, byte_size, created_at)";
 
 /** Verifies a pass-on entry belongs to the active tenant, else throws 404. */
-async function assertEntryInTenant(
+export async function assertEntryInTenant(
   supabase: SupabaseClient,
   entryId: number,
   scope: PassOnScope
@@ -25,7 +26,7 @@ async function assertEntryInTenant(
   if (!data) throw new TenantRequestError(404, "Pass-on entry not found");
 }
 
-async function assertReplyInTenant(
+export async function assertReplyInTenant(
   supabase: SupabaseClient,
   replyId: number,
   scope: PassOnScope
@@ -158,6 +159,24 @@ export async function deletePassOnEntry(
   scope: PassOnScope
 ) {
   await assertEntryInTenant(supabase, id, scope);
+  const { data: attachments, error: attachmentsError } = await supabase
+    .from("pass_on_log_attachments")
+    .select("storage_path")
+    .eq("entry_id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
+  if (attachmentsError) throw new Error(attachmentsError.message);
+
+  const storagePaths = (attachments || []).map((attachment) =>
+    String(attachment.storage_path)
+  );
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from("pass-on-attachments")
+      .remove(storagePaths);
+    if (storageError) throw new Error(storageError.message);
+  }
+
   const { error } = await supabase
     .from("pass_on_log")
     .delete()
@@ -214,6 +233,24 @@ export async function deletePassOnReply(
   scope: PassOnScope
 ) {
   await assertReplyInTenant(supabase, replyId, scope);
+  const { data: attachments, error: attachmentsError } = await supabase
+    .from("pass_on_log_attachments")
+    .select("storage_path")
+    .eq("reply_id", replyId)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
+  if (attachmentsError) throw new Error(attachmentsError.message);
+
+  const storagePaths = (attachments || []).map((attachment) =>
+    String(attachment.storage_path)
+  );
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from("pass-on-attachments")
+      .remove(storagePaths);
+    if (storageError) throw new Error(storageError.message);
+  }
+
   const { error, count } = await supabase
     .from("pass_on_log_replies")
     .delete({ count: "exact" })

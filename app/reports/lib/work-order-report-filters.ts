@@ -36,6 +36,11 @@ function matchesCategory(rowCategory: string, filterCategory: string): boolean {
   return rowCategory === filterCategory;
 }
 
+function matchesItemIssue(rowItemIssue: string, filterItemIssue: string): boolean {
+  if (filterItemIssue === "All") return true;
+  return rowItemIssue === filterItemIssue;
+}
+
 function matchesArea(row: WorkOrderReportRow, filters: WorkOrderReportFilters): boolean {
   if (filters.areaId != null) {
     return row.areaId === filters.areaId;
@@ -53,12 +58,52 @@ function matchesSharedWorkOrderReportFilters(
   filters: WorkOrderReportFilters,
   dateIso: string | null | undefined
 ): boolean {
+  const search = filters.search.trim().toLowerCase();
+  if (
+    search &&
+    ![
+      row.id,
+      row.title,
+      row.description,
+      row.area,
+      row.category,
+      row.itemIssue,
+      row.createdBy,
+      row.assignedTo,
+      row.completedBy,
+      row.resolution,
+    ].some((value) => String(value || "").toLowerCase().includes(search))
+  ) {
+    return false;
+  }
+  if (
+    filters.completedBy !== "All" &&
+    row.completedBy !== filters.completedBy
+  ) {
+    return false;
+  }
   if (!matchesReportStatus(row.status, filters.status)) return false;
   if (!matchesWorkOrderReportSourceFilter(row.source, filters.source)) return false;
   if (!matchesCategory(row.category, filters.category)) return false;
+  if (!matchesItemIssue(row.itemIssue, filters.itemIssue)) return false;
   if (!matchesArea(row, filters)) return false;
   if (!matchesDateRange(dateIso, filters.dateStart, filters.dateEnd)) return false;
   return true;
+}
+
+/** Completed-only Resolution Report, filtered by completion date. */
+export function filterWorkOrdersForResolutionReport(
+  rows: WorkOrderReportRow[],
+  filters: WorkOrderReportFilters
+): WorkOrderReportRow[] {
+  return rows.filter((row) => {
+    if (row.status !== "Completed") return false;
+    return matchesSharedWorkOrderReportFilters(
+      row,
+      { ...filters, status: "Completed" },
+      row.completedAtIso
+    );
+  });
 }
 
 /** Applies Work Orders report filters for list and aggregate reports. */
@@ -86,6 +131,7 @@ export function filterWorkOrdersForAverageCompletionTimeReport(
     }
 
     if (!matchesCategory(row.category, filters.category)) return false;
+    if (!matchesItemIssue(row.itemIssue, filters.itemIssue)) return false;
     if (!matchesArea(row, filters)) return false;
     if (!matchesWorkOrderReportSourceFilter(row.source, filters.source)) return false;
     if (!matchesDateRange(row.completedAtIso, filters.dateStart, filters.dateEnd)) {
@@ -177,6 +223,18 @@ export function buildWorkOrdersByCategoryRows(
     counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
   }
 
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+export function buildWorkOrdersByItemIssueRows(
+  rows: WorkOrderReportRow[]
+): WorkOrderReportGroupRow[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    counts.set(row.itemIssue, (counts.get(row.itemIssue) ?? 0) + 1);
+  }
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));

@@ -10,6 +10,7 @@ type WorkOrderPhotoFieldProps = {
   uploading?: boolean;
   disabled?: boolean;
   compact?: boolean;
+  label?: string;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
 };
@@ -22,6 +23,7 @@ export default function WorkOrderPhotoField({
   uploading = false,
   disabled = false,
   compact = false,
+  label = "Photo",
   onPhotoSelect,
   onPhotoRemove,
 }: WorkOrderPhotoFieldProps) {
@@ -111,7 +113,7 @@ export default function WorkOrderPhotoField({
 
   return (
     <div className={compact ? "work-order-photo-field work-order-photo-field--compact" : undefined}>
-      <div style={labelStyle}>Photo</div>
+      <div style={labelStyle}>{label}</div>
 
       <div
         className={compact ? "work-order-photo-field__row" : undefined}

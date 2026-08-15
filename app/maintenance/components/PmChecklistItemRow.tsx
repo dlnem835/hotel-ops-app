@@ -7,6 +7,7 @@ import { WorkOrderModalInitialValues } from "@/app/maintenance/components/WorkOr
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PmChecklistStep, PmStepOutcome } from "../lib/pm-types";
+import { classifyWorkOrderItemIssue } from "../lib/work-order-item-issues";
 
 export type PmFailedItemWorkOrderContext = {
   templateName: string;
@@ -162,6 +163,10 @@ export default function PmChecklistItemRow({
                   workOrderContext.onCreateWorkOrder({
                     subject: `PM fail: ${step.label}`,
                     description: notes || "",
+                    item: classifyWorkOrderItemIssue({
+                      structuredItem: step.label,
+                      description: notes,
+                    }),
                     priority: "Important",
                     area_id: workOrderContext.areaId,
                     area_label: locationLabel(workOrderContext),
@@ -177,6 +182,10 @@ export default function PmChecklistItemRow({
                 initialValues={{
                   subject: `PM fail: ${step.label}`,
                   description: notes || "",
+                  item: classifyWorkOrderItemIssue({
+                    structuredItem: step.label,
+                    description: notes,
+                  }),
                   priority: "Important",
                   area_id: workOrderContext.areaId,
                   area_label: locationLabel(workOrderContext),

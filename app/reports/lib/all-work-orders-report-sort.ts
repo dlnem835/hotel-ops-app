@@ -4,7 +4,7 @@ import { resolveWorkOrderReportCreatedByLabel } from "@/app/reports/lib/work-ord
 export type AllWorkOrdersSortColumn =
   | "title"
   | "area"
-  | "category"
+  | "itemIssue"
   | "priority"
   | "status"
   | "createdBy"
@@ -45,8 +45,8 @@ function getSortValue(row: WorkOrderReportRow, column: AllWorkOrdersSortColumn):
       return row.title;
     case "area":
       return row.area;
-    case "category":
-      return row.category;
+    case "itemIssue":
+      return row.itemIssue;
     case "priority":
       return PRIORITY_ORDER[row.priority] ?? 99;
     case "status":
@@ -100,7 +100,7 @@ export const ALL_WORK_ORDERS_SORT_COLUMNS: Array<{
 }> = [
   { key: "title", label: "Title" },
   { key: "area", label: "Room / Area" },
-  { key: "category", label: "Category" },
+  { key: "itemIssue", label: "Item / Issue" },
   { key: "priority", label: "Priority" },
   { key: "status", label: "Status" },
   { key: "createdBy", label: "Created by" },

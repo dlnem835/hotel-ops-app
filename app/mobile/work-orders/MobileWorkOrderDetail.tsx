@@ -18,6 +18,8 @@ import {
   saveWorkOrderComments,
 } from "./lib/work-order-shared";
 import WorkOrderPhotoAttachment from "@/app/maintenance/components/WorkOrderPhotoAttachment";
+import WorkOrderResolutionModal from "@/app/maintenance/components/WorkOrderResolutionModal";
+import WorkOrderItemIssueSelect from "@/app/maintenance/components/WorkOrderItemIssueSelect";
 
 type MobileWorkOrderDetailProps = {
   workOrderId: number;
@@ -29,12 +31,14 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [comments, setComments] = useState("");
+  const [itemIssue, setItemIssue] = useState("Other");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingComments, setSavingComments] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [resolutionOpen, setResolutionOpen] = useState(false);
 
   useEffect(() => {
     void resolveWorkOrderCreatedBy().then(setCurrentUserName);
@@ -53,13 +57,14 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
           return;
         }
 
-        if (order.status === "Completed" || order.status === "Cancelled") {
+        if (order.status === "Cancelled") {
           router.replace("/mobile/work-orders");
           return;
         }
 
         setWorkOrder(order);
         setComments(order.comments || "");
+        setItemIssue(order.item || "Other");
         setLoading(false);
       })
       .catch((loadError) => {
@@ -82,7 +87,11 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
     setSaveMessage(null);
 
     try {
-      const updated = await saveWorkOrderComments(workOrder.id, comments);
+      const updated = await saveWorkOrderComments(
+        workOrder.id,
+        comments,
+        itemIssue
+      );
       setWorkOrder(updated);
       setComments(updated.comments || "");
       setSaveMessage("Comments saved.");
@@ -96,13 +105,22 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
     }
   }
 
-  async function handleComplete() {
+  async function handleComplete(
+    resolution: string,
+    resolutionPhotoUrl: string | null
+  ) {
     if (!workOrder) return;
     setCompleting(true);
     setActionError(null);
 
     try {
-      await completeWorkOrder(workOrder.id, currentUserName);
+      await completeWorkOrder(
+        workOrder.id,
+        resolution,
+        currentUserName,
+        resolutionPhotoUrl
+      );
+      setResolutionOpen(false);
       router.push("/mobile/work-orders");
     } catch (completeError) {
       setActionError(
@@ -132,6 +150,7 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
   }
 
   const busy = savingComments || completing;
+  const isCompleted = workOrder.status === "Completed";
 
   return (
     <div className="one-eyrie-mobile__inner one-eyrie-mobile-work-orders">
@@ -184,14 +203,34 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
           className="one-eyrie-mobile-work-order-detail__photo"
         />
       ) : null}
+      {workOrder.resolutionPhotoUrl ? (
+        <WorkOrderPhotoAttachment
+          photoUrl={workOrder.resolutionPhotoUrl}
+          label="Resolution Photo"
+          className="one-eyrie-mobile-work-order-detail__photo"
+        />
+      ) : null}
+
+      <label className="one-eyrie-mobile-field">
+        <span>Item / Issue</span>
+        <WorkOrderItemIssueSelect
+          value={itemIssue}
+          disabled={isCompleted || busy}
+          className=""
+          onChange={setItemIssue}
+        />
+      </label>
 
       <label className="one-eyrie-mobile-field one-eyrie-mobile-work-order-detail__comments">
-        <span>Comments</span>
+        <span>{isCompleted ? "Resolution" : "Comments"}</span>
         <textarea
           value={comments}
           onChange={(event) => setComments(event.target.value)}
           rows={4}
-          placeholder="Add notes about progress, parts needed, or completion details..."
+          placeholder={
+            isCompleted ? "No resolution was recorded." : "Add notes about progress or parts needed..."
+          }
+          readOnly={isCompleted}
         />
       </label>
 
@@ -211,23 +250,37 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         >
           Close
         </Link>
-        <button
-          type="button"
-          className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold-outline"
-          disabled={busy}
-          onClick={() => void handleSaveComments()}
-        >
-          {savingComments ? "Saving…" : "Save"}
-        </button>
-        <button
-          type="button"
-          className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold"
-          disabled={busy}
-          onClick={() => void handleComplete()}
-        >
-          {completing ? "Saving…" : "Mark Completed"}
-        </button>
+        {!isCompleted ? (
+          <>
+            <button
+              type="button"
+              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold-outline"
+              disabled={busy}
+              onClick={() => void handleSaveComments()}
+            >
+              {savingComments ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold"
+              disabled={busy}
+              onClick={() => setResolutionOpen(true)}
+            >
+              Mark Completed
+            </button>
+          </>
+        ) : null}
       </div>
+      {resolutionOpen ? (
+        <WorkOrderResolutionModal
+          open
+          saving={completing}
+          onClose={() => setResolutionOpen(false)}
+          onSubmit={(resolution, resolutionPhotoUrl) =>
+            void handleComplete(resolution, resolutionPhotoUrl)
+          }
+        />
+      ) : null}
     </div>
   );
 }

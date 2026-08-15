@@ -7,6 +7,7 @@ import {
 import { WorkOrderCategory } from "./work-order-categories";
 import { WORK_ORDER_PRIORITY_ORDER } from "@/app/lib/workOrderPriority";
 import { isGuestImpactingWorkOrder } from "./work-order-display";
+import { classifyWorkOrderItemIssue } from "./work-order-item-issues";
 
 export type WorkOrderRow = {
   id: number;
@@ -21,6 +22,7 @@ export type WorkOrderRow = {
   source_note: string | null;
   comments: string | null;
   photo_url: string | null;
+  resolution_photo_url: string | null;
   category: string | null;
   item: string | null;
   created_by: string | null;
@@ -45,8 +47,15 @@ export function normalizeWorkOrder(row: WorkOrderRow): WorkOrder {
     sourceNote: row.source_note ? String(row.source_note) : null,
     comments: row.comments ? String(row.comments) : null,
     photoUrl: row.photo_url ? String(row.photo_url) : null,
+    resolutionPhotoUrl: row.resolution_photo_url
+      ? String(row.resolution_photo_url)
+      : null,
     category: row.category ? (row.category as WorkOrderCategory) : null,
-    item: row.item ? String(row.item) : null,
+    item: classifyWorkOrderItemIssue({
+      structuredItem: row.item,
+      description: row.description,
+      details: row.source_note,
+    }),
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -168,6 +177,10 @@ export async function updateWorkOrder(
     payload.comments_updated_at = new Date().toISOString();
   }
   if (patch.photo_url !== undefined) payload.photo_url = patch.photo_url;
+  if (patch.item !== undefined) payload.item = patch.item?.trim() || "Other";
+  if (patch.resolution_photo_url !== undefined) {
+    payload.resolution_photo_url = patch.resolution_photo_url;
+  }
 
   let updateQuery = supabase.from("work_orders").update(payload).eq("id", id);
   if (scope) {

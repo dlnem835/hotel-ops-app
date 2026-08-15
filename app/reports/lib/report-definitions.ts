@@ -14,7 +14,9 @@ export type PmReportId =
 
 export type WorkOrderReportId =
   | "all-work-orders"
+  | "resolution-report"
   | "work-order-completion-time"
+  | "work-orders-by-item-issue"
   | "work-orders-by-category"
   | "work-orders-by-area"
   | "work-orders-by-source";
@@ -99,7 +101,7 @@ export const WORK_ORDER_SOURCE_FILTER_OPTIONS = [
   "Manual",
   "Pass-On Log",
   "Room Inspection",
-  "RPM",
+  "RPM Inspection",
   "Preventive Maintenance",
   "Lost & Found",
   "Other",
@@ -107,22 +109,28 @@ export const WORK_ORDER_SOURCE_FILTER_OPTIONS = [
 
 export type WorkOrderReportFilters = {
   propertyName: string;
+  search: string;
   status: (typeof WORK_ORDER_STATUS_FILTER_OPTIONS)[number];
   source: (typeof WORK_ORDER_SOURCE_FILTER_OPTIONS)[number];
   areaId: number | null;
   areaLabel: string;
   category: string;
+  itemIssue: string;
+  completedBy: string;
   dateStart: string;
   dateEnd: string;
 };
 
 export const DEFAULT_WORK_ORDER_REPORT_FILTERS: WorkOrderReportFilters = {
   propertyName: FALLBACK_REPORT_PROPERTY_NAME,
+  search: "",
   status: "All",
   source: "All",
   areaId: null,
   areaLabel: "All",
   category: "All",
+  itemIssue: "All",
+  completedBy: "All",
   dateStart: "",
   dateEnd: "",
 };
@@ -309,8 +317,12 @@ export const WORK_ORDERS_SECTION: ReportCategorySection = {
   title: "Work Orders",
   reports: [
     report("all-work-orders", "All Work Orders", { woReportId: "all-work-orders" }),
+    report("resolution-report", "Resolution Report", { woReportId: "resolution-report" }),
     report("average-completion-time", "Average Completion Time", {
       woReportId: "work-order-completion-time",
+    }),
+    report("top-item-issues", "Top Item / Issues", {
+      woReportId: "work-orders-by-item-issue",
     }),
     report("top-categories", "Top Categories", { woReportId: "work-orders-by-category" }),
     report("top-areas", "Top Areas", { woReportId: "work-orders-by-area" }),

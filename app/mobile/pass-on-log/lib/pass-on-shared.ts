@@ -24,6 +24,16 @@ export type PassOnView = {
   viewed_at: string;
 };
 
+export type PassOnAttachment = {
+  id: number;
+  entry_id: number;
+  reply_id: number | null;
+  original_filename: string;
+  content_type: string;
+  byte_size: number;
+  created_at: string;
+};
+
 export type PassOnEntry = {
   id: number;
   subject: string;
@@ -35,6 +45,7 @@ export type PassOnEntry = {
   edited_at?: string | null;
   pass_on_log_replies: PassOnReply[];
   pass_on_log_views: PassOnView[];
+  pass_on_log_attachments: PassOnAttachment[];
 };
 
 export type TeamMember = {
@@ -201,7 +212,7 @@ export async function createPassOnEntry(input: {
   priority: string;
   entryDate: string;
   author: string;
-}): Promise<void> {
+}): Promise<PassOnEntry> {
   const now = new Date();
   const selectedDateTime = new Date(
     `${input.entryDate}T${String(now.getHours()).padStart(2, "0")}:${String(
@@ -221,24 +232,63 @@ export async function createPassOnEntry(input: {
       entry_date: input.entryDate,
     }),
   });
+  const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
     throw new Error(result.error || "Unable to save entry");
   }
+  return result.entry as PassOnEntry;
 }
 
-export async function addPassOnReply(entryId: number, author: string, text: string): Promise<void> {
+export async function uploadPassOnAttachment(
+  entryId: number,
+  file: File,
+  replyId?: number
+): Promise<PassOnAttachment> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (replyId) formData.append("replyId", String(replyId));
+  const response = await tenantFetch(`/api/pass-on/${entryId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || "Unable to upload attachment");
+  }
+  return result.attachment as PassOnAttachment;
+}
+
+export async function openPassOnAttachment(
+  entryId: number,
+  attachmentId: number
+): Promise<void> {
+  const response = await tenantFetch(
+    `/api/pass-on/${entryId}/attachments/${attachmentId}`
+  );
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.url) {
+    throw new Error(result.error || "Unable to open attachment");
+  }
+  window.open(String(result.url), "_blank", "noopener,noreferrer");
+}
+
+export async function addPassOnReply(
+  entryId: number,
+  author: string,
+  text: string
+): Promise<PassOnReply> {
   const response = await tenantFetch(`/api/pass-on/${entryId}/replies`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reply_author: author, reply_message: text }),
   });
+  const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
     throw new Error(result.error || "Unable to send reply");
   }
+  return result.reply as PassOnReply;
 }
 
 export function memberDisplayName(

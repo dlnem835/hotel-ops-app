@@ -213,7 +213,7 @@ export default function ReportsAllWorkOrdersResults({
                         </button>
                       </td>
                       <td>{row.area}</td>
-                      <td>{row.category}</td>
+                      <td>{row.itemIssue}</td>
                       <td>{row.priority}</td>
                       <td>{row.status}</td>
                       <td>

@@ -5,7 +5,12 @@ import { X } from "lucide-react";
 import { forestHoverHandlers, PRIMARY_BUTTON } from "@/app/settings/lib/settings-ui-interactions";
 import { BuildingArea } from "@/app/settings/lib/buildings-types";
 import { WorkOrderInput, WorkOrderPriority } from "../lib/maintenance-types";
-import { WORK_ORDER_CATEGORIES, WorkOrderCategory } from "../lib/work-order-categories";
+import {
+  classifyWorkOrderItemIssue,
+  isWorkOrderItemIssue,
+  WORK_ORDER_ITEM_ISSUES,
+  type WorkOrderItemIssue,
+} from "../lib/work-order-item-issues";
 import {
   buildWorkOrderLocationOptions,
   inferInitialLocationSelection,
@@ -14,6 +19,7 @@ import {
 import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import "./work-order-modal.css";
 
 export type WorkOrderModalInitialValues = Partial<WorkOrderInput> & {
@@ -37,8 +43,7 @@ export default function WorkOrderModal({
 }: WorkOrderModalProps) {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<WorkOrderCategory | "">("");
-  const [item, setItem] = useState("");
+  const [item, setItem] = useState<WorkOrderItemIssue | "">("");
   const [priority, setPriority] = useState<WorkOrderPriority>("Normal");
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [selectedLocationLabel, setSelectedLocationLabel] = useState("");
@@ -49,6 +54,7 @@ export default function WorkOrderModal({
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  useModalScrollLock(open);
 
   const activeAreas = useMemo(
     () => areas.filter((area) => area.status === "Active"),
@@ -85,8 +91,18 @@ export default function WorkOrderModal({
         ? initialValues.description
         : initialValues?.source_note || ""
     );
-    setCategory(initialValues?.category || "");
-    setItem(initialValues?.item || "");
+    const initialItem = String(initialValues?.item || "").trim();
+    setItem(
+      isWorkOrderItemIssue(initialItem)
+        ? initialItem
+        : initialValues?.source_module
+          ? classifyWorkOrderItemIssue({
+              structuredItem: initialItem,
+              description: initialValues.description,
+              details: initialValues.source_note,
+            })
+          : ""
+    );
     setPriority(initialValues?.priority || "Normal");
     setPhotoUrl(initialValues?.photo_url ?? null);
     setUploadingPhoto(false);
@@ -168,8 +184,8 @@ export default function WorkOrderModal({
       return;
     }
 
-    if (!category) {
-      setError("Category is required.");
+    if (!item) {
+      setError("Item / Issue is required.");
       return;
     }
 
@@ -184,8 +200,8 @@ export default function WorkOrderModal({
     const payload: WorkOrderInput = {
       subject: subject.trim(),
       description: description.trim(),
-      category,
-      item: item.trim() || null,
+      category: initialValues?.category ?? null,
+      item,
       priority,
       area_id: location.area_id,
       area_label: location.area_label,
@@ -285,31 +301,21 @@ export default function WorkOrderModal({
             </label>
 
             <label className="work-order-modal__field">
-              <span className="work-order-modal__label">Category</span>
+              <span className="work-order-modal__label">Item / Issue</span>
               <select
                 className="work-order-modal__select"
-                value={category}
+                value={item}
                 onChange={(event) =>
-                  setCategory(event.target.value as WorkOrderCategory | "")
+                  setItem(event.target.value as WorkOrderItemIssue | "")
                 }
               >
-                <option value="">Select category…</option>
-                {WORK_ORDER_CATEGORIES.map((entry) => (
+                <option value="">Select item / issue…</option>
+                {WORK_ORDER_ITEM_ISSUES.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
                   </option>
                 ))}
               </select>
-            </label>
-
-            <label className="work-order-modal__field">
-              <span className="work-order-modal__label">Item</span>
-              <input
-                className="work-order-modal__input"
-                value={item}
-                onChange={(event) => setItem(event.target.value)}
-                placeholder="Example: Toilet, PTAC, TV, refrigerator"
-              />
             </label>
 
             <label className="work-order-modal__field">

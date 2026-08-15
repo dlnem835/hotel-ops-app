@@ -40,9 +40,11 @@ export type WorkOrderReportBySourceRow = {
 export type WorkOrderReportRow = {
   id: string;
   title: string;
+  description: string | null;
   area: string;
   areaId: number | null;
   category: string;
+  itemIssue: string;
   priority: string;
   status: string;
   /** Person who created the work order (display name). */
@@ -52,11 +54,15 @@ export type WorkOrderReportRow = {
   createdAtIso: string;
   /** Origin workflow — not the creator's department. */
   source: WorkOrderReportSource;
+  /** Work Orders do not currently have an assignment field; retained for report compatibility. */
+  assignedTo: string | null;
   completedBy: string | null;
   completedAt: string | null;
   /** ISO date (YYYY-MM-DD) for report date-range filtering. */
   completedAtIso: string | null;
   comments: string;
+  /** Same persisted work_orders.comments value required by Mark Completed. */
+  resolution: string;
   daysOpen: number | null;
   hoursOpen: number | null;
 };
@@ -94,7 +100,7 @@ export function mapWorkOrderSourceModule(
   if (!value || value === "Maintenance") return "Manual";
   if (value === "Pass-On Log") return "Pass-On Log";
   if (value === "Inspections" || value === "Room Inspection") return "Room Inspection";
-  if (value === "RPM") return "RPM";
+  if (value === "RPM" || value === "RPM Inspection") return "RPM Inspection";
   if (value === "Preventive Maintenance" || value === "PM") return "Preventive Maintenance";
   if (value === "Lost & Found" || value === "Lost and Found") return "Lost & Found";
 
@@ -107,6 +113,9 @@ export function matchesWorkOrderReportSourceFilter(
   filterSource: WorkOrderReportSource | "All"
 ): boolean {
   if (filterSource === "All") return true;
+  // Backward compatibility for saved report schedules created before the
+  // source label was clarified.
+  if (String(filterSource) === "RPM") return source === "RPM Inspection";
   return source === filterSource;
 }
 

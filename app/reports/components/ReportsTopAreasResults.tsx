@@ -193,7 +193,7 @@ export default function ReportsTopAreasResults({ rows }: ReportsTopAreasResultsP
                             <thead>
                               <tr>
                                 <th>Title</th>
-                                <th>Category</th>
+                                <th>Item / Issue</th>
                                 <th>Priority</th>
                                 <th>Status</th>
                                 <th>Created by</th>
@@ -217,7 +217,7 @@ export default function ReportsTopAreasResults({ rows }: ReportsTopAreasResultsP
                                         {workOrder.title}
                                       </button>
                                     </td>
-                                    <td>{workOrder.category}</td>
+                                    <td>{workOrder.itemIssue}</td>
                                     <td>{workOrder.priority}</td>
                                     <td>{workOrder.status}</td>
                                     <td>

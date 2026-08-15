@@ -59,10 +59,12 @@ import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-
 import {
   buildWorkOrdersByAreaRows,
   buildWorkOrdersByCategoryRows,
+  buildWorkOrdersByItemIssueRows,
   buildWorkOrdersBySourceRows,
   calculateAverageCompletionTimeHours,
   filterWorkOrdersForAverageCompletionTimeReport,
   filterWorkOrdersForReport,
+  filterWorkOrdersForResolutionReport,
   formatAverageCompletionTime,
 } from "@/app/reports/lib/work-order-report-filters";
 import type { WorkOrderReportFilters } from "@/app/reports/lib/report-definitions";
@@ -272,11 +274,14 @@ function buildWorkOrderTables(
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const filters: WorkOrderReportFilters = {
     propertyName: context.propertyName,
+    search: snapshotString(snapshot, "search"),
     status: snapshotString(snapshot, "status") as WorkOrderReportFilters["status"],
     source: snapshotString(snapshot, "source") as WorkOrderReportFilters["source"],
     category: snapshotString(snapshot, "category"),
+    itemIssue: snapshotString(snapshot, "itemIssue") || "All",
     areaId: snapshot.areaId != null ? Number(snapshot.areaId) : null,
     areaLabel: snapshotString(snapshot, "areaLabel"),
+    completedBy: snapshotString(snapshot, "completedBy") || "All",
     dateStart: dateRange.dateStart,
     dateEnd: dateRange.dateEnd,
   };
@@ -287,15 +292,50 @@ function buildWorkOrderTables(
         const filtered = filterWorkOrdersForReport(rows, filters);
         return finalizeReportPdfTables([
           table(
-            ["Title", "Area", "Category", "Status", "Created By", "Created", "Source"],
+            ["Title", "Area", "Item / Issue", "Status", "Created By", "Created", "Source"],
             filtered.map((row) => [
               row.title,
               row.area,
-              row.category,
+              row.itemIssue,
               row.status,
               row.createdBy,
               row.createdAt,
               row.source,
+            ])
+          ),
+        ]);
+      }
+      case "resolution-report": {
+        const completed = filterWorkOrdersForResolutionReport(rows, filters);
+        return finalizeReportPdfTables([
+          table(
+            [
+              "Work Order",
+              "Issue",
+              "Location",
+              "Item / Issue",
+              "Priority",
+              "Created",
+              "Created By",
+              "Assigned To",
+              "Completed",
+              "Resolution",
+              "Completed By",
+              "Hours",
+            ],
+            completed.map((row) => [
+              `#${row.id}`,
+              row.description ?? row.title,
+              row.area,
+              row.itemIssue,
+              row.priority,
+              row.createdAt,
+              row.createdBy,
+              row.assignedTo ?? "—",
+              row.completedAt ?? "—",
+              row.resolution,
+              row.completedBy ?? "—",
+              row.hoursOpen == null ? "—" : String(row.hoursOpen),
             ])
           ),
         ]);
@@ -323,6 +363,17 @@ function buildWorkOrderTables(
           table(
             ["Category", "Count"],
             categoryRows.map((row) => [row.label, String(row.count)])
+          ),
+        ]);
+      }
+      case "work-orders-by-item-issue": {
+        const itemRows = buildWorkOrdersByItemIssueRows(
+          filterWorkOrdersForReport(rows, filters)
+        );
+        return finalizeReportPdfTables([
+          table(
+            ["Item / Issue", "Count"],
+            itemRows.map((row) => [row.label, String(row.count)])
           ),
         ]);
       }

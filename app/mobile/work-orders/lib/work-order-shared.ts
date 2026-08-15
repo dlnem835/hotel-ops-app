@@ -48,12 +48,16 @@ export async function fetchWorkOrderById(id: number): Promise<WorkOrder | null> 
 
 export async function saveWorkOrderComments(
   id: number,
-  comments: string
+  comments: string,
+  item?: string | null
 ): Promise<WorkOrder> {
   const response = await tenantFetch(`/api/work-orders/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ comments: comments.trim() || null }),
+    body: JSON.stringify({
+      comments: comments.trim() || null,
+      ...(item ? { item } : {}),
+    }),
   });
   const result = await response.json();
 
@@ -66,7 +70,9 @@ export async function saveWorkOrderComments(
 
 export async function completeWorkOrder(
   id: number,
-  completedBy?: string | null
+  resolution: string,
+  completedBy?: string | null,
+  resolutionPhotoUrl?: string | null
 ): Promise<WorkOrder> {
   const response = await tenantFetch(`/api/work-orders/${id}`, {
     method: "PATCH",
@@ -74,6 +80,8 @@ export async function completeWorkOrder(
     body: JSON.stringify({
       status: "Completed",
       completed_by: completedBy ?? null,
+      comments: resolution.trim(),
+      resolution_photo_url: resolutionPhotoUrl ?? null,
     }),
   });
   const result = await response.json();

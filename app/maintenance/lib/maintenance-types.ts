@@ -10,6 +10,8 @@ export type WorkOrderStatus = "Open" | "In Progress" | "Completed" | "Cancelled"
 export type WorkOrderSourceModule =
   | "Maintenance"
   | "Inspections"
+  | "Room Inspection"
+  | "RPM Inspection"
   | "Pass-On Log"
   | "Housekeeping";
 
@@ -26,6 +28,7 @@ export type WorkOrder = {
   sourceNote: string | null;
   comments: string | null;
   photoUrl: string | null;
+  resolutionPhotoUrl: string | null;
   category: WorkOrderCategory | null;
   item: string | null;
   createdBy: string | null;
@@ -52,6 +55,7 @@ export type WorkOrderInput = {
   source_note?: string | null;
   comments?: string | null;
   photo_url?: string | null;
+  resolution_photo_url?: string | null;
   category?: WorkOrderCategory | null;
   item?: string | null;
   created_by?: string | null;

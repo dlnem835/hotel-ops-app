@@ -1,11 +1,13 @@
 type WorkOrderPhotoAttachmentProps = {
   photoUrl: string;
   className?: string;
+  label?: string;
 };
 
 export default function WorkOrderPhotoAttachment({
   photoUrl,
   className,
+  label = "Attached Photo",
 }: WorkOrderPhotoAttachmentProps) {
   return (
     <div className={className}>
@@ -19,7 +21,7 @@ export default function WorkOrderPhotoAttachment({
           letterSpacing: "0.3px",
         }}
       >
-        Attached Photo
+        {label}
       </div>
       <a
         href={photoUrl}

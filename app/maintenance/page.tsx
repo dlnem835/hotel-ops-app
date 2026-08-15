@@ -37,6 +37,8 @@ import WorkOrderModal, {
 } from "./components/WorkOrderModal";
 import WorkOrderPhotoAttachment from "./components/WorkOrderPhotoAttachment";
 import WorkOrderDetailMetadata from "./components/WorkOrderDetailMetadata";
+import WorkOrderResolutionModal from "./components/WorkOrderResolutionModal";
+import WorkOrderItemIssueSelect from "./components/WorkOrderItemIssueSelect";
 import {
   MaintenanceDashboardPayload,
   PmTile,
@@ -52,6 +54,7 @@ import {
   WorkOrderListFilters,
 } from "./lib/work-order-list-filters";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import "./maintenance-responsive.css";
 import "./maintenance-light-theme.css";
 
@@ -73,15 +76,25 @@ export default function MaintenancePage() {
   const [createdByName, setCreatedByName] = useState<string | null>(null);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [workOrderComments, setWorkOrderComments] = useState("");
+  const [workOrderItemIssue, setWorkOrderItemIssue] = useState("Other");
   const [completingWo, setCompletingWo] = useState(false);
   const [savingComments, setSavingComments] = useState(false);
   const [commentsSaved, setCommentsSaved] = useState(false);
+  const [resolutionOpen, setResolutionOpen] = useState(false);
   const [pmHealthModalOpen, setPmHealthModalOpen] = useState(false);
   const [kpiPeriod, setKpiPeriod] = useState<InspectionPeriod>("mtd");
   const [workOrderFilters, setWorkOrderFilters] = useState<WorkOrderListFilters>(
     DEFAULT_WORK_ORDER_LIST_FILTERS
   );
   const memberResolver = useMemberDisplayNameResolver();
+  useModalScrollLock(Boolean(selectedWorkOrder));
+
+  useEffect(() => {
+    if (!selectedWorkOrder) return;
+    setWorkOrderComments(selectedWorkOrder.comments || "");
+    setWorkOrderItemIssue(selectedWorkOrder.item || "Other");
+    setCommentsSaved(false);
+  }, [selectedWorkOrder]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -171,7 +184,10 @@ export default function MaintenancePage() {
     const response = await tenantFetch(`/api/work-orders/${selectedWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: workOrderComments.trim() || null }),
+      body: JSON.stringify({
+        comments: workOrderComments.trim() || null,
+        item: workOrderItemIssue,
+      }),
     });
     setSavingComments(false);
 
@@ -188,7 +204,10 @@ export default function MaintenancePage() {
     await loadDashboard();
   }
 
-  async function completeWorkOrder() {
+  async function completeWorkOrder(
+    resolution: string,
+    resolutionPhotoUrl: string | null
+  ) {
     if (!selectedWorkOrder) return;
     setCompletingWo(true);
     const response = await tenantFetch(`/api/work-orders/${selectedWorkOrder.id}`, {
@@ -197,6 +216,8 @@ export default function MaintenancePage() {
       body: JSON.stringify({
         status: "Completed",
         completed_by: createdByName,
+        comments: resolution,
+        resolution_photo_url: resolutionPhotoUrl,
       }),
     });
     setCompletingWo(false);
@@ -207,6 +228,7 @@ export default function MaintenancePage() {
       return;
     }
 
+    setResolutionOpen(false);
     setSelectedWorkOrder(null);
     await loadDashboard();
   }
@@ -335,7 +357,14 @@ export default function MaintenancePage() {
           >
             <div
               className="one-eyrie-modal one-eyrie-maintenance-detail-modal"
-              style={{ ...ONE_EYRIE_MODAL_BOX, width: "720px", maxWidth: "100%" }}
+              style={{
+                ...ONE_EYRIE_MODAL_BOX,
+                width: "720px",
+                maxWidth: "100%",
+                maxHeight: "calc(100vh - 32px)",
+                overflowY: "auto",
+                boxSizing: "border-box",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={ONE_EYRIE_MODAL_HEADER}>
@@ -410,6 +439,34 @@ export default function MaintenancePage() {
                   <WorkOrderPhotoAttachment photoUrl={selectedWorkOrder.photoUrl} />
                 </div>
               )}
+              {selectedWorkOrder.resolutionPhotoUrl && (
+                <div style={{ marginBottom: "18px" }}>
+                  <WorkOrderPhotoAttachment
+                    photoUrl={selectedWorkOrder.resolutionPhotoUrl}
+                    label="Resolution Photo"
+                  />
+                </div>
+              )}
+              <label style={{ display: "block", marginBottom: "20px" }}>
+                <div
+                  style={{
+                    color: ONE_EYRIE.textSubtle,
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    marginBottom: "6px",
+                  }}
+                >
+                  Item / Issue
+                </div>
+                <WorkOrderItemIssueSelect
+                  value={workOrderItemIssue}
+                  disabled={completingWo || savingComments}
+                  onChange={(value) => {
+                    setWorkOrderItemIssue(value);
+                    setCommentsSaved(false);
+                  }}
+                />
+              </label>
               <label style={{ display: "block", marginBottom: "20px" }}>
                 <div
                   style={{
@@ -487,7 +544,7 @@ export default function MaintenancePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void completeWorkOrder()}
+                  onClick={() => setResolutionOpen(true)}
                   disabled={completingWo || savingComments}
                   style={{
                     ...GOLD_FILLED_BUTTON,
@@ -500,6 +557,16 @@ export default function MaintenancePage() {
                   {completingWo ? "Saving..." : "Mark Completed"}
                 </button>
               </div>
+              {resolutionOpen ? (
+                <WorkOrderResolutionModal
+                  open
+                  saving={completingWo}
+                  onClose={() => setResolutionOpen(false)}
+                  onSubmit={(resolution, resolutionPhotoUrl) =>
+                    void completeWorkOrder(resolution, resolutionPhotoUrl)
+                  }
+                />
+              ) : null}
             </div>
           </div>
         )}

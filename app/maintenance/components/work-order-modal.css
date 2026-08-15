@@ -7,7 +7,7 @@
   align-items: center;
   padding: 12px;
   background: rgba(0, 0, 0, 0.75);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .work-order-modal {
@@ -19,6 +19,7 @@
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  max-height: calc(100vh - 24px);
 }
 
 .work-order-modal__header {
@@ -43,6 +44,8 @@
 
 .work-order-modal__content {
   padding: 12px 16px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .work-order-modal__error {

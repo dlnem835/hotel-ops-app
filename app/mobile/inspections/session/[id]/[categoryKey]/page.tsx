@@ -13,6 +13,7 @@ import {
   itemResponseKey,
   useMobileInspectionSession,
 } from "../MobileInspectionSessionProvider";
+import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 
 export default function MobileInspectionCategoryPage() {
   const params = useParams<{ id: string; categoryKey: string }>();
@@ -24,6 +25,7 @@ export default function MobileInspectionCategoryPage() {
     content,
     roomName,
     templateName,
+    program,
     areaId,
     inspectorName,
     responses,
@@ -121,10 +123,15 @@ export default function MobileInspectionCategoryPage() {
                   initialValues={{
                     subject: "",
                     description: "",
+                    item: classifyWorkOrderItemIssue({
+                      structuredItem: item.label.en,
+                      description: notes[responseKey],
+                    }),
                     priority: "Important",
                     area_id: areaId,
                     area_label: roomName ? `Room ${roomName}` : null,
-                    source_module: "Inspections",
+                    source_module:
+                      program === "RPM" ? "RPM Inspection" : "Room Inspection",
                     source_record_id: String(sessionId),
                     source_note: `${templateName} · ${categoryName} · ${item.label.en}${
                       notes[responseKey] ? ` — ${notes[responseKey]}` : ""

@@ -12,12 +12,14 @@ import {
   calculateAverageCompletionTimeHours,
   filterWorkOrdersForAverageCompletionTimeReport,
   filterWorkOrdersForReport,
+  filterWorkOrdersForResolutionReport,
   formatAverageCompletionTime,
 } from "@/app/reports/lib/work-order-report-filters";
 import ReportsAllWorkOrdersResults from "@/app/reports/components/ReportsAllWorkOrdersResults";
 import ReportsTopAreasResults from "@/app/reports/components/ReportsTopAreasResults";
 import ReportsTopCategoriesResults from "@/app/reports/components/ReportsTopCategoriesResults";
 import type { WorkOrderReportRow } from "@/app/reports/lib/work-order-report-types";
+import ReportsResolutionResults from "@/app/reports/components/ReportsResolutionResults";
 
 type ReportsWoPlaceholderResultsProps = {
   reportId: WorkOrderReportId;
@@ -83,6 +85,10 @@ export default function ReportsWoPlaceholderResults({
     [completedRows]
   );
   const averageCompletionTime = formatAverageCompletionTime(averageHours);
+  const resolutionRows = useMemo(
+    () => filterWorkOrdersForResolutionReport(items, activeFilters),
+    [items, activeFilters]
+  );
 
   if (loading) {
     return <ReportStateMessage message="Loading work order report data…" />;
@@ -134,8 +140,16 @@ export default function ReportsWoPlaceholderResults({
     );
   }
 
+  if (reportId === "resolution-report") {
+    return <ReportsResolutionResults rows={resolutionRows} />;
+  }
+
   if (reportId === "work-orders-by-category") {
     return <ReportsTopCategoriesResults rows={filteredItems} />;
+  }
+
+  if (reportId === "work-orders-by-item-issue") {
+    return <ReportsTopCategoriesResults rows={filteredItems} groupBy="itemIssue" />;
   }
 
   if (reportId === "work-orders-by-area") {

@@ -32,11 +32,14 @@ import {
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
+import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
 import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
 import { PASS_ON_DAYS_PER_PAGE } from "@/app/mobile/pass-on-log/lib/pass-on-shared";
+import { uploadPassOnAttachment } from "@/app/mobile/pass-on-log/lib/pass-on-shared";
+import PassOnAttachments from "@/app/pass-on-log/components/PassOnAttachments";
 import "./pass-on-log-light-theme.css";
 import {
   clearPassOnDraft,
@@ -74,6 +77,7 @@ export default function PassOnLogPageContent() {
   const [draftSubject, setDraftSubject] = useState("");
   const [draftPriority, setDraftPriority] = useState("Normal");
   const [draftMessage, setDraftMessage] = useState("");
+  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
   const [draftEntryDate, setDraftEntryDate] = useState(() =>
     getHotelBusinessDateString()
   );
@@ -98,6 +102,9 @@ export default function PassOnLogPageContent() {
   );
   const [expandedViewsEntry, setExpandedViewsEntry] = useState<number | null>(null);
   const [replyMessages, setReplyMessages] = useState<Record<number, string>>({});
+  const [replyAttachments, setReplyAttachments] = useState<Record<number, File[]>>(
+    {}
+  );
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
@@ -337,6 +344,7 @@ async function markAsViewed(entryId: number) {
     setDraftSubject("");
     setDraftPriority("Normal");
     setDraftMessage("");
+    setDraftAttachments([]);
     setDraftEntryDate(getHotelBusinessDateString());
     syncDraftSavedBaseline(
       emptyPassOnDraftSnapshot(getHotelBusinessDateString()),
@@ -451,7 +459,6 @@ async function markAsViewed(entryId: number) {
       return null;
     }
 
-    await fetchEntries();
     return result.entry?.id ?? null;
   }
 
@@ -479,6 +486,19 @@ async function markAsViewed(entryId: number) {
       setDraftPublishButtonState("idle");
       return;
     }
+
+    try {
+      for (const file of draftAttachments) {
+        await uploadPassOnAttachment(entryId, file);
+      }
+    } catch (uploadError) {
+      alert(
+        uploadError instanceof Error
+          ? `Pass-on posted, but an attachment failed: ${uploadError.message}`
+          : "Pass-on posted, but an attachment failed to upload."
+      );
+    }
+    await fetchEntries();
 
     setDraftPublishButtonState("published");
     setDraftCardExitAnimating(true);
@@ -761,16 +781,29 @@ setTeamMembers(allTeamMembers || []);
       body: JSON.stringify({ reply_author: currentUserName, reply_message: text }),
     });
 
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
       alert(result.error || "Unable to send reply");
       return;
     }
 
+    const replyId = Number(result.reply?.id);
+    try {
+      for (const file of replyAttachments[entryId] || []) {
+        await uploadPassOnAttachment(entryId, file, replyId);
+      }
+    } catch (uploadError) {
+      alert(
+        uploadError instanceof Error
+          ? `Reply sent, but an attachment failed: ${uploadError.message}`
+          : "Reply sent, but an attachment failed to upload."
+      );
+    }
     await markAsViewed(entryId);
 
     setReplyMessages((prev) => ({ ...prev, [entryId]: "" }));
-    fetchEntries();
+    setReplyAttachments((prev) => ({ ...prev, [entryId]: [] }));
+    void fetchEntries();
   }
 
   async function deleteEntry(id: number) {
@@ -1366,6 +1399,14 @@ function dateHeader(dateString: string) {
                     disabled={draftFieldsLocked}
                   />
 
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <PassOnAttachments
+                      pendingFiles={draftAttachments}
+                      onPendingFilesChange={setDraftAttachments}
+                      disabled={draftFieldsLocked}
+                    />
+                  </div>
+
                   <div
                     className="pass-on-draft-card__actions"
                     style={{ gridColumn: "1 / -1" }}
@@ -1633,7 +1674,11 @@ function dateHeader(dateString: string) {
                     onClick={() => {
                       setWorkOrderInitial({
                         subject: entry.subject,
-                        description: entry.message,
+                        description: "",
+                        item: classifyWorkOrderItemIssue({
+                          description: entry.message,
+                          details: entry.subject,
+                        }),
                         priority:
                           (entry.priority as "Normal" | "Important" | "Urgent") ||
                           "Normal",
@@ -1661,7 +1706,19 @@ function dateHeader(dateString: string) {
                 </div>
               </div>
 
-
+              <div style={{ marginTop: 10 }}>
+                <PassOnAttachments
+                  entryId={entry.id}
+                  attachments={(entry.pass_on_log_attachments || []).filter(
+                    (attachment: { reply_id?: number | null }) =>
+                      !attachment.reply_id
+                  )}
+                  allowUpload={
+                    editingEntryId === entry.id && isAuthorMatch(entry.author)
+                  }
+                  onUploaded={() => void fetchEntries()}
+                />
+              </div>
 
               {entry.pass_on_log_replies?.length > 0 && (
                 <div style={{ marginTop: "8px" }}>
@@ -1718,6 +1775,18 @@ function dateHeader(dateString: string) {
                                 {formatOneEyrieUpdatedTimestamp(reply.edited_at)}
                               </div>
                             ) : null}
+                            <div style={{ marginTop: 6 }}>
+                              <PassOnAttachments
+                                entryId={entry.id}
+                                attachments={(
+                                  entry.pass_on_log_attachments || []
+                                ).filter(
+                                  (attachment: { reply_id?: number | null }) =>
+                                    Number(attachment.reply_id) === Number(reply.id)
+                                )}
+                                allowUpload={false}
+                              />
+                            </div>
                           </div>
                           <div
                             className="reply-preview-box__actions"
@@ -1790,6 +1859,15 @@ function dateHeader(dateString: string) {
                   <Send size={14} strokeWidth={2.25} aria-hidden />
     Send Reply
   </button>
+</div>
+
+<div style={{ marginTop: 8 }}>
+  <PassOnAttachments
+    pendingFiles={replyAttachments[entry.id] || []}
+    onPendingFilesChange={(files) =>
+      setReplyAttachments((prev) => ({ ...prev, [entry.id]: files }))
+    }
+  />
 </div>
 
 {entry.pass_on_log_views?.length > 0 && (

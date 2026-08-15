@@ -27,6 +27,7 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
+import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -618,10 +619,17 @@ export default function InspectionSessionPage() {
                               initialValues={{
                                 subject: "",
                                 description: "",
+                                item: classifyWorkOrderItemIssue({
+                                  structuredItem: item.label.en,
+                                  description: notes[key],
+                                }),
                                 priority: "Important",
                                 area_id: areaId,
                                 area_label: roomName ? `Room ${roomName}` : null,
-                                source_module: "Inspections",
+                                source_module:
+                                  program === "RPM"
+                                    ? "RPM Inspection"
+                                    : "Room Inspection",
                                 source_record_id: String(sessionId),
                                 source_note: `${templateName} · ${category.name.en} · ${item.label.en}${
                                   notes[key] ? ` — ${notes[key]}` : ""

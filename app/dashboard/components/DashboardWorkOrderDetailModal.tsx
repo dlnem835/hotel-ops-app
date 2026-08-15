@@ -24,6 +24,9 @@ import {
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import WorkOrderResolutionModal from "@/app/maintenance/components/WorkOrderResolutionModal";
+import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
+import WorkOrderItemIssueSelect from "@/app/maintenance/components/WorkOrderItemIssueSelect";
 
 type DashboardWorkOrderDetailModalProps = {
   workOrder: WorkOrder;
@@ -40,10 +43,16 @@ export default function DashboardWorkOrderDetailModal({
 }: DashboardWorkOrderDetailModalProps) {
   const [currentWorkOrder, setCurrentWorkOrder] = useState(workOrder);
   const [workOrderComments, setWorkOrderComments] = useState(workOrder.comments || "");
+  const [workOrderItemIssue, setWorkOrderItemIssue] = useState(
+    workOrder.item || "Other"
+  );
   const [completingWo, setCompletingWo] = useState(false);
   const [savingComments, setSavingComments] = useState(false);
   const [commentsSaved, setCommentsSaved] = useState(false);
+  const [resolutionOpen, setResolutionOpen] = useState(false);
   const memberResolver = useMemberDisplayNameResolver();
+  const isCompleted = currentWorkOrder.status === "Completed";
+  useModalScrollLock(true);
 
   useEffect(() => {
     setCommentsSaved(false);
@@ -52,6 +61,7 @@ export default function DashboardWorkOrderDetailModal({
   useEffect(() => {
     setCurrentWorkOrder(workOrder);
     setWorkOrderComments(workOrder.comments || "");
+    setWorkOrderItemIssue(workOrder.item || "Other");
   }, [workOrder]);
 
   async function saveWorkOrderComments() {
@@ -61,7 +71,10 @@ export default function DashboardWorkOrderDetailModal({
     const response = await tenantFetch(`/api/work-orders/${currentWorkOrder.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: workOrderComments.trim() || null }),
+      body: JSON.stringify({
+        comments: workOrderComments.trim() || null,
+        item: workOrderItemIssue,
+      }),
     });
     setSavingComments(false);
 
@@ -78,7 +91,10 @@ export default function DashboardWorkOrderDetailModal({
     onUpdated();
   }
 
-  async function completeWorkOrder() {
+  async function completeWorkOrder(
+    resolution: string,
+    resolutionPhotoUrl: string | null
+  ) {
     setCompletingWo(true);
     const response = await tenantFetch(`/api/work-orders/${currentWorkOrder.id}`, {
       method: "PATCH",
@@ -86,6 +102,8 @@ export default function DashboardWorkOrderDetailModal({
       body: JSON.stringify({
         status: "Completed",
         completed_by: createdByName,
+        comments: resolution,
+        resolution_photo_url: resolutionPhotoUrl,
       }),
     });
     setCompletingWo(false);
@@ -96,6 +114,7 @@ export default function DashboardWorkOrderDetailModal({
       return;
     }
 
+    setResolutionOpen(false);
     onClose();
     onUpdated();
   }
@@ -103,7 +122,14 @@ export default function DashboardWorkOrderDetailModal({
   return (
     <div style={ONE_EYRIE_MODAL_OVERLAY} onClick={onClose}>
       <div
-        style={{ ...ONE_EYRIE_MODAL_BOX, width: "720px", maxWidth: "100%" }}
+        style={{
+          ...ONE_EYRIE_MODAL_BOX,
+          width: "720px",
+          maxWidth: "100%",
+          maxHeight: "calc(100vh - 32px)",
+          overflowY: "auto",
+          boxSizing: "border-box",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={ONE_EYRIE_MODAL_HEADER}>
@@ -127,7 +153,7 @@ export default function DashboardWorkOrderDetailModal({
               : null)
           }
           createdAt={currentWorkOrder.createdAt}
-          isCompleted={currentWorkOrder.status === "Completed"}
+          isCompleted={isCompleted}
           completedByLabel={
             currentWorkOrder.completedByLabel ||
             (currentWorkOrder.completedBy
@@ -174,6 +200,14 @@ export default function DashboardWorkOrderDetailModal({
             <WorkOrderPhotoAttachment photoUrl={currentWorkOrder.photoUrl} />
           </div>
         )}
+        {currentWorkOrder.resolutionPhotoUrl && (
+          <div style={{ marginBottom: "18px" }}>
+            <WorkOrderPhotoAttachment
+              photoUrl={currentWorkOrder.resolutionPhotoUrl}
+              label="Resolution Photo"
+            />
+          </div>
+        )}
         <label style={{ display: "block", marginBottom: "20px" }}>
           <div
             style={{
@@ -183,7 +217,27 @@ export default function DashboardWorkOrderDetailModal({
               marginBottom: "6px",
             }}
           >
-            Comments
+            Item / Issue
+          </div>
+          <WorkOrderItemIssueSelect
+            value={workOrderItemIssue}
+            disabled={isCompleted || completingWo || savingComments}
+            onChange={(value) => {
+              setWorkOrderItemIssue(value);
+              setCommentsSaved(false);
+            }}
+          />
+        </label>
+        <label style={{ display: "block", marginBottom: "20px" }}>
+          <div
+            style={{
+              color: ONE_EYRIE.textSubtle,
+              fontSize: "12px",
+              fontWeight: 700,
+              marginBottom: "6px",
+            }}
+          >
+            {isCompleted ? "Resolution" : "Comments"}
           </div>
           <textarea
             value={workOrderComments}
@@ -192,7 +246,12 @@ export default function DashboardWorkOrderDetailModal({
               setCommentsSaved(false);
             }}
             rows={4}
-            placeholder="Add notes about progress, parts needed, or completion details..."
+            placeholder={
+              isCompleted
+                ? "No resolution was recorded."
+                : "Add notes about progress or parts needed..."
+            }
+            readOnly={isCompleted}
             className="one-eyrie-maintenance-field"
             style={{
               width: "100%",
@@ -235,36 +294,52 @@ export default function DashboardWorkOrderDetailModal({
           >
             Close
           </button>
-          <button
-            type="button"
-            onClick={() => void saveWorkOrderComments()}
-            disabled={completingWo || savingComments}
-            style={{
-              ...GOLD_OUTLINE_ACTION_BUTTON,
-              opacity: completingWo || savingComments ? 0.6 : 1,
-              cursor: completingWo || savingComments ? "not-allowed" : "pointer",
-            }}
-            className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
-            {...goldHoverHandlers("secondary", completingWo || savingComments)}
-          >
-            {savingComments ? "Saving..." : commentsSaved ? "Saved" : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void completeWorkOrder()}
-            disabled={completingWo || savingComments}
-            style={{
-              ...GOLD_FILLED_BUTTON,
-              opacity: completingWo || savingComments ? 0.6 : 1,
-              cursor: completingWo || savingComments ? "not-allowed" : "pointer",
-            }}
-            className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
-            {...goldFilledHoverHandlers(completingWo || savingComments)}
-          >
-            {completingWo ? "Saving..." : "Mark Completed"}
-          </button>
+          {!isCompleted ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void saveWorkOrderComments()}
+                disabled={completingWo || savingComments}
+                style={{
+                  ...GOLD_OUTLINE_ACTION_BUTTON,
+                  opacity: completingWo || savingComments ? 0.6 : 1,
+                  cursor:
+                    completingWo || savingComments ? "not-allowed" : "pointer",
+                }}
+                className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--md"
+                {...goldHoverHandlers("secondary", completingWo || savingComments)}
+              >
+                {savingComments ? "Saving..." : commentsSaved ? "Saved" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setResolutionOpen(true)}
+                disabled={completingWo || savingComments}
+                style={{
+                  ...GOLD_FILLED_BUTTON,
+                  opacity: completingWo || savingComments ? 0.6 : 1,
+                  cursor:
+                    completingWo || savingComments ? "not-allowed" : "pointer",
+                }}
+                className="one-eyrie-btn one-eyrie-btn--gold-filled one-eyrie-btn--md"
+                {...goldFilledHoverHandlers(completingWo || savingComments)}
+              >
+                Mark Completed
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
+      {resolutionOpen ? (
+        <WorkOrderResolutionModal
+          open
+          saving={completingWo}
+          onClose={() => setResolutionOpen(false)}
+          onSubmit={(resolution, resolutionPhotoUrl) =>
+            void completeWorkOrder(resolution, resolutionPhotoUrl)
+          }
+        />
+      ) : null}
     </div>
   );
 }
