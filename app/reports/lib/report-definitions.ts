@@ -324,7 +324,6 @@ export const WORK_ORDERS_SECTION: ReportCategorySection = {
     report("top-item-issues", "Top Item / Issues", {
       woReportId: "work-orders-by-item-issue",
     }),
-    report("top-categories", "Top Categories", { woReportId: "work-orders-by-category" }),
     report("top-areas", "Top Areas", { woReportId: "work-orders-by-area" }),
     report("work-orders-by-source", "Work Orders by Source", {
       woReportId: "work-orders-by-source",
