@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import CompletedInspectionReview from "@/app/inspections/components/CompletedInspectionReview";
+import { GeneralInspectionStandards } from "@/app/inspections/components/InspectionGuidance";
+import { isHousekeepingVacantReadyTemplate } from "@/app/inspections/lib/housekeeping-vacant-ready-ui";
 import { useMobileInspectionSession } from "./MobileInspectionSessionProvider";
 import MobileInspectionSessionFooter from "../../components/MobileInspectionSessionFooter";
 
@@ -16,6 +18,7 @@ export default function MobileInspectionSessionHubPage() {
     content,
     roomName,
     templateName,
+    templateStandardKey,
     program,
     associateName,
     inspectorName,
@@ -92,6 +95,10 @@ export default function MobileInspectionSessionHubPage() {
           {scorePointsLabel ? ` (${scorePointsLabel})` : ""}
         </div>
       </header>
+
+      {isHousekeepingVacantReadyTemplate(templateStandardKey, templateName) ? (
+        <GeneralInspectionStandards />
+      ) : null}
 
       <div className="one-eyrie-mobile-inspection-category-grid">
         {content?.categories.map((category) => {

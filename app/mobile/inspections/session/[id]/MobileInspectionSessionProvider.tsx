@@ -37,6 +37,7 @@ type MobileInspectionSessionContextValue = {
   status: string;
   roomName: string;
   templateName: string;
+  templateStandardKey: string | null;
   program: string;
   associateName: string | null;
   inspectorName: string | null;
@@ -99,6 +100,7 @@ export function MobileInspectionSessionProvider({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [templateName, setTemplateName] = useState("Inspection");
+  const [templateStandardKey, setTemplateStandardKey] = useState<string | null>(null);
   const [content, setContent] = useState<PropertyTemplateContent | null>(null);
   const [responses, setResponses] = useState<ResponseMap>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -141,10 +143,12 @@ export function MobileInspectionSessionProvider({
 
       const snapshot = result.session.template_snapshot as {
         name?: string;
+        standard_key?: string | null;
         content?: PropertyTemplateContent;
       };
 
       setTemplateName(snapshot.name || "Inspection");
+      setTemplateStandardKey(snapshot.standard_key || null);
       setContent(snapshot.content || null);
       setStatus(result.session.status);
       setSessionNotes(result.session.session_notes || "");
@@ -457,6 +461,7 @@ export function MobileInspectionSessionProvider({
     status,
     roomName,
     templateName,
+    templateStandardKey,
     program,
     associateName,
     inspectorName,

@@ -14,6 +14,10 @@ import {
   useMobileInspectionSession,
 } from "../MobileInspectionSessionProvider";
 import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import {
+  getHousekeepingVacantReadyItemGuidance,
+  isHousekeepingVacantReadyTemplate,
+} from "@/app/inspections/lib/housekeeping-vacant-ready-ui";
 
 export default function MobileInspectionCategoryPage() {
   const params = useParams<{ id: string; categoryKey: string }>();
@@ -25,6 +29,7 @@ export default function MobileInspectionCategoryPage() {
     content,
     roomName,
     templateName,
+    templateStandardKey,
     program,
     areaId,
     inspectorName,
@@ -40,6 +45,7 @@ export default function MobileInspectionCategoryPage() {
   } = useMobileInspectionSession();
 
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
+  const [expandedGuidanceItemKey, setExpandedGuidanceItemKey] = useState<string | null>(null);
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
   >(undefined);
@@ -97,6 +103,12 @@ export default function MobileInspectionCategoryPage() {
         {items.map((item) => {
           const responseKey = itemResponseKey(categoryKey, item.key);
           const outcome = responses[responseKey];
+          const guidance = isHousekeepingVacantReadyTemplate(
+            templateStandardKey,
+            templateName
+          )
+            ? getHousekeepingVacantReadyItemGuidance(categoryKey, item.key)
+            : null;
 
           return (
             <div
@@ -109,6 +121,19 @@ export default function MobileInspectionCategoryPage() {
               notes={notes[responseKey] || ""}
               photoUrl={photos[responseKey] || null}
               uploading={Boolean(uploadingKeys[responseKey])}
+              displayGuidance={
+                guidance
+                  ? {
+                      label: guidance.label,
+                      inspect: guidance.inspect,
+                      expanded: expandedGuidanceItemKey === item.key,
+                      onToggle: () =>
+                        setExpandedGuidanceItemKey((current) =>
+                          current === item.key ? null : item.key
+                        ),
+                    }
+                  : undefined
+              }
               onOutcomeChange={(value) => setOutcome(categoryKey, item.key, value)}
               onNotesChange={(value) => setItemNotes(categoryKey, item.key, value)}
               onPhotoSelect={(file) => void uploadItemPhoto(categoryKey, item.key, file)}

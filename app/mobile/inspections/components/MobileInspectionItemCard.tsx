@@ -2,10 +2,10 @@
 
 import { Check, Minus, X } from "lucide-react";
 import FailedItemDetails from "@/app/inspections/components/FailedItemDetails";
-import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
 import { FLAT_RED, FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PropertyItem } from "@/app/inspections/standards/types";
+import { InspectionItemGuidanceHeading } from "@/app/inspections/components/InspectionGuidance";
 
 type Outcome = "pass" | "fail" | "na";
 
@@ -40,6 +40,12 @@ type MobileInspectionItemCardProps = {
   photoUrl: string | null;
   readOnly?: boolean;
   uploading?: boolean;
+  displayGuidance?: {
+    label: string;
+    inspect: readonly string[];
+    expanded: boolean;
+    onToggle: () => void;
+  };
   onOutcomeChange: (outcome: Outcome) => void;
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
@@ -54,6 +60,7 @@ export default function MobileInspectionItemCard({
   photoUrl,
   readOnly = false,
   uploading = false,
+  displayGuidance,
   onOutcomeChange,
   onNotesChange,
   onPhotoSelect,
@@ -63,7 +70,18 @@ export default function MobileInspectionItemCard({
   return (
     <div className="one-eyrie-mobile-inspection-item">
       <div className="one-eyrie-mobile-inspection-item__prompt">
-        <div className="one-eyrie-mobile-inspection-item__label">{item.label.en}</div>
+        <div className="one-eyrie-mobile-inspection-item__label">
+          {displayGuidance ? (
+            <InspectionItemGuidanceHeading
+              label={displayGuidance.label}
+              inspect={displayGuidance.inspect}
+              expanded={displayGuidance.expanded}
+              onToggle={displayGuidance.onToggle}
+            />
+          ) : (
+            item.label.en
+          )}
+        </div>
         <div className="one-eyrie-mobile-inspection-item__meta">
           Weight {item.pointValue}
           {item.required ? " · Required" : ""}

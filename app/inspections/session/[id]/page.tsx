@@ -28,6 +28,14 @@ import WorkOrderModal, {
 } from "@/app/maintenance/components/WorkOrderModal";
 import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
 import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import {
+  GeneralInspectionStandards,
+  InspectionItemGuidanceHeading,
+} from "../../components/InspectionGuidance";
+import {
+  getHousekeepingVacantReadyItemGuidance,
+  isHousekeepingVacantReadyTemplate,
+} from "../../lib/housekeeping-vacant-ready-ui";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,6 +62,7 @@ export default function InspectionSessionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [templateName, setTemplateName] = useState("Inspection");
+  const [templateStandardKey, setTemplateStandardKey] = useState<string | null>(null);
   const [content, setContent] = useState<PropertyTemplateContent | null>(null);
   const [responses, setResponses] = useState<ResponseMap>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -72,6 +81,7 @@ export default function InspectionSessionPage() {
   const [scorePercent, setScorePercent] = useState<number | null>(null);
   const [completedScore, setCompletedScore] = useState<string | null>(null);
   const [expandedCategoryKey, setExpandedCategoryKey] = useState<string | null>(null);
+  const [expandedGuidanceItemKey, setExpandedGuidanceItemKey] = useState<string | null>(null);
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
@@ -100,10 +110,12 @@ export default function InspectionSessionPage() {
 
       const snapshot = result.session.template_snapshot as {
         name?: string;
+        standard_key?: string | null;
         content?: PropertyTemplateContent;
       };
 
       setTemplateName(snapshot.name || "Inspection");
+      setTemplateStandardKey(snapshot.standard_key || null);
       setContent(snapshot.content || null);
       setStatus(result.session.status);
       setSessionNotes(result.session.session_notes || "");
@@ -231,6 +243,10 @@ export default function InspectionSessionPage() {
 
   const scoreDisplay = liveScore ? formatInspectionScoreDisplay(liveScore) : null;
   const isCompleted = status === "completed";
+  const showVacantReadyGuidance = isHousekeepingVacantReadyTemplate(
+    templateStandardKey,
+    templateName
+  );
 
   const totalItems = content?.categories.reduce((sum, cat) => sum + cat.items.length, 0) ?? 0;
   const answeredItems = responseInputs.length;
@@ -473,6 +489,8 @@ export default function InspectionSessionPage() {
           className="inspection-mobile-session-body"
           style={{ flex: 1, overflowY: "auto", padding: "24px 32px 120px" }}
         >
+          {showVacantReadyGuidance ? <GeneralInspectionStandards /> : null}
+
           {content?.categories.map((category) => (
             <InspectionCategorySection
               key={category.key}
@@ -486,6 +504,9 @@ export default function InspectionSessionPage() {
               {category.items.map((item, index) => {
                 const key = itemKey(category.key, item.key);
                 const outcome = responses[key];
+                const guidance = showVacantReadyGuidance
+                  ? getHousekeepingVacantReadyItemGuidance(category.key, item.key)
+                  : null;
                 return (
                   <div key={item.key} style={{ marginBottom: "8px" }}>
                     <div
@@ -514,7 +535,20 @@ export default function InspectionSessionPage() {
                           className={isMobileLayout ? "inspection-mobile-item-label" : undefined}
                           style={{ fontWeight: 700, lineHeight: 1.45 }}
                         >
-                          {item.label.en}
+                          {guidance ? (
+                            <InspectionItemGuidanceHeading
+                              label={guidance.label}
+                              inspect={guidance.inspect}
+                              expanded={expandedGuidanceItemKey === key}
+                              onToggle={() =>
+                                setExpandedGuidanceItemKey((current) =>
+                                  current === key ? null : key
+                                )
+                              }
+                            />
+                          ) : (
+                            item.label.en
+                          )}
                         </div>
                         <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
                           Weight {item.pointValue}
