@@ -35,6 +35,7 @@ export const SHIPPING_TIMELINE_EVENTS = {
   manualReview: "manual_review",
   guestEditingAddress: "guest_editing_shipping_address",
   guestLinkIssued: "guest_link_issued",
+  statusManuallyCorrected: "status_manually_corrected",
 } as const;
 
 export type ShippingTimelineEventType =
@@ -72,6 +73,7 @@ export const SHIPPING_TIMELINE_LABELS: Record<ShippingTimelineEventType, string>
   manual_review: "Manual review",
   guest_editing_shipping_address: "Guest editing shipping address",
   guest_link_issued: "Guest link issued for staff",
+  status_manually_corrected: "Shipment status manually corrected",
 };
 
 export function shippingTimelineLabel(eventType: string): string {

@@ -130,6 +130,42 @@ export const LOST_ITEM_STATUS_OPTIONS: readonly LostItemStatus[] = [
   LOST_ITEM_STATUS.discarded,
 ] as const;
 
+/** Carrier-owned once a live label + tracking number exist. */
+export const SHIPPO_OWNED_LOST_ITEM_STATUSES: readonly LostItemStatus[] = [
+  LOST_ITEM_STATUS.readyToShip,
+  LOST_ITEM_STATUS.shipped,
+  LOST_ITEM_STATUS.delivered,
+] as const;
+
+/** Always staff-editable (including when tracking is active). */
+export const STAFF_EDITABLE_LOST_ITEM_STATUSES: readonly LostItemStatus[] = [
+  LOST_ITEM_STATUS.stored,
+  LOST_ITEM_STATUS.awaitingGuestAction,
+  LOST_ITEM_STATUS.discarded,
+] as const;
+
+export function isShippoOwnedLostItemStatus(
+  status: string | null | undefined
+): boolean {
+  const normalized = normalizeLostItemStatus(status);
+  return Boolean(
+    normalized &&
+      (SHIPPO_OWNED_LOST_ITEM_STATUSES as readonly string[]).includes(normalized)
+  );
+}
+
+export function isStaffEditableLostItemStatus(
+  status: string | null | undefined
+): boolean {
+  const normalized = normalizeLostItemStatus(status);
+  return Boolean(
+    normalized &&
+      (STAFF_EDITABLE_LOST_ITEM_STATUSES as readonly string[]).includes(
+        normalized
+      )
+  );
+}
+
 /** @deprecated Legacy string aliases for docs / migration notes only. */
 export const LOST_ITEM_STATUS_LEGACY_ALIASES = {
   foundLegacy: "Found",

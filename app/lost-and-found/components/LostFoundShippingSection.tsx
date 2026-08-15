@@ -468,13 +468,24 @@ export default function LostFoundShippingSection({
                 }
               />
               <SummaryField
+                label="Shipped date"
+                value={
+                  activeRequest.shippedAt
+                    ? formatLocalDate(activeRequest.shippedAt)
+                    : activeRequest.shipmentStatus === "in_transit" ||
+                        activeRequest.shipmentStatus === "delivered"
+                      ? "In transit"
+                      : "Not shipped yet"
+                }
+              />
+              <SummaryField
                 label="Delivered date"
                 value={
                   activeRequest.deliveredAt
                     ? formatLocalDate(activeRequest.deliveredAt)
                     : activeRequest.shipmentStatus === "delivered"
                       ? "Delivered"
-                      : "Not available"
+                      : "Not delivered yet"
                 }
               />
             </dl>

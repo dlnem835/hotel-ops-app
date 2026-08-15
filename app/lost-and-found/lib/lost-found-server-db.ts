@@ -57,7 +57,7 @@ export async function updateLostItem(
   supabase: SupabaseClient,
   id: string | number,
   scope: LostFoundScope,
-  patch: Record<string, string | null>
+  patch: Record<string, string | number | boolean | null>
 ) {
   await assertLostItemInTenant(supabase, id, scope);
   const { data, error } = await supabase

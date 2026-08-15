@@ -258,6 +258,8 @@ export function timelineEventIcon(eventType: string): string {
       return "🚛";
     case SHIPPING_TIMELINE_EVENTS.packageDelivered:
       return "✔";
+    case SHIPPING_TIMELINE_EVENTS.statusManuallyCorrected:
+      return "✎";
     case SHIPPING_TIMELINE_EVENTS.requestCreated:
     case SHIPPING_TIMELINE_EVENTS.guestOpened:
     case SHIPPING_TIMELINE_EVENTS.requestEmailed:

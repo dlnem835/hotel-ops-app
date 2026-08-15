@@ -11,12 +11,23 @@ import {
   coerceLostItemStatusForWrite,
   LOST_ITEM_STATUS,
 } from "@/app/lib/lost-found-shipping/status";
+import { mapLostItemsWithLiveShippingTracking } from "@/app/lib/lost-found-shipping/shipping-status-ownership";
 
 export async function GET(request: Request) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(request);
+    const { supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
     const items = await listLostItems(supabase, { organizationId, propertyId });
-    return NextResponse.json({ items });
+    const trackingMap = await mapLostItemsWithLiveShippingTracking(supabase, {
+      organizationId,
+      propertyId,
+      lostItemIds: items.map((item) => Number(item.id)).filter(Number.isFinite),
+    });
+    const enriched = items.map((item) => ({
+      ...item,
+      hasLiveShippingTracking: Boolean(trackingMap[Number(item.id)]),
+    }));
+    return NextResponse.json({ items: enriched });
   } catch (error) {
     return tenantErrorResponse(error);
   }

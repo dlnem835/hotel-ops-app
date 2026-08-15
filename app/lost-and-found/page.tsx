@@ -22,7 +22,9 @@ import {
   LOST_ITEM_STATUS,
   LOST_ITEM_STATUS_OPTIONS,
   normalizeLostItemStatus,
+  STAFF_EDITABLE_LOST_ITEM_STATUSES,
 } from "@/app/lib/lost-found-shipping/status";
+import CorrectShipmentStatusModal from "@/app/lost-and-found/components/CorrectShipmentStatusModal";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -103,6 +105,7 @@ export default function LostAndFoundPage() {
   } | null>(null);
   const [commentEditItem, setCommentEditItem] = useState<any | null>(null);
   const [canDeleteItems, setCanDeleteItems] = useState(false);
+  const [correctStatusItem, setCorrectStatusItem] = useState<any | null>(null);
 
   const readyToShipCount = lostItems.filter(
     (item) => displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
@@ -278,12 +281,19 @@ setTeamMembers(allTeamMembers || []);
   }
 
   async function updateStatus(id: string, status: string) {
-    await tenantFetch(`/api/lost-and-found/${id}`, {
+    const res = await tenantFetch(`/api/lost-and-found/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    fetchItems();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setActionError(
+        data.error ||
+          "Status could not be updated. Carrier tracking may control this status."
+      );
+    }
+    void fetchItems();
   }
 
   async function updateComments(id: string | number, comments: string) {
@@ -344,6 +354,19 @@ setTeamMembers(allTeamMembers || []);
     }
     if (normalized === LOST_ITEM_STATUS.stored) return "lnf-status-pill--stored";
     return "lnf-status-pill--default";
+  }
+
+  function statusSelectOptionsForItem(item: {
+    status?: string;
+    hasLiveShippingTracking?: boolean;
+  }) {
+    const current = displayItemStatus(item.status);
+    if (!item.hasLiveShippingTracking) {
+      return [...LOST_ITEM_STATUS_OPTIONS];
+    }
+    const options = new Set<string>(STAFF_EDITABLE_LOST_ITEM_STATUSES);
+    options.add(current);
+    return LOST_ITEM_STATUS_OPTIONS.filter((status) => options.has(status));
   }
 
   function handleKpiFilter(filter: LnfKpiFilter) {
@@ -612,22 +635,41 @@ setTeamMembers(allTeamMembers || []);
             </td>
 
             <td className="col-status one-eyrie-table__cell--wrap one-eyrie-lnf-status-cell" style={tdStyle}>
-              <div
-                className={`one-eyrie-lnf-status-select-wrap ${statusPillClass(item.status)}`}
-                style={statusStyle(item.status)}
-              >
-                <select
-                  value={displayItemStatus(item.status)}
-                  onChange={(e) => updateStatus(item.id, e.target.value)}
-                  className="one-eyrie-lnf-status-select"
-                  aria-label={`Status for ${item.item_name}`}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                <div
+                  className={`one-eyrie-lnf-status-select-wrap ${statusPillClass(item.status)}`}
+                  style={statusStyle(item.status)}
                 >
-                  {LOST_ITEM_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
+                  <select
+                    value={displayItemStatus(item.status)}
+                    onChange={(e) => updateStatus(item.id, e.target.value)}
+                    className="one-eyrie-lnf-status-select"
+                    aria-label={`Status for ${item.item_name}`}
+                  >
+                    {statusSelectOptionsForItem(item).map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {item.status_manual_override ? (
+                  <span
+                    title={
+                      item.status_manual_override_reason
+                        ? String(item.status_manual_override_reason)
+                        : "Administrator corrected shipment status. Carrier updates may overwrite this."
+                    }
+                    style={{
+                      fontSize: 10,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                      color: ONE_EYRIE.gold,
+                    }}
+                  >
+                    Manually overridden
+                  </span>
+                ) : null}
               </div>
             </td>
 
@@ -774,9 +816,44 @@ setTeamMembers(allTeamMembers || []);
                   className={`lnf-item-details-status ${statusPillClass(
                     selectedItem.status
                   )}`}
+                  style={statusStyle(selectedItem.status)}
                 >
                   {displayItemStatus(selectedItem.status)}
                 </span>
+                {selectedItem.status_manual_override ? (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: ONE_EYRIE.gold,
+                    }}
+                  >
+                    Manually overridden
+                    {selectedItem.status_manual_override_reason
+                      ? `: ${selectedItem.status_manual_override_reason}`
+                      : ""}
+                    . Carrier updates may overwrite this.
+                  </div>
+                ) : null}
+                {canDeleteItems && selectedItem.hasLiveShippingTracking ? (
+                  <button
+                    type="button"
+                    onClick={() => setCorrectStatusItem(selectedItem)}
+                    style={{
+                      marginTop: 10,
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: `1px solid ${ONE_EYRIE.gold}`,
+                      background: "transparent",
+                      color: ONE_EYRIE.gold,
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Correct Shipment Status
+                  </button>
+                ) : null}
               </dd>
             </div>
             <div className="lnf-item-details-grid__field">
@@ -889,6 +966,17 @@ setTeamMembers(allTeamMembers || []);
           onResent={({ guestEmail }) => {
             setResendModalItem(null);
             setSuccessToast(`Shipping request sent to ${guestEmail}`);
+            void fetchItems();
+          }}
+        />
+
+        <CorrectShipmentStatusModal
+          open={Boolean(correctStatusItem)}
+          itemId={Number(correctStatusItem?.id)}
+          currentStatus={displayItemStatus(correctStatusItem?.status)}
+          onClose={() => setCorrectStatusItem(null)}
+          onCorrected={() => {
+            setSuccessToast("Shipment status corrected.");
             void fetchItems();
           }}
         />

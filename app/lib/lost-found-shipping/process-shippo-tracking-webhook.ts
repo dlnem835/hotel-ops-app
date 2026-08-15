@@ -404,7 +404,14 @@ async function applyLostItemStatusIfAllowed(
 
   const { error: updateError } = await supabase
     .from("lost_items")
-    .update({ status: nextStatus })
+    .update({
+      status: nextStatus,
+      status_manual_override: false,
+      status_manual_override_at: null,
+      status_manual_override_by: null,
+      status_manual_override_reason: null,
+      status_manual_override_previous: null,
+    })
     .eq("id", lostItemId)
     .eq("organization_id", Number(row.organization_id))
     .eq("property_id", Number(row.property_id));
