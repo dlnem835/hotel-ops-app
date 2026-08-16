@@ -102,5 +102,8 @@ export const FAILED_PM_ITEMS_SORT_COLUMNS: Array<{
 export function getFailedItemStepKey(row: PmReportFailedItemRow): string | null {
   const separatorIndex = row.id.indexOf("::");
   if (separatorIndex === -1) return null;
-  return row.id.slice(separatorIndex + 2) || null;
+  const stepKey = row.id.slice(separatorIndex + 2) || null;
+  // Target-level Fail rows are assignment failures, not checklist-step keys.
+  if (stepKey === "target") return null;
+  return stepKey;
 }

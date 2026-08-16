@@ -58,6 +58,19 @@ async function resolveDefaultAreaId(
   return match ? Number(match.id) : null;
 }
 
+async function countActiveAssignments(
+  supabase: SupabaseClient,
+  templateId: number
+) {
+  const { count, error } = await supabase
+    .from("pm_schedule_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("template_id", templateId)
+    .eq("status", "Active");
+  if (error) throw new Error(error.message);
+  return count || 0;
+}
+
 async function ensureDefaultUnits(
   supabase: SupabaseClient,
   organizationId: number,
@@ -65,10 +78,7 @@ async function ensureDefaultUnits(
   templateId: number,
   template: (typeof STANDARD_PM_TEMPLATES)[number]
 ) {
-  if (
-    template.assignmentType !== "equipment_unit" ||
-    !template.defaultUnits?.length
-  ) {
+  if (!template.defaultUnits?.length) {
     return;
   }
 
@@ -126,21 +136,7 @@ async function ensureDefaultLocations(
   templateId: number,
   template: (typeof STANDARD_PM_TEMPLATES)[number]
 ) {
-  if (
-    template.assignmentType !== "area_location" ||
-    (!template.defaultAreaNames?.length &&
-      !template.defaultNamedLocations?.length)
-  ) {
-    return;
-  }
-
-  const { count, error: assignmentError } = await supabase
-    .from("pm_schedule_assignments")
-    .select("id", { count: "exact", head: true })
-    .eq("template_id", templateId)
-    .eq("status", "Active");
-  if (assignmentError) throw new Error(assignmentError.message);
-  if ((count || 0) > 0) return;
+  if ((await countActiveAssignments(supabase, templateId)) > 0) return;
 
   const { data: areas, error: areaError } = await supabase
     .from("buildings_and_areas")
@@ -156,10 +152,19 @@ async function ensureDefaultLocations(
     ])
   );
   const namedLocations = template.defaultNamedLocations || [];
-  const areaIds = (template.defaultAreaNames || [])
-    .map((name) => areaIdByName.get(templateNameKey(name)) ?? null)
-    .filter((areaId): areaId is number => areaId !== null);
-  if (areaIds.length === 0 && namedLocations.length === 0) return;
+  const defaultAreaNames =
+    template.defaultAreaNames ||
+    (template.defaultAreaName ? [template.defaultAreaName] : []);
+  const areaIds = (
+    await Promise.all(
+      defaultAreaNames.map((name) =>
+        resolveDefaultAreaId(supabase, organizationId, propertyId, name)
+      )
+    )
+  ).filter((areaId): areaId is number => areaId !== null);
+  const areaNameById = new Map(
+    (areas || []).map((area) => [Number(area.id), String(area.name)])
+  );
 
   const startDate = new Date().toISOString().slice(0, 10);
   const { error: insertError } = await supabase
@@ -169,7 +174,10 @@ async function ensureDefaultLocations(
         ...areaIds.map((areaId) => ({
           template_id: templateId,
           area_id: areaId,
-          asset_label: null,
+          asset_label:
+            defaultAreaNames.length === 1
+              ? template.name
+              : areaNameById.get(areaId) || template.name,
           start_date: startDate,
           end_date: null,
           status: "Active",
@@ -182,6 +190,18 @@ async function ensureDefaultLocations(
           end_date: null,
           status: "Active",
         })),
+        ...(areaIds.length === 0 && namedLocations.length === 0
+          ? [
+              {
+                template_id: templateId,
+                area_id: null,
+                asset_label: template.name,
+                start_date: startDate,
+                end_date: null,
+                status: "Active",
+              },
+            ]
+          : []),
       ]
     );
   if (insertError) throw new Error(insertError.message);
@@ -252,6 +272,23 @@ export async function POST(request: Request) {
     for (const template of STANDARD_PM_TEMPLATES) {
       const installed = findInstalledStandard(installedRows, template);
       if (installed?.standard_key === template.key) {
+        // Idempotent repair only: never rewrite existing assignment history.
+        if ((await countActiveAssignments(supabase, installed.id)) === 0) {
+          await ensureDefaultUnits(
+            supabase,
+            organizationId,
+            propertyId,
+            installed.id,
+            template
+          );
+          await ensureDefaultLocations(
+            supabase,
+            organizationId,
+            propertyId,
+            installed.id,
+            template
+          );
+        }
         skipped += 1;
         continue;
       }
@@ -259,13 +296,9 @@ export async function POST(request: Request) {
       if (installed) {
         const update: Record<string, unknown> = {
           standard_key: template.key,
+          assignment_type: "equipment_unit",
+          named_locations: false,
         };
-        if (template.assignmentType) {
-          update.assignment_type = template.assignmentType;
-        }
-        if (template.defaultNamedLocations?.length) {
-          update.named_locations = true;
-        }
         if (
           template.legacyNames?.some(
             (name) => templateNameKey(name) === templateNameKey(installed.name)
@@ -318,8 +351,8 @@ export async function POST(request: Request) {
           applies_to: template.appliesTo ?? "asset",
           checklist: template.checklist,
           status: "Active",
-          assignment_type: template.assignmentType ?? "area_location",
-          named_locations: Boolean(template.defaultNamedLocations?.length),
+          assignment_type: "equipment_unit",
+          named_locations: false,
         })
         .select("id")
         .single();

@@ -37,7 +37,7 @@ type PmChecklistItemRowProps = {
 
 function locationLabel(context: PmFailedItemWorkOrderContext): string | null {
   if (context.areaName && context.assetLabel) {
-    return `${context.areaName} · ${context.assetLabel}`;
+    return `${context.assetLabel} — ${context.areaName}`;
   }
   return context.areaName || context.assetLabel || null;
 }

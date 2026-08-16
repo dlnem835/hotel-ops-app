@@ -11,24 +11,20 @@ import {
   rekeyChecklist,
   stepsToChecklist,
 } from "@/app/maintenance/lib/pm-checklist-draft";
+import { sortPmAreaOptions } from "@/app/maintenance/lib/pm-category";
 import {
-  sortPmAreaOptions,
-} from "@/app/maintenance/lib/pm-category";
-import {
-  PM_ASSIGNMENT_TYPE_LABELS,
-  PM_ASSIGNMENT_TYPES,
   PM_CATEGORIES,
   PM_FREQUENCIES,
   PM_FREQUENCY_LABELS,
-  PmCategory,
-  PmAssignmentType,
-  PmChecklistStep,
-  PmAssignmentSchedule,
-  PmTemplateInput,
+  type PmAssignmentSchedule,
+  type PmCategory,
+  type PmChecklistStep,
+  type PmItemInput,
+  type PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-import { BuildingArea } from "../lib/buildings-types";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import type { BuildingArea } from "../lib/buildings-types";
 import {
   goldFilledHoverHandlers,
   goldHoverHandlers,
@@ -48,8 +44,7 @@ type PmTemplateModalProps = {
   onSaved: () => void;
 };
 
-type AreaMode = "area" | "custom" | "named";
-type UnitDraft = {
+type ItemDraft = {
   clientKey: string;
   assignmentId?: number;
   name: string;
@@ -63,14 +58,23 @@ function getLocalDateString(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function emptyItem(index = 0, templateName = ""): ItemDraft {
+  return {
+    clientKey: `item-${Date.now()}-${index + 1}`,
+    name: templateName.trim() ? `${templateName.trim()} #${index + 1}` : "",
+    areaId: null,
+  };
+}
+
 function emptyForm(): PmTemplateInput {
   return {
     name: "",
     description: "",
     category: "Custom",
     frequency: "monthly",
-    assignment_type: "area_location",
+    assignment_type: "equipment_unit",
     named_locations: false,
+    items: [],
     checklist: emptyChecklist(),
     status: "Active",
     assignment: {
@@ -82,6 +86,21 @@ function emptyForm(): PmTemplateInput {
       status: "Active",
     },
   };
+}
+
+function toDraftItems(
+  source: PmItemInput[],
+  templateName: string
+): ItemDraft[] {
+  if (source.length === 0) return [emptyItem(0, templateName)];
+  return source.map((item, index) => ({
+    clientKey: item.assignment_id
+      ? `assignment-${item.assignment_id}`
+      : `item-${index + 1}`,
+    assignmentId: item.assignment_id,
+    name: item.name || `${templateName || "Item"} #${index + 1}`,
+    areaId: item.area_id ?? null,
+  }));
 }
 
 export default function PmTemplateModal({
@@ -109,339 +128,63 @@ export default function PmTemplateModal({
   } = styles;
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [noEndDate, setNoEndDate] = useState(true);
   const [form, setForm] = useState<PmTemplateInput>(emptyForm());
-  const [areaMode, setAreaMode] = useState<AreaMode>("area");
-  const [selectedAreaIds, setSelectedAreaIds] = useState<number[]>([]);
-  const [customAreaLabel, setCustomAreaLabel] = useState("");
-  const [units, setUnits] = useState<UnitDraft[]>([]);
+  const [items, setItems] = useState<ItemDraft[]>([emptyItem()]);
 
   useEffect(() => {
     if (!open) return;
-
     const timer = window.setTimeout(() => {
-      if (initial) {
-      const checklist = normalizeChecklist(initial.checklist || emptyChecklist());
-      const initialAreaIds = Array.from(
-        new Set(
-          (
-            initial.assignment?.area_ids?.length
-              ? initial.assignment.area_ids
-              : initial.assignment?.area_id
-                ? [initial.assignment.area_id]
-                : []
-          ).filter((id): id is number => Number.isInteger(id) && id > 0)
-        )
-      );
-      const hasCustomArea =
-        Boolean(initial.assignment?.asset_label?.trim()) &&
-        initialAreaIds.length === 0;
+      if (!initial) {
+        setForm(emptyForm());
+        setItems([emptyItem()]);
+        setNoEndDate(true);
+        setError(null);
+        return;
+      }
 
+      const sourceItems = initial.items || initial.units || [];
       setForm({
+        ...emptyForm(),
         name: initial.name || "",
         description: initial.description || "",
         category: initial.category || "Custom",
         frequency: initial.frequency || "monthly",
-        assignment_type: initial.assignment_type || "area_location",
-        named_locations: Boolean(initial.named_locations),
-        units: initial.units || [],
-        checklist,
+        estimated_minutes: initial.estimated_minutes ?? null,
+        assigned_role: initial.assigned_role || "Maintenance",
+        assigned_member_id: initial.assigned_member_id || null,
+        applies_to: initial.applies_to || "asset",
+        checklist: normalizeChecklist(initial.checklist || emptyChecklist()),
         status: initial.status || "Active",
         assignment: {
-          area_id: initialAreaIds[0] ?? null,
-          area_ids: initialAreaIds,
-          asset_label: initial.assignment?.asset_label ?? null,
+          area_id: null,
+          area_ids: [],
+          asset_label: null,
           start_date: initial.assignment?.start_date || getLocalDateString(),
           end_date: initial.assignment?.end_date ?? null,
           status: initial.assignment?.status || "Active",
         },
       });
-      setSelectedAreaIds(initialAreaIds);
-      setUnits(
-        (initial.units || []).map((unit, index) => ({
-          clientKey: unit.assignment_id
-            ? `assignment-${unit.assignment_id}`
-            : `unit-${index + 1}`,
-          assignmentId: unit.assignment_id,
-          name:
-            unit.name ||
-            `${initial.name?.trim() || "Equipment"} #${index + 1}`,
-          areaId: unit.area_id ?? null,
-        }))
-      );
-      setAreaMode(
-        initial.named_locations
-          ? "named"
-          : hasCustomArea
-            ? "custom"
-            : "area"
-      );
-      setCustomAreaLabel(
-        hasCustomArea ? initial.assignment?.asset_label || "" : ""
-      );
+      setItems(toDraftItems(sourceItems, initial.name || ""));
       setNoEndDate(!initial.assignment?.end_date);
-        return;
-      }
-
-      setForm(emptyForm());
-      setSelectedAreaIds([]);
-      setUnits([]);
-      setAreaMode("area");
-      setCustomAreaLabel("");
-      setNoEndDate(true);
+      setError(null);
     }, 0);
-
     return () => window.clearTimeout(timer);
   }, [open, initial]);
 
   const areaOptions = useMemo(
-    () =>
-      sortPmAreaOptions(
-        areas.filter((area) => area.area_type !== "Guest Room")
-      ),
+    () => sortPmAreaOptions(areas),
     [areas]
   );
-
   const draftPm = useMemo(
-    () => ({
-      name: form.name,
-      frequency: form.frequency,
-    }),
+    () => ({ name: form.name, frequency: form.frequency }),
     [form.name, form.frequency]
   );
 
   if (!open) return null;
 
   const checklistSteps = getFlatChecklistSteps(form.checklist);
-
-  function updateForm(patch: Partial<PmTemplateInput>) {
-    setForm((prev) => ({ ...prev, ...patch }));
-  }
-
-  function updateAssignment(patch: Partial<PmTemplateInput["assignment"]>) {
-    setForm((prev) => ({
-      ...prev,
-      assignment: { ...prev.assignment, ...patch },
-    }));
-  }
-
-  function updateChecklistSteps(steps: PmChecklistStep[]) {
-    updateForm({ checklist: stepsToChecklist(steps) });
-  }
-
-  function toggleAreaSelection(areaId: number) {
-    setAreaMode("area");
-    setCustomAreaLabel("");
-    setSelectedAreaIds((prev) => {
-      const next = prev.includes(areaId)
-        ? prev.filter((id) => id !== areaId)
-        : [...prev, areaId];
-      updateAssignment({
-        area_id: next[0] ?? null,
-        area_ids: next,
-        asset_label: null,
-      });
-      return next;
-    });
-  }
-
-  function selectCustomAreaMode() {
-    setAreaMode("custom");
-    setSelectedAreaIds([]);
-    updateAssignment({
-      area_id: null,
-      area_ids: [],
-    });
-  }
-
-  function selectNamedLocationMode() {
-    setAreaMode("named");
-    setSelectedAreaIds([]);
-    setCustomAreaLabel("");
-    updateAssignment({
-      area_id: null,
-      area_ids: [],
-      asset_label: null,
-    });
-    if (units.length === 0) {
-      setUnits([
-        {
-          clientKey: "location-1",
-          name: `${form.name.trim() || "Location"} #1`,
-          areaId: null,
-        },
-      ]);
-    }
-  }
-
-  function changeAssignmentType(assignmentType: PmAssignmentType) {
-    updateForm({ assignment_type: assignmentType });
-    if (assignmentType === "equipment_unit" && units.length === 0) {
-      setUnits([
-        {
-          clientKey: "unit-1",
-          name: `${form.name.trim() || "Equipment"} #1`,
-          areaId: null,
-        },
-      ]);
-    }
-  }
-
-  function changeUnitCount(value: number) {
-    const count = Math.max(1, Math.min(100, Math.trunc(value) || 1));
-    setUnits((current) => {
-      if (count <= current.length) return current.slice(0, count);
-      return [
-        ...current,
-        ...Array.from({ length: count - current.length }, (_, index) => {
-          const unitNumber = current.length + index + 1;
-          const ordinalSuffix =
-            unitNumber % 100 >= 11 && unitNumber % 100 <= 13
-              ? "th"
-              : unitNumber % 10 === 1
-                ? "st"
-                : unitNumber % 10 === 2
-                  ? "nd"
-                  : unitNumber % 10 === 3
-                    ? "rd"
-                    : "th";
-          const generatedName =
-            areaMode === "named" &&
-            /corridor|hallway/i.test(form.name)
-              ? `${unitNumber}${ordinalSuffix} Floor Hallway`
-              : `${form.name.trim() || (areaMode === "named" ? "Location" : "Equipment")} #${unitNumber}`;
-          return {
-            clientKey: `unit-${Date.now()}-${unitNumber}`,
-            name: generatedName,
-            areaId: null,
-          };
-        }),
-      ];
-    });
-  }
-
-  function updateUnit(clientKey: string, patch: Partial<UnitDraft>) {
-    setUnits((current) =>
-      current.map((unit) =>
-        unit.clientKey === clientKey ? { ...unit, ...patch } : unit
-      )
-    );
-  }
-
-  async function handleSave() {
-    if (!form.name.trim()) {
-      alert("PM template name is required.");
-      return;
-    }
-
-    const assignmentType = form.assignment_type || "area_location";
-
-    if (
-      assignmentType === "area_location" &&
-      areaMode === "area" &&
-      selectedAreaIds.length === 0
-    ) {
-      alert("Select one or more areas, or choose Custom Area / Utility PM.");
-      return;
-    }
-
-    if (
-      assignmentType === "area_location" &&
-      areaMode === "custom" &&
-      !customAreaLabel.trim()
-    ) {
-      alert("Enter a custom area or utility PM label.");
-      return;
-    }
-
-    if (
-      assignmentType === "area_location" &&
-      areaMode === "named" &&
-      (units.length === 0 || units.some((unit) => !unit.name.trim()))
-    ) {
-      alert("Add a name for each location.");
-      return;
-    }
-
-    if (
-      assignmentType === "equipment_unit" &&
-      (units.length === 0 || units.some((unit) => !unit.name.trim()))
-    ) {
-      alert("Add a name for each equipment unit.");
-      return;
-    }
-
-    const filledSteps = checklistSteps.filter((step) => step.label.trim());
-    if (filledSteps.length === 0) {
-      alert("Add at least one checklist step.");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload: PmTemplateInput = {
-        ...form,
-        assignment_type: assignmentType,
-        named_locations:
-          assignmentType === "area_location" && areaMode === "named",
-        units:
-          assignmentType === "equipment_unit" || areaMode === "named"
-            ? units.map((unit) => ({
-                assignment_id: unit.assignmentId,
-                name: unit.name.trim(),
-                area_id: unit.areaId,
-              }))
-            : undefined,
-        applies_to: "asset",
-        estimated_minutes: null,
-        checklist: rekeyChecklist(form.checklist),
-        assignment: {
-          ...form.assignment,
-          area_id:
-            assignmentType === "equipment_unit" || areaMode === "named"
-              ? units[0]?.areaId ?? null
-              : areaMode === "area"
-                ? selectedAreaIds[0] ?? null
-                : null,
-          area_ids:
-            assignmentType === "area_location" && areaMode === "area"
-              ? selectedAreaIds
-              : [],
-          asset_label:
-            assignmentType === "area_location" && areaMode === "custom"
-              ? customAreaLabel.trim()
-              : null,
-          end_date: noEndDate ? null : form.assignment.end_date,
-        },
-      };
-
-      const url = editingId
-        ? `/api/pm-templates/${editingId}`
-        : "/api/pm-templates";
-      const method = editingId ? "PATCH" : "POST";
-
-      const response = await tenantFetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Unable to save PM template");
-      }
-
-      onSaved();
-      onClose();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Unable to save PM template";
-      alert(message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const labelStyle: React.CSSProperties = {
     display: "block",
     color: "#C9C9C9",
@@ -450,83 +193,105 @@ export default function PmTemplateModal({
     marginBottom: "6px",
   };
 
-  function renderNamedLocationEditor() {
-    return (
-      <div style={{ marginTop: "10px" }}>
-        <div style={{ maxWidth: "180px", marginBottom: "12px" }}>
-          <span style={labelStyle}>Number of Locations *</span>
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={units.length || 1}
-            onChange={(event) => changeUnitCount(Number(event.target.value))}
-            style={input}
-          />
-        </div>
-        <div style={{ display: "grid", gap: "10px" }}>
-          {units.map((location, index) => (
-            <div
-              key={location.clientKey}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "10px",
-                padding: "12px",
-                border: `1px solid ${ONE_EYRIE.border}`,
-                borderRadius: "10px",
-                background: ONE_EYRIE.surface,
-              }}
-            >
-              <label>
-                <span style={labelStyle}>Location {index + 1} Name *</span>
-                <input
-                  value={location.name}
-                  onChange={(event) =>
-                    updateUnit(location.clientKey, {
-                      name: event.target.value,
-                    })
-                  }
-                  style={input}
-                />
-              </label>
-              <label>
-                <span style={labelStyle}>Map to Room / Area</span>
-                <select
-                  value={location.areaId ? String(location.areaId) : ""}
-                  onChange={(event) =>
-                    updateUnit(location.clientKey, {
-                      areaId: event.target.value
-                        ? Number(event.target.value)
-                        : null,
-                    })
-                  }
-                  style={input}
-                >
-                  <option value="">No mapped area</option>
-                  {areaOptions.map((area) => (
-                    <option key={area.id} value={area.id}>
-                      {area.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ))}
-        </div>
-        <div
-          style={{
-            color: ONE_EYRIE.textSubtle,
-            fontSize: "11px",
-            marginTop: "8px",
-            lineHeight: 1.45,
-          }}
-        >
-          Each named location is independently completable. Mapping to an
-          existing Room / Area is optional.
-        </div>
-      </div>
+  function updateForm(patch: Partial<PmTemplateInput>) {
+    setForm((current) => ({ ...current, ...patch }));
+  }
+
+  function updateAssignment(patch: Partial<PmTemplateInput["assignment"]>) {
+    setForm((current) => ({
+      ...current,
+      assignment: { ...current.assignment, ...patch },
+    }));
+  }
+
+  function updateChecklistSteps(steps: PmChecklistStep[]) {
+    updateForm({ checklist: stepsToChecklist(steps) });
+  }
+
+  function changeItemCount(value: number) {
+    const count = Math.max(1, Math.min(100, Math.trunc(value) || 1));
+    setItems((current) => {
+      if (count <= current.length) return current.slice(0, count);
+      return [
+        ...current,
+        ...Array.from({ length: count - current.length }, (_, offset) =>
+          emptyItem(current.length + offset, form.name)
+        ),
+      ];
+    });
+  }
+
+  function updateItem(clientKey: string, patch: Partial<ItemDraft>) {
+    setItems((current) =>
+      current.map((item) =>
+        item.clientKey === clientKey ? { ...item, ...patch } : item
+      )
     );
+  }
+
+  async function handleSave() {
+    const filledSteps = checklistSteps.filter((step) => step.label.trim());
+    if (!form.name.trim()) {
+      setError("PM template name is required.");
+      return;
+    }
+    if (items.length === 0 || items.some((item) => !item.name.trim())) {
+      setError("Enter an Item Name for every PM item.");
+      return;
+    }
+    if (filledSteps.length === 0) {
+      setError("Add at least one checklist step.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload: PmTemplateInput = {
+        ...form,
+        assignment_type: "equipment_unit",
+        named_locations: false,
+        items: items.map((item) => ({
+          assignment_id: item.assignmentId,
+          name: item.name.trim(),
+          area_id: item.areaId,
+        })),
+        units: undefined,
+        applies_to: "asset",
+        estimated_minutes: null,
+        checklist: rekeyChecklist(form.checklist),
+        assignment: {
+          ...form.assignment,
+          area_id: null,
+          area_ids: [],
+          asset_label: null,
+          status: form.status || "Active",
+          end_date: noEndDate ? null : form.assignment.end_date,
+        },
+      };
+      const response = await tenantFetch(
+        editingId ? `/api/pm-templates/${editingId}` : "/api/pm-templates",
+        {
+          method: editingId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to save PM template");
+      }
+      onSaved();
+      onClose();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save PM template"
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -558,8 +323,8 @@ export default function PmTemplateModal({
             <span style={labelStyle}>PM Template Name *</span>
             <input
               value={form.name}
-              onChange={(e) => updateForm({ name: e.target.value })}
-              placeholder="Fire Extinguisher Monthly Inspection"
+              onChange={(event) => updateForm({ name: event.target.value })}
+              placeholder="Commercial Dryer"
               style={input}
             />
           </div>
@@ -568,7 +333,9 @@ export default function PmTemplateModal({
             <span style={labelStyle}>Description</span>
             <textarea
               value={form.description || ""}
-              onChange={(e) => updateForm({ description: e.target.value })}
+              onChange={(event) =>
+                updateForm({ description: event.target.value })
+              }
               placeholder="A brief summary of what this PM covers"
               maxLength={500}
               rows={3}
@@ -579,262 +346,40 @@ export default function PmTemplateModal({
                 fontFamily: "inherit",
               }}
             />
-            <div
-              style={{
-                color: ONE_EYRIE.textSubtle,
-                fontSize: "11px",
-                marginTop: "4px",
-              }}
-            >
-              500 characters max
-            </div>
           </div>
-
-          <div>
-            <span style={labelStyle}>Assignment Type *</span>
-            <select
-              value={form.assignment_type || "area_location"}
-              onChange={(event) =>
-                changeAssignmentType(event.target.value as PmAssignmentType)
-              }
-              style={input}
-            >
-              {PM_ASSIGNMENT_TYPES.map((assignmentType) => (
-                <option key={assignmentType} value={assignmentType}>
-                  {PM_ASSIGNMENT_TYPE_LABELS[assignmentType]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {(form.assignment_type || "area_location") === "area_location" ? (
-            <div>
-              <span style={labelStyle}>Locations *</span>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  color: ONE_EYRIE.text,
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  marginBottom: "10px",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={areaMode === "named"}
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      selectNamedLocationMode();
-                    } else {
-                      setAreaMode("area");
-                    }
-                  }}
-                />
-                Use editable named locations / floors
-              </label>
-              {areaMode === "named" ? (
-                renderNamedLocationEditor()
-              ) : (
-                <>
-              <div
-                style={{
-                  border: `1px solid ${ONE_EYRIE.border}`,
-                  borderRadius: "10px",
-                  background: ONE_EYRIE.surface,
-                  maxHeight: "220px",
-                  overflowY: "auto",
-                  padding: "8px 10px",
-                }}
-              >
-                {areaOptions.map((area) => {
-                  const checked = selectedAreaIds.includes(area.id);
-                  return (
-                    <label
-                      key={area.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "6px 4px",
-                        color: ONE_EYRIE.text,
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleAreaSelection(area.id)}
-                      />
-                      {area.name}
-                    </label>
-                  );
-                })}
-              </div>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  color: ONE_EYRIE.text,
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  marginTop: "10px",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={areaMode === "custom"}
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      selectCustomAreaMode();
-                    } else {
-                      setAreaMode("area");
-                      updateAssignment({ asset_label: null });
-                    }
-                  }}
-                />
-                Custom Area / Utility PM
-              </label>
-              {areaMode === "custom" && (
-                <input
-                  value={customAreaLabel}
-                  onChange={(event) => setCustomAreaLabel(event.target.value)}
-                  placeholder="Life Safety Program, Annual Compliance Walk…"
-                  style={{ ...input, marginTop: "8px" }}
-                />
-              )}
-              <div
-                style={{
-                  color: ONE_EYRIE.textSubtle,
-                  fontSize: "11px",
-                  marginTop: "6px",
-                  lineHeight: 1.45,
-                }}
-              >
-                Select one or more property locations. This remains one PM
-                template with independently completable locations.
-              </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div style={{ maxWidth: "180px", marginBottom: "12px" }}>
-                <span style={labelStyle}>Number of Units *</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={units.length || 1}
-                  onChange={(event) =>
-                    changeUnitCount(Number(event.target.value))
-                  }
-                  style={input}
-                />
-              </div>
-              <div style={{ display: "grid", gap: "10px" }}>
-                {units.map((unit, index) => (
-                  <div
-                    key={unit.clientKey}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(220px, 1fr))",
-                      gap: "10px",
-                      padding: "12px",
-                      border: `1px solid ${ONE_EYRIE.border}`,
-                      borderRadius: "10px",
-                      background: ONE_EYRIE.surface,
-                    }}
-                  >
-                    <label>
-                      <span style={labelStyle}>Unit {index + 1} Name *</span>
-                      <input
-                        value={unit.name}
-                        onChange={(event) =>
-                          updateUnit(unit.clientKey, {
-                            name: event.target.value,
-                          })
-                        }
-                        style={input}
-                      />
-                    </label>
-                    <label>
-                      <span style={labelStyle}>Location</span>
-                      <select
-                        value={unit.areaId ? String(unit.areaId) : ""}
-                        onChange={(event) =>
-                          updateUnit(unit.clientKey, {
-                            areaId: event.target.value
-                              ? Number(event.target.value)
-                              : null,
-                          })
-                        }
-                        style={input}
-                      >
-                        <option value="">Unassigned</option>
-                        {areaOptions.map((area) => (
-                          <option key={area.id} value={area.id}>
-                            {area.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <div
-                style={{
-                  color: ONE_EYRIE.textSubtle,
-                  fontSize: "11px",
-                  marginTop: "8px",
-                  lineHeight: 1.45,
-                }}
-              >
-                Each unit uses this template&apos;s checklist and keeps its own
-                completion history, photos, failures, and work orders.
-              </div>
-            </div>
-          )}
 
           <div style={twoCol}>
             <div>
               <span style={labelStyle}>Category *</span>
               <select
                 value={form.category || "Custom"}
-                onChange={(e) =>
-                  updateForm({ category: e.target.value as PmCategory })
+                onChange={(event) =>
+                  updateForm({ category: event.target.value as PmCategory })
                 }
                 style={input}
               >
-                {PM_CATEGORIES.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {entry}
+                {PM_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
               <span style={labelStyle}>Frequency *</span>
               <select
                 value={form.frequency}
-                onChange={(e) =>
+                onChange={(event) =>
                   updateForm({
-                    frequency: e.target.value as PmTemplateInput["frequency"],
+                    frequency: event.target
+                      .value as PmTemplateInput["frequency"],
                   })
                 }
                 style={input}
               >
-                {PM_FREQUENCIES.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {PM_FREQUENCY_LABELS[entry]}
+                {PM_FREQUENCIES.map((frequency) => (
+                  <option key={frequency} value={frequency}>
+                    {PM_FREQUENCY_LABELS[frequency]}
                   </option>
                 ))}
               </select>
@@ -843,7 +388,7 @@ export default function PmTemplateModal({
 
           <div style={twoCol}>
             <div>
-              <span style={labelStyle}>Start date *</span>
+              <span style={labelStyle}>Start Date *</span>
               <PmWorkloadDatePicker
                 value={form.assignment.start_date}
                 onChange={(start_date) => updateAssignment({ start_date })}
@@ -853,20 +398,16 @@ export default function PmTemplateModal({
                 inputStyle={input}
               />
             </div>
-
             <div>
-              <span style={labelStyle}>End date</span>
+              <span style={labelStyle}>End Date</span>
               <input
                 type="date"
                 value={form.assignment.end_date || ""}
-                onChange={(e) =>
-                  updateAssignment({ end_date: e.target.value || null })
+                onChange={(event) =>
+                  updateAssignment({ end_date: event.target.value || null })
                 }
                 disabled={noEndDate}
-                style={{
-                  ...input,
-                  opacity: noEndDate ? 0.5 : 1,
-                }}
+                style={{ ...input, opacity: noEndDate ? 0.5 : 1 }}
               />
               <label
                 style={{
@@ -882,9 +423,9 @@ export default function PmTemplateModal({
                 <input
                   type="checkbox"
                   checked={noEndDate}
-                  onChange={(e) => {
-                    setNoEndDate(e.target.checked);
-                    if (e.target.checked) {
+                  onChange={(event) => {
+                    setNoEndDate(event.target.checked);
+                    if (event.target.checked) {
                       updateAssignment({ end_date: null });
                     }
                   }}
@@ -893,6 +434,86 @@ export default function PmTemplateModal({
               </label>
             </div>
           </div>
+
+          <section>
+            <div style={{ maxWidth: "180px", marginBottom: "12px" }}>
+              <span style={labelStyle}>Number of Items *</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={items.length}
+                onChange={(event) =>
+                  changeItemCount(Number(event.target.value))
+                }
+                style={input}
+              />
+            </div>
+            <div style={{ display: "grid", gap: "10px" }}>
+              {items.map((item, index) => (
+                <div
+                  key={item.clientKey}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: "10px",
+                    padding: "12px",
+                    border: `1px solid ${ONE_EYRIE.border}`,
+                    borderRadius: "10px",
+                    background: ONE_EYRIE.surface,
+                  }}
+                >
+                  <label>
+                    <span style={labelStyle}>Item {index + 1} Name *</span>
+                    <input
+                      value={item.name}
+                      onChange={(event) =>
+                        updateItem(item.clientKey, {
+                          name: event.target.value,
+                        })
+                      }
+                      placeholder={`${form.name.trim() || "Item"} #${index + 1}`}
+                      style={input}
+                    />
+                  </label>
+                  <label>
+                    <span style={labelStyle}>Location</span>
+                    <select
+                      value={item.areaId ? String(item.areaId) : ""}
+                      onChange={(event) =>
+                        updateItem(item.clientKey, {
+                          areaId: event.target.value
+                            ? Number(event.target.value)
+                            : null,
+                        })
+                      }
+                      style={input}
+                    >
+                      <option value="">Unassigned</option>
+                      {areaOptions.map((area) => (
+                        <option key={area.id} value={area.id}>
+                          {area.name}
+                          {area.status === "Inactive" ? " (Inactive)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                color: ONE_EYRIE.textSubtle,
+                fontSize: "11px",
+                marginTop: "8px",
+                lineHeight: 1.45,
+              }}
+            >
+              Each item uses this template&apos;s checklist and keeps its own
+              result, history, failures, notes, photos, and work orders.
+            </div>
+          </section>
 
           <label
             style={{
@@ -906,8 +527,10 @@ export default function PmTemplateModal({
             <input
               type="checkbox"
               checked={form.status === "Active"}
-              onChange={(e) =>
-                updateForm({ status: e.target.checked ? "Active" : "Inactive" })
+              onChange={(event) =>
+                updateForm({
+                  status: event.target.checked ? "Active" : "Inactive",
+                })
               }
             />
             Active
@@ -919,6 +542,19 @@ export default function PmTemplateModal({
             secondaryButton={secondaryButton}
             onChange={updateChecklistSteps}
           />
+
+          {error ? (
+            <div
+              style={{
+                color: FLAT_RED.text,
+                border: `1px solid ${FLAT_RED.border}`,
+                borderRadius: "8px",
+                padding: "10px 12px",
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
         </div>
 
         <div style={modalFooter}>

@@ -380,40 +380,29 @@ export async function createPmTemplate(
   scope?: PmTenantScope
 ) {
   const category = await resolveTemplateCategory(supabase, input, scope);
-  const isEquipmentPm = input.assignment_type === "equipment_unit";
-  const usesNamedTargets = isEquipmentPm || Boolean(input.named_locations);
-  const targetNoun = isEquipmentPm ? "equipment unit" : "location";
-  const units = (input.units || []).map((unit) => ({
-    assignment_id: unit.assignment_id,
-    name: unit.name.trim(),
-    area_id: unit.area_id ?? null,
+  const items = (input.items || input.units || []).map((item) => ({
+    assignment_id: item.assignment_id,
+    name: item.name.trim(),
+    area_id: item.area_id ?? null,
   }));
-  if (usesNamedTargets && units.some((unit) => !unit.name)) {
-    throw new TenantRequestError(400, `Each ${targetNoun} requires a name`);
+  if (items.some((item) => !item.name)) {
+    throw new TenantRequestError(400, "Each PM item requires a name");
   }
-  if (usesNamedTargets && units.length === 0) {
-    throw new TenantRequestError(400, `Add at least one ${targetNoun}`);
+  if (items.length === 0) {
+    throw new TenantRequestError(400, "Add at least one PM item");
   }
-  const unitAssignmentIds = units
-    .map((unit) => unit.assignment_id)
+  const itemAssignmentIds = items
+    .map((item) => item.assignment_id)
     .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
   if (
-    usesNamedTargets &&
-    new Set(unitAssignmentIds).size !== unitAssignmentIds.length
+    new Set(itemAssignmentIds).size !== itemAssignmentIds.length
   ) {
-    throw new TenantRequestError(400, "PM target assignments must be unique");
+    throw new TenantRequestError(400, "PM item assignments must be unique");
   }
 
   const areaIds = Array.from(
     new Set(
-      (usesNamedTargets
-        ? units.map((unit) => unit.area_id)
-        : input.assignment.area_ids?.length
-          ? input.assignment.area_ids
-          : input.assignment.area_id
-            ? [input.assignment.area_id]
-            : []
-      ).filter(
+      items.map((item) => item.area_id).filter(
         (id): id is number =>
           typeof id === "number" && Number.isInteger(id) && id > 0
       )
@@ -432,8 +421,10 @@ export async function createPmTemplate(
     applies_to: input.applies_to || "asset",
     checklist: input.checklist,
     status: input.status || "Active",
-    assignment_type: input.assignment_type || "area_location",
-    named_locations: Boolean(input.named_locations),
+    // Legacy discriminator remains populated for schema compatibility. The
+    // product model is universally template -> items -> optional location.
+    assignment_type: "equipment_unit",
+    named_locations: false,
   };
 
   if (scope) {
@@ -451,29 +442,10 @@ export async function createPmTemplate(
     throw new Error(templateError.message);
   }
 
-  const assignmentRows = (
-    usesNamedTargets
-      ? units.map((unit) => ({
-          area_id: unit.area_id,
-          asset_label: unit.name,
-        }))
-      : input.assignment.unassigned
-        ? []
-        : areaIds.length > 0
-          ? areaIds.map((areaId) => ({
-              area_id: areaId,
-              asset_label: null,
-            }))
-          : [
-              {
-                area_id: null,
-                asset_label: input.assignment.asset_label || null,
-              },
-            ]
-  ).map((assignment) => ({
+  const assignmentRows = items.map((item) => ({
       template_id: templateRow.id,
-      area_id: assignment.area_id,
-      asset_label: assignment.asset_label,
+      area_id: item.area_id,
+      asset_label: item.name,
       start_date: input.assignment.start_date,
       end_date: input.assignment.end_date || null,
       status: input.assignment.status || "Active",
@@ -528,8 +500,9 @@ export async function updatePmTemplate(
       applies_to: input.applies_to || "asset",
       checklist: input.checklist,
       status: input.status || "Active",
-      assignment_type: input.assignment_type || "area_location",
-      named_locations: Boolean(input.named_locations),
+      // Keep the legacy column stable without exposing assignment taxonomy.
+      assignment_type: "equipment_unit",
+      named_locations: false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -555,40 +528,29 @@ export async function updatePmTemplate(
     throw new Error(fetchError.message);
   }
 
-  const isEquipmentPm = input.assignment_type === "equipment_unit";
-  const usesNamedTargets = isEquipmentPm || Boolean(input.named_locations);
-  const targetNoun = isEquipmentPm ? "equipment unit" : "location";
-  const units = (input.units || []).map((unit) => ({
-    assignment_id: unit.assignment_id,
-    name: unit.name.trim(),
-    area_id: unit.area_id ?? null,
+  const items = (input.items || input.units || []).map((item) => ({
+    assignment_id: item.assignment_id,
+    name: item.name.trim(),
+    area_id: item.area_id ?? null,
   }));
-  if (usesNamedTargets && units.some((unit) => !unit.name)) {
-    throw new TenantRequestError(400, `Each ${targetNoun} requires a name`);
+  if (items.some((item) => !item.name)) {
+    throw new TenantRequestError(400, "Each PM item requires a name");
   }
-  if (usesNamedTargets && units.length === 0) {
-    throw new TenantRequestError(400, `Add at least one ${targetNoun}`);
+  if (items.length === 0) {
+    throw new TenantRequestError(400, "Add at least one PM item");
   }
-  const updateUnitAssignmentIds = units
-    .map((unit) => unit.assignment_id)
+  const updateItemAssignmentIds = items
+    .map((item) => item.assignment_id)
     .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
   if (
-    usesNamedTargets &&
-    new Set(updateUnitAssignmentIds).size !== updateUnitAssignmentIds.length
+    new Set(updateItemAssignmentIds).size !== updateItemAssignmentIds.length
   ) {
-    throw new TenantRequestError(400, "PM target assignments must be unique");
+    throw new TenantRequestError(400, "PM item assignments must be unique");
   }
 
   const areaIds = Array.from(
     new Set(
-      (usesNamedTargets
-        ? units.map((unit) => unit.area_id)
-        : input.assignment.area_ids?.length
-          ? input.assignment.area_ids
-          : input.assignment.area_id
-            ? [input.assignment.area_id]
-            : []
-      ).filter(
+      items.map((item) => item.area_id).filter(
         (areaId): areaId is number =>
           typeof areaId === "number" &&
           Number.isInteger(areaId) &&
@@ -604,7 +566,7 @@ export async function updatePmTemplate(
     status: input.assignment.status || "Active",
   };
 
-  if (usesNamedTargets) {
+  {
     const existingById = new Map(
       (existingAssignments || []).map((assignment) => [
         Number(assignment.id),
@@ -613,21 +575,21 @@ export async function updatePmTemplate(
     );
     const retainedIds = new Set<number>();
 
-    for (const unit of units) {
-      if (unit.assignment_id) {
-        const existing = existingById.get(unit.assignment_id);
+    for (const item of items) {
+      if (item.assignment_id) {
+        const existing = existingById.get(item.assignment_id);
         if (!existing) {
-          throw new TenantRequestError(400, `Invalid ${targetNoun} assignment`);
+          throw new TenantRequestError(400, "Invalid PM item assignment");
         }
-        retainedIds.add(unit.assignment_id);
+        retainedIds.add(item.assignment_id);
         const { error } = await supabase
           .from("pm_schedule_assignments")
           .update({
-            area_id: unit.area_id,
-            asset_label: unit.name,
+            area_id: item.area_id,
+            asset_label: item.name,
             ...assignmentSchedule,
           })
-          .eq("id", unit.assignment_id)
+          .eq("id", item.assignment_id)
           .eq("template_id", id);
         if (error) throw new Error(error.message);
       } else {
@@ -635,8 +597,8 @@ export async function updatePmTemplate(
           .from("pm_schedule_assignments")
           .insert({
             template_id: id,
-            area_id: unit.area_id,
-            asset_label: unit.name,
+            area_id: item.area_id,
+            asset_label: item.name,
             ...assignmentSchedule,
           })
           .select("id")
@@ -658,79 +620,6 @@ export async function updatePmTemplate(
           .eq("template_id", id);
         if (error) throw new Error(error.message);
       }
-    }
-  } else if (areaIds.length > 0) {
-    const selectedAreaIds = new Set(areaIds);
-    const existingAreaIds = new Set<number>();
-
-    for (const assignment of existingAssignments || []) {
-      const assignmentAreaId = assignment.area_id ? Number(assignment.area_id) : null;
-      if (assignmentAreaId && selectedAreaIds.has(assignmentAreaId)) {
-        existingAreaIds.add(assignmentAreaId);
-        const { error } = await supabase
-          .from("pm_schedule_assignments")
-          .update({
-            area_id: assignmentAreaId,
-            asset_label: null,
-            ...assignmentSchedule,
-          })
-          .eq("id", assignment.id);
-        if (error) throw new Error(error.message);
-      } else if (assignment.status !== "Inactive") {
-        const { error } = await supabase
-          .from("pm_schedule_assignments")
-          .update({ status: "Inactive" })
-          .eq("id", assignment.id);
-        if (error) throw new Error(error.message);
-      }
-    }
-
-    const newAreaIds = areaIds.filter((areaId) => !existingAreaIds.has(areaId));
-    if (newAreaIds.length > 0) {
-      const { error } = await supabase.from("pm_schedule_assignments").insert(
-        newAreaIds.map((areaId) => ({
-          template_id: id,
-          area_id: areaId,
-          asset_label: null,
-          ...assignmentSchedule,
-        }))
-      );
-      if (error) throw new Error(error.message);
-    }
-  } else {
-    const customAssignment = (existingAssignments || []).find(
-      (assignment) => assignment.area_id === null
-    );
-
-    for (const assignment of existingAssignments || []) {
-      if (assignment.id === customAssignment?.id) continue;
-      if (assignment.status !== "Inactive") {
-        const { error } = await supabase
-          .from("pm_schedule_assignments")
-          .update({ status: "Inactive" })
-          .eq("id", assignment.id);
-        if (error) throw new Error(error.message);
-      }
-    }
-
-    if (customAssignment) {
-      const { error } = await supabase
-        .from("pm_schedule_assignments")
-        .update({
-          area_id: null,
-          asset_label: input.assignment.asset_label || null,
-          ...assignmentSchedule,
-        })
-        .eq("id", customAssignment.id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await supabase.from("pm_schedule_assignments").insert({
-        template_id: id,
-        area_id: null,
-        asset_label: input.assignment.asset_label || null,
-        ...assignmentSchedule,
-      });
-      if (error) throw new Error(error.message);
     }
   }
 

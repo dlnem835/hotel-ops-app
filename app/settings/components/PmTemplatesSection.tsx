@@ -15,7 +15,6 @@ import {
   PmTemplate,
   PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
-import { formatPmAreaLabel } from "@/app/maintenance/lib/pm-category";
 import { normalizeChecklist } from "@/app/maintenance/lib/pm-checklist-draft";
 import {
   buildDuplicatePmTemplateInput,
@@ -57,16 +56,10 @@ function getLocalDateString(date = new Date()) {
 }
 
 function areaLabel(schedule: PmAssignmentSchedule): string {
-  if (schedule.assignmentType === "equipment_unit") {
-    if (schedule.assetLabel && schedule.areaName) {
-      return `${schedule.assetLabel} — ${schedule.areaName}`;
-    }
-    return schedule.assetLabel || schedule.areaName || "Unassigned unit";
+  if (schedule.assetLabel && schedule.areaName) {
+    return `${schedule.assetLabel} — ${schedule.areaName}`;
   }
-  return formatPmAreaLabel({
-    areaName: schedule.areaName,
-    customAreaLabel: schedule.assetLabel,
-  });
+  return schedule.assetLabel || schedule.areaName || "Unassigned item";
 }
 
 function formatScheduleDate(dateIso: string): string {
@@ -317,19 +310,16 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         description: result.template.description,
         category: result.template.category,
         frequency: result.template.frequency,
-        assignment_type: result.template.assignmentType,
-        named_locations: Boolean(result.template.namedLocations),
-        units:
-          result.template.assignmentType === "equipment_unit" ||
-          result.template.namedLocations
-            ? activeAssignments.map((assignment) => ({
-                assignment_id: assignment.id,
-                name:
-                  assignment.asset_label ||
-                  `${result.template.name} Unit`,
-                area_id: assignment.area_id,
-              }))
-            : undefined,
+        items: selectedAssignments.map((assignment, index) => ({
+          assignment_id: assignment.id,
+          name:
+            assignment.asset_label ||
+            areas.find((area) => area.id === assignment.area_id)?.name ||
+            (selectedAssignments.length === 1
+              ? result.template.name
+              : `${result.template.name} #${index + 1}`),
+          area_id: assignment.area_id,
+        })),
         checklist: normalizeChecklist(result.template.checklist),
         status: result.template.status,
         assignment: primaryAssignment
@@ -375,41 +365,22 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       )
         .filter((assignment) => assignment.status === "Active")
         .sort((a, b) => a.id - b.id);
-      const areaIds = Array.from(
-        new Set(
-          activeAssignments
-            .map((assignment) => assignment.area_id)
-            .filter(
-              (id): id is number =>
-                typeof id === "number" && Number.isInteger(id) && id > 0
-            )
-        )
-      );
       const duplicate = buildDuplicatePmTemplateInput(
         toPmTemplateWithAssignment(result)
       );
-      duplicate.assignment_type = result.template.assignmentType;
-      duplicate.named_locations = Boolean(result.template.namedLocations);
-      if (
-        result.template.assignmentType === "equipment_unit" ||
-        result.template.namedLocations
-      ) {
-        duplicate.units = activeAssignments.map((assignment) => ({
-          name: assignment.asset_label || `${result.template.name} Unit`,
-          area_id: assignment.area_id,
-        }));
-        if (duplicate.assignment) {
-          duplicate.assignment.area_id = activeAssignments[0]?.area_id ?? null;
-          duplicate.assignment.area_ids = [];
-          duplicate.assignment.asset_label = null;
-        }
-      } else if (duplicate.assignment) {
-        duplicate.assignment.area_id = areaIds[0] ?? null;
-        duplicate.assignment.area_ids = areaIds;
-        duplicate.assignment.asset_label =
-          areaIds.length === 0
-            ? activeAssignments[0]?.asset_label ?? null
-            : null;
+      duplicate.items = activeAssignments.map((assignment, index) => ({
+        name:
+          assignment.asset_label ||
+          areas.find((area) => area.id === assignment.area_id)?.name ||
+          (activeAssignments.length === 1
+            ? result.template.name
+            : `${result.template.name} #${index + 1}`),
+        area_id: assignment.area_id,
+      }));
+      if (duplicate.assignment) {
+        duplicate.assignment.area_id = null;
+        duplicate.assignment.area_ids = [];
+        duplicate.assignment.asset_label = null;
       }
       setEditInitial(duplicate);
       setModalOpen(true);
@@ -871,12 +842,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                 >
                                   {locationLabels.length === 1
                                     ? locationLabels[0]
-                                    : `${locationLabels.length} ${
-                                        group.schedules[0]?.assignmentType ===
-                                        "equipment_unit"
-                                          ? "units"
-                                          : "locations"
-                                      }`}
+                                    : `${locationLabels.length} items`}
                                 </div>
                                 <div className="one-eyrie-pm-schedule-row__meta">
                                   {startDates.length === 1

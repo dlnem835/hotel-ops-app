@@ -68,7 +68,7 @@ export default function MaintenancePage() {
   const [dashboard, setDashboard] = useState<MaintenanceDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startingPm, setStartingPm] = useState(false);
+  const startingPm = false;
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
@@ -134,33 +134,8 @@ export default function MaintenancePage() {
     void init();
   }, [loadDashboard]);
 
-  async function startPmForAssignment(assignmentId: number) {
-    setStartingPm(true);
-    const response = await tenantFetch("/api/maintenance/pm-occurrences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        assignment_id: assignmentId,
-        created_by: createdByName,
-      }),
-    });
-    const result = await response.json();
-    setStartingPm(false);
-
-    if (!response.ok) {
-      alert(result.error || "Unable to start PM");
-      return;
-    }
-
-    router.push(`/maintenance/pm/${result.occurrence.id}`);
-  }
-
   function handleOpenPmTile(tile: PmTile) {
-    if ((tile.locationCount || 1) > 1) {
-      router.push(`/maintenance/pm-program/${tile.templateId}`);
-      return;
-    }
-    void startPmForAssignment(tile.assignmentId);
+    router.push(`/maintenance/pm-program/${tile.templateId}`);
   }
 
   function openWorkOrderModal(initial?: WorkOrderModalInitialValues) {

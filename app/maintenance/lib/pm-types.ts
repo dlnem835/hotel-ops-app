@@ -63,11 +63,6 @@ export const PM_APPLIES_TO_LABELS: Record<PmAppliesTo, string> = {
 };
 
 export const PM_TEMPLATE_STATUSES = ["Active", "Inactive"] as const;
-export const PM_ASSIGNMENT_TYPES = ["area_location", "equipment_unit"] as const;
-export const PM_ASSIGNMENT_TYPE_LABELS: Record<PmAssignmentType, string> = {
-  area_location: "Area / Location PM",
-  equipment_unit: "Equipment / Unit PM",
-};
 
 export const PM_ASSIGNED_ROLES = [
   "Management",
@@ -81,7 +76,7 @@ export type PmCategory = (typeof PM_CATEGORIES)[number];
 export type PmFrequency = (typeof PM_FREQUENCIES)[number];
 export type PmAppliesTo = (typeof PM_APPLIES_TO)[number];
 export type PmTemplateStatus = (typeof PM_TEMPLATE_STATUSES)[number];
-export type PmAssignmentType = (typeof PM_ASSIGNMENT_TYPES)[number];
+export type PmAssignmentType = "area_location" | "equipment_unit";
 
 export type PmChecklistStep = {
   key: string;
@@ -160,6 +155,12 @@ export type PmAssignmentSchedule = {
   assignedRole: string | null;
 };
 
+export type PmItemInput = {
+  assignment_id?: number;
+  name: string;
+  area_id?: number | null;
+};
+
 export type AreaPmGridSummary = {
   areaId: number;
   areaName: string;
@@ -183,11 +184,9 @@ export type PmTemplateInput = {
   status?: PmTemplateStatus;
   assignment_type?: PmAssignmentType;
   named_locations?: boolean;
-  units?: Array<{
-    assignment_id?: number;
-    name: string;
-    area_id?: number | null;
-  }>;
+  items?: PmItemInput[];
+  /** @deprecated Compatibility for older PM setup payloads. */
+  units?: PmItemInput[];
   assignment: {
     unassigned?: boolean;
     area_id?: number | null;

@@ -14,8 +14,7 @@ import {
   tileMatchesPmFilters,
 } from "@/app/maintenance/lib/pm-tile-filters";
 import { getPmTileStyle, PM_TILE_LEGEND } from "@/app/maintenance/lib/pm-tile-styles";
-import { pmSessionUrl } from "@/app/maintenance/lib/pm-session-return";
-import { fetchPmTiles, pmAreaLabel, resolvePmCreatedBy, startPmAssignment } from "./lib/pm-shared";
+import { fetchPmTiles, pmAreaLabel } from "./lib/pm-shared";
 
 function PmCompletionHistory({ tile }: { tile: PmTile }) {
   if (!tile.lastCompletedAt) {
@@ -38,16 +37,10 @@ export default function MobilePmGridSection() {
   const [tiles, setTiles] = useState<PmTile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startingKey, setStartingKey] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
     () => new Set(DEFAULT_PM_TILE_FILTERS)
   );
   const [search, setSearch] = useState("");
-  const [createdByName, setCreatedByName] = useState<string | null>(null);
-
-  useEffect(() => {
-    void resolvePmCreatedBy().then(setCreatedByName);
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -96,22 +89,8 @@ export default function MobilePmGridSection() {
     });
   }
 
-  async function handleOpenPm(tile: PmTile) {
-    if (startingKey) return;
-    if ((tile.locationCount || 1) > 1) {
-      router.push(`/maintenance/pm-program/${tile.templateId}?from=mobile`);
-      return;
-    }
-    setStartingKey(tile.key);
-    setError(null);
-
-    try {
-      const occurrenceId = await startPmAssignment(tile.assignmentId, createdByName);
-      router.push(pmSessionUrl(occurrenceId, true));
-    } catch (startError) {
-      setStartingKey(null);
-      setError(startError instanceof Error ? startError.message : "Unable to start PM");
-    }
+  function handleOpenPm(tile: PmTile) {
+    router.push(`/maintenance/pm-program/${tile.templateId}?from=mobile`);
   }
 
   if (loading) {
@@ -184,19 +163,15 @@ export default function MobilePmGridSection() {
           <div className="one-eyrie-mobile-pm-grid">
             {filteredTiles.map((tile) => {
               const style = getPmTileStyle(tile.urgency);
-              const isStarting = startingKey === tile.key;
-
               return (
                 <button
                   key={tile.key}
                   type="button"
                   className="one-eyrie-mobile-pm-queue-row"
-                  disabled={Boolean(startingKey)}
                   style={{
                     borderLeftColor: style.border,
-                    opacity: startingKey && !isStarting ? 0.55 : 1,
                   }}
-                  onClick={() => void handleOpenPm(tile)}
+                  onClick={() => handleOpenPm(tile)}
                 >
                   <div className="one-eyrie-mobile-pm-queue-row__main">
                     <div className="one-eyrie-mobile-pm-queue-row__top">
@@ -225,9 +200,6 @@ export default function MobilePmGridSection() {
                       {tile.frequencyLabel}
                     </div>
                     <PmCompletionHistory tile={tile} />
-                    {isStarting ? (
-                      <div className="one-eyrie-mobile-pm-queue-row__opening">Opening…</div>
-                    ) : null}
                   </div>
                   <ChevronRight
                     size={18}

@@ -28,7 +28,7 @@ type PmTileGridProps = {
 
 function areaLabel(tile: PmTile): string {
   if (tile.areaName && tile.assetLabel) {
-    return `${tile.areaName} · ${tile.assetLabel}`;
+    return `${tile.assetLabel} — ${tile.areaName}`;
   }
   return tile.areaName || tile.assetLabel || "Property-wide";
 }
@@ -44,9 +44,7 @@ function PmTileDetailLine({ label, value }: { label: string; value: string }) {
 
 function PmTileProgressPanel({ tile }: { tile: PmTile }) {
   const { cycleHistory } = tile;
-  const hasMultipleLocations = (tile.locationCount || 1) > 1;
-  const assignmentLabel =
-    tile.assignmentType === "equipment_unit" ? "Units" : "Locations";
+  const hasMultipleItems = (tile.locationCount || 1) > 1;
 
   return (
     <div
@@ -59,10 +57,10 @@ function PmTileProgressPanel({ tile }: { tile: PmTile }) {
     >
       <PmTileDetailLine
         label={
-          hasMultipleLocations ? `${assignmentLabel} Completed` : "Completed"
+          hasMultipleItems ? "Items Completed" : "Completed"
         }
         value={
-          hasMultipleLocations
+          hasMultipleItems
             ? `${tile.completedLocationCount || 0}/${tile.locationCount}`
             : formatPmCycleProgressLabel(
                 cycleHistory.completedCount,

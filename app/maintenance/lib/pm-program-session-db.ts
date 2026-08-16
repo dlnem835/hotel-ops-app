@@ -47,6 +47,9 @@ export type PmProgramSession = {
   savedAt: string | null;
   completedBy: string | null;
   completedAt: string | null;
+  nextDueDate: string | null;
+  lastCompletedBy: string | null;
+  lastCompletedAt: string | null;
 };
 
 function normalizeChecklist(value: unknown) {
@@ -93,10 +96,10 @@ async function loadProgramState(
   const assignments = (result.assignments as ProgramAssignment[])
     .filter((assignment) => assignment.status === "Active")
     .sort((a, b) => Number(a.id) - Number(b.id));
-  if (assignments.length < 2) {
+  if (assignments.length < 1) {
     throw new TenantRequestError(
       400,
-      "A shared PM program requires at least two active locations or units"
+      "A PM program requires at least one active item"
     );
   }
 
@@ -151,6 +154,18 @@ async function loadProgramState(
     .order("id", { ascending: false });
   if (occurrenceError) throw new Error(occurrenceError.message);
 
+  const { data: lastCompletedRows, error: lastCompletedError } = await supabase
+    .from("pm_occurrences")
+    .select("completed_at, completed_by")
+    .eq("template_id", templateId)
+    .eq("status", "completed")
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(1);
+  if (lastCompletedError) throw new Error(lastCompletedError.message);
+
   const occurrenceIdByKey = new Map<string, number>();
   for (const row of occurrenceRows || []) {
     const key = `${Number(row.assignment_id)}::${String(row.due_date)}`;
@@ -177,7 +192,11 @@ async function loadProgramState(
     })
   );
 
-  return { template: result.template, states };
+  return {
+    template: result.template,
+    states,
+    lastCompleted: lastCompletedRows?.[0] || null,
+  };
 }
 
 function buildSession(
@@ -243,6 +262,16 @@ function buildSession(
           .filter((value): value is string => Boolean(value))
           .sort()
           .at(-1) || null
+      : null,
+    nextDueDate:
+      state.states
+        .map((entry) => entry.dueDate)
+        .sort((left, right) => left.localeCompare(right))[0] || null,
+    lastCompletedBy: state.lastCompleted?.completed_by
+      ? String(state.lastCompleted.completed_by)
+      : null,
+    lastCompletedAt: state.lastCompleted?.completed_at
+      ? String(state.lastCompleted.completed_at)
       : null,
   };
 }
@@ -330,7 +359,7 @@ export async function savePmProgramSession(
     if (input.complete && !outcome) {
       throw new TenantRequestError(
         400,
-        "Mark every location or unit before completing this PM"
+        "Select Pass, Fail, or N/A for every PM item"
       );
     }
     if (!target.occurrenceId || target.occurrenceStatus === "completed") {

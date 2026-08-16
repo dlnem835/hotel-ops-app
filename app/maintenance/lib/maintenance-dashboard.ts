@@ -68,8 +68,7 @@ function groupPmTilesByTemplate(tiles: PmTile[]): PmTile[] {
   }
 
   return Array.from(groups.values()).map((group) => {
-    const itemLabel =
-      group[0]?.assignmentType === "equipment_unit" ? "units" : "locations";
+    const itemLabel = "items";
     const locations = group.flatMap((tile) => tile.locations || []);
     const completedLocationCount = locations.filter(
       (location) => location.completed || Boolean(location.targetOutcome)
@@ -177,9 +176,27 @@ function buildPmHealthSummary(
   };
 }
 
-function countFailedSteps(responses: PmOccurrenceResponses | null | undefined): number {
-  if (responses?.sharedChecklistPrimary === false) return 0;
-  return (responses?.steps || []).filter((step) => step.outcome === "fail").length;
+function countFailedPmSignals(
+  responses: PmOccurrenceResponses | null | undefined
+): number {
+  let count = 0;
+
+  // Preserve shared-checklist fan-out suppression for legacy grouped PMs.
+  if (responses?.sharedChecklistPrimary !== false) {
+    count += (responses?.steps || []).filter(
+      (step) => step.outcome === "fail"
+    ).length;
+  }
+
+  // Universal item model stores Pass/Fail/N/A on the assignment itself.
+  if (
+    responses?.targetOutcome === "fail" ||
+    responses?.targetOutcome === "issue_found"
+  ) {
+    count += 1;
+  }
+
+  return count;
 }
 
 export async function buildMaintenanceDashboard(
@@ -287,7 +304,7 @@ export async function buildMaintenanceDashboard(
       }
     } else if (row.status === "open") {
       openByKey.set(key, row);
-      failedPmItems += countFailedSteps(row.responses);
+      failedPmItems += countFailedPmSignals(row.responses);
     } else if (row.status === "missed") {
       missedByKey.set(key, row);
     }

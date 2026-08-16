@@ -285,6 +285,25 @@ export function buildFailedPmItemReportRows(
         notes: step.notes?.trim() || "—",
       });
     }
+
+    const targetOutcome = occurrence.responses?.targetOutcome;
+    if (targetOutcome === "fail" || targetOutcome === "issue_found") {
+      rows.push({
+        id: `${occurrence.id}::target`,
+        occurrenceId: occurrence.id,
+        itemLabel: schedule.areaLabel,
+        sourcePmName: schedule.templateName,
+        pmType: PM_FREQUENCY_LABELS[schedule.frequency],
+        pmTypeKey: schedule.frequency,
+        areaLabel: schedule.areaLabel,
+        frequency: PM_FREQUENCY_LABELS[schedule.frequency],
+        completedBy: source.resolveCompletedBy(occurrence.completedBy) || "—",
+        completedAt: formatDisplayDate(occurrence.completedAt),
+        completedAtIso,
+        completedAtSortIso: occurrence.completedAt || completedAtIso,
+        notes: occurrence.responses?.targetNotes?.trim() || "—",
+      });
+    }
   }
 
   return rows;

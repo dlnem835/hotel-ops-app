@@ -6,7 +6,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import PmProgramTargetRow from "../../components/PmProgramTargetRow";
-import PmSessionMetadata from "../../components/PmSessionMetadata";
 import WorkOrderModal, {
   type WorkOrderModalInitialValues,
 } from "../../components/WorkOrderModal";
@@ -28,6 +27,8 @@ import type {
   PmProgramSessionTarget,
 } from "../../lib/pm-program-session-db";
 import { PM_FREQUENCY_LABELS } from "../../lib/pm-types";
+import { formatPmNextDueDate } from "../../lib/pm-tile-display";
+import { formatPmCompletionDate } from "../../lib/pm-urgency";
 import { classifyWorkOrderItemIssue } from "../../lib/work-order-item-issues";
 import {
   resolveMemberDisplayLabel,
@@ -41,10 +42,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-function targetLabel(
-  target: PmProgramSessionTarget,
-  isEquipment: boolean
-): string {
+function targetLabel(target: PmProgramSessionTarget): string {
   if (target.areaName && target.assetLabel) {
     if (
       target.areaName.trim().toLowerCase() ===
@@ -52,34 +50,56 @@ function targetLabel(
     ) {
       return target.assetLabel;
     }
-    return isEquipment
-      ? `${target.assetLabel} — ${target.areaName}`
-      : `${target.areaName} · ${target.assetLabel}`;
+    return `${target.assetLabel} — ${target.areaName}`;
   }
   return target.assetLabel || target.areaName || "Property-wide";
 }
 
 function targetDisplay(
-  target: PmProgramSessionTarget,
-  isEquipment: boolean
+  target: PmProgramSessionTarget
 ): { name: string; location: string | null } {
-  if (isEquipment) {
-    return {
-      name: target.assetLabel || target.areaName || "Property-wide",
-      location:
-        target.assetLabel && target.areaName ? target.areaName : null,
-    };
-  }
   return {
     name: target.assetLabel || target.areaName || "Property-wide",
-    location:
-      target.assetLabel &&
-      target.areaName &&
-      target.assetLabel.trim().toLowerCase() !==
-        target.areaName.trim().toLowerCase()
-        ? target.areaName
-        : null,
+    location: target.assetLabel && target.areaName ? target.areaName : null,
   };
+}
+
+function HeaderFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        padding: "10px 12px",
+        borderRadius: "8px",
+        border: `1px solid ${ONE_EYRIE.borderDivider}`,
+        background: ONE_EYRIE.surfaceInset,
+      }}
+    >
+      <div
+        style={{
+          color: ONE_EYRIE.textSubtle,
+          fontSize: "11px",
+          fontWeight: 800,
+          marginBottom: "4px",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          color: ONE_EYRIE.text,
+          fontSize: "13px",
+          fontWeight: 700,
+          lineHeight: 1.4,
+          overflowWrap: "anywhere",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
 }
 
 export default function PmProgramPage() {
@@ -197,15 +217,40 @@ export default function PmProgramPage() {
   );
   const sortedTargets = useMemo(() => {
     if (!session) return [];
-    const equipment = session.assignmentType === "equipment_unit";
     return [...session.targets].sort((a, b) =>
-      targetLabel(a, equipment).localeCompare(targetLabel(b, equipment))
+      targetLabel(a).localeCompare(targetLabel(b))
     );
   }, [session]);
+  const locationNames = Array.from(
+    new Set(
+      sortedTargets
+        .map((target) => target.areaName)
+        .filter((name): name is string => Boolean(name))
+    )
+  );
+  const locationSummary =
+    locationNames.length === 0
+      ? null
+      : locationNames.length === 1
+        ? locationNames[0]
+        : `${locationNames.length} locations`;
+  const frequencyLabel = session
+    ? PM_FREQUENCY_LABELS[
+        session.frequency as keyof typeof PM_FREQUENCY_LABELS
+      ] || session.frequency
+    : "—";
+  const lastCompletedLabel = session?.lastCompletedAt
+    ? `${formatPmCompletionDate(session.lastCompletedAt)}${
+        session.lastCompletedBy
+          ? ` by ${resolveMemberDisplayLabel(
+              memberResolver,
+              session.lastCompletedBy
+            )}`
+          : ""
+      }`
+    : "Never";
   const isCompleted = session?.status === "completed";
-  const isEquipment = session?.assignmentType === "equipment_unit";
-  const targetNoun = isEquipment ? "unit" : "location";
-  const targetNounPlural = isEquipment ? "units" : "locations";
+  const targetNoun = "item";
   const markedCount = sortedTargets.filter(
     (target) => Boolean(targetOutcomes[target.assignmentId])
   ).length;
@@ -307,7 +352,7 @@ export default function PmProgramPage() {
   function buildTargetWorkOrder(
     target: PmProgramSessionTarget
   ): WorkOrderModalInitialValues {
-    const label = targetLabel(target, Boolean(isEquipment));
+    const label = targetLabel(target);
     const note = targetNotes[target.assignmentId] || "";
     return {
       subject: `PM fail: ${session?.templateName || "Preventive Maintenance"}`,
@@ -374,7 +419,7 @@ export default function PmProgramPage() {
           <div style={{ color: FLAT_RED.text, marginTop: "24px" }}>{error}</div>
         ) : session ? (
           <>
-            <header style={{ marginTop: "18px", marginBottom: "20px" }}>
+            <header style={{ marginTop: "18px", marginBottom: "22px" }}>
               <h1
                 style={{
                   color: ONE_EYRIE.text,
@@ -384,65 +429,90 @@ export default function PmProgramPage() {
               >
                 {session.templateName}
               </h1>
-              <PmSessionMetadata
-                locationLabel={`${session.targets.length} ${targetNounPlural}`}
-                frequencyLabel={
-                  PM_FREQUENCY_LABELS[
-                    session.frequency as keyof typeof PM_FREQUENCY_LABELS
-                  ] || session.frequency
-                }
-                createdByLabel={
-                  session.createdBy
-                    ? resolveMemberDisplayLabel(memberResolver, session.createdBy)
-                    : null
-                }
-                savedByLabel={
-                  session.savedBy
-                    ? resolveMemberDisplayLabel(memberResolver, session.savedBy)
-                    : null
-                }
-                savedAt={session.savedAt}
-                isCompleted={isCompleted}
-                completedByLabel={
-                  session.completedBy
-                    ? resolveMemberDisplayLabel(
-                        memberResolver,
-                        session.completedBy
-                      )
-                    : null
-                }
-                completedAt={session.completedAt}
-              />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
+                  gap: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                <HeaderFact label="Frequency" value={frequencyLabel} />
+                {locationSummary ? (
+                  <HeaderFact label="Location" value={locationSummary} />
+                ) : null}
+                <HeaderFact
+                  label="Next Due"
+                  value={formatPmNextDueDate(session.nextDueDate)}
+                />
+                <HeaderFact
+                  label="Last Completed"
+                  value={lastCompletedLabel}
+                />
+              </div>
             </header>
 
-            <section>
+            <section
+              style={{
+                borderRadius: "12px",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                background: ONE_EYRIE.surface,
+                padding: fromMobile ? "16px" : "18px",
+              }}
+            >
               <h2
                 style={{
                   color: ONE_EYRIE.text,
-                  margin: "0 0 12px",
+                  margin: 0,
                   fontSize: "20px",
                 }}
               >
-                PM Checklist
+                PM Checklist (Read Only)
               </h2>
-              <div style={{ display: "grid", gap: "10px" }}>
-                {allSteps.map((step, index) => (
+              <p
+                style={{
+                  color: ONE_EYRIE.textMuted,
+                  fontSize: "13px",
+                  lineHeight: 1.5,
+                  margin: "5px 0 14px",
+                }}
+              >
+                This checklist defines what to inspect for each item.
+              </p>
+              <div
+                role="list"
+                style={{
+                  display: "grid",
+                  borderTop: `1px solid ${ONE_EYRIE.borderDivider}`,
+                }}
+              >
+                {allSteps.map((step) => (
                   <div
                     key={step.key}
+                    role="listitem"
                     style={{
-                      padding: "12px",
-                      borderRadius: "8px",
-                      background:
-                        index % 2 === 0
-                          ? ONE_EYRIE.row
-                          : ONE_EYRIE.surfaceInset,
-                      border: `1px solid ${ONE_EYRIE.borderDivider}`,
+                      display: "grid",
+                      gridTemplateColumns: "18px minmax(0, 1fr)",
+                      gap: "8px",
+                      padding: "11px 2px",
+                      borderBottom: `1px solid ${ONE_EYRIE.borderDivider}`,
                       color: ONE_EYRIE.text,
-                      fontWeight: 700,
+                      fontWeight: 650,
                       lineHeight: 1.45,
                     }}
                   >
-                    {step.label}
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        color: ONE_EYRIE.gold,
+                        fontWeight: 900,
+                        textAlign: "center",
+                      }}
+                    >
+                      •
+                    </span>
+                    <span>{step.label}</span>
                   </div>
                 ))}
               </div>
@@ -450,22 +520,27 @@ export default function PmProgramPage() {
 
             <section
               style={{
-                marginTop: "24px",
-                paddingTop: "20px",
-                borderTop: `1px solid ${ONE_EYRIE.border}`,
+                marginTop: "20px",
               }}
             >
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  gap: "12px",
+                  gap: "8px 12px",
                   alignItems: "baseline",
                   marginBottom: "12px",
+                  flexWrap: "wrap",
                 }}
               >
-                <h2 style={{ color: ONE_EYRIE.text, margin: 0, fontSize: "20px" }}>
-                  {isEquipment ? "Units" : "Locations"}
+                <h2
+                  style={{
+                    color: ONE_EYRIE.text,
+                    margin: 0,
+                    fontSize: "20px",
+                  }}
+                >
+                  Items
                 </h2>
                 <span
                   style={{
@@ -474,17 +549,14 @@ export default function PmProgramPage() {
                     fontWeight: 800,
                   }}
                 >
-                  {markedCount} of {sortedTargets.length} {targetNounPlural} completed
+                  {markedCount} of {sortedTargets.length} completed
                 </span>
               </div>
 
               <div style={{ display: "grid", gap: "10px" }}>
                 {sortedTargets.map((target, index) => {
                   const outcome = targetOutcomes[target.assignmentId] || null;
-                  const display = targetDisplay(
-                    target,
-                    Boolean(isEquipment)
-                  );
+                  const display = targetDisplay(target);
                   return (
                     <PmProgramTargetRow
                       key={target.assignmentId}

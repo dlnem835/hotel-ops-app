@@ -141,9 +141,7 @@ export default function ReportsPmOccurrenceDetailModal({
 
   const locationLabel =
     detail?.areaName && detail.assetLabel
-      ? detail.assignmentType === "equipment_unit"
-        ? `${detail.assetLabel} — ${detail.areaName}`
-        : `${detail.areaName} · ${detail.assetLabel}`
+      ? `${detail.assetLabel} — ${detail.areaName}`
       : detail?.areaName || detail?.assetLabel || "Property-wide";
 
   const frequencyLabel =
