@@ -142,7 +142,7 @@ export default function MobileInspectionCategoryPage() {
                   : undefined
               }
               onOutcomeChange={(value) => {
-                if (hasGuidedInspectionUx && outcome === value) {
+                if (!value) {
                   clearOutcome(categoryKey, item.key);
                   return;
                 }

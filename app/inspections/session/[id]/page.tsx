@@ -10,6 +10,7 @@ import FailedItemDetails from "../../components/FailedItemDetails";
 import InspectionCategorySection from "../../components/InspectionCategorySection";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 import { useIsMobileInspectionLayout } from "../../lib/use-inspection-breakpoint";
 import "../../inspections-responsive.css";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
@@ -186,7 +187,10 @@ export default function InspectionSessionPage() {
     if (!content || expandedCategoryKey) {
       return;
     }
-    setExpandedCategoryKey(content.categories[0]?.key ?? null);
+    const timeoutId = window.setTimeout(() => {
+      setExpandedCategoryKey(content.categories[0]?.key ?? null);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [content, expandedCategoryKey]);
 
   function toggleCategory(categoryKeyValue: string) {
@@ -251,29 +255,23 @@ export default function InspectionSessionPage() {
   const totalItems = content?.categories.reduce((sum, cat) => sum + cat.items.length, 0) ?? 0;
   const answeredItems = responseInputs.length;
 
-  function setOutcome(categoryKeyValue: string, itemKeyValue: string, outcome: Outcome) {
+  function setOutcome(
+    categoryKeyValue: string,
+    itemKeyValue: string,
+    outcome: Outcome | undefined
+  ) {
     const key = itemKey(categoryKeyValue, itemKeyValue);
-    setResponses((prev) => ({
-      ...prev,
-      [key]: outcome,
-    }));
+    setResponses((prev) => {
+      const next = { ...prev };
+      if (outcome) next[key] = outcome;
+      else delete next[key];
+      return next;
+    });
 
     if (isMobileLayout) {
       setExpandedCategoryKey(categoryKeyValue);
     }
 
-    if (outcome !== "fail") {
-      setNotes((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-      setPhotos((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
   }
 
   async function uploadItemPhoto(
@@ -616,7 +614,14 @@ export default function InspectionSessionPage() {
                                 className={isMobileLayout ? "inspection-mobile-outcome-btn" : undefined}
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setOutcome(category.key, item.key, value);
+                                  setOutcome(
+                                    category.key,
+                                    item.key,
+                                    toggleSelectedOutcome(
+                                      responses[itemKey(category.key, item.key)],
+                                      value
+                                    )
+                                  );
                                 }}
                                 style={{
                                   ...SETTINGS_BUTTON_BASE,

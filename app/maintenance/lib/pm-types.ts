@@ -122,6 +122,7 @@ export type PmTemplate = {
   id: number;
   standardKey: string | null;
   assignmentType: PmAssignmentType;
+  namedLocations: boolean;
   name: string;
   description: string | null;
   category: PmCategory;
@@ -181,6 +182,7 @@ export type PmTemplateInput = {
   checklist: PmChecklist;
   status?: PmTemplateStatus;
   assignment_type?: PmAssignmentType;
+  named_locations?: boolean;
   units?: Array<{
     assignment_id?: number;
     name: string;

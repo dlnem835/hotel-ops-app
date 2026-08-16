@@ -1,8 +1,35 @@
 export const PM_SESSION_MOBILE_FROM = "mobile";
 export const PM_SESSION_MOBILE_RETURN_PATH = "/mobile/pms";
 
+const PM_OCCURRENCE_PATH = /^\/maintenance\/pm\/\d+\/?$/;
+const PM_PROGRAM_PATH = /^\/maintenance\/pm-program\/\d+\/?$/;
+
 export function isMobilePmSession(searchParams: URLSearchParams): boolean {
   return searchParams.get("from") === PM_SESSION_MOBILE_FROM;
+}
+
+/** Single PM occurrence and grouped PM program completion routes. */
+export function isPmSessionPath(pathname: string): boolean {
+  const path = pathname.split("?")[0] ?? pathname;
+  return PM_OCCURRENCE_PATH.test(path) || PM_PROGRAM_PATH.test(path);
+}
+
+/**
+ * PM completion screens render in either shell from the same route, so the
+ * mobile shell must keep the occurrence/template id rather than treating these
+ * as desktop-only paths.
+ */
+export function isMobilePmSessionRoute(
+  pathname: string,
+  searchParams: URLSearchParams
+): boolean {
+  if (!isPmSessionPath(pathname)) return false;
+  if (isMobilePmSession(searchParams)) return true;
+
+  const returnTo = searchParams.get("returnTo");
+  return Boolean(
+    returnTo && returnTo.includes(`from=${PM_SESSION_MOBILE_FROM}`)
+  );
 }
 
 export function pmSessionReturnPath(searchParams: URLSearchParams): string {

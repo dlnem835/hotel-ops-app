@@ -6,6 +6,7 @@ import { FLAT_RED, FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneEyrieCol
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PropertyItem } from "@/app/inspections/standards/types";
 import { InspectionItemGuidanceHeading } from "@/app/inspections/components/InspectionGuidance";
+import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 
 type Outcome = "pass" | "fail" | "na";
 
@@ -46,7 +47,7 @@ type MobileInspectionItemCardProps = {
     expanded: boolean;
     onToggle: () => void;
   };
-  onOutcomeChange: (outcome: Outcome) => void;
+  onOutcomeChange: (outcome: Outcome | null) => void;
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
@@ -126,7 +127,9 @@ export default function MobileInspectionItemCard({
                 className="one-eyrie-mobile-inspection-outcome-btn"
                 onClick={(event) => {
                   event.stopPropagation();
-                  onOutcomeChange(value);
+                  onOutcomeChange(
+                    toggleSelectedOutcome(outcome, value) ?? null
+                  );
                 }}
                 style={{
                   ...SETTINGS_BUTTON_BASE,

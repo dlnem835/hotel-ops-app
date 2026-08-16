@@ -28,7 +28,9 @@ function findInstalledStandard(
       row.standard_key === standard.key ||
       (!row.standard_key &&
         row.frequency === standard.frequency &&
-        templateNameKey(row.name) === templateNameKey(standard.name))
+        [standard.name, ...(standard.legacyNames || [])]
+          .map(templateNameKey)
+          .includes(templateNameKey(row.name)))
   );
 }
 
@@ -126,7 +128,8 @@ async function ensureDefaultLocations(
 ) {
   if (
     template.assignmentType !== "area_location" ||
-    !template.defaultAreaNames?.length
+    (!template.defaultAreaNames?.length &&
+      !template.defaultNamedLocations?.length)
   ) {
     return;
   }
@@ -152,23 +155,34 @@ async function ensureDefaultLocations(
       Number(area.id),
     ])
   );
-  const areaIds = template.defaultAreaNames
+  const namedLocations = template.defaultNamedLocations || [];
+  const areaIds = (template.defaultAreaNames || [])
     .map((name) => areaIdByName.get(templateNameKey(name)) ?? null)
     .filter((areaId): areaId is number => areaId !== null);
-  if (areaIds.length === 0) return;
+  if (areaIds.length === 0 && namedLocations.length === 0) return;
 
   const startDate = new Date().toISOString().slice(0, 10);
   const { error: insertError } = await supabase
     .from("pm_schedule_assignments")
     .insert(
-      areaIds.map((areaId) => ({
-        template_id: templateId,
-        area_id: areaId,
-        asset_label: null,
-        start_date: startDate,
-        end_date: null,
-        status: "Active",
-      }))
+      [
+        ...areaIds.map((areaId) => ({
+          template_id: templateId,
+          area_id: areaId,
+          asset_label: null,
+          start_date: startDate,
+          end_date: null,
+          status: "Active",
+        })),
+        ...namedLocations.map((name) => ({
+          template_id: templateId,
+          area_id: areaIdByName.get(templateNameKey(name)) ?? null,
+          asset_label: name,
+          start_date: startDate,
+          end_date: null,
+          status: "Active",
+        })),
+      ]
     );
   if (insertError) throw new Error(insertError.message);
 }
@@ -249,6 +263,16 @@ export async function POST(request: Request) {
         if (template.assignmentType) {
           update.assignment_type = template.assignmentType;
         }
+        if (template.defaultNamedLocations?.length) {
+          update.named_locations = true;
+        }
+        if (
+          template.legacyNames?.some(
+            (name) => templateNameKey(name) === templateNameKey(installed.name)
+          )
+        ) {
+          update.name = template.name;
+        }
         const { error } = await supabase
           .from("pm_templates")
           .update(update)
@@ -295,6 +319,7 @@ export async function POST(request: Request) {
           checklist: template.checklist,
           status: "Active",
           assignment_type: template.assignmentType ?? "area_location",
+          named_locations: Boolean(template.defaultNamedLocations?.length),
         })
         .select("id")
         .single();

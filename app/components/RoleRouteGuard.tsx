@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import { ACCOUNT_SETUP_PATH } from "@/app/lib/account-setup/account-setup-client";
 import { resolveHomeForPermissions } from "@/app/lib/resolve-app-home";
+import { isMobilePmSessionRoute } from "@/app/maintenance/lib/pm-session-return";
 import {
+  canAccessPath,
   isAccountOnboardingPath,
   isMobileAppPath,
   isPlatformAdminAppPath,
@@ -54,6 +56,15 @@ export default function RoleRouteGuard() {
 
       const shell = resolvePreferredShell();
       const onMobile = isMobileAppPath(pathname);
+      const searchParams = new URLSearchParams(window.location.search);
+
+      if (shell === "mobile" && isMobilePmSessionRoute(pathname, searchParams)) {
+        if (!canAccessPath(permissions, pathname)) {
+          redirectingRef.current = true;
+          window.location.replace(resolveHomeForPermissions(permissions));
+        }
+        return;
+      }
 
       if (shell === "mobile" && !onMobile) {
         const target = resolveHomeForPermissions(permissions);

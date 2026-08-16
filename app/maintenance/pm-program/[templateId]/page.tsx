@@ -50,6 +50,12 @@ function targetLabel(
   isEquipment: boolean
 ): string {
   if (target.areaName && target.assetLabel) {
+    if (
+      target.areaName.trim().toLowerCase() ===
+      target.assetLabel.trim().toLowerCase()
+    ) {
+      return target.assetLabel;
+    }
     return isEquipment
       ? `${target.assetLabel} — ${target.areaName}`
       : `${target.areaName} · ${target.assetLabel}`;
@@ -383,10 +389,12 @@ export default function PmProgramPage() {
                   readOnly={isCompleted}
                   uploading={Boolean(uploadingKeys[step.key])}
                   onOutcomeChange={(outcome) =>
-                    setResponses((current) => ({
-                      ...current,
-                      [step.key]: outcome,
-                    }))
+                    setResponses((current) => {
+                      const next = { ...current };
+                      if (outcome) next[step.key] = outcome;
+                      else delete next[step.key];
+                      return next;
+                    })
                   }
                   onNotesChange={(value) =>
                     setNotes((current) => ({ ...current, [step.key]: value }))

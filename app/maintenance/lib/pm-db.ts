@@ -56,6 +56,7 @@ type TemplateRow = {
   id: number;
   standard_key: string | null;
   assignment_type: string;
+  named_locations: boolean;
   name: string;
   description: string | null;
   category: string;
@@ -79,6 +80,7 @@ function normalizeTemplate(row: TemplateRow): PmTemplate {
       row.assignment_type === "equipment_unit"
         ? "equipment_unit"
         : "area_location",
+    namedLocations: Boolean(row.named_locations),
     name: String(row.name),
     description: row.description ? String(row.description) : null,
     category: row.category as PmTemplate["category"],
@@ -379,27 +381,32 @@ export async function createPmTemplate(
 ) {
   const category = await resolveTemplateCategory(supabase, input, scope);
   const isEquipmentPm = input.assignment_type === "equipment_unit";
+  const usesNamedTargets = isEquipmentPm || Boolean(input.named_locations);
+  const targetNoun = isEquipmentPm ? "equipment unit" : "location";
   const units = (input.units || []).map((unit) => ({
     assignment_id: unit.assignment_id,
     name: unit.name.trim(),
     area_id: unit.area_id ?? null,
   }));
-  if (isEquipmentPm && units.some((unit) => !unit.name)) {
-    throw new TenantRequestError(400, "Each equipment unit requires a name");
+  if (usesNamedTargets && units.some((unit) => !unit.name)) {
+    throw new TenantRequestError(400, `Each ${targetNoun} requires a name`);
   }
-  if (isEquipmentPm && units.length === 0) {
-    throw new TenantRequestError(400, "Add at least one equipment unit");
+  if (usesNamedTargets && units.length === 0) {
+    throw new TenantRequestError(400, `Add at least one ${targetNoun}`);
   }
   const unitAssignmentIds = units
     .map((unit) => unit.assignment_id)
     .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
-  if (new Set(unitAssignmentIds).size !== unitAssignmentIds.length) {
-    throw new TenantRequestError(400, "Equipment unit assignments must be unique");
+  if (
+    usesNamedTargets &&
+    new Set(unitAssignmentIds).size !== unitAssignmentIds.length
+  ) {
+    throw new TenantRequestError(400, "PM target assignments must be unique");
   }
 
   const areaIds = Array.from(
     new Set(
-      (isEquipmentPm
+      (usesNamedTargets
         ? units.map((unit) => unit.area_id)
         : input.assignment.area_ids?.length
           ? input.assignment.area_ids
@@ -426,6 +433,7 @@ export async function createPmTemplate(
     checklist: input.checklist,
     status: input.status || "Active",
     assignment_type: input.assignment_type || "area_location",
+    named_locations: Boolean(input.named_locations),
   };
 
   if (scope) {
@@ -444,7 +452,7 @@ export async function createPmTemplate(
   }
 
   const assignmentRows = (
-    isEquipmentPm
+    usesNamedTargets
       ? units.map((unit) => ({
           area_id: unit.area_id,
           asset_label: unit.name,
@@ -521,6 +529,7 @@ export async function updatePmTemplate(
       checklist: input.checklist,
       status: input.status || "Active",
       assignment_type: input.assignment_type || "area_location",
+      named_locations: Boolean(input.named_locations),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -547,29 +556,32 @@ export async function updatePmTemplate(
   }
 
   const isEquipmentPm = input.assignment_type === "equipment_unit";
+  const usesNamedTargets = isEquipmentPm || Boolean(input.named_locations);
+  const targetNoun = isEquipmentPm ? "equipment unit" : "location";
   const units = (input.units || []).map((unit) => ({
     assignment_id: unit.assignment_id,
     name: unit.name.trim(),
     area_id: unit.area_id ?? null,
   }));
-  if (isEquipmentPm && units.some((unit) => !unit.name)) {
-    throw new TenantRequestError(400, "Each equipment unit requires a name");
+  if (usesNamedTargets && units.some((unit) => !unit.name)) {
+    throw new TenantRequestError(400, `Each ${targetNoun} requires a name`);
   }
-  if (isEquipmentPm && units.length === 0) {
-    throw new TenantRequestError(400, "Add at least one equipment unit");
+  if (usesNamedTargets && units.length === 0) {
+    throw new TenantRequestError(400, `Add at least one ${targetNoun}`);
   }
   const updateUnitAssignmentIds = units
     .map((unit) => unit.assignment_id)
     .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
   if (
+    usesNamedTargets &&
     new Set(updateUnitAssignmentIds).size !== updateUnitAssignmentIds.length
   ) {
-    throw new TenantRequestError(400, "Equipment unit assignments must be unique");
+    throw new TenantRequestError(400, "PM target assignments must be unique");
   }
 
   const areaIds = Array.from(
     new Set(
-      (isEquipmentPm
+      (usesNamedTargets
         ? units.map((unit) => unit.area_id)
         : input.assignment.area_ids?.length
           ? input.assignment.area_ids
@@ -592,7 +604,7 @@ export async function updatePmTemplate(
     status: input.assignment.status || "Active",
   };
 
-  if (isEquipmentPm) {
+  if (usesNamedTargets) {
     const existingById = new Map(
       (existingAssignments || []).map((assignment) => [
         Number(assignment.id),
@@ -605,7 +617,7 @@ export async function updatePmTemplate(
       if (unit.assignment_id) {
         const existing = existingById.get(unit.assignment_id);
         if (!existing) {
-          throw new TenantRequestError(400, "Invalid equipment unit assignment");
+          throw new TenantRequestError(400, `Invalid ${targetNoun} assignment`);
         }
         retainedIds.add(unit.assignment_id);
         const { error } = await supabase

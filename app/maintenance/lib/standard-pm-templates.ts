@@ -18,8 +18,10 @@ export type StandardPmTemplateDefinition = {
   appliesTo?: PmAppliesTo;
   defaultAreaName?: string;
   defaultAreaNames?: readonly string[];
+  defaultNamedLocations?: readonly string[];
   assignmentType?: PmAssignmentType;
   defaultUnits?: readonly string[];
+  legacyNames?: readonly string[];
 };
 
 function checklist(labels: readonly string[]): PmChecklist {
@@ -334,6 +336,102 @@ export const STANDARD_PM_TEMPLATES: readonly StandardPmTemplateDefinition[] = [
       "Verify feeder appears to be operating normally.",
       "Document leaks, damage, or abnormal operation.",
       "Contact the pool service provider or qualified contractor for chemical-system repairs or service beyond routine maintenance.",
+    ]),
+  },
+  {
+    key: "one-eyrie-commercial-washing-machine-quarterly-v1",
+    name: "Commercial Washing Machine",
+    legacyNames: ["Commercial Washing Machines"],
+    description:
+      "Quarterly preventive maintenance for commercial washing machines. Each unit keeps independent completion and maintenance history.",
+    category: "Mechanical",
+    frequency: "quarterly",
+    assignedRole: "Maintenance",
+    appliesTo: "asset",
+    defaultAreaName: "Laundry",
+    assignmentType: "equipment_unit",
+    defaultUnits: [
+      "Commercial Washing Machine #1",
+      "Commercial Washing Machine #2",
+    ],
+    checklist: checklist([
+      "Clean drain trough/lint trap.",
+      "Check for loose, frayed, damaged, or overheated wiring. Create a work order or contact a qualified contractor if repair is required.",
+      "Check for water or chemical leaks.",
+      "Check and clean accessible drain lines as needed.",
+      "Grease/lubricate applicable fittings according to manufacturer recommendations.",
+      "Run a test cycle and verify proper operation.",
+    ]),
+  },
+  {
+    key: "one-eyrie-corridors-hallways-quarterly-v1",
+    name: "Corridors (Hallways)",
+    legacyNames: ["Corridors", "Hallways"],
+    description:
+      "Quarterly corridor and hallway condition inspection by floor.",
+    category: "Building",
+    frequency: "quarterly",
+    assignedRole: "Maintenance",
+    appliesTo: "public_area",
+    assignmentType: "area_location",
+    defaultNamedLocations: [
+      "1st Floor Hallway",
+      "2nd Floor Hallway",
+      "3rd Floor Hallway",
+    ],
+    checklist: checklist([
+      "Inspect walls for damage, stains, or needed paint/repairs.",
+      "Inspect wall vinyl/wall coverings for damage or needed repair.",
+      "Inspect door jambs/frames for damage or needed repair/paint.",
+      "Inspect ceiling tiles and ceiling surfaces for stains, damage, or needed replacement.",
+      "Inspect carpet/flooring for stains, damage, trip hazards, or needed repair.",
+    ]),
+  },
+  {
+    key: "one-eyrie-dining-breakfast-area-quarterly-v1",
+    name: "Dining & Breakfast Area",
+    legacyNames: [
+      "Dining & Buffet Area – Quarterly",
+      "Dining & Buffet Area - Quarterly",
+    ],
+    description:
+      "Quarterly preventive maintenance for the dining and breakfast area.",
+    category: "Building",
+    frequency: "quarterly",
+    assignedRole: "Maintenance",
+    appliesTo: "public_area",
+    defaultAreaName: "Dining & Breakfast Area",
+    checklist: checklist([
+      "Inspect overall condition of dining and breakfast area, including walls, ceilings, flooring, cabinetry and finishes. Repair or create work order as needed.",
+      "Test accessible electrical outlets for proper operation.",
+      "Inspect breakfast-area tables and chairs for damage, loose components, nicks, or scratches.",
+      "Verify proper lighting and replace failed lamps as needed.",
+      "Test GFCI outlets for proper operation.",
+    ]),
+  },
+  {
+    key: "one-eyrie-dishwasher-sanitizer-quarterly-v1",
+    name: "Dishwasher / Sanitizer",
+    legacyNames: [
+      "Dishwasher/Sanitizer",
+      "Dishwasher / Sanitizer – Quarterly",
+    ],
+    description:
+      "Quarterly inspection, cleaning, and operational service for commercial dishwashing and sanitizing equipment.",
+    category: "Mechanical",
+    frequency: "quarterly",
+    assignedRole: "Maintenance",
+    appliesTo: "asset",
+    defaultAreaName: "Kitchen",
+    checklist: checklist([
+      "Inspect the unit, doors, racks, curtains, and accessible components for damage or abnormal wear.",
+      "Inspect for water, chemical, or steam leaks and repair or create a work order as needed.",
+      "Inspect accessible electrical wiring and connections for visible damage, overheating, or looseness. Contact a qualified contractor when repair is required.",
+      "Verify wash and rinse temperatures meet the equipment manufacturer and applicable sanitation requirements.",
+      "Clean accessible screens, strainers, spray arms, nozzles, and interior surfaces as needed.",
+      "Drain and flush the unit according to manufacturer instructions.",
+      "Delime the unit according to manufacturer instructions using the property’s approved deliming product.",
+      "Run an operational cycle and verify proper filling, washing, rinsing, draining, and shutdown.",
     ]),
   },
   {

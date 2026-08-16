@@ -8,6 +8,7 @@ import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PmChecklistStep, PmStepOutcome } from "../lib/pm-types";
 import { classifyWorkOrderItemIssue } from "../lib/work-order-item-issues";
+import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 
 export type PmFailedItemWorkOrderContext = {
   templateName: string;
@@ -28,7 +29,7 @@ type PmChecklistItemRowProps = {
   readOnly?: boolean;
   uploading?: boolean;
   workOrderContext?: PmFailedItemWorkOrderContext;
-  onOutcomeChange: (outcome: PmStepOutcome) => void;
+  onOutcomeChange: (outcome: PmStepOutcome | null) => void;
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
@@ -98,7 +99,11 @@ export default function PmChecklistItemRow({
                 <button
                   key={value}
                   type="button"
-                  onClick={() => onOutcomeChange(value)}
+                  onClick={() =>
+                    onOutcomeChange(
+                      toggleSelectedOutcome(outcome, value) ?? null
+                    )
+                  }
                   style={{
                     ...SETTINGS_BUTTON_BASE,
                     minWidth: "64px",

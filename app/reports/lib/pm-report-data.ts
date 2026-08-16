@@ -100,6 +100,12 @@ function resolveAreaLabel(
 ): string {
   if (assignment.area_id != null) {
     const areaName = areaNameById.get(Number(assignment.area_id)) || "—";
+    if (
+      assignment.asset_label?.trim().toLowerCase() ===
+      areaName.trim().toLowerCase()
+    ) {
+      return assignment.asset_label.trim();
+    }
     return assignment.asset_label?.trim()
       ? `${assignment.asset_label.trim()} — ${areaName}`
       : areaName;

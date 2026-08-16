@@ -347,19 +347,6 @@ export function MobileInspectionSessionProvider({
   function setOutcome(categoryKeyValue: string, itemKeyValue: string, outcome: Outcome) {
     const key = itemResponseKey(categoryKeyValue, itemKeyValue);
     setResponses((prev) => ({ ...prev, [key]: outcome }));
-
-    if (outcome !== "fail") {
-      setNotes((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-      setPhotos((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
   }
 
   function clearOutcome(categoryKeyValue: string, itemKeyValue: string) {

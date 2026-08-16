@@ -45,6 +45,7 @@ export function buildDuplicatePmTemplateInput(
     assigned_role: template.assigned_role,
     assigned_member_id: template.assigned_member_id,
     applies_to: template.applies_to,
+    named_locations: template.namedLocations,
     checklist: cloneChecklist(template.checklist),
     status: template.status,
     assignment: {

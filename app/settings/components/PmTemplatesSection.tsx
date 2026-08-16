@@ -318,8 +318,10 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         category: result.template.category,
         frequency: result.template.frequency,
         assignment_type: result.template.assignmentType,
+        named_locations: Boolean(result.template.namedLocations),
         units:
-          result.template.assignmentType === "equipment_unit"
+          result.template.assignmentType === "equipment_unit" ||
+          result.template.namedLocations
             ? activeAssignments.map((assignment) => ({
                 assignment_id: assignment.id,
                 name:
@@ -387,7 +389,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         toPmTemplateWithAssignment(result)
       );
       duplicate.assignment_type = result.template.assignmentType;
-      if (result.template.assignmentType === "equipment_unit") {
+      duplicate.named_locations = Boolean(result.template.namedLocations);
+      if (
+        result.template.assignmentType === "equipment_unit" ||
+        result.template.namedLocations
+      ) {
         duplicate.units = activeAssignments.map((assignment) => ({
           name: assignment.asset_label || `${result.template.name} Unit`,
           area_id: assignment.area_id,
@@ -447,7 +453,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           "All standard PM templates are already added to this property."
       );
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : "Unable to add standard PMs");
+      const message =
+        error instanceof Error ? error.message : "Unable to add standard PMs";
+      setToast(`Error: ${message}`);
     } finally {
       setAddingStandards(false);
     }
@@ -564,8 +572,15 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             marginBottom: "12px",
             padding: "10px 12px",
             borderRadius: "8px",
-            border: `1px solid ${ONE_EYRIE.border}`,
-            color: ONE_EYRIE.textMuted,
+            border: `1px solid ${
+              toast.startsWith("Error:") ? "#8A3B3B" : ONE_EYRIE.border
+            }`,
+            color: toast.startsWith("Error:")
+              ? "#F0A3A3"
+              : ONE_EYRIE.textMuted,
+            background: toast.startsWith("Error:")
+              ? "rgba(139, 59, 59, 0.14)"
+              : "transparent",
             fontSize: "13px",
           }}
         >

@@ -179,20 +179,13 @@ export default function PmSessionPage() {
     ]
   );
 
-  function setOutcome(stepKey: string, outcome: PmStepOutcome) {
-    setResponses((prev) => ({ ...prev, [stepKey]: outcome }));
-    if (outcome !== "fail") {
-      setNotes((prev) => {
-        const next = { ...prev };
-        delete next[stepKey];
-        return next;
-      });
-      setPhotos((prev) => {
-        const next = { ...prev };
-        delete next[stepKey];
-        return next;
-      });
-    }
+  function setOutcome(stepKey: string, outcome: PmStepOutcome | null) {
+    setResponses((prev) => {
+      const next = { ...prev };
+      if (outcome) next[stepKey] = outcome;
+      else delete next[stepKey];
+      return next;
+    });
   }
 
   async function uploadItemPhoto(stepKey: string, file: File) {

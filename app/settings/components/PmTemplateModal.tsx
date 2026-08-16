@@ -48,7 +48,7 @@ type PmTemplateModalProps = {
   onSaved: () => void;
 };
 
-type AreaMode = "area" | "custom";
+type AreaMode = "area" | "custom" | "named";
 type UnitDraft = {
   clientKey: string;
   assignmentId?: number;
@@ -70,6 +70,7 @@ function emptyForm(): PmTemplateInput {
     category: "Custom",
     frequency: "monthly",
     assignment_type: "area_location",
+    named_locations: false,
     checklist: emptyChecklist(),
     status: "Active",
     assignment: {
@@ -142,6 +143,7 @@ export default function PmTemplateModal({
         category: initial.category || "Custom",
         frequency: initial.frequency || "monthly",
         assignment_type: initial.assignment_type || "area_location",
+        named_locations: Boolean(initial.named_locations),
         units: initial.units || [],
         checklist,
         status: initial.status || "Active",
@@ -167,7 +169,13 @@ export default function PmTemplateModal({
           areaId: unit.area_id ?? null,
         }))
       );
-      setAreaMode(hasCustomArea ? "custom" : "area");
+      setAreaMode(
+        initial.named_locations
+          ? "named"
+          : hasCustomArea
+            ? "custom"
+            : "area"
+      );
       setCustomAreaLabel(
         hasCustomArea ? initial.assignment?.asset_label || "" : ""
       );
@@ -246,6 +254,26 @@ export default function PmTemplateModal({
     });
   }
 
+  function selectNamedLocationMode() {
+    setAreaMode("named");
+    setSelectedAreaIds([]);
+    setCustomAreaLabel("");
+    updateAssignment({
+      area_id: null,
+      area_ids: [],
+      asset_label: null,
+    });
+    if (units.length === 0) {
+      setUnits([
+        {
+          clientKey: "location-1",
+          name: `${form.name.trim() || "Location"} #1`,
+          areaId: null,
+        },
+      ]);
+    }
+  }
+
   function changeAssignmentType(assignmentType: PmAssignmentType) {
     updateForm({ assignment_type: assignmentType });
     if (assignmentType === "equipment_unit" && units.length === 0) {
@@ -267,9 +295,24 @@ export default function PmTemplateModal({
         ...current,
         ...Array.from({ length: count - current.length }, (_, index) => {
           const unitNumber = current.length + index + 1;
+          const ordinalSuffix =
+            unitNumber % 100 >= 11 && unitNumber % 100 <= 13
+              ? "th"
+              : unitNumber % 10 === 1
+                ? "st"
+                : unitNumber % 10 === 2
+                  ? "nd"
+                  : unitNumber % 10 === 3
+                    ? "rd"
+                    : "th";
+          const generatedName =
+            areaMode === "named" &&
+            /corridor|hallway/i.test(form.name)
+              ? `${unitNumber}${ordinalSuffix} Floor Hallway`
+              : `${form.name.trim() || (areaMode === "named" ? "Location" : "Equipment")} #${unitNumber}`;
           return {
             clientKey: `unit-${Date.now()}-${unitNumber}`,
-            name: `${form.name.trim() || "Equipment"} #${unitNumber}`,
+            name: generatedName,
             areaId: null,
           };
         }),
@@ -312,6 +355,15 @@ export default function PmTemplateModal({
     }
 
     if (
+      assignmentType === "area_location" &&
+      areaMode === "named" &&
+      (units.length === 0 || units.some((unit) => !unit.name.trim()))
+    ) {
+      alert("Add a name for each location.");
+      return;
+    }
+
+    if (
       assignmentType === "equipment_unit" &&
       (units.length === 0 || units.some((unit) => !unit.name.trim()))
     ) {
@@ -330,8 +382,10 @@ export default function PmTemplateModal({
       const payload: PmTemplateInput = {
         ...form,
         assignment_type: assignmentType,
+        named_locations:
+          assignmentType === "area_location" && areaMode === "named",
         units:
-          assignmentType === "equipment_unit"
+          assignmentType === "equipment_unit" || areaMode === "named"
             ? units.map((unit) => ({
                 assignment_id: unit.assignmentId,
                 name: unit.name.trim(),
@@ -344,7 +398,7 @@ export default function PmTemplateModal({
         assignment: {
           ...form.assignment,
           area_id:
-            assignmentType === "equipment_unit"
+            assignmentType === "equipment_unit" || areaMode === "named"
               ? units[0]?.areaId ?? null
               : areaMode === "area"
                 ? selectedAreaIds[0] ?? null
@@ -395,6 +449,85 @@ export default function PmTemplateModal({
     fontWeight: 700,
     marginBottom: "6px",
   };
+
+  function renderNamedLocationEditor() {
+    return (
+      <div style={{ marginTop: "10px" }}>
+        <div style={{ maxWidth: "180px", marginBottom: "12px" }}>
+          <span style={labelStyle}>Number of Locations *</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={units.length || 1}
+            onChange={(event) => changeUnitCount(Number(event.target.value))}
+            style={input}
+          />
+        </div>
+        <div style={{ display: "grid", gap: "10px" }}>
+          {units.map((location, index) => (
+            <div
+              key={location.clientKey}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: "10px",
+                padding: "12px",
+                border: `1px solid ${ONE_EYRIE.border}`,
+                borderRadius: "10px",
+                background: ONE_EYRIE.surface,
+              }}
+            >
+              <label>
+                <span style={labelStyle}>Location {index + 1} Name *</span>
+                <input
+                  value={location.name}
+                  onChange={(event) =>
+                    updateUnit(location.clientKey, {
+                      name: event.target.value,
+                    })
+                  }
+                  style={input}
+                />
+              </label>
+              <label>
+                <span style={labelStyle}>Map to Room / Area</span>
+                <select
+                  value={location.areaId ? String(location.areaId) : ""}
+                  onChange={(event) =>
+                    updateUnit(location.clientKey, {
+                      areaId: event.target.value
+                        ? Number(event.target.value)
+                        : null,
+                    })
+                  }
+                  style={input}
+                >
+                  <option value="">No mapped area</option>
+                  {areaOptions.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
+            color: ONE_EYRIE.textSubtle,
+            fontSize: "11px",
+            marginTop: "8px",
+            lineHeight: 1.45,
+          }}
+        >
+          Each named location is independently completable. Mapping to an
+          existing Room / Area is optional.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={modalOverlay}>
@@ -477,6 +610,35 @@ export default function PmTemplateModal({
           {(form.assignment_type || "area_location") === "area_location" ? (
             <div>
               <span style={labelStyle}>Locations *</span>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: ONE_EYRIE.text,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  marginBottom: "10px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={areaMode === "named"}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      selectNamedLocationMode();
+                    } else {
+                      setAreaMode("area");
+                    }
+                  }}
+                />
+                Use editable named locations / floors
+              </label>
+              {areaMode === "named" ? (
+                renderNamedLocationEditor()
+              ) : (
+                <>
               <div
                 style={{
                   border: `1px solid ${ONE_EYRIE.border}`,
@@ -558,6 +720,8 @@ export default function PmTemplateModal({
                 Select one or more property locations. This remains one PM
                 template with independently completable locations.
               </div>
+                </>
+              )}
             </div>
           ) : (
             <div>
