@@ -135,7 +135,7 @@ export default function MobileInspectionSessionFooter({
           {hasGuidedInspectionUx ? (
             <button
               type="button"
-              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold"
+              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold-outline"
               disabled={saving || !previousCategoryKey}
               onClick={() => void handlePreviousSection()}
             >
