@@ -44,6 +44,9 @@ function PmTileDetailLine({ label, value }: { label: string; value: string }) {
 
 function PmTileProgressPanel({ tile }: { tile: PmTile }) {
   const { cycleHistory } = tile;
+  const hasMultipleLocations = (tile.locationCount || 1) > 1;
+  const assignmentLabel =
+    tile.assignmentType === "equipment_unit" ? "Units" : "Locations";
 
   return (
     <div
@@ -55,11 +58,17 @@ function PmTileProgressPanel({ tile }: { tile: PmTile }) {
       }}
     >
       <PmTileDetailLine
-        label="Completed"
-        value={formatPmCycleProgressLabel(
-          cycleHistory.completedCount,
-          cycleHistory.totalCount
-        )}
+        label={
+          hasMultipleLocations ? `${assignmentLabel} Completed` : "Completed"
+        }
+        value={
+          hasMultipleLocations
+            ? `${tile.completedLocationCount || 0}/${tile.locationCount}`
+            : formatPmCycleProgressLabel(
+                cycleHistory.completedCount,
+                cycleHistory.totalCount
+              )
+        }
       />
       <PmTileDetailLine label="Frequency" value={tile.frequencyLabel} />
       <PmTileDetailLine

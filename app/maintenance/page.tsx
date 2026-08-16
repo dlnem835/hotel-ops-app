@@ -89,13 +89,6 @@ export default function MaintenancePage() {
   const memberResolver = useMemberDisplayNameResolver();
   useModalScrollLock(Boolean(selectedWorkOrder));
 
-  useEffect(() => {
-    if (!selectedWorkOrder) return;
-    setWorkOrderComments(selectedWorkOrder.comments || "");
-    setWorkOrderItemIssue(selectedWorkOrder.item || "Other");
-    setCommentsSaved(false);
-  }, [selectedWorkOrder]);
-
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -141,11 +134,6 @@ export default function MaintenancePage() {
     void init();
   }, [loadDashboard]);
 
-  useEffect(() => {
-    setWorkOrderComments(selectedWorkOrder?.comments || "");
-    setCommentsSaved(false);
-  }, [selectedWorkOrder?.id]);
-
   async function startPmForAssignment(assignmentId: number) {
     setStartingPm(true);
     const response = await tenantFetch("/api/maintenance/pm-occurrences", {
@@ -168,6 +156,10 @@ export default function MaintenancePage() {
   }
 
   function handleOpenPmTile(tile: PmTile) {
+    if ((tile.locationCount || 1) > 1) {
+      router.push(`/maintenance/pm-program/${tile.templateId}`);
+      return;
+    }
     void startPmForAssignment(tile.assignmentId);
   }
 
@@ -237,6 +229,13 @@ export default function MaintenancePage() {
     if (!dashboard) return [];
     return applyWorkOrderListFilters(dashboard.workOrders, workOrderFilters);
   }, [dashboard, workOrderFilters]);
+
+  function openWorkOrderDetails(workOrder: WorkOrder) {
+    setSelectedWorkOrder(workOrder);
+    setWorkOrderComments(workOrder.comments || "");
+    setWorkOrderItemIssue(workOrder.item || "Other");
+    setCommentsSaved(false);
+  }
 
   return (
     <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-maintenance-route`}>
@@ -327,7 +326,7 @@ export default function MaintenancePage() {
                 workOrders={filteredWorkOrders}
                 workOrderFilters={workOrderFilters}
                 onWorkOrderFiltersChange={setWorkOrderFilters}
-                onOpenWorkOrder={setSelectedWorkOrder}
+                onOpenWorkOrder={openWorkOrderDetails}
               />
             </div>
           </div>

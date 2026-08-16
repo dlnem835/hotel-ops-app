@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Copy, Pencil, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import {
   formatDueStatusLabel,
   formatNextDueLabel,
@@ -12,6 +12,7 @@ import {
   PM_FREQUENCY_LABELS,
   PmAssignmentSchedule,
   PmFrequency,
+  PmTemplate,
   PmTemplateInput,
 } from "@/app/maintenance/lib/pm-types";
 import { formatPmAreaLabel } from "@/app/maintenance/lib/pm-category";
@@ -24,14 +25,28 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestHoverHandlers,
   secondaryHoverHandlers,
+  SETTINGS_BUTTON_BASE,
 } from "../lib/settings-ui-interactions";
 import { BuildingArea } from "../lib/buildings-types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import PmAssignmentGrid, { PmGridLegend } from "./PmAssignmentGrid";
 import PmTemplateModal from "./PmTemplateModal";
+import {
+  useOrganizationContext,
+  usePropertyContext,
+} from "@/app/components/TenantContextProviders";
+import { canManageStandardPmTemplates } from "@/app/maintenance/lib/standard-pm-access";
 
 type PmTemplatesSectionProps = {
   styles: Record<string, React.CSSProperties>;
+};
+
+type PmScheduleGroup = {
+  templateId: number;
+  templateName: string;
+  standardKey: string | null;
+  frequency: PmFrequency;
+  schedules: PmAssignmentSchedule[];
 };
 
 function getLocalDateString(date = new Date()) {
@@ -42,6 +57,12 @@ function getLocalDateString(date = new Date()) {
 }
 
 function areaLabel(schedule: PmAssignmentSchedule): string {
+  if (schedule.assignmentType === "equipment_unit") {
+    if (schedule.assetLabel && schedule.areaName) {
+      return `${schedule.assetLabel} — ${schedule.areaName}`;
+    }
+    return schedule.assetLabel || schedule.areaName || "Unassigned unit";
+  }
   return formatPmAreaLabel({
     areaName: schedule.areaName,
     customAreaLabel: schedule.assetLabel,
@@ -81,7 +102,29 @@ function dueStatusStyles(dueStatus: PmAssignmentSchedule["dueStatus"]) {
   }
 }
 
+function groupDueStatus(
+  schedules: PmAssignmentSchedule[]
+): PmAssignmentSchedule["dueStatus"] {
+  if (schedules.some((schedule) => schedule.dueStatus === "overdue")) {
+    return "overdue";
+  }
+  if (schedules.some((schedule) => schedule.dueStatus === "due_soon")) {
+    return "due_soon";
+  }
+  if (schedules.some((schedule) => schedule.dueStatus === "current")) {
+    return "current";
+  }
+  return "inactive";
+}
+
 export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) {
+  const { organization } = useOrganizationContext();
+  const { activeProperty } = usePropertyContext();
+  const canManageStandardPms = canManageStandardPmTemplates(
+    organization && activeProperty
+      ? { organization, activeProperty, properties: [] }
+      : null
+  );
   const {
     sectionPanel,
     sectionToolbar,
@@ -106,6 +149,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [schedules, setSchedules] = useState<PmAssignmentSchedule[]>([]);
+  const [templates, setTemplates] = useState<PmTemplate[]>([]);
   const [gridSummaries, setGridSummaries] = useState<AreaPmGridSummary[]>([]);
   const [areas, setAreas] = useState<BuildingArea[]>([]);
   const [expandedFrequencies, setExpandedFrequencies] = useState<
@@ -118,25 +162,36 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     (Partial<PmTemplateInput> & { id?: number }) | undefined
   >(undefined);
   const [toast, setToast] = useState<string | null>(null);
+  const [standardModalOpen, setStandardModalOpen] = useState(false);
+  const [addingStandards, setAddingStandards] = useState(false);
+  const [availableStandardCount, setAvailableStandardCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pmRes, areasRes] = await Promise.all([
+      const [pmRes, areasRes, standardRes] = await Promise.all([
         tenantFetch("/api/pm-templates"),
         tenantFetch("/api/buildings-areas"),
+        canManageStandardPms
+          ? tenantFetch("/api/pm-templates/standard")
+          : Promise.resolve(null),
       ]);
 
       const pmData = await pmRes.json();
       const areasData = await areasRes.json();
+      const standardData = standardRes ? await standardRes.json() : null;
 
       if (!pmRes.ok) {
         throw new Error(pmData.error || "Unable to load PM templates");
       }
 
       setSchedules(pmData.schedules || []);
+      setTemplates(pmData.templates || []);
       setGridSummaries(pmData.gridSummaries || []);
       setAreas(areasData.areas || areasData || []);
+      setAvailableStandardCount(
+        standardRes?.ok ? standardData?.available?.length || 0 : 0
+      );
     } catch (error: unknown) {
       console.error(error);
       setToast(
@@ -145,21 +200,43 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManageStandardPms]);
 
   useEffect(() => {
-    void fetchData();
+    const timeoutId = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
 
-  const filteredSchedules = useMemo(() => {
-    if (!search.trim()) return schedules;
+  const filteredScheduleGroups = useMemo(() => {
+    const grouped = new Map<number, PmScheduleGroup>();
+    for (const schedule of schedules) {
+      const existing = grouped.get(schedule.templateId);
+      if (existing) {
+        existing.schedules.push(schedule);
+      } else {
+        grouped.set(schedule.templateId, {
+          templateId: schedule.templateId,
+          templateName: schedule.templateName,
+          standardKey: schedule.standardKey,
+          frequency: schedule.frequency,
+          schedules: [schedule],
+        });
+      }
+    }
+
+    const groups = Array.from(grouped.values());
+    if (!search.trim()) return groups;
     const term = search.trim().toLowerCase();
-    return schedules.filter((entry) =>
+    return groups.filter((group) =>
       [
-        entry.templateName,
-        entry.areaName,
-        entry.assetLabel,
-        PM_FREQUENCY_LABELS[entry.frequency],
+        group.templateName,
+        PM_FREQUENCY_LABELS[group.frequency],
+        ...group.schedules.flatMap((schedule) => [
+          schedule.areaName,
+          schedule.assetLabel,
+        ]),
       ]
         .filter(Boolean)
         .join(" ")
@@ -169,15 +246,15 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   }, [schedules, search]);
 
   const schedulesByFrequency = useMemo(() => {
-    const grouped = new Map<PmFrequency, PmAssignmentSchedule[]>();
+    const grouped = new Map<PmFrequency, PmScheduleGroup[]>();
     for (const frequency of PM_FREQUENCIES) {
       grouped.set(frequency, []);
     }
-    for (const schedule of filteredSchedules) {
-      grouped.get(schedule.frequency)?.push(schedule);
+    for (const group of filteredScheduleGroups) {
+      grouped.get(group.frequency)?.push(group);
     }
     return grouped;
-  }, [filteredSchedules]);
+  }, [filteredScheduleGroups]);
 
   function toggleFrequency(frequency: PmFrequency) {
     setExpandedFrequencies((current) => {
@@ -201,6 +278,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     setEditInitial({
       assignment: {
         area_id: areaId,
+        area_ids: [areaId],
         asset_label: null,
         start_date: getLocalDateString(),
       },
@@ -216,22 +294,56 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         throw new Error(result.error || "Unable to load template");
       }
 
+      const assignments = (result.assignments || []) as Array<{
+        id: number;
+        area_id: number | null;
+        asset_label: string | null;
+        start_date: string;
+        end_date: string | null;
+        status: "Active" | "Inactive";
+      }>;
+      const activeAssignments = assignments
+        .filter((assignment) => assignment.status === "Active")
+        .sort((a, b) => a.id - b.id);
+      const selectedAssignments =
+        activeAssignments.length > 0 ? activeAssignments : assignments;
+      const primaryAssignment = selectedAssignments[0] || null;
+
       setEditingId(templateId);
       setIsDuplicate(false);
       setEditInitial({
         id: templateId,
         name: result.template.name,
         description: result.template.description,
+        category: result.template.category,
         frequency: result.template.frequency,
+        assignment_type: result.template.assignmentType,
+        units:
+          result.template.assignmentType === "equipment_unit"
+            ? activeAssignments.map((assignment) => ({
+                assignment_id: assignment.id,
+                name:
+                  assignment.asset_label ||
+                  `${result.template.name} Unit`,
+                area_id: assignment.area_id,
+              }))
+            : undefined,
         checklist: normalizeChecklist(result.template.checklist),
         status: result.template.status,
-        assignment: result.assignment
+        assignment: primaryAssignment
           ? {
-              area_id: result.assignment.area_id,
-              asset_label: result.assignment.asset_label,
-              start_date: result.assignment.start_date,
-              end_date: result.assignment.end_date,
-              status: result.assignment.status,
+              area_id:
+                selectedAssignments.find((assignment) => assignment.area_id)
+                  ?.area_id ?? null,
+              area_ids: activeAssignments
+                .map((assignment) => assignment.area_id)
+                .filter((areaId): areaId is number => areaId !== null),
+              asset_label:
+                selectedAssignments.find((assignment) => assignment.asset_label)
+                  ?.asset_label ?? null,
+              start_date: primaryAssignment.start_date,
+              end_date: primaryAssignment.end_date,
+              status: primaryAssignment.status,
             }
           : undefined,
       });
@@ -251,9 +363,49 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
       setEditingId(null);
       setIsDuplicate(true);
-      setEditInitial(
-        buildDuplicatePmTemplateInput(toPmTemplateWithAssignment(result))
+      const activeAssignments = (
+        (result.assignments || []) as Array<{
+          id: number;
+          area_id: number | null;
+          asset_label: string | null;
+          status: string;
+        }>
+      )
+        .filter((assignment) => assignment.status === "Active")
+        .sort((a, b) => a.id - b.id);
+      const areaIds = Array.from(
+        new Set(
+          activeAssignments
+            .map((assignment) => assignment.area_id)
+            .filter(
+              (id): id is number =>
+                typeof id === "number" && Number.isInteger(id) && id > 0
+            )
+        )
       );
+      const duplicate = buildDuplicatePmTemplateInput(
+        toPmTemplateWithAssignment(result)
+      );
+      duplicate.assignment_type = result.template.assignmentType;
+      if (result.template.assignmentType === "equipment_unit") {
+        duplicate.units = activeAssignments.map((assignment) => ({
+          name: assignment.asset_label || `${result.template.name} Unit`,
+          area_id: assignment.area_id,
+        }));
+        if (duplicate.assignment) {
+          duplicate.assignment.area_id = activeAssignments[0]?.area_id ?? null;
+          duplicate.assignment.area_ids = [];
+          duplicate.assignment.asset_label = null;
+        }
+      } else if (duplicate.assignment) {
+        duplicate.assignment.area_id = areaIds[0] ?? null;
+        duplicate.assignment.area_ids = areaIds;
+        duplicate.assignment.asset_label =
+          areaIds.length === 0
+            ? activeAssignments[0]?.asset_label ?? null
+            : null;
+      }
+      setEditInitial(duplicate);
       setModalOpen(true);
     } catch (error: unknown) {
       alert(
@@ -262,15 +414,96 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     }
   }
 
+  async function addStandardPms() {
+    setAddingStandards(true);
+    try {
+      const response = await tenantFetch("/api/pm-templates/standard", {
+        method: "POST",
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to add standard PMs");
+      }
+
+      await fetchData();
+      setStandardModalOpen(false);
+      const messages: string[] = [];
+      if (result.created > 0) {
+        messages.push(
+          `Added ${result.created} standard PM template${
+            result.created === 1 ? "" : "s"
+          }: ${result.addedNames.join(", ")}.`
+        );
+      }
+      if (result.adoptedNames?.length > 0) {
+        messages.push(
+          `Recognized ${result.adoptedNames.length} existing PM template${
+            result.adoptedNames.length === 1 ? "" : "s"
+          } as installed standards.`
+        );
+      }
+      setToast(
+        messages.join(" ") ||
+          "All standard PM templates are already added to this property."
+      );
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : "Unable to add standard PMs");
+    } finally {
+      setAddingStandards(false);
+    }
+  }
+
+  async function deleteTemplate(templateId: number) {
+    if (
+      !confirm("Delete this PM template? This action cannot be undone.")
+    ) {
+      return;
+    }
+
+    try {
+      const response = await tenantFetch(`/api/pm-templates/${templateId}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to delete PM template");
+      }
+
+      await fetchData();
+      setToast("PM template deleted.");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error ? error.message : "Unable to delete PM template"
+      );
+    }
+  }
+
+  const assignedTemplateIds = useMemo(
+    () => new Set(schedules.map((schedule) => schedule.templateId)),
+    [schedules]
+  );
+  const unassignedTemplates = useMemo(
+    () => templates.filter((template) => !assignedTemplateIds.has(template.id)),
+    [templates, assignedTemplateIds]
+  );
+
   const stats = useMemo(() => {
     const active = schedules.filter(
       (entry) =>
         entry.templateStatus === "Active" && entry.assignmentStatus === "Active"
     );
     return {
-      total: active.length,
-      overdue: active.filter((entry) => entry.dueStatus === "overdue").length,
-      dueSoon: active.filter((entry) => entry.dueStatus === "due_soon").length,
+      total: new Set(active.map((entry) => entry.templateId)).size,
+      overdue: new Set(
+        active
+          .filter((entry) => entry.dueStatus === "overdue")
+          .map((entry) => entry.templateId)
+      ).size,
+      dueSoon: new Set(
+        active
+          .filter((entry) => entry.dueStatus === "due_soon")
+          .map((entry) => entry.templateId)
+      ).size,
       missingAreas: gridSummaries.filter((entry) => entry.marker === "missing")
         .length,
     };
@@ -293,9 +526,30 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           />
         </div>
 
+        {canManageStandardPms && (
+          <button
+            type="button"
+            style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE }}
+            onClick={() => setStandardModalOpen(true)}
+            disabled={addingStandards}
+            title={
+              availableStandardCount > 0
+                ? `Add ${availableStandardCount} standard PM template${
+                    availableStandardCount === 1 ? "" : "s"
+                  }`
+                : "All standard PM templates are already added"
+            }
+            {...secondaryHoverHandlers(addingStandards)}
+          >
+            <Plus size={16} />
+            Add Standard PMs
+            {availableStandardCount > 0 ? ` (${availableStandardCount})` : ""}
+          </button>
+        )}
+
         <button
           type="button"
-          style={primaryButton}
+          style={{ ...primaryButton, ...SETTINGS_BUTTON_BASE }}
           onClick={openNew}
           {...forestHoverHandlers()}
         >
@@ -390,6 +644,92 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         )}
       </div>
 
+      {unassignedTemplates.length > 0 && (
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
+            Unassigned PM Templates
+          </div>
+          <div
+            style={{
+              color: ONE_EYRIE.textSubtle,
+              fontSize: "12px",
+              marginTop: "4px",
+              marginBottom: "10px",
+            }}
+          >
+            Assign one or more property areas and a start date before scheduling begins.
+          </div>
+          <div className="one-eyrie-pm-schedule-list">
+            <div className="one-eyrie-pm-schedule-header">
+              <span>PM Name</span>
+              <span>Assignment</span>
+              <span>Frequency</span>
+              <span>Category</span>
+              <span>Status</span>
+              <span />
+            </div>
+            {unassignedTemplates.map((template) => {
+              const canModify =
+                !template.standardKey || canManageStandardPms;
+              return (
+                <div
+                  key={template.id}
+                  className="one-eyrie-pm-schedule-row"
+                >
+                  <div className="one-eyrie-pm-schedule-row__name">
+                    {template.name}
+                  </div>
+                  <div className="one-eyrie-pm-schedule-row__area">
+                    Not assigned
+                  </div>
+                  <div className="one-eyrie-pm-schedule-row__meta">
+                    {PM_FREQUENCY_LABELS[template.frequency]}
+                  </div>
+                  <div className="one-eyrie-pm-schedule-row__meta">
+                    {template.category}
+                  </div>
+                  <div>
+                    <span style={statusPill}>{template.status}</span>
+                  </div>
+                  <div style={actionCell}>
+                    {canModify && (
+                      <>
+                        <button
+                          type="button"
+                          style={iconButton}
+                          title="Duplicate PM Template"
+                          onClick={() => void openDuplicate(template.id)}
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          style={iconButton}
+                          title="Edit PM template"
+                          onClick={() => void openEdit(template.id)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      </>
+                    )}
+                    {canManageStandardPms && (
+                      <button
+                        type="button"
+                        style={iconButton}
+                        title="Delete PM template"
+                        onClick={() => void deleteTemplate(template.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div>
         <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
           PM Templates by Frequency
@@ -475,34 +815,64 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                         <div className="one-eyrie-pm-schedule-list">
                           <div className="one-eyrie-pm-schedule-header">
                             <span>PM Name</span>
-                            <span>Area</span>
+                            <span>Assignment</span>
                             <span>Start Date</span>
                             <span>Next Due</span>
                             <span>Status</span>
                             <span />
                           </div>
-                          {items.map((schedule) => {
-                            const dueStyles = dueStatusStyles(schedule.dueStatus);
+                          {items.map((group) => {
+                            const dueStatus = groupDueStatus(group.schedules);
+                            const dueStyles = dueStatusStyles(dueStatus);
+                            const canModify =
+                              !group.standardKey || canManageStandardPms;
+                            const locationLabels = group.schedules.map(areaLabel);
+                            const startDates = Array.from(
+                              new Set(
+                                group.schedules.map(
+                                  (schedule) => schedule.startDate
+                                )
+                              )
+                            );
+                            const nextDueDate =
+                              group.schedules
+                                .map((schedule) => schedule.nextDueDate)
+                                .filter(
+                                  (date): date is string => Boolean(date)
+                                )
+                                .sort()[0] ?? null;
 
                             return (
                               <div
-                                key={schedule.assignmentId}
+                                key={group.templateId}
                                 className="one-eyrie-pm-schedule-row"
                               >
                                 <div className="one-eyrie-pm-schedule-row__name">
-                                  {schedule.templateName}
+                                  {group.templateName}
                                 </div>
-                                <div className="one-eyrie-pm-schedule-row__area">
-                                  {areaLabel(schedule)}
+                                <div
+                                  className="one-eyrie-pm-schedule-row__area"
+                                  title={locationLabels.join(", ")}
+                                >
+                                  {locationLabels.length === 1
+                                    ? locationLabels[0]
+                                    : `${locationLabels.length} ${
+                                        group.schedules[0]?.assignmentType ===
+                                        "equipment_unit"
+                                          ? "units"
+                                          : "locations"
+                                      }`}
                                 </div>
                                 <div className="one-eyrie-pm-schedule-row__meta">
-                                  {formatScheduleDate(schedule.startDate)}
+                                  {startDates.length === 1
+                                    ? formatScheduleDate(startDates[0])
+                                    : "Multiple"}
                                 </div>
                                 <div className="one-eyrie-pm-schedule-row__meta">
-                                  {schedule.nextDueDate
+                                  {nextDueDate
                                     ? formatNextDueLabel(
-                                        schedule.nextDueDate,
-                                        schedule.dueStatus
+                                        nextDueDate,
+                                        dueStatus
                                       )
                                     : "—"}
                                 </div>
@@ -513,26 +883,46 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                       ...dueStyles,
                                     }}
                                   >
-                                    {formatDueStatusLabel(schedule.dueStatus)}
+                                    {formatDueStatusLabel(dueStatus)}
                                   </span>
                                 </div>
                                 <div style={actionCell}>
-                                  <button
-                                    type="button"
-                                    style={iconButton}
-                                    title="Duplicate PM Template"
-                                    onClick={() => void openDuplicate(schedule.templateId)}
-                                  >
-                                    <Copy size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={iconButton}
-                                    title="Edit PM template"
-                                    onClick={() => void openEdit(schedule.templateId)}
-                                  >
-                                    <Pencil size={16} />
-                                  </button>
+                                  {canModify && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        style={iconButton}
+                                        title="Duplicate PM Template"
+                                        onClick={() =>
+                                          void openDuplicate(group.templateId)
+                                        }
+                                      >
+                                        <Copy size={16} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        style={iconButton}
+                                        title="Edit PM template"
+                                        onClick={() =>
+                                          void openEdit(group.templateId)
+                                        }
+                                      >
+                                        <Pencil size={16} />
+                                      </button>
+                                    </>
+                                  )}
+                                  {canManageStandardPms && (
+                                    <button
+                                      type="button"
+                                      style={iconButton}
+                                      title="Delete PM template"
+                                      onClick={() =>
+                                        void deleteTemplate(group.templateId)
+                                      }
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -582,6 +972,65 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           setIsDuplicate(false);
         }}
       />
+
+      {standardModalOpen && (
+        <div style={modalOverlay}>
+          <div
+            style={{ ...modalBox, width: "min(520px, 94vw)" }}
+            className="one-eyrie-modal"
+          >
+            <div style={modalHeader}>
+              <h2 style={{ margin: 0 }}>Add Standard PMs</h2>
+              <button
+                type="button"
+                style={closeButton}
+                onClick={() => setStandardModalOpen(false)}
+                disabled={addingStandards}
+                aria-label="Close"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div
+              style={{
+                color: ONE_EYRIE.textMuted,
+                fontSize: "14px",
+                lineHeight: 1.6,
+              }}
+            >
+              <p style={{ marginTop: 0 }}>
+                Add One Eyrie&apos;s standard preventive maintenance templates
+                to this property.
+              </p>
+              <p style={{ marginBottom: 0 }}>
+                These templates can be edited, assigned to one or multiple
+                locations, disabled, or deleted after they are added. Existing
+                standard templates will not be duplicated.
+              </p>
+            </div>
+            <div style={modalFooter}>
+              <button
+                type="button"
+                style={secondaryButton}
+                onClick={() => setStandardModalOpen(false)}
+                disabled={addingStandards}
+                {...secondaryHoverHandlers(addingStandards)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={primaryButton}
+                onClick={() => void addStandardPms()}
+                disabled={addingStandards || availableStandardCount === 0}
+                {...forestHoverHandlers()}
+              >
+                {addingStandards ? "Adding…" : "Add Standard PMs"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

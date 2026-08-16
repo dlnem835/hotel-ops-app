@@ -1,4 +1,5 @@
 import { InspectionPeriod } from "@/app/inspections/lib/inspection-types";
+import type { PmAssignmentType } from "./pm-types";
 import {
   WorkOrderCategory,
 } from "./work-order-categories";
@@ -85,10 +86,25 @@ export type PmCycleHistory = {
   summaryLabel: string;
 };
 
+export type PmTileLocation = {
+  assignmentId: number;
+  areaName: string | null;
+  assetLabel: string | null;
+  nextDueDate: string | null;
+  urgency: PmTileUrgency;
+  occurrenceId: number | null;
+  targetOutcome: PmTargetOutcome | null;
+  completed: boolean;
+  inProgress: boolean;
+  lastCompletedAt: string | null;
+  lastCompletedBy: string | null;
+};
+
 export type PmTile = {
   key: string;
   assignmentId: number;
   templateId: number;
+  assignmentType: PmAssignmentType;
   templateName: string;
   areaName: string | null;
   assetLabel: string | null;
@@ -105,6 +121,9 @@ export type PmTile = {
   /** UI-only label resolved from team member first name */
   lastCompletedByLabel?: string | null;
   cycleHistory: PmCycleHistory;
+  locations?: PmTileLocation[];
+  locationCount?: number;
+  completedLocationCount?: number;
 };
 
 export type PmPriorityQueueItem = {
@@ -178,7 +197,11 @@ export type PmOccurrenceStepResponse = {
 
 export type PmOccurrenceResponses = {
   steps: PmOccurrenceStepResponse[];
+  targetOutcome?: PmTargetOutcome | null;
+  sharedChecklistPrimary?: boolean;
 };
+
+export type PmTargetOutcome = "complete" | "issue_found";
 
 export type PmOccurrence = {
   id: number;

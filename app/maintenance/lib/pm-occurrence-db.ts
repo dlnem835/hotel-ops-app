@@ -298,6 +298,7 @@ export async function fetchPmOccurrenceDetail(
   return {
     occurrence,
     templateName: template.name,
+    assignmentType: template.assignmentType,
     checklist: template.checklist,
     frequency: template.frequency,
     category: template.category,

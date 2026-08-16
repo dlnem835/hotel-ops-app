@@ -63,7 +63,7 @@ export default function PmSessionPage() {
   const [areaName, setAreaName] = useState<string | null>(null);
   const [areaId, setAreaId] = useState<number | null>(null);
   const [assetLabel, setAssetLabel] = useState<string | null>(null);
-  const [dueDate, setDueDate] = useState("");
+  const [isEquipmentPm, setIsEquipmentPm] = useState(false);
   const [frequency, setFrequency] = useState("");
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [occurrenceCreatedBy, setOccurrenceCreatedBy] = useState<string | null>(null);
@@ -119,7 +119,7 @@ export default function PmSessionPage() {
       setAreaName(result.areaName);
       setAreaId(result.areaId ?? null);
       setAssetLabel(result.assetLabel);
-      setDueDate(result.occurrence.dueDate);
+      setIsEquipmentPm(result.assignmentType === "equipment_unit");
       setFrequency(result.frequency || "");
       setOccurrenceCreatedBy(result.occurrence.createdBy || null);
       setOccurrenceSavedBy(result.occurrence.lastSavedBy || null);
@@ -294,7 +294,9 @@ export default function PmSessionPage() {
 
   const locationLabel =
     areaName && assetLabel
-      ? `${areaName} · ${assetLabel}`
+      ? isEquipmentPm
+        ? `${assetLabel} — ${areaName}`
+        : `${areaName} · ${assetLabel}`
       : areaName || assetLabel || "Property-wide";
 
   const frequencyLabel =
@@ -332,7 +334,7 @@ export default function PmSessionPage() {
         >
           {isMobileSession ? (
             <Link href={pmReturnPath} className="one-eyrie-mobile-back">
-              ← PMs
+              ← {pmBackLabel}
             </Link>
           ) : (
             <button

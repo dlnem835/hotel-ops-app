@@ -178,7 +178,13 @@ export function buildCompletedPmReportRows(
       completedAtSortIso: occurrence.completedAt || completedAtIso,
       completedBy: completedBy || "—",
       completionStatus: timing,
-      completionStatusLabel: formatPmReportCompletionStatusLabel(timing),
+      completionStatusLabel: `${
+        formatPmReportCompletionStatusLabel(timing)
+      }${
+        occurrence.responses?.targetOutcome === "issue_found"
+          ? " · Issue Found"
+          : ""
+      }`,
       cycleLabel: getReportCycleLabel(schedule.frequency, occurrence.dueDate, 0),
     });
   }
@@ -254,9 +260,12 @@ export function buildFailedPmItemReportRows(
 
     const stepLabels =
       source.stepLabelsByTemplateId.get(schedule.templateId) ?? new Map<string, string>();
-    const failedSteps = (occurrence.responses?.steps ?? []).filter(
-      (step) => step.outcome === "fail"
-    );
+    const failedSteps =
+      occurrence.responses?.sharedChecklistPrimary === false
+        ? []
+        : (occurrence.responses?.steps ?? []).filter(
+            (step) => step.outcome === "fail"
+          );
 
     for (const step of failedSteps) {
       rows.push({

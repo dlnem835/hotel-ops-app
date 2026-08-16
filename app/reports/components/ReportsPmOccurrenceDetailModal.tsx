@@ -21,6 +21,7 @@ type PmOccurrenceDetailResponse = {
   templateName: string;
   checklist: PmChecklist;
   frequency: string;
+  assignmentType?: "area_location" | "equipment_unit";
   areaId: number | null;
   areaName: string | null;
   assetLabel: string | null;
@@ -40,6 +41,7 @@ type PmOccurrenceDetailResponse = {
         notes?: string;
         photoUrl?: string | null;
       }>;
+      targetOutcome?: "complete" | "issue_found" | null;
     };
   };
 };
@@ -136,7 +138,9 @@ export default function ReportsPmOccurrenceDetailModal({
 
   const locationLabel =
     detail?.areaName && detail.assetLabel
-      ? `${detail.areaName} · ${detail.assetLabel}`
+      ? detail.assignmentType === "equipment_unit"
+        ? `${detail.assetLabel} — ${detail.areaName}`
+        : `${detail.areaName} · ${detail.assetLabel}`
       : detail?.areaName || detail?.assetLabel || "Property-wide";
 
   const frequencyLabel =
@@ -215,6 +219,34 @@ export default function ReportsPmOccurrenceDetailModal({
                 }
                 completedAt={detail.occurrence.completedAt || null}
               />
+              {detail.occurrence.responses?.targetOutcome ? (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    marginTop: "10px",
+                    padding: "5px 9px",
+                    borderRadius: "999px",
+                    border: `1px solid ${
+                      detail.occurrence.responses.targetOutcome ===
+                      "issue_found"
+                        ? "#8A3B3B"
+                        : "#2F6B4F"
+                    }`,
+                    color:
+                      detail.occurrence.responses.targetOutcome ===
+                      "issue_found"
+                        ? "#F0A3A3"
+                        : "#8FD3AE",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                  }}
+                >
+                  Target result:{" "}
+                  {detail.occurrence.responses.targetOutcome === "issue_found"
+                    ? "Issue Found"
+                    : "Complete"}
+                </div>
+              ) : null}
 
               {allSteps.length === 0 ? (
                 <p style={{ margin: "16px 0 0", color: ONE_EYRIE.textMuted }}>

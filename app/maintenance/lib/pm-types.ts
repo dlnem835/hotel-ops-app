@@ -63,6 +63,11 @@ export const PM_APPLIES_TO_LABELS: Record<PmAppliesTo, string> = {
 };
 
 export const PM_TEMPLATE_STATUSES = ["Active", "Inactive"] as const;
+export const PM_ASSIGNMENT_TYPES = ["area_location", "equipment_unit"] as const;
+export const PM_ASSIGNMENT_TYPE_LABELS: Record<PmAssignmentType, string> = {
+  area_location: "Area / Location PM",
+  equipment_unit: "Equipment / Unit PM",
+};
 
 export const PM_ASSIGNED_ROLES = [
   "Management",
@@ -76,6 +81,7 @@ export type PmCategory = (typeof PM_CATEGORIES)[number];
 export type PmFrequency = (typeof PM_FREQUENCIES)[number];
 export type PmAppliesTo = (typeof PM_APPLIES_TO)[number];
 export type PmTemplateStatus = (typeof PM_TEMPLATE_STATUSES)[number];
+export type PmAssignmentType = (typeof PM_ASSIGNMENT_TYPES)[number];
 
 export type PmChecklistStep = {
   key: string;
@@ -114,6 +120,8 @@ export type PmScheduleAssignment = {
 
 export type PmTemplate = {
   id: number;
+  standardKey: string | null;
+  assignmentType: PmAssignmentType;
   name: string;
   description: string | null;
   category: PmCategory;
@@ -133,6 +141,8 @@ export type PmDueStatus = "missing" | "current" | "due_soon" | "overdue" | "inac
 export type PmAssignmentSchedule = {
   assignmentId: number;
   templateId: number;
+  standardKey: string | null;
+  assignmentType: PmAssignmentType;
   templateName: string;
   frequency: PmFrequency;
   category: PmCategory;
@@ -170,8 +180,16 @@ export type PmTemplateInput = {
   applies_to?: PmAppliesTo;
   checklist: PmChecklist;
   status?: PmTemplateStatus;
-  assignment: {
+  assignment_type?: PmAssignmentType;
+  units?: Array<{
+    assignment_id?: number;
+    name: string;
     area_id?: number | null;
+  }>;
+  assignment: {
+    unassigned?: boolean;
+    area_id?: number | null;
+    area_ids?: number[];
     asset_label?: string | null;
     start_date: string;
     end_date?: string | null;

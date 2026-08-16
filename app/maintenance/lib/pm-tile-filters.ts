@@ -65,6 +65,11 @@ export function filterPmTilesBySearch(tiles: PmTile[], search: string): PmTile[]
       tile.templateName.toLowerCase().includes(term) ||
       (tile.areaName || "").toLowerCase().includes(term) ||
       (tile.assetLabel || "").toLowerCase().includes(term) ||
+      (tile.locations || []).some(
+        (location) =>
+          (location.areaName || "").toLowerCase().includes(term) ||
+          (location.assetLabel || "").toLowerCase().includes(term)
+      ) ||
       tile.frequencyLabel.toLowerCase().includes(term)
   );
 }

@@ -98,6 +98,10 @@ export default function MobilePmGridSection() {
 
   async function handleOpenPm(tile: PmTile) {
     if (startingKey) return;
+    if ((tile.locationCount || 1) > 1) {
+      router.push(`/maintenance/pm-program/${tile.templateId}?from=mobile`);
+      return;
+    }
     setStartingKey(tile.key);
     setError(null);
 

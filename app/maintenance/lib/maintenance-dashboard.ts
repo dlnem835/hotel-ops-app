@@ -59,6 +59,77 @@ function parseOccurrenceDueDate(iso: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function groupPmTilesByTemplate(tiles: PmTile[]): PmTile[] {
+  const groups = new Map<number, PmTile[]>();
+  for (const tile of tiles) {
+    const group = groups.get(tile.templateId);
+    if (group) group.push(tile);
+    else groups.set(tile.templateId, [tile]);
+  }
+
+  return Array.from(groups.values()).map((group) => {
+    const itemLabel =
+      group[0]?.assignmentType === "equipment_unit" ? "units" : "locations";
+    const locations = group.flatMap((tile) => tile.locations || []);
+    const completedLocationCount = locations.filter(
+      (location) => location.completed || Boolean(location.targetOutcome)
+    ).length;
+    const allCompleted =
+      locations.length > 0 && locations.every((location) => location.completed);
+    const hasProgress =
+      completedLocationCount > 0 ||
+      locations.some((location) => location.inProgress);
+    const candidates = allCompleted
+      ? group
+      : group.filter((tile) => tile.urgency !== "completed");
+    const primary = [...(candidates.length > 0 ? candidates : group)].sort(
+      (a, b) => {
+        const urgencyDiff =
+          PM_URGENCY_ORDER[a.urgency] - PM_URGENCY_ORDER[b.urgency];
+        if (urgencyDiff !== 0) return urgencyDiff;
+        return (a.nextDueDate || "").localeCompare(b.nextDueDate || "");
+      }
+    )[0];
+
+    if (group.length === 1) {
+      return {
+        ...primary,
+        locationCount: locations.length,
+        completedLocationCount,
+      };
+    }
+
+    const completedLocations = locations
+      .filter((location) => location.completed && location.lastCompletedAt)
+      .sort((a, b) =>
+        String(b.lastCompletedAt).localeCompare(String(a.lastCompletedAt))
+      );
+
+    return {
+      ...primary,
+      key: `template-${primary.templateId}`,
+      areaName: null,
+      assetLabel: `${locations.length} ${itemLabel}`,
+      urgency: allCompleted ? ("completed" as const) : primary.urgency,
+      dueStatusLine: allCompleted
+        ? `${locations.length}/${locations.length} ${itemLabel} complete`
+        : `${
+            hasProgress ? "In Progress · " : ""
+          }${completedLocationCount}/${locations.length} ${itemLabel} complete`,
+      occurrenceId: null,
+      lastCompletedAt: allCompleted
+        ? completedLocations[0]?.lastCompletedAt ?? null
+        : null,
+      lastCompletedBy: allCompleted
+        ? completedLocations[0]?.lastCompletedBy ?? null
+        : null,
+      locations,
+      locationCount: locations.length,
+      completedLocationCount,
+    };
+  });
+}
+
 function buildPmHealthSummary(
   pmTiles: PmTile[],
   completedByKey: Map<string, OccurrenceRow>,
@@ -107,6 +178,7 @@ function buildPmHealthSummary(
 }
 
 function countFailedSteps(responses: PmOccurrenceResponses | null | undefined): number {
+  if (responses?.sharedChecklistPrimary === false) return 0;
   return (responses?.steps || []).filter((step) => step.outcome === "fail").length;
 }
 
@@ -127,6 +199,7 @@ export async function buildMaintenanceDashboard(
     .map((schedule) => ({
       assignmentId: schedule.assignmentId,
       templateId: schedule.templateId,
+      assignmentType: schedule.assignmentType,
       startDate: schedule.startDate,
       endDate: schedule.endDate,
       frequency: schedule.frequency,
@@ -189,8 +262,6 @@ export async function buildMaintenanceDashboard(
   const lastCompletedByAssignment = new Map<number, LastCompletion>();
   let failedPmItems = 0;
 
-  const yearStart = new Date(now.getFullYear(), 0, 1);
-
   for (const row of occurrences) {
     const assignmentId = Number(row.assignment_id);
     const key = occurrenceKey(assignmentId, String(row.due_date));
@@ -229,11 +300,20 @@ export async function buildMaintenanceDashboard(
       schedule.nextDueDate
   );
 
-  const pmTiles: PmTile[] = activeSchedules.map((schedule) => {
+  const assignmentPmTiles: PmTile[] = activeSchedules.map((schedule) => {
     const dueDate = schedule.nextDueDate!;
     const key = occurrenceKey(schedule.assignmentId, dueDate);
     const isCompleted = completedByKey.has(key);
     const openOccurrence = openByKey.get(key);
+    const completedOccurrence = completedByKey.get(key);
+    const currentOccurrence = openOccurrence || completedOccurrence;
+    const targetOutcome =
+      currentOccurrence?.responses?.targetOutcome === "complete" ||
+      currentOccurrence?.responses?.targetOutcome === "issue_found"
+        ? currentOccurrence.responses.targetOutcome
+        : isCompleted
+          ? "complete"
+          : null;
     const urgency = classifyPmUrgency(dueDate, isCompleted, now);
     const lastCompletion = lastCompletedByAssignment.get(schedule.assignmentId);
     const occurrenceByDueDate =
@@ -251,6 +331,7 @@ export async function buildMaintenanceDashboard(
       key: `${schedule.assignmentId}-${dueDate}`,
       assignmentId: schedule.assignmentId,
       templateId: schedule.templateId,
+      assignmentType: schedule.assignmentType,
       templateName: schedule.templateName,
       areaName: schedule.areaName,
       assetLabel: schedule.assetLabel,
@@ -265,8 +346,28 @@ export async function buildMaintenanceDashboard(
       lastCompletedAt: lastCompletion?.completedAt ?? null,
       lastCompletedBy: lastCompletion?.completedBy ?? null,
       cycleHistory,
+      locations: [
+        {
+          assignmentId: schedule.assignmentId,
+          areaName: schedule.areaName,
+          assetLabel: schedule.assetLabel,
+          nextDueDate: dueDate,
+          urgency,
+          occurrenceId:
+            openOccurrence?.id ?? completedByKey.get(key)?.id ?? null,
+          targetOutcome,
+          completed: isCompleted,
+          inProgress: Boolean(openOccurrence),
+          lastCompletedAt: lastCompletion?.completedAt ?? null,
+          lastCompletedBy: lastCompletion?.completedBy ?? null,
+        },
+      ],
+      locationCount: 1,
+      completedLocationCount: isCompleted ? 1 : 0,
     };
   });
+
+  const pmTiles = groupPmTilesByTemplate(assignmentPmTiles);
 
   pmTiles.sort((a, b) => {
     const urgencyDiff = PM_URGENCY_ORDER[a.urgency] - PM_URGENCY_ORDER[b.urgency];
@@ -315,11 +416,20 @@ export async function buildMaintenanceDashboard(
       : null,
   }));
 
-  const metrics = buildMetrics(pmTiles, workOrders, completedByKey, now);
-  const completedByPeriod = countCompletedPmsByAllPeriods(completedByKey, pmTiles, now);
+  const metrics = buildMetrics(
+    assignmentPmTiles,
+    workOrders,
+    completedByKey,
+    now
+  );
+  const completedByPeriod = countCompletedPmsByAllPeriods(
+    completedByKey,
+    assignmentPmTiles,
+    now
+  );
   const completedByKpiPeriod = countCompletedPmsByKpiPeriods(
     completedByKey,
-    pmTiles,
+    assignmentPmTiles,
     now
   );
   const complianceSchedules = pmData.schedules
@@ -350,7 +460,12 @@ export async function buildMaintenanceDashboard(
   }).length;
 
   const engineeringPerformance: EngineeringPerformance = {
-    pmHealth: buildPmHealthSummary(pmTiles, completedByKey, missedByKey, now),
+    pmHealth: buildPmHealthSummary(
+      assignmentPmTiles,
+      completedByKey,
+      missedByKey,
+      now
+    ),
     performanceByPeriod,
     completedMtd: completedByPeriod.mtd,
     completedByPeriod,

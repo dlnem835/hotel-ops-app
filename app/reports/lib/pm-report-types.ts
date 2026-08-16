@@ -102,6 +102,8 @@ export type PmReportSourceOccurrence = {
       outcome: "pass" | "fail" | "na";
       notes?: string;
     }>;
+    sharedChecklistPrimary?: boolean;
+    targetOutcome?: "complete" | "issue_found" | null;
   } | null;
   completedAt: string | null;
   completedBy: string | null;

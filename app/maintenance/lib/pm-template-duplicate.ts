@@ -39,6 +39,7 @@ export function buildDuplicatePmTemplateInput(
   return {
     name: target.name ?? buildDuplicatePmTemplateName(template.name),
     description: template.description,
+    category: template.category,
     frequency: template.frequency,
     estimated_minutes: template.estimated_minutes,
     assigned_role: template.assigned_role,
@@ -51,6 +52,14 @@ export function buildDuplicatePmTemplateInput(
         target.area_id !== undefined
           ? target.area_id
           : (assignment?.area_id ?? null),
+      area_ids:
+        target.area_id !== undefined
+          ? target.area_id
+            ? [target.area_id]
+            : []
+          : assignment?.area_id
+            ? [assignment.area_id]
+            : [],
       asset_label:
         target.asset_label !== undefined
           ? target.asset_label

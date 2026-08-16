@@ -99,7 +99,10 @@ function resolveAreaLabel(
   areaNameById: Map<number, string>
 ): string {
   if (assignment.area_id != null) {
-    return areaNameById.get(Number(assignment.area_id)) || "—";
+    const areaName = areaNameById.get(Number(assignment.area_id)) || "—";
+    return assignment.asset_label?.trim()
+      ? `${assignment.asset_label.trim()} — ${areaName}`
+      : areaName;
   }
 
   return assignment.asset_label?.trim() || "—";

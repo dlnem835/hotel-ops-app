@@ -54,6 +54,8 @@ type AssignmentRow = {
 
 type TemplateRow = {
   id: number;
+  standard_key: string | null;
+  assignment_type: string;
   name: string;
   description: string | null;
   category: string;
@@ -72,6 +74,11 @@ type TemplateRow = {
 function normalizeTemplate(row: TemplateRow): PmTemplate {
   return {
     id: Number(row.id),
+    standardKey: row.standard_key ? String(row.standard_key) : null,
+    assignmentType:
+      row.assignment_type === "equipment_unit"
+        ? "equipment_unit"
+        : "area_location",
     name: String(row.name),
     description: row.description ? String(row.description) : null,
     category: row.category as PmTemplate["category"],
@@ -115,6 +122,8 @@ function buildAssignmentSchedule(
   return {
     assignmentId: Number(assignment.id),
     templateId: template.id,
+    standardKey: template.standardKey,
+    assignmentType: template.assignmentType,
     templateName: template.name,
     frequency: template.frequency,
     category: template.category,
@@ -182,6 +191,7 @@ export async function fetchPmDashboardData(
   for (const row of (data || []) as TemplateRow[]) {
     const template = normalizeTemplate(row);
     for (const assignment of row.pm_schedule_assignments || []) {
+      if (String(assignment.status) !== "Active") continue;
       const areaName = assignment.area_id
         ? areaNameById.get(Number(assignment.area_id)) || null
         : null;
@@ -291,9 +301,17 @@ export async function fetchPmTemplateById(
 
   const row = data as TemplateRow;
   const template = normalizeTemplate(row);
-  const assignment = row.pm_schedule_assignments?.[0] || null;
+  const assignments = row.pm_schedule_assignments || [];
+  const assignment =
+    assignments.find((entry) => String(entry.status) === "Active") ||
+    assignments[0] ||
+    null;
 
-  return { template, assignment };
+  return {
+    template,
+    assignment,
+    assignments,
+  };
 }
 
 async function resolveTemplateCategory(
@@ -334,12 +352,67 @@ async function resolveTemplateCategory(
   });
 }
 
+async function assertPmAreasInTenant(
+  supabase: SupabaseClient,
+  areaIds: number[],
+  scope?: PmTenantScope
+) {
+  if (!scope || areaIds.length === 0) return;
+
+  const { data, error } = await supabase
+    .from("buildings_and_areas")
+    .select("id")
+    .in("id", areaIds)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
+
+  if (error) throw new Error(error.message);
+  if ((data || []).length !== areaIds.length) {
+    throw new TenantRequestError(400, "One or more selected PM areas are invalid");
+  }
+}
+
 export async function createPmTemplate(
   supabase: SupabaseClient,
   input: PmTemplateInput,
   scope?: PmTenantScope
 ) {
   const category = await resolveTemplateCategory(supabase, input, scope);
+  const isEquipmentPm = input.assignment_type === "equipment_unit";
+  const units = (input.units || []).map((unit) => ({
+    assignment_id: unit.assignment_id,
+    name: unit.name.trim(),
+    area_id: unit.area_id ?? null,
+  }));
+  if (isEquipmentPm && units.some((unit) => !unit.name)) {
+    throw new TenantRequestError(400, "Each equipment unit requires a name");
+  }
+  if (isEquipmentPm && units.length === 0) {
+    throw new TenantRequestError(400, "Add at least one equipment unit");
+  }
+  const unitAssignmentIds = units
+    .map((unit) => unit.assignment_id)
+    .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
+  if (new Set(unitAssignmentIds).size !== unitAssignmentIds.length) {
+    throw new TenantRequestError(400, "Equipment unit assignments must be unique");
+  }
+
+  const areaIds = Array.from(
+    new Set(
+      (isEquipmentPm
+        ? units.map((unit) => unit.area_id)
+        : input.assignment.area_ids?.length
+          ? input.assignment.area_ids
+          : input.assignment.area_id
+            ? [input.assignment.area_id]
+            : []
+      ).filter(
+        (id): id is number =>
+          typeof id === "number" && Number.isInteger(id) && id > 0
+      )
+    )
+  );
+  await assertPmAreasInTenant(supabase, areaIds, scope);
 
   const templateInsert: Record<string, unknown> = {
     name: input.name,
@@ -352,6 +425,7 @@ export async function createPmTemplate(
     applies_to: input.applies_to || "asset",
     checklist: input.checklist,
     status: input.status || "Active",
+    assignment_type: input.assignment_type || "area_location",
   };
 
   if (scope) {
@@ -369,18 +443,42 @@ export async function createPmTemplate(
     throw new Error(templateError.message);
   }
 
-  const { data: assignmentRow, error: assignmentError } = await supabase
-    .from("pm_schedule_assignments")
-    .insert({
+  const assignmentRows = (
+    isEquipmentPm
+      ? units.map((unit) => ({
+          area_id: unit.area_id,
+          asset_label: unit.name,
+        }))
+      : input.assignment.unassigned
+        ? []
+        : areaIds.length > 0
+          ? areaIds.map((areaId) => ({
+              area_id: areaId,
+              asset_label: null,
+            }))
+          : [
+              {
+                area_id: null,
+                asset_label: input.assignment.asset_label || null,
+              },
+            ]
+  ).map((assignment) => ({
       template_id: templateRow.id,
-      area_id: input.assignment.area_id ?? null,
-      asset_label: input.assignment.asset_label || null,
+      area_id: assignment.area_id,
+      asset_label: assignment.asset_label,
       start_date: input.assignment.start_date,
       end_date: input.assignment.end_date || null,
       status: input.assignment.status || "Active",
-    })
-    .select("*")
-    .single();
+    }));
+
+  const assignmentResult =
+    assignmentRows.length > 0
+      ? await supabase
+          .from("pm_schedule_assignments")
+          .insert(assignmentRows)
+          .select("*")
+      : { data: [], error: null };
+  const { data: createdAssignments, error: assignmentError } = assignmentResult;
 
   if (assignmentError) {
     await supabase.from("pm_templates").delete().eq("id", templateRow.id);
@@ -392,7 +490,8 @@ export async function createPmTemplate(
       ...(templateRow as TemplateRow),
       pm_schedule_assignments: [],
     }),
-    assignment: assignmentRow as AssignmentRow,
+    assignment: (createdAssignments?.[0] as AssignmentRow | undefined) || null,
+    assignments: (createdAssignments || []) as AssignmentRow[],
   };
 }
 
@@ -421,6 +520,7 @@ export async function updatePmTemplate(
       applies_to: input.applies_to || "asset",
       checklist: input.checklist,
       status: input.status || "Active",
+      assignment_type: input.assignment_type || "area_location",
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -439,41 +539,186 @@ export async function updatePmTemplate(
 
   const { data: existingAssignments, error: fetchError } = await supabase
     .from("pm_schedule_assignments")
-    .select("id")
-    .eq("template_id", id)
-    .limit(1);
+    .select("id, area_id, asset_label, status")
+    .eq("template_id", id);
 
   if (fetchError) {
     throw new Error(fetchError.message);
   }
 
-  const assignmentPayload = {
-    area_id: input.assignment.area_id ?? null,
-    asset_label: input.assignment.asset_label || null,
+  const isEquipmentPm = input.assignment_type === "equipment_unit";
+  const units = (input.units || []).map((unit) => ({
+    assignment_id: unit.assignment_id,
+    name: unit.name.trim(),
+    area_id: unit.area_id ?? null,
+  }));
+  if (isEquipmentPm && units.some((unit) => !unit.name)) {
+    throw new TenantRequestError(400, "Each equipment unit requires a name");
+  }
+  if (isEquipmentPm && units.length === 0) {
+    throw new TenantRequestError(400, "Add at least one equipment unit");
+  }
+  const updateUnitAssignmentIds = units
+    .map((unit) => unit.assignment_id)
+    .filter((assignmentId): assignmentId is number => Boolean(assignmentId));
+  if (
+    new Set(updateUnitAssignmentIds).size !== updateUnitAssignmentIds.length
+  ) {
+    throw new TenantRequestError(400, "Equipment unit assignments must be unique");
+  }
+
+  const areaIds = Array.from(
+    new Set(
+      (isEquipmentPm
+        ? units.map((unit) => unit.area_id)
+        : input.assignment.area_ids?.length
+          ? input.assignment.area_ids
+          : input.assignment.area_id
+            ? [input.assignment.area_id]
+            : []
+      ).filter(
+        (areaId): areaId is number =>
+          typeof areaId === "number" &&
+          Number.isInteger(areaId) &&
+          areaId > 0
+      )
+    )
+  );
+  await assertPmAreasInTenant(supabase, areaIds, scope);
+
+  const assignmentSchedule = {
     start_date: input.assignment.start_date,
     end_date: input.assignment.end_date || null,
     status: input.assignment.status || "Active",
   };
 
-  if (existingAssignments?.[0]) {
-    const { error: assignmentError } = await supabase
-      .from("pm_schedule_assignments")
-      .update(assignmentPayload)
-      .eq("id", existingAssignments[0].id);
+  if (isEquipmentPm) {
+    const existingById = new Map(
+      (existingAssignments || []).map((assignment) => [
+        Number(assignment.id),
+        assignment,
+      ])
+    );
+    const retainedIds = new Set<number>();
 
-    if (assignmentError) {
-      throw new Error(assignmentError.message);
+    for (const unit of units) {
+      if (unit.assignment_id) {
+        const existing = existingById.get(unit.assignment_id);
+        if (!existing) {
+          throw new TenantRequestError(400, "Invalid equipment unit assignment");
+        }
+        retainedIds.add(unit.assignment_id);
+        const { error } = await supabase
+          .from("pm_schedule_assignments")
+          .update({
+            area_id: unit.area_id,
+            asset_label: unit.name,
+            ...assignmentSchedule,
+          })
+          .eq("id", unit.assignment_id)
+          .eq("template_id", id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { data, error } = await supabase
+          .from("pm_schedule_assignments")
+          .insert({
+            template_id: id,
+            area_id: unit.area_id,
+            asset_label: unit.name,
+            ...assignmentSchedule,
+          })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        retainedIds.add(Number(data.id));
+      }
+    }
+
+    for (const assignment of existingAssignments || []) {
+      if (
+        !retainedIds.has(Number(assignment.id)) &&
+        assignment.status !== "Inactive"
+      ) {
+        const { error } = await supabase
+          .from("pm_schedule_assignments")
+          .update({ status: "Inactive" })
+          .eq("id", assignment.id)
+          .eq("template_id", id);
+        if (error) throw new Error(error.message);
+      }
+    }
+  } else if (areaIds.length > 0) {
+    const selectedAreaIds = new Set(areaIds);
+    const existingAreaIds = new Set<number>();
+
+    for (const assignment of existingAssignments || []) {
+      const assignmentAreaId = assignment.area_id ? Number(assignment.area_id) : null;
+      if (assignmentAreaId && selectedAreaIds.has(assignmentAreaId)) {
+        existingAreaIds.add(assignmentAreaId);
+        const { error } = await supabase
+          .from("pm_schedule_assignments")
+          .update({
+            area_id: assignmentAreaId,
+            asset_label: null,
+            ...assignmentSchedule,
+          })
+          .eq("id", assignment.id);
+        if (error) throw new Error(error.message);
+      } else if (assignment.status !== "Inactive") {
+        const { error } = await supabase
+          .from("pm_schedule_assignments")
+          .update({ status: "Inactive" })
+          .eq("id", assignment.id);
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    const newAreaIds = areaIds.filter((areaId) => !existingAreaIds.has(areaId));
+    if (newAreaIds.length > 0) {
+      const { error } = await supabase.from("pm_schedule_assignments").insert(
+        newAreaIds.map((areaId) => ({
+          template_id: id,
+          area_id: areaId,
+          asset_label: null,
+          ...assignmentSchedule,
+        }))
+      );
+      if (error) throw new Error(error.message);
     }
   } else {
-    const { error: assignmentError } = await supabase
-      .from("pm_schedule_assignments")
-      .insert({
-        template_id: id,
-        ...assignmentPayload,
-      });
+    const customAssignment = (existingAssignments || []).find(
+      (assignment) => assignment.area_id === null
+    );
 
-    if (assignmentError) {
-      throw new Error(assignmentError.message);
+    for (const assignment of existingAssignments || []) {
+      if (assignment.id === customAssignment?.id) continue;
+      if (assignment.status !== "Inactive") {
+        const { error } = await supabase
+          .from("pm_schedule_assignments")
+          .update({ status: "Inactive" })
+          .eq("id", assignment.id);
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    if (customAssignment) {
+      const { error } = await supabase
+        .from("pm_schedule_assignments")
+        .update({
+          area_id: null,
+          asset_label: input.assignment.asset_label || null,
+          ...assignmentSchedule,
+        })
+        .eq("id", customAssignment.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("pm_schedule_assignments").insert({
+        template_id: id,
+        area_id: null,
+        asset_label: input.assignment.asset_label || null,
+        ...assignmentSchedule,
+      });
+      if (error) throw new Error(error.message);
     }
   }
 
