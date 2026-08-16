@@ -15,9 +15,9 @@ import {
 } from "../MobileInspectionSessionProvider";
 import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 import {
-  getHousekeepingVacantReadyItemGuidance,
-  isHousekeepingVacantReadyTemplate,
-} from "@/app/inspections/lib/housekeeping-vacant-ready-ui";
+  getInspectionItemGuidance,
+  isGuidedInspectionTemplate,
+} from "@/app/inspections/lib/inspection-guidance-ui";
 
 export default function MobileInspectionCategoryPage() {
   const params = useParams<{ id: string; categoryKey: string }>();
@@ -58,7 +58,7 @@ export default function MobileInspectionCategoryPage() {
 
   const items = category?.items ?? [];
   const progress = categoryProgress(categoryKey);
-  const isVacantReady = isHousekeepingVacantReadyTemplate(
+  const hasGuidedInspectionUx = isGuidedInspectionTemplate(
     templateStandardKey,
     templateName
   );
@@ -108,8 +108,13 @@ export default function MobileInspectionCategoryPage() {
         {items.map((item) => {
           const responseKey = itemResponseKey(categoryKey, item.key);
           const outcome = responses[responseKey];
-          const guidance = isVacantReady
-            ? getHousekeepingVacantReadyItemGuidance(categoryKey, item.key)
+          const guidance = hasGuidedInspectionUx
+            ? getInspectionItemGuidance(
+                templateStandardKey,
+                templateName,
+                categoryKey,
+                item.key
+              )
             : null;
 
           return (
@@ -137,7 +142,7 @@ export default function MobileInspectionCategoryPage() {
                   : undefined
               }
               onOutcomeChange={(value) => {
-                if (isVacantReady && outcome === value) {
+                if (hasGuidedInspectionUx && outcome === value) {
                   clearOutcome(categoryKey, item.key);
                   return;
                 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMobileInspectionSession } from "@/app/mobile/inspections/session/[id]/MobileInspectionSessionProvider";
-import { isHousekeepingVacantReadyTemplate } from "@/app/inspections/lib/housekeeping-vacant-ready-ui";
+import { isGuidedInspectionTemplate } from "@/app/inspections/lib/inspection-guidance-ui";
 
 const SECTION_VALIDATION_MESSAGE =
   "Please complete all required inspection items before continuing to the next section.";
@@ -46,7 +46,7 @@ export default function MobileInspectionSessionFooter({
     validationState.responseSnapshot === responses
       ? validationState.message
       : null;
-  const isVacantReady = isHousekeepingVacantReadyTemplate(
+  const hasGuidedInspectionUx = isGuidedInspectionTemplate(
     templateStandardKey,
     templateName
   );
@@ -114,7 +114,7 @@ export default function MobileInspectionSessionFooter({
     return (
       <div
         className={`one-eyrie-mobile-inspection-session-footer${
-          isVacantReady ? " one-eyrie-mobile-inspection-session-footer--vacant-ready" : ""
+          hasGuidedInspectionUx ? " one-eyrie-mobile-inspection-session-footer--guided" : ""
         }`}
       >
         {validationMessage ? (
@@ -127,15 +127,15 @@ export default function MobileInspectionSessionFooter({
         ) : null}
         <div
           className={`one-eyrie-mobile-inspection-session-footer__actions one-eyrie-mobile-inspection-session-footer__actions--category${
-            isVacantReady
-              ? " one-eyrie-mobile-inspection-session-footer__actions--vacant-ready"
+            hasGuidedInspectionUx
+              ? " one-eyrie-mobile-inspection-session-footer__actions--guided"
               : ""
           }`}
         >
-          {isVacantReady ? (
+          {hasGuidedInspectionUx ? (
             <button
               type="button"
-              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--ghost"
+              className="one-eyrie-mobile-btn one-eyrie-mobile-btn--gold"
               disabled={saving || !previousCategoryKey}
               onClick={() => void handlePreviousSection()}
             >
@@ -143,7 +143,7 @@ export default function MobileInspectionSessionFooter({
             </button>
           ) : null}
 
-          {isVacantReady && !nextCategoryKey ? (
+          {hasGuidedInspectionUx && !nextCategoryKey ? (
             <button
               type="button"
               className="one-eyrie-mobile-btn one-eyrie-mobile-inspection-complete-btn"
@@ -156,14 +156,14 @@ export default function MobileInspectionSessionFooter({
             <button
               type="button"
               className={`one-eyrie-mobile-btn ${
-                isVacantReady
+                hasGuidedInspectionUx
                   ? "one-eyrie-mobile-btn--gold"
                   : "one-eyrie-mobile-btn--gold-outline"
               }`}
               disabled={saving || !categoryKey}
               onClick={() => void handleNextSection()}
             >
-              Next Section{isVacantReady ? " →" : ""}
+              Next Section{hasGuidedInspectionUx ? " →" : ""}
             </button>
           )}
         </div>

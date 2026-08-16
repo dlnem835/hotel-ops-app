@@ -14,7 +14,7 @@ export const GENERAL_INSPECTION_STANDARDS = [
   "Missing or damaged components",
 ] as const;
 
-type ItemGuidance = {
+export type ItemGuidance = {
   label: string;
   inspect: readonly string[];
 };

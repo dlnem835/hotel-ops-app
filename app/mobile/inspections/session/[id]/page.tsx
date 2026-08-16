@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import CompletedInspectionReview from "@/app/inspections/components/CompletedInspectionReview";
 import { GeneralInspectionStandards } from "@/app/inspections/components/InspectionGuidance";
-import { isHousekeepingVacantReadyTemplate } from "@/app/inspections/lib/housekeeping-vacant-ready-ui";
+import { isGuidedInspectionTemplate } from "@/app/inspections/lib/inspection-guidance-ui";
 import { useMobileInspectionSession } from "./MobileInspectionSessionProvider";
 import MobileInspectionSessionFooter from "../../components/MobileInspectionSessionFooter";
 
@@ -96,7 +96,7 @@ export default function MobileInspectionSessionHubPage() {
         </div>
       </header>
 
-      {isHousekeepingVacantReadyTemplate(templateStandardKey, templateName) ? (
+      {isGuidedInspectionTemplate(templateStandardKey, templateName) ? (
         <GeneralInspectionStandards />
       ) : null}
 

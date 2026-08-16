@@ -33,9 +33,9 @@ import {
   InspectionItemGuidanceHeading,
 } from "../../components/InspectionGuidance";
 import {
-  getHousekeepingVacantReadyItemGuidance,
-  isHousekeepingVacantReadyTemplate,
-} from "../../lib/housekeeping-vacant-ready-ui";
+  getInspectionItemGuidance,
+  isGuidedInspectionTemplate,
+} from "../../lib/inspection-guidance-ui";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -243,7 +243,7 @@ export default function InspectionSessionPage() {
 
   const scoreDisplay = liveScore ? formatInspectionScoreDisplay(liveScore) : null;
   const isCompleted = status === "completed";
-  const showVacantReadyGuidance = isHousekeepingVacantReadyTemplate(
+  const showInspectionGuidance = isGuidedInspectionTemplate(
     templateStandardKey,
     templateName
   );
@@ -489,7 +489,7 @@ export default function InspectionSessionPage() {
           className="inspection-mobile-session-body"
           style={{ flex: 1, overflowY: "auto", padding: "24px 32px 120px" }}
         >
-          {showVacantReadyGuidance ? <GeneralInspectionStandards /> : null}
+          {showInspectionGuidance ? <GeneralInspectionStandards /> : null}
 
           {content?.categories.map((category) => (
             <InspectionCategorySection
@@ -504,8 +504,13 @@ export default function InspectionSessionPage() {
               {category.items.map((item, index) => {
                 const key = itemKey(category.key, item.key);
                 const outcome = responses[key];
-                const guidance = showVacantReadyGuidance
-                  ? getHousekeepingVacantReadyItemGuidance(category.key, item.key)
+                const guidance = showInspectionGuidance
+                  ? getInspectionItemGuidance(
+                      templateStandardKey,
+                      templateName,
+                      category.key,
+                      item.key
+                    )
                   : null;
                 const guidanceExpanded = expandedGuidanceItemKey === key;
                 return (

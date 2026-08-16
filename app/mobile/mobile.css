@@ -1208,7 +1208,7 @@
   grid-template-columns: 1fr;
 }
 
-.one-eyrie-mobile-inspection-session-footer--vacant-ready {
+.one-eyrie-mobile-inspection-session-footer--guided {
   position: sticky;
   bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 20;
@@ -1220,16 +1220,16 @@
   backdrop-filter: blur(8px);
 }
 
-.one-eyrie-mobile-inspection-session-footer__actions--vacant-ready {
+.one-eyrie-mobile-inspection-session-footer__actions--guided {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 }
 
-.one-eyrie-mobile-inspection-session-footer__actions--vacant-ready .one-eyrie-mobile-btn {
+.one-eyrie-mobile-inspection-session-footer__actions--guided .one-eyrie-mobile-btn {
   min-height: 52px;
   padding-inline: 10px;
 }
 
-.one-eyrie-mobile-inspection-session-footer__actions--vacant-ready
+.one-eyrie-mobile-inspection-session-footer__actions--guided
   .one-eyrie-mobile-btn:disabled {
   cursor: not-allowed;
 }
