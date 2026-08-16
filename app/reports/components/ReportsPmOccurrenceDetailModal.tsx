@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import PmChecklistItemRow from "@/app/maintenance/components/PmChecklistItemRow";
 import PmSessionMetadata from "@/app/maintenance/components/PmSessionMetadata";
+import type { PmStoredTargetOutcome } from "@/app/maintenance/lib/maintenance-types";
 import { PM_FREQUENCY_LABELS, type PmChecklist, type PmStepOutcome } from "@/app/maintenance/lib/pm-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -41,7 +42,9 @@ type PmOccurrenceDetailResponse = {
         notes?: string;
         photoUrl?: string | null;
       }>;
-      targetOutcome?: "complete" | "issue_found" | null;
+      targetOutcome?: PmStoredTargetOutcome | null;
+      targetNotes?: string;
+      targetPhotoUrl?: string | null;
     };
   };
 };
@@ -228,13 +231,15 @@ export default function ReportsPmOccurrenceDetailModal({
                     borderRadius: "999px",
                     border: `1px solid ${
                       detail.occurrence.responses.targetOutcome ===
-                      "issue_found"
+                        "issue_found" ||
+                      detail.occurrence.responses.targetOutcome === "fail"
                         ? "#8A3B3B"
                         : "#2F6B4F"
                     }`,
                     color:
                       detail.occurrence.responses.targetOutcome ===
-                      "issue_found"
+                        "issue_found" ||
+                      detail.occurrence.responses.targetOutcome === "fail"
                         ? "#F0A3A3"
                         : "#8FD3AE",
                     fontSize: "12px",
@@ -242,10 +247,41 @@ export default function ReportsPmOccurrenceDetailModal({
                   }}
                 >
                   Target result:{" "}
-                  {detail.occurrence.responses.targetOutcome === "issue_found"
-                    ? "Issue Found"
-                    : "Complete"}
+                  {detail.occurrence.responses.targetOutcome ===
+                    "issue_found" ||
+                  detail.occurrence.responses.targetOutcome === "fail"
+                    ? "Fail"
+                    : detail.occurrence.responses.targetOutcome === "na"
+                      ? "N/A"
+                      : "Pass"}
                 </div>
+              ) : null}
+              {detail.occurrence.responses?.targetNotes ? (
+                <div
+                  style={{
+                    color: ONE_EYRIE.textMuted,
+                    fontSize: "13px",
+                    marginTop: "8px",
+                  }}
+                >
+                  Deficiency: {detail.occurrence.responses.targetNotes}
+                </div>
+              ) : null}
+              {detail.occurrence.responses?.targetPhotoUrl ? (
+                <a
+                  href={detail.occurrence.responses.targetPhotoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-block",
+                    color: ONE_EYRIE.gold,
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    marginTop: "8px",
+                  }}
+                >
+                  View deficiency photo
+                </a>
               ) : null}
 
               {allSteps.length === 0 ? (

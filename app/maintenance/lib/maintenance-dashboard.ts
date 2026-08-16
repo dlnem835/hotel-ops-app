@@ -307,13 +307,17 @@ export async function buildMaintenanceDashboard(
     const openOccurrence = openByKey.get(key);
     const completedOccurrence = completedByKey.get(key);
     const currentOccurrence = openOccurrence || completedOccurrence;
+    const storedTargetOutcome = currentOccurrence?.responses?.targetOutcome;
     const targetOutcome =
-      currentOccurrence?.responses?.targetOutcome === "complete" ||
-      currentOccurrence?.responses?.targetOutcome === "issue_found"
-        ? currentOccurrence.responses.targetOutcome
-        : isCompleted
-          ? "complete"
-          : null;
+      storedTargetOutcome === "pass" ||
+      storedTargetOutcome === "fail" ||
+      storedTargetOutcome === "na"
+        ? storedTargetOutcome
+        : storedTargetOutcome === "issue_found"
+          ? "fail"
+          : storedTargetOutcome === "complete" || isCompleted
+            ? "pass"
+            : null;
     const urgency = classifyPmUrgency(dueDate, isCompleted, now);
     const lastCompletion = lastCompletedByAssignment.get(schedule.assignmentId);
     const occurrenceByDueDate =

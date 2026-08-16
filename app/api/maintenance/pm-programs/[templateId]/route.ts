@@ -69,11 +69,36 @@ export async function PATCH(request: Request, context: RouteContext) {
         : {};
     const targetOutcomes: Record<string, PmTargetOutcome | null> = {};
     for (const [assignmentId, value] of Object.entries(rawOutcomes)) {
-      if (value !== null && value !== "complete" && value !== "issue_found") {
+      if (
+        value !== null &&
+        value !== "pass" &&
+        value !== "fail" &&
+        value !== "na"
+      ) {
         throw new TenantRequestError(400, "Invalid PM target outcome");
       }
       targetOutcomes[assignmentId] = value as PmTargetOutcome | null;
     }
+    const rawNotes =
+      body.target_notes && typeof body.target_notes === "object"
+        ? body.target_notes
+        : {};
+    const targetNotes = Object.fromEntries(
+      Object.entries(rawNotes).map(([assignmentId, value]) => [
+        assignmentId,
+        String(value ?? "").slice(0, 240),
+      ])
+    );
+    const rawPhotoUrls =
+      body.target_photo_urls && typeof body.target_photo_urls === "object"
+        ? body.target_photo_urls
+        : {};
+    const targetPhotoUrls = Object.fromEntries(
+      Object.entries(rawPhotoUrls).map(([assignmentId, value]) => [
+        assignmentId,
+        value == null ? null : String(value),
+      ])
+    );
 
     const responses =
       body.responses && Array.isArray(body.responses.steps)
@@ -87,6 +112,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         sessionNotes:
           body.session_notes == null ? null : String(body.session_notes),
         targetOutcomes,
+        targetNotes,
+        targetPhotoUrls,
         complete: body.status === "completed",
         actor: user.id,
       },

@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { AlertTriangle, Check, CheckCircle2 } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
-import PmChecklistItemRow from "../../components/PmChecklistItemRow";
+import PmProgramTargetRow from "../../components/PmProgramTargetRow";
 import PmSessionMetadata from "../../components/PmSessionMetadata";
 import WorkOrderModal, {
   type WorkOrderModalInitialValues,
 } from "../../components/WorkOrderModal";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
-import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   GOLD_FILLED_BUTTON,
   GOLD_OUTLINE_ACTION_BUTTON,
@@ -28,7 +27,6 @@ import type {
   PmProgramSession,
   PmProgramSessionTarget,
 } from "../../lib/pm-program-session-db";
-import type { PmStepOutcome } from "../../lib/pm-types";
 import { PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { classifyWorkOrderItemIssue } from "../../lib/work-order-item-issues";
 import {
@@ -42,8 +40,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-type ResponseMap = Record<string, PmStepOutcome | undefined>;
 
 function targetLabel(
   target: PmProgramSessionTarget,
@@ -63,6 +59,29 @@ function targetLabel(
   return target.assetLabel || target.areaName || "Property-wide";
 }
 
+function targetDisplay(
+  target: PmProgramSessionTarget,
+  isEquipment: boolean
+): { name: string; location: string | null } {
+  if (isEquipment) {
+    return {
+      name: target.assetLabel || target.areaName || "Property-wide",
+      location:
+        target.assetLabel && target.areaName ? target.areaName : null,
+    };
+  }
+  return {
+    name: target.assetLabel || target.areaName || "Property-wide",
+    location:
+      target.assetLabel &&
+      target.areaName &&
+      target.assetLabel.trim().toLowerCase() !==
+        target.areaName.trim().toLowerCase()
+        ? target.areaName
+        : null,
+  };
+}
+
 export default function PmProgramPage() {
   const params = useParams<{ templateId: string }>();
   const searchParams = useSearchParams();
@@ -74,12 +93,15 @@ export default function PmProgramPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<PmProgramSession | null>(null);
-  const [responses, setResponses] = useState<ResponseMap>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [photos, setPhotos] = useState<Record<string, string>>({});
-  const [uploadingKeys, setUploadingKeys] = useState<Record<string, boolean>>({});
   const [targetOutcomes, setTargetOutcomes] = useState<
     Record<number, PmTargetOutcome | null>
+  >({});
+  const [targetNotes, setTargetNotes] = useState<Record<number, string>>({});
+  const [targetPhotos, setTargetPhotos] = useState<
+    Record<number, string | null>
+  >({});
+  const [targetUploading, setTargetUploading] = useState<
+    Record<number, boolean>
   >({});
   const [sessionNotes, setSessionNotes] = useState("");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -91,24 +113,29 @@ export default function PmProgramPage() {
   const memberResolver = useMemberDisplayNameResolver();
 
   function applySession(nextSession: PmProgramSession) {
-    const nextResponses: ResponseMap = {};
-    const nextNotes: Record<string, string> = {};
-    const nextPhotos: Record<string, string> = {};
-    for (const step of nextSession.responses?.steps || []) {
-      nextResponses[step.stepKey] = step.outcome;
-      if (step.notes) nextNotes[step.stepKey] = step.notes;
-      if (step.photoUrl) nextPhotos[step.stepKey] = step.photoUrl;
-    }
     setSession(nextSession);
-    setResponses(nextResponses);
-    setNotes(nextNotes);
-    setPhotos(nextPhotos);
     setSessionNotes(nextSession.sessionNotes || "");
     setTargetOutcomes(
       Object.fromEntries(
         nextSession.targets.map((target) => [
           target.assignmentId,
           target.outcome,
+        ])
+      )
+    );
+    setTargetNotes(
+      Object.fromEntries(
+        nextSession.targets.map((target) => [
+          target.assignmentId,
+          target.notes,
+        ])
+      )
+    );
+    setTargetPhotos(
+      Object.fromEntries(
+        nextSession.targets.map((target) => [
+          target.assignmentId,
+          target.photoUrl,
         ])
       )
     );
@@ -182,29 +209,15 @@ export default function PmProgramPage() {
   const markedCount = sortedTargets.filter(
     (target) => Boolean(targetOutcomes[target.assignmentId])
   ).length;
-  const requiredStepsAnswered = allSteps
-    .filter((step) => step.required)
-    .every((step) => Boolean(responses[step.key]));
   const allTargetsMarked =
     sortedTargets.length > 0 && markedCount === sortedTargets.length;
   const canComplete =
-    requiredStepsAnswered &&
     allTargetsMarked &&
     !saving &&
-    !Object.values(uploadingKeys).some(Boolean);
+    !Object.values(targetUploading).some(Boolean);
 
   function buildResponsesPayload(): PmOccurrenceResponses {
-    return {
-      steps: allSteps
-        .filter((step) => responses[step.key])
-        .map((step) => ({
-          stepKey: step.key,
-          outcome: responses[step.key] as PmStepOutcome,
-          notes: responses[step.key] === "fail" ? notes[step.key] : undefined,
-          photoUrl:
-            responses[step.key] === "fail" ? photos[step.key] || null : null,
-        })),
-    };
+    return session?.responses || { steps: [] };
   }
 
   async function saveProgram(complete: boolean) {
@@ -222,6 +235,8 @@ export default function PmProgramPage() {
             responses: buildResponsesPayload(),
             session_notes: sessionNotes,
             target_outcomes: targetOutcomes,
+            target_notes: targetNotes,
+            target_photo_urls: targetPhotos,
             status: complete ? "completed" : "open",
           }),
         }
@@ -248,54 +263,77 @@ export default function PmProgramPage() {
     }
   }
 
-  async function uploadItemPhoto(stepKey: string, file: File) {
-    if (!session?.uploadOccurrenceId) return;
-    setUploadingKeys((current) => ({ ...current, [stepKey]: true }));
+  async function uploadTargetPhoto(
+    target: PmProgramSessionTarget,
+    file: File
+  ) {
+    if (!target.occurrenceId) return;
+    setTargetUploading((current) => ({
+      ...current,
+      [target.assignmentId]: true,
+    }));
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("stepKey", stepKey);
+    formData.append("stepKey", `target-${target.assignmentId}`);
     const response = await tenantFetch(
-      `/api/maintenance/pm-occurrences/${session.uploadOccurrenceId}/item-photo`,
+      `/api/maintenance/pm-occurrences/${target.occurrenceId}/item-photo`,
       { method: "POST", body: formData }
     );
-    setUploadingKeys((current) => ({ ...current, [stepKey]: false }));
+    setTargetUploading((current) => ({
+      ...current,
+      [target.assignmentId]: false,
+    }));
     if (!response.ok) {
       setError("Unable to upload photo.");
       return;
     }
     const result = await response.json();
-    setPhotos((current) => ({ ...current, [stepKey]: result.photoUrl }));
+    setTargetPhotos((current) => ({
+      ...current,
+      [target.assignmentId]: result.photoUrl,
+    }));
   }
 
   function markTarget(
     target: PmProgramSessionTarget,
-    outcome: PmTargetOutcome
+    outcome: PmTargetOutcome | null
   ) {
-    const nextOutcome =
-      targetOutcomes[target.assignmentId] === outcome ? null : outcome;
     setTargetOutcomes((current) => ({
       ...current,
-      [target.assignmentId]: nextOutcome,
+      [target.assignmentId]: outcome,
     }));
-    if (nextOutcome !== "issue_found") return;
+  }
 
+  function buildTargetWorkOrder(
+    target: PmProgramSessionTarget
+  ): WorkOrderModalInitialValues {
     const label = targetLabel(target, Boolean(isEquipment));
-    setWorkOrderInitial({
-      subject: `PM issue: ${session?.templateName || "Preventive Maintenance"}`,
-      description: "",
+    const note = targetNotes[target.assignmentId] || "";
+    return {
+      subject: `PM fail: ${session?.templateName || "Preventive Maintenance"}`,
+      description: note,
       item: classifyWorkOrderItemIssue({
         structuredItem: session?.templateName || "Preventive Maintenance",
+        description: note,
       }),
       priority: "Important",
       area_id: target.areaId,
       area_label: label,
+      lock_location: true,
       source_module: "Maintenance",
       source_record_id: target.occurrenceId
         ? String(target.occurrenceId)
         : String(templateId),
-      source_note: `${session?.templateName || "PM"} · Issue found at ${label}`,
+      source_note: `${session?.templateName || "PM"} · ${label}${
+        note ? ` — ${note}` : ""
+      }`,
+      photo_url: targetPhotos[target.assignmentId] || null,
       created_by: currentUserName,
-    });
+    };
+  }
+
+  function openTargetWorkOrder(initial: WorkOrderModalInitialValues) {
+    setWorkOrderInitial(initial);
     setWorkOrderModalOpen(true);
   }
 
@@ -377,41 +415,38 @@ export default function PmProgramPage() {
               />
             </header>
 
-            <div style={{ display: "grid", gap: "10px" }}>
-              {allSteps.map((step, index) => (
-                <PmChecklistItemRow
-                  key={step.key}
-                  step={step}
-                  index={index}
-                  outcome={responses[step.key] || null}
-                  notes={notes[step.key] || ""}
-                  photoUrl={photos[step.key] || null}
-                  readOnly={isCompleted}
-                  uploading={Boolean(uploadingKeys[step.key])}
-                  onOutcomeChange={(outcome) =>
-                    setResponses((current) => {
-                      const next = { ...current };
-                      if (outcome) next[step.key] = outcome;
-                      else delete next[step.key];
-                      return next;
-                    })
-                  }
-                  onNotesChange={(value) =>
-                    setNotes((current) => ({ ...current, [step.key]: value }))
-                  }
-                  onPhotoSelect={(file) =>
-                    void uploadItemPhoto(step.key, file)
-                  }
-                  onPhotoRemove={() =>
-                    setPhotos((current) => {
-                      const next = { ...current };
-                      delete next[step.key];
-                      return next;
-                    })
-                  }
-                />
-              ))}
-            </div>
+            <section>
+              <h2
+                style={{
+                  color: ONE_EYRIE.text,
+                  margin: "0 0 12px",
+                  fontSize: "20px",
+                }}
+              >
+                PM Checklist
+              </h2>
+              <div style={{ display: "grid", gap: "10px" }}>
+                {allSteps.map((step, index) => (
+                  <div
+                    key={step.key}
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      background:
+                        index % 2 === 0
+                          ? ONE_EYRIE.row
+                          : ONE_EYRIE.surfaceInset,
+                      border: `1px solid ${ONE_EYRIE.borderDivider}`,
+                      color: ONE_EYRIE.text,
+                      fontWeight: 700,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {step.label}
+                  </div>
+                ))}
+              </div>
+            </section>
 
             <section
               style={{
@@ -439,99 +474,59 @@ export default function PmProgramPage() {
                     fontWeight: 800,
                   }}
                 >
-                  {markedCount} of {sortedTargets.length} {targetNounPlural} marked
+                  {markedCount} of {sortedTargets.length} {targetNounPlural} completed
                 </span>
               </div>
 
               <div style={{ display: "grid", gap: "10px" }}>
-                {sortedTargets.map((target) => {
+                {sortedTargets.map((target, index) => {
                   const outcome = targetOutcomes[target.assignmentId] || null;
+                  const display = targetDisplay(
+                    target,
+                    Boolean(isEquipment)
+                  );
                   return (
-                    <div
+                    <PmProgramTargetRow
                       key={target.assignmentId}
-                      style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
-                        padding: "12px 14px",
-                        borderRadius: "10px",
-                        border: `1px solid ${
-                          outcome === "issue_found"
-                            ? FLAT_RED.border
-                            : outcome === "complete"
-                              ? FOREST.border
-                              : ONE_EYRIE.border
-                        }`,
-                        background: ONE_EYRIE.surfaceInset,
-                      }}
-                    >
-                      <span style={{ color: ONE_EYRIE.text, fontWeight: 800 }}>
-                        {targetLabel(target, Boolean(isEquipment))}
-                      </span>
-                      {isCompleted ? (
-                        <span
-                          style={{
-                            color:
-                              outcome === "issue_found"
-                                ? FLAT_RED.text
-                                : FOREST.text,
-                            fontSize: "12px",
-                            fontWeight: 800,
-                          }}
-                        >
-                          {outcome === "issue_found"
-                            ? "Issue Found"
-                            : "Complete"}
-                        </span>
-                      ) : (
-                        <span style={{ display: "flex", gap: "8px" }}>
-                          <button
-                            type="button"
-                            onClick={() => markTarget(target, "complete")}
-                            style={{
-                              ...GOLD_OUTLINE_ACTION_BUTTON,
-                              borderColor:
-                                outcome === "complete"
-                                  ? FOREST.border
-                                  : ONE_EYRIE.gold,
-                              color:
-                                outcome === "complete"
-                                  ? FOREST.text
-                                  : ONE_EYRIE.gold,
-                            }}
-                            className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--sm"
-                          >
-                            {outcome === "complete" ? (
-                              <CheckCircle2 size={14} />
-                            ) : (
-                              <Check size={14} />
-                            )}
-                            Complete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => markTarget(target, "issue_found")}
-                            style={{
-                              ...GOLD_OUTLINE_ACTION_BUTTON,
-                              borderColor:
-                                outcome === "issue_found"
-                                  ? FLAT_RED.border
-                                  : ONE_EYRIE.gold,
-                              color:
-                                outcome === "issue_found"
-                                  ? FLAT_RED.text
-                                  : ONE_EYRIE.gold,
-                            }}
-                            className="one-eyrie-btn one-eyrie-btn--gold-outline one-eyrie-btn--sm"
-                          >
-                            <AlertTriangle size={14} />
-                            Issue Found
-                          </button>
-                        </span>
+                      index={index}
+                      name={display.name}
+                      location={display.location}
+                      outcome={outcome}
+                      notes={targetNotes[target.assignmentId] || ""}
+                      photoUrl={targetPhotos[target.assignmentId] || null}
+                      readOnly={Boolean(isCompleted)}
+                      uploading={Boolean(
+                        targetUploading[target.assignmentId]
                       )}
-                    </div>
+                      workOrderInitial={buildTargetWorkOrder(target)}
+                      onOutcomeChange={(nextOutcome) =>
+                        markTarget(target, nextOutcome)
+                      }
+                      onNotesChange={(value) =>
+                        setTargetNotes((current) => ({
+                          ...current,
+                          [target.assignmentId]: value,
+                        }))
+                      }
+                      onPhotoSelect={(file) =>
+                        void uploadTargetPhoto(target, file)
+                      }
+                      onPhotoRemove={() =>
+                        setTargetPhotos((current) => ({
+                          ...current,
+                          [target.assignmentId]: null,
+                        }))
+                      }
+                      onCreateWorkOrder={(initial) => {
+                        openTargetWorkOrder({
+                          ...initial,
+                          description:
+                            targetNotes[target.assignmentId] || "",
+                          photo_url:
+                            targetPhotos[target.assignmentId] || null,
+                        });
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -600,7 +595,7 @@ export default function PmProgramPage() {
                     title={
                       canComplete
                         ? "Complete PM"
-                        : `Answer required checklist items and mark every ${targetNoun}`
+                        : `Select Pass, Fail, or N/A for every ${targetNoun}`
                     }
                     style={{
                       ...GOLD_FILLED_BUTTON,

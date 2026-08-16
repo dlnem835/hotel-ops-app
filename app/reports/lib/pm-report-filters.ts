@@ -181,8 +181,9 @@ export function buildCompletedPmReportRows(
       completionStatusLabel: `${
         formatPmReportCompletionStatusLabel(timing)
       }${
-        occurrence.responses?.targetOutcome === "issue_found"
-          ? " · Issue Found"
+        occurrence.responses?.targetOutcome === "issue_found" ||
+        occurrence.responses?.targetOutcome === "fail"
+          ? " · Fail"
           : ""
       }`,
       cycleLabel: getReportCycleLabel(schedule.frequency, occurrence.dueDate, 0),

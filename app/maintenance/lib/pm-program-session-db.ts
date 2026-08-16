@@ -26,6 +26,8 @@ export type PmProgramSessionTarget = {
   areaName: string | null;
   assetLabel: string | null;
   outcome: PmTargetOutcome | null;
+  notes: string;
+  photoUrl: string | null;
   occurrenceStatus: PmOccurrence["status"] | null;
 };
 
@@ -68,8 +70,14 @@ function normalizeTargetOutcome(
   occurrence: PmOccurrence | null
 ): PmTargetOutcome | null {
   const outcome = occurrence?.responses?.targetOutcome;
-  if (outcome === "complete" || outcome === "issue_found") return outcome;
-  return occurrence?.status === "completed" ? "complete" : null;
+  if (outcome === "pass" || outcome === "fail" || outcome === "na") {
+    return outcome;
+  }
+  // Preserve existing grouped PM history created before target-level
+  // Pass/Fail/N/A was introduced.
+  if (outcome === "complete") return "pass";
+  if (outcome === "issue_found") return "fail";
+  return occurrence?.status === "completed" ? "pass" : null;
 }
 
 async function loadProgramState(
@@ -214,6 +222,8 @@ function buildSession(
         ? String(entry.assignment.asset_label)
         : null,
       outcome: normalizeTargetOutcome(entry.occurrence),
+      notes: entry.occurrence?.responses?.targetNotes || "",
+      photoUrl: entry.occurrence?.responses?.targetPhotoUrl || null,
       occurrenceStatus: entry.occurrence?.status ?? null,
     })),
     uploadOccurrenceId:
@@ -275,6 +285,8 @@ export async function savePmProgramSession(
     responses: PmOccurrenceResponses;
     sessionNotes?: string | null;
     targetOutcomes: Record<string, PmTargetOutcome | null>;
+    targetNotes: Record<string, string>;
+    targetPhotoUrls: Record<string, string | null>;
     complete?: boolean;
     actor: string | null;
   },
@@ -287,36 +299,31 @@ export async function savePmProgramSession(
     scope
   );
   const primaryAssignmentId = session.targets[0]?.assignmentId ?? null;
-  const responseByKey = new Map(
-    (input.responses?.steps || []).map((response) => [
-      response.stepKey,
-      response,
-    ])
-  );
-
-  if (input.complete) {
-    const requiredKeys = session.checklist.categories.flatMap((category) =>
-      category.steps
-        .filter((step) => step.required)
-        .map((step) => step.key)
-    );
-    if (requiredKeys.some((key) => !responseByKey.has(key))) {
-      throw new TenantRequestError(
-        400,
-        "Answer every required checklist item before completing this PM"
-      );
-    }
-  }
-
   for (const target of session.targets) {
-    const outcome =
-      input.targetOutcomes[String(target.assignmentId)] ??
-      target.outcome ??
-      null;
+    const assignmentKey = String(target.assignmentId);
+    const outcome = Object.prototype.hasOwnProperty.call(
+      input.targetOutcomes,
+      assignmentKey
+    )
+      ? input.targetOutcomes[assignmentKey]
+      : target.outcome;
+    const notes = Object.prototype.hasOwnProperty.call(
+      input.targetNotes,
+      assignmentKey
+    )
+      ? input.targetNotes[assignmentKey]
+      : target.notes;
+    const photoUrl = Object.prototype.hasOwnProperty.call(
+      input.targetPhotoUrls,
+      assignmentKey
+    )
+      ? input.targetPhotoUrls[assignmentKey]
+      : target.photoUrl;
     if (
       outcome !== null &&
-      outcome !== "complete" &&
-      outcome !== "issue_found"
+      outcome !== "pass" &&
+      outcome !== "fail" &&
+      outcome !== "na"
     ) {
       throw new TenantRequestError(400, "Invalid PM target outcome");
     }
@@ -337,6 +344,8 @@ export async function savePmProgramSession(
         responses: {
           steps: input.responses?.steps || [],
           targetOutcome: outcome,
+          targetNotes: notes || "",
+          targetPhotoUrl: photoUrl || null,
           sharedChecklistPrimary:
             target.assignmentId === primaryAssignmentId,
         },

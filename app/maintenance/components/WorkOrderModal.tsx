@@ -24,6 +24,7 @@ import "./work-order-modal.css";
 
 export type WorkOrderModalInitialValues = Partial<WorkOrderInput> & {
   subject?: string;
+  lock_location?: boolean;
 };
 
 type WorkOrderModalProps = {
@@ -85,37 +86,41 @@ export default function WorkOrderModal({
   useEffect(() => {
     if (!open) return;
 
-    setSubject(initialValues?.subject ?? "");
-    setDescription(
-      initialValues?.description !== undefined && initialValues?.description !== null
-        ? initialValues.description
-        : initialValues?.source_note || ""
-    );
-    const initialItem = String(initialValues?.item || "").trim();
-    setItem(
-      isWorkOrderItemIssue(initialItem)
-        ? initialItem
-        : initialValues?.source_module
-          ? classifyWorkOrderItemIssue({
-              structuredItem: initialItem,
-              description: initialValues.description,
-              details: initialValues.source_note,
-            })
-          : ""
-    );
-    setPriority(initialValues?.priority || "Normal");
-    setPhotoUrl(initialValues?.photo_url ?? null);
-    setUploadingPhoto(false);
-    setError(null);
+    const timeoutId = window.setTimeout(() => {
+      setSubject(initialValues?.subject ?? "");
+      setDescription(
+        initialValues?.description !== undefined &&
+          initialValues?.description !== null
+          ? initialValues.description
+          : initialValues?.source_note || ""
+      );
+      const initialItem = String(initialValues?.item || "").trim();
+      setItem(
+        isWorkOrderItemIssue(initialItem)
+          ? initialItem
+          : initialValues?.source_module
+            ? classifyWorkOrderItemIssue({
+                structuredItem: initialItem,
+                description: initialValues.description,
+                details: initialValues.source_note,
+              })
+            : ""
+      );
+      setPriority(initialValues?.priority || "Normal");
+      setPhotoUrl(initialValues?.photo_url ?? null);
+      setUploadingPhoto(false);
+      setError(null);
 
-    const selection = inferInitialLocationSelection(
-      areas,
-      initialValues?.area_id ?? null,
-      initialValues?.area_label ?? null
-    );
-    setSelectedLocationId(selection.selectedLocationId);
-    setSelectedLocationLabel(selection.selectedLocationLabel);
-    setCustomLocation(selection.customLocation);
+      const selection = inferInitialLocationSelection(
+        areas,
+        initialValues?.area_id ?? null,
+        initialValues?.area_label ?? null
+      );
+      setSelectedLocationId(selection.selectedLocationId);
+      setSelectedLocationLabel(selection.selectedLocationLabel);
+      setCustomLocation(selection.customLocation);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [open, initialValues, areas]);
 
   if (!open) return null;
@@ -174,11 +179,16 @@ export default function WorkOrderModal({
       return;
     }
 
-    const location = resolveWorkOrderLocationFromSelection({
-      selectedLocationId,
-      customLocation,
-      areas: activeAreas,
-    });
+    const location = initialValues?.lock_location
+      ? {
+          area_id: initialValues.area_id ?? null,
+          area_label: initialValues.area_label?.trim() || null,
+        }
+      : resolveWorkOrderLocationFromSelection({
+          selectedLocationId,
+          customLocation,
+          areas: activeAreas,
+        });
     if (!location.area_id && !location.area_label) {
       setError("Location or custom location is required.");
       return;
@@ -279,26 +289,38 @@ export default function WorkOrderModal({
 
             <div className="work-order-modal__field work-order-modal__field--full">
               <span className="work-order-modal__label">Location</span>
-              <WorkOrderLocationField
-                options={locationOptions}
-                loading={areasLoading}
-                selectedId={selectedLocationId}
-                selectedLabel={selectedLocationLabel}
-                onSelect={handleLocationSelect}
-                onClearSelection={handleLocationClear}
-                disabled={saving}
-              />
+              {initialValues?.lock_location ? (
+                <div className="work-order-modal__input">
+                  {initialValues.area_label || selectedLocationLabel}
+                </div>
+              ) : (
+                <WorkOrderLocationField
+                  options={locationOptions}
+                  loading={areasLoading}
+                  selectedId={selectedLocationId}
+                  selectedLabel={selectedLocationLabel}
+                  onSelect={handleLocationSelect}
+                  onClearSelection={handleLocationClear}
+                  disabled={saving}
+                />
+              )}
             </div>
 
-            <label className="work-order-modal__field work-order-modal__field--full">
-              <span className="work-order-modal__label">Custom Location (optional)</span>
-              <input
-                className="work-order-modal__input"
-                value={customLocation}
-                onChange={(event) => handleCustomLocationChange(event.target.value)}
-                placeholder="If location is not listed"
-              />
-            </label>
+            {!initialValues?.lock_location ? (
+              <label className="work-order-modal__field work-order-modal__field--full">
+                <span className="work-order-modal__label">
+                  Custom Location (optional)
+                </span>
+                <input
+                  className="work-order-modal__input"
+                  value={customLocation}
+                  onChange={(event) =>
+                    handleCustomLocationChange(event.target.value)
+                  }
+                  placeholder="If location is not listed"
+                />
+              </label>
+            ) : null}
 
             <label className="work-order-modal__field">
               <span className="work-order-modal__label">Item / Issue</span>

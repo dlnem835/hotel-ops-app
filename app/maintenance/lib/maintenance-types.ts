@@ -1,5 +1,5 @@
 import { InspectionPeriod } from "@/app/inspections/lib/inspection-types";
-import type { PmAssignmentType } from "./pm-types";
+import type { PmAssignmentType, PmStepOutcome } from "./pm-types";
 import {
   WorkOrderCategory,
 } from "./work-order-categories";
@@ -197,11 +197,17 @@ export type PmOccurrenceStepResponse = {
 
 export type PmOccurrenceResponses = {
   steps: PmOccurrenceStepResponse[];
-  targetOutcome?: PmTargetOutcome | null;
+  targetOutcome?: PmStoredTargetOutcome | null;
+  targetNotes?: string;
+  targetPhotoUrl?: string | null;
   sharedChecklistPrimary?: boolean;
 };
 
-export type PmTargetOutcome = "complete" | "issue_found";
+export type PmTargetOutcome = PmStepOutcome;
+export type PmStoredTargetOutcome =
+  | PmTargetOutcome
+  | "complete"
+  | "issue_found";
 
 export type PmOccurrence = {
   id: number;

@@ -103,7 +103,15 @@ export type PmReportSourceOccurrence = {
       notes?: string;
     }>;
     sharedChecklistPrimary?: boolean;
-    targetOutcome?: "complete" | "issue_found" | null;
+    targetOutcome?:
+      | "pass"
+      | "fail"
+      | "na"
+      | "complete"
+      | "issue_found"
+      | null;
+    targetNotes?: string;
+    targetPhotoUrl?: string | null;
   } | null;
   completedAt: string | null;
   completedBy: string | null;
