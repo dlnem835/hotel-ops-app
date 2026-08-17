@@ -13,11 +13,9 @@ import {
 } from "@/app/maintenance/lib/pm-checklist-draft";
 import { sortPmAreaOptions } from "@/app/maintenance/lib/pm-category";
 import {
-  PM_CATEGORIES,
   PM_FREQUENCIES,
   PM_FREQUENCY_LABELS,
   type PmAssignmentSchedule,
-  type PmCategory,
   type PmChecklistStep,
   type PmItemInput,
   type PmTemplateInput,
@@ -70,7 +68,6 @@ function emptyForm(): PmTemplateInput {
   return {
     name: "",
     description: "",
-    category: "Custom",
     frequency: "monthly",
     assignment_type: "equipment_unit",
     named_locations: false,
@@ -149,7 +146,6 @@ export default function PmTemplateModal({
         ...emptyForm(),
         name: initial.name || "",
         description: initial.description || "",
-        category: initial.category || "Custom",
         frequency: initial.frequency || "monthly",
         estimated_minutes: initial.estimated_minutes ?? null,
         assigned_role: initial.assigned_role || "Maintenance",
@@ -249,6 +245,7 @@ export default function PmTemplateModal({
     try {
       const payload: PmTemplateInput = {
         ...form,
+        category: undefined,
         assignment_type: "equipment_unit",
         named_locations: false,
         items: items.map((item) => ({
@@ -350,22 +347,6 @@ export default function PmTemplateModal({
 
           <div style={twoCol}>
             <div>
-              <span style={labelStyle}>Category *</span>
-              <select
-                value={form.category || "Custom"}
-                onChange={(event) =>
-                  updateForm({ category: event.target.value as PmCategory })
-                }
-                style={input}
-              >
-                {PM_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
               <span style={labelStyle}>Frequency *</span>
               <select
                 value={form.frequency}
@@ -384,9 +365,6 @@ export default function PmTemplateModal({
                 ))}
               </select>
             </div>
-          </div>
-
-          <div style={twoCol}>
             <div>
               <span style={labelStyle}>Start Date *</span>
               <PmWorkloadDatePicker
@@ -398,41 +376,42 @@ export default function PmTemplateModal({
                 inputStyle={input}
               />
             </div>
-            <div>
-              <span style={labelStyle}>End Date</span>
+          </div>
+
+          <div>
+            <span style={labelStyle}>End Date</span>
+            <input
+              type="date"
+              value={form.assignment.end_date || ""}
+              onChange={(event) =>
+                updateAssignment({ end_date: event.target.value || null })
+              }
+              disabled={noEndDate}
+              style={{ ...input, opacity: noEndDate ? 0.5 : 1 }}
+            />
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: ONE_EYRIE.text,
+                fontSize: "12px",
+                fontWeight: 600,
+                marginTop: "8px",
+              }}
+            >
               <input
-                type="date"
-                value={form.assignment.end_date || ""}
-                onChange={(event) =>
-                  updateAssignment({ end_date: event.target.value || null })
-                }
-                disabled={noEndDate}
-                style={{ ...input, opacity: noEndDate ? 0.5 : 1 }}
-              />
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  color: ONE_EYRIE.text,
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  marginTop: "8px",
+                type="checkbox"
+                checked={noEndDate}
+                onChange={(event) => {
+                  setNoEndDate(event.target.checked);
+                  if (event.target.checked) {
+                    updateAssignment({ end_date: null });
+                  }
                 }}
-              >
-                <input
-                  type="checkbox"
-                  checked={noEndDate}
-                  onChange={(event) => {
-                    setNoEndDate(event.target.checked);
-                    if (event.target.checked) {
-                      updateAssignment({ end_date: null });
-                    }
-                  }}
-                />
-                No end date
-              </label>
-            </div>
+              />
+              No end date
+            </label>
           </div>
 
           <section>

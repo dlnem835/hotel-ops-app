@@ -973,6 +973,11 @@
   align-items: center;
 }
 
+.one-eyrie-pm-schedule-list--unassigned .one-eyrie-pm-schedule-header,
+.one-eyrie-pm-schedule-list--unassigned .one-eyrie-pm-schedule-row {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr) auto;
+}
+
 .one-eyrie-pm-schedule-header > *,
 .one-eyrie-pm-schedule-row > * {
   min-width: 0;

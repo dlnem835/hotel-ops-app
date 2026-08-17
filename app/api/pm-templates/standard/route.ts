@@ -78,7 +78,14 @@ async function ensureDefaultUnits(
   templateId: number,
   template: (typeof STANDARD_PM_TEMPLATES)[number]
 ) {
-  if (!template.defaultUnits?.length) {
+  const defaultItems =
+    template.defaultItems?.length
+      ? template.defaultItems
+      : template.defaultUnits?.map((name) => ({
+          name,
+          areaName: template.defaultAreaName,
+        }));
+  if (!defaultItems?.length) {
     return;
   }
 
@@ -90,25 +97,26 @@ async function ensureDefaultUnits(
     .order("id", { ascending: true });
   if (error) throw new Error(error.message);
 
-  const defaultAreaId = await resolveDefaultAreaId(
-    supabase,
-    organizationId,
-    propertyId,
-    template.defaultAreaName
-  );
   const activeAssignments = assignments || [];
   const startDate =
     activeAssignments[0]?.start_date ||
     new Date().toISOString().slice(0, 10);
 
-  for (let index = 0; index < template.defaultUnits.length; index += 1) {
+  for (let index = 0; index < defaultItems.length; index += 1) {
+    const item = defaultItems[index];
+    const areaId = await resolveDefaultAreaId(
+      supabase,
+      organizationId,
+      propertyId,
+      item.areaName
+    );
     const existing = activeAssignments[index];
     if (existing) {
       const { error: updateError } = await supabase
         .from("pm_schedule_assignments")
         .update({
-          asset_label: template.defaultUnits[index],
-          area_id: existing.area_id ?? defaultAreaId,
+          asset_label: item.name,
+          area_id: existing.area_id ?? areaId,
         })
         .eq("id", existing.id)
         .eq("template_id", templateId);
@@ -118,8 +126,8 @@ async function ensureDefaultUnits(
         .from("pm_schedule_assignments")
         .insert({
           template_id: templateId,
-          area_id: defaultAreaId,
-          asset_label: template.defaultUnits[index],
+          area_id: areaId,
+          asset_label: item.name,
           start_date: startDate,
           end_date: null,
           status: "Active",

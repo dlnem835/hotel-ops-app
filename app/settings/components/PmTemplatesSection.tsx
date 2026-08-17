@@ -158,6 +158,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   const [standardModalOpen, setStandardModalOpen] = useState(false);
   const [addingStandards, setAddingStandards] = useState(false);
   const [availableStandardCount, setAvailableStandardCount] = useState(0);
+  const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -205,6 +206,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   const filteredScheduleGroups = useMemo(() => {
     const grouped = new Map<number, PmScheduleGroup>();
     for (const schedule of schedules) {
+      if (showInactiveOnly && schedule.templateStatus !== "Inactive") {
+        continue;
+      }
       const existing = grouped.get(schedule.templateId);
       if (existing) {
         existing.schedules.push(schedule);
@@ -236,7 +240,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         .toLowerCase()
         .includes(term)
     );
-  }, [schedules, search]);
+  }, [schedules, search, showInactiveOnly]);
 
   const schedulesByFrequency = useMemo(() => {
     const grouped = new Map<PmFrequency, PmScheduleGroup[]>();
@@ -465,6 +469,13 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     () => templates.filter((template) => !assignedTemplateIds.has(template.id)),
     [templates, assignedTemplateIds]
   );
+  const visibleUnassignedTemplates = useMemo(
+    () =>
+      showInactiveOnly
+        ? unassignedTemplates.filter((template) => template.status === "Inactive")
+        : unassignedTemplates,
+    [showInactiveOnly, unassignedTemplates]
+  );
 
   const stats = useMemo(() => {
     const active = schedules.filter(
@@ -473,11 +484,8 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
     );
     return {
       total: new Set(active.map((entry) => entry.templateId)).size,
-      overdue: new Set(
-        active
-          .filter((entry) => entry.dueStatus === "overdue")
-          .map((entry) => entry.templateId)
-      ).size,
+      inactive: templates.filter((template) => template.status === "Inactive")
+        .length,
       dueSoon: new Set(
         active
           .filter((entry) => entry.dueStatus === "due_soon")
@@ -486,7 +494,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       missingAreas: gridSummaries.filter((entry) => entry.marker === "missing")
         .length,
     };
-  }, [schedules, gridSummaries]);
+  }, [schedules, templates, gridSummaries]);
 
   return (
     <div style={sectionPanel}>
@@ -569,23 +577,21 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       >
         {[
           { label: "Active PMs", value: stats.total },
-          { label: "Overdue", value: stats.overdue, accent: "#E57373" },
+          {
+            label: "Inactive",
+            value: stats.inactive,
+            accent: "#9CA3AF",
+            inactiveFilter: true,
+          },
           { label: "Due soon", value: stats.dueSoon, accent: "#E0C47B" },
           {
             label: "Areas without PM",
             value: stats.missingAreas,
             accent: "#9CA3AF",
           },
-        ].map((item) => (
-          <div
-            key={item.label}
-            style={{
-              background: ONE_EYRIE.surface,
-              border: `1px solid ${ONE_EYRIE.border}`,
-              borderRadius: "12px",
-              padding: "14px 16px",
-            }}
-          >
+        ].map((item) => {
+          const tileContent = (
+            <>
             <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
               {item.label}
             </div>
@@ -600,11 +606,45 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             >
               {item.value}
             </div>
-          </div>
-        ))}
+            </>
+          );
+          const tileStyle: React.CSSProperties = {
+            background: ONE_EYRIE.surface,
+            border: `1px solid ${
+              item.inactiveFilter && showInactiveOnly
+                ? ONE_EYRIE.gold
+                : ONE_EYRIE.border
+            }`,
+            borderRadius: "12px",
+            padding: "14px 16px",
+            textAlign: "left",
+            fontFamily: "inherit",
+          };
+
+          return item.inactiveFilter ? (
+            <button
+              key={item.label}
+              type="button"
+              aria-pressed={showInactiveOnly}
+              title={
+                showInactiveOnly
+                  ? "Show all PM templates"
+                  : "Show inactive PM templates"
+              }
+              onClick={() => setShowInactiveOnly((current) => !current)}
+              style={{ ...tileStyle, cursor: "pointer" }}
+            >
+              {tileContent}
+            </button>
+          ) : (
+            <div key={item.label} style={tileStyle}>
+              {tileContent}
+            </div>
+          );
+        })}
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
+      {!showInactiveOnly && <div style={{ marginBottom: "20px" }}>
         <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
           PM Assignment Grid
         </div>
@@ -628,9 +668,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             onAreaClick={openNewForArea}
           />
         )}
-      </div>
+      </div>}
 
-      {unassignedTemplates.length > 0 && (
+      {visibleUnassignedTemplates.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
           <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
             Unassigned PM Templates
@@ -645,16 +685,15 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           >
             Assign one or more property areas and a start date before scheduling begins.
           </div>
-          <div className="one-eyrie-pm-schedule-list">
+          <div className="one-eyrie-pm-schedule-list one-eyrie-pm-schedule-list--unassigned">
             <div className="one-eyrie-pm-schedule-header">
               <span>PM Name</span>
               <span>Assignment</span>
               <span>Frequency</span>
-              <span>Category</span>
               <span>Status</span>
               <span />
             </div>
-            {unassignedTemplates.map((template) => {
+            {visibleUnassignedTemplates.map((template) => {
               const canModify =
                 !template.standardKey || canManageStandardPms;
               return (
@@ -670,9 +709,6 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                   </div>
                   <div className="one-eyrie-pm-schedule-row__meta">
                     {PM_FREQUENCY_LABELS[template.frequency]}
-                  </div>
-                  <div className="one-eyrie-pm-schedule-row__meta">
-                    {template.category}
                   </div>
                   <div>
                     <span style={statusPill}>{template.status}</span>
