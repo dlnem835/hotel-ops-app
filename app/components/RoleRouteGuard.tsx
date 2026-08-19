@@ -15,8 +15,10 @@ import {
   resolveRedirectForPath,
 } from "@/app/lib/role-permissions";
 import {
+  isPrintMedia,
   resolvePreferredShell,
   subscribePhoneViewport,
+  subscribePrintSession,
 } from "@/app/lib/viewport-interface";
 
 /**
@@ -27,6 +29,7 @@ export default function RoleRouteGuard() {
   const pathname = usePathname();
   const { permissions, loading, accountSetupComplete } = useRoleAccess();
   const redirectingRef = useRef(false);
+  const printingRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -53,6 +56,7 @@ export default function RoleRouteGuard() {
 
     function applyShellAndPermissionRedirects() {
       if (redirectingRef.current || !pathname || !permissions) return;
+      if (printingRef.current || isPrintMedia()) return;
 
       const shell = resolvePreferredShell();
       const onMobile = isMobileAppPath(pathname);
@@ -93,13 +97,27 @@ export default function RoleRouteGuard() {
 
     applyShellAndPermissionRedirects();
 
-    const unsubscribe = subscribePhoneViewport(() => {
-      redirectingRef.current = false;
-      applyShellAndPermissionRedirects();
+    let viewportTimer: number | null = null;
+    const unsubscribeViewport = subscribePhoneViewport(() => {
+      if (printingRef.current || isPrintMedia()) return;
+      if (viewportTimer !== null) window.clearTimeout(viewportTimer);
+      // Print dialogs can briefly change reported viewport width before
+      // beforeprint/print media is visible; wait so we do not bounce Home.
+      viewportTimer = window.setTimeout(() => {
+        viewportTimer = null;
+        if (printingRef.current || isPrintMedia()) return;
+        redirectingRef.current = false;
+        applyShellAndPermissionRedirects();
+      }, 400);
+    });
+    const unsubscribePrint = subscribePrintSession((printing) => {
+      printingRef.current = printing;
     });
 
     return () => {
-      unsubscribe();
+      if (viewportTimer !== null) window.clearTimeout(viewportTimer);
+      unsubscribeViewport();
+      unsubscribePrint();
     };
   }, [loading, pathname, permissions, accountSetupComplete]);
 

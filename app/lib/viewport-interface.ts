@@ -73,3 +73,35 @@ export function subscribePhoneViewport(onChange: () => void): () => void {
   media.addEventListener("change", listener);
   return () => media.removeEventListener("change", listener);
 }
+
+/** True while the browser print dialog / preview is active. */
+export function isPrintMedia(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("print").matches;
+}
+
+/**
+ * Print preview often changes reported viewport width, which would otherwise
+ * flip the mobile/desktop shell and bounce the user off the page they are
+ * trying to print.
+ */
+export function subscribePrintSession(
+  onChange: (printing: boolean) => void
+): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const onBeforePrint = () => onChange(true);
+  const onAfterPrint = () => onChange(false);
+  window.addEventListener("beforeprint", onBeforePrint);
+  window.addEventListener("afterprint", onAfterPrint);
+
+  const media = window.matchMedia("print");
+  const onMedia = () => onChange(media.matches);
+  media.addEventListener("change", onMedia);
+
+  return () => {
+    window.removeEventListener("beforeprint", onBeforePrint);
+    window.removeEventListener("afterprint", onAfterPrint);
+    media.removeEventListener("change", onMedia);
+  };
+}
