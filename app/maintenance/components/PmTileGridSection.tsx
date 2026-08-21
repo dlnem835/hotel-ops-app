@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PmTile } from "../lib/maintenance-types";
 import {
   DEFAULT_PM_TILE_FILTERS,
+  DEFAULT_PM_UPCOMING_HORIZON,
   filterPmTilesBySearch,
   formatPmQueueShowingLabel,
+  getPmTileEmptyMessage,
   PM_QUEUE_PAGE_SIZE,
   PM_TILE_FILTER_OPTIONS,
+  PM_UPCOMING_HORIZON_OPTIONS,
   PmTileFilterKey,
+  PmUpcomingHorizonKey,
+  sortPmTilesForFilters,
   tileMatchesPmFilters,
 } from "../lib/pm-tile-filters";
 import PmTileGrid from "./PmTileGrid";
@@ -42,16 +47,25 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
     () => new Set(readInitialPmFiltersFromUrl())
   );
+  const [upcomingHorizon, setUpcomingHorizon] = useState<PmUpcomingHorizonKey>(
+    DEFAULT_PM_UPCOMING_HORIZON
+  );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const showUpcomingHorizon = activeFilters.has("upcoming");
 
   const filteredTiles = useMemo(
     () =>
-      filterPmTilesBySearch(
-        tiles.filter((tile) => tileMatchesPmFilters(tile, activeFilters)),
-        search
+      sortPmTilesForFilters(
+        filterPmTilesBySearch(
+          tiles.filter((tile) =>
+            tileMatchesPmFilters(tile, activeFilters, upcomingHorizon)
+          ),
+          search
+        ),
+        activeFilters
       ),
-    [tiles, activeFilters, search]
+    [tiles, activeFilters, upcomingHorizon, search]
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredTiles.length / PM_QUEUE_PAGE_SIZE));
@@ -67,17 +81,8 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
     filteredTiles.length
   );
 
-  useEffect(() => {
-    setPage(0);
-  }, [activeFilters, search]);
-
-  useEffect(() => {
-    if (page > totalPages - 1) {
-      setPage(Math.max(0, totalPages - 1));
-    }
-  }, [page, totalPages]);
-
   function toggleFilter(key: PmTileFilterKey) {
+    setPage(0);
     setActiveFilters((current) => {
       const next = new Set(current);
       if (next.has(key)) {
@@ -87,6 +92,16 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
       }
       return next;
     });
+  }
+
+  function handleUpcomingHorizonChange(key: PmUpcomingHorizonKey) {
+    setPage(0);
+    setUpcomingHorizon(key);
+  }
+
+  function handleSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
   }
 
   const canGoPrev = safePage > 0;
@@ -112,7 +127,7 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
             flexWrap: "wrap",
             gap: "8px",
             alignItems: "center",
-            marginBottom: "10px",
+            marginBottom: showUpcomingHorizon ? "8px" : "10px",
           }}
         >
           {PM_TILE_FILTER_OPTIONS.map((option) => {
@@ -141,6 +156,45 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
           })}
         </div>
 
+        {showUpcomingHorizon ? (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px",
+              alignItems: "center",
+              marginBottom: "10px",
+            }}
+            role="group"
+            aria-label="Upcoming horizon"
+          >
+            {PM_UPCOMING_HORIZON_OPTIONS.map((option) => {
+              const active = upcomingHorizon === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  data-active={active ? "true" : undefined}
+                  onClick={() => handleUpcomingHorizonChange(option.key)}
+                  style={{
+                    ...SETTINGS_BUTTON_BASE,
+                    background: active ? ONE_EYRIE.goldGlow : "transparent",
+                    color: active ? ONE_EYRIE.goldLight : ONE_EYRIE.textMuted,
+                    border: `1px solid ${active ? ONE_EYRIE.gold : ONE_EYRIE.border}`,
+                    borderRadius: "999px",
+                    padding: "6px 12px",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                  }}
+                  {...goldHoverHandlers("secondary")}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         <div
           style={{
             color: ONE_EYRIE.textMuted,
@@ -158,12 +212,12 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
           tiles={visibleTiles}
           onOpenPm={onOpenPm}
           search={search}
-          onSearchChange={setSearch}
-          emptyMessage={
-            search.trim()
-              ? "No PM assignments match your search."
-              : "No PMs match the selected filters."
-          }
+          onSearchChange={handleSearchChange}
+          emptyMessage={getPmTileEmptyMessage({
+            search,
+            activeFilters,
+            upcomingHorizon,
+          })}
           totalCount={filteredTiles.length}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}

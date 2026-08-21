@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { canManageStandardPmTemplates } from "@/app/maintenance/lib/standard-pm-access";
-import { STANDARD_PM_TEMPLATES } from "@/app/maintenance/lib/standard-pm-templates";
+import {
+  getStandardPmActivationDate,
+  resolveStandardPmStartDate,
+  STANDARD_PM_LIBRARY_META,
+  STANDARD_PM_TEMPLATES,
+} from "@/app/maintenance/lib/standard-pm-templates";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -76,15 +81,15 @@ async function ensureDefaultUnits(
   organizationId: number,
   propertyId: number,
   templateId: number,
-  template: (typeof STANDARD_PM_TEMPLATES)[number]
+  template: (typeof STANDARD_PM_TEMPLATES)[number],
+  packageStartDate: string
 ) {
-  const defaultItems =
-    template.defaultItems?.length
-      ? template.defaultItems
-      : template.defaultUnits?.map((name) => ({
-          name,
-          areaName: template.defaultAreaName,
-        }));
+  const defaultItems = template.defaultItems?.length
+    ? template.defaultItems
+    : template.defaultUnits?.map((name) => ({
+        name,
+        areaName: template.defaultAreaName,
+      }));
   if (!defaultItems?.length) {
     return;
   }
@@ -98,9 +103,8 @@ async function ensureDefaultUnits(
   if (error) throw new Error(error.message);
 
   const activeAssignments = assignments || [];
-  const startDate =
-    activeAssignments[0]?.start_date ||
-    new Date().toISOString().slice(0, 10);
+  // Preserve existing start dates; only new items use the package offset date.
+  const startDate = activeAssignments[0]?.start_date || packageStartDate;
 
   for (let index = 0; index < defaultItems.length; index += 1) {
     const item = defaultItems[index];
@@ -142,7 +146,8 @@ async function ensureDefaultLocations(
   organizationId: number,
   propertyId: number,
   templateId: number,
-  template: (typeof STANDARD_PM_TEMPLATES)[number]
+  template: (typeof STANDARD_PM_TEMPLATES)[number],
+  packageStartDate: string
 ) {
   if ((await countActiveAssignments(supabase, templateId)) > 0) return;
 
@@ -174,7 +179,6 @@ async function ensureDefaultLocations(
     (areas || []).map((area) => [Number(area.id), String(area.name)])
   );
 
-  const startDate = new Date().toISOString().slice(0, 10);
   const { error: insertError } = await supabase
     .from("pm_schedule_assignments")
     .insert(
@@ -186,7 +190,7 @@ async function ensureDefaultLocations(
             defaultAreaNames.length === 1
               ? template.name
               : areaNameById.get(areaId) || template.name,
-          start_date: startDate,
+          start_date: packageStartDate,
           end_date: null,
           status: "Active",
         })),
@@ -194,7 +198,7 @@ async function ensureDefaultLocations(
           template_id: templateId,
           area_id: areaIdByName.get(templateNameKey(name)) ?? null,
           asset_label: name,
-          start_date: startDate,
+          start_date: packageStartDate,
           end_date: null,
           status: "Active",
         })),
@@ -204,7 +208,7 @@ async function ensureDefaultLocations(
                 template_id: templateId,
                 area_id: null,
                 asset_label: template.name,
-                start_date: startDate,
+                start_date: packageStartDate,
                 end_date: null,
                 status: "Active",
               },
@@ -242,12 +246,15 @@ export async function GET(request: Request) {
       canManage: true,
       total: STANDARD_PM_TEMPLATES.length,
       added: STANDARD_PM_TEMPLATES.length - available.length,
+      library: STANDARD_PM_LIBRARY_META,
       available: available.map((template) => ({
         key: template.key,
         name: template.name,
         frequency: template.frequency,
         category: template.category,
+        startOffsetDays: template.startOffsetDays,
         defaultAreaName: template.defaultAreaName ?? null,
+        itemCount: template.defaultItems?.length || 0,
       })),
     });
   } catch (error: unknown) {
@@ -276,8 +283,13 @@ export async function POST(request: Request) {
     const addedNames: string[] = [];
     const adoptedNames: string[] = [];
     let skipped = 0;
+    const activationDayZero = getStandardPmActivationDate();
 
     for (const template of STANDARD_PM_TEMPLATES) {
+      const packageStartDate = resolveStandardPmStartDate(
+        template,
+        activationDayZero
+      );
       const installed = findInstalledStandard(installedRows, template);
       if (installed?.standard_key === template.key) {
         // Idempotent repair only: never rewrite existing assignment history.
@@ -287,14 +299,16 @@ export async function POST(request: Request) {
             organizationId,
             propertyId,
             installed.id,
-            template
+            template,
+            packageStartDate
           );
           await ensureDefaultLocations(
             supabase,
             organizationId,
             propertyId,
             installed.id,
-            template
+            template,
+            packageStartDate
           );
         }
         skipped += 1;
@@ -328,14 +342,16 @@ export async function POST(request: Request) {
           organizationId,
           propertyId,
           installed.id,
-          template
+          template,
+          packageStartDate
         );
         await ensureDefaultLocations(
           supabase,
           organizationId,
           propertyId,
           installed.id,
-          template
+          template,
+          packageStartDate
         );
         installed.standard_key = template.key;
         adoptedNames.push(template.name);
@@ -379,14 +395,16 @@ export async function POST(request: Request) {
           organizationId,
           propertyId,
           Number(createdTemplate.id),
-          template
+          template,
+          packageStartDate
         );
         await ensureDefaultLocations(
           supabase,
           organizationId,
           propertyId,
           Number(createdTemplate.id),
-          template
+          template,
+          packageStartDate
         );
       } catch (unitError) {
         await supabase
@@ -406,6 +424,8 @@ export async function POST(request: Request) {
       skipped,
       addedNames,
       adoptedNames,
+      activationDayZero,
+      library: STANDARD_PM_LIBRARY_META,
     });
   } catch (error: unknown) {
     return tenantErrorResponse(error);

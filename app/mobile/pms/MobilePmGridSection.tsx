@@ -7,10 +7,15 @@ import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import { formatPmCompletionDate } from "@/app/maintenance/lib/pm-urgency";
 import {
   DEFAULT_PM_TILE_FILTERS,
+  DEFAULT_PM_UPCOMING_HORIZON,
   filterPmTilesBySearch,
   formatPmQueueShowingLabel,
+  getPmTileEmptyMessage,
   PM_TILE_FILTER_OPTIONS,
+  PM_UPCOMING_HORIZON_OPTIONS,
   PmTileFilterKey,
+  PmUpcomingHorizonKey,
+  sortPmTilesForFilters,
   tileMatchesPmFilters,
 } from "@/app/maintenance/lib/pm-tile-filters";
 import { getPmTileStyle, PM_TILE_LEGEND } from "@/app/maintenance/lib/pm-tile-styles";
@@ -40,7 +45,11 @@ export default function MobilePmGridSection() {
   const [activeFilters, setActiveFilters] = useState<Set<PmTileFilterKey>>(
     () => new Set(DEFAULT_PM_TILE_FILTERS)
   );
+  const [upcomingHorizon, setUpcomingHorizon] = useState<PmUpcomingHorizonKey>(
+    DEFAULT_PM_UPCOMING_HORIZON
+  );
   const [search, setSearch] = useState("");
+  const showUpcomingHorizon = activeFilters.has("upcoming");
 
   useEffect(() => {
     let mounted = true;
@@ -64,11 +73,16 @@ export default function MobilePmGridSection() {
 
   const filteredTiles = useMemo(
     () =>
-      filterPmTilesBySearch(
-        tiles.filter((tile) => tileMatchesPmFilters(tile, activeFilters)),
-        search
+      sortPmTilesForFilters(
+        filterPmTilesBySearch(
+          tiles.filter((tile) =>
+            tileMatchesPmFilters(tile, activeFilters, upcomingHorizon)
+          ),
+          search
+        ),
+        activeFilters
       ),
-    [tiles, activeFilters, search]
+    [tiles, activeFilters, upcomingHorizon, search]
   );
 
   const showingLabel = formatPmQueueShowingLabel(
@@ -116,6 +130,27 @@ export default function MobilePmGridSection() {
             );
           })}
         </div>
+        {showUpcomingHorizon ? (
+          <div
+            className="one-eyrie-mobile-pm-grid-section__horizons"
+            role="group"
+            aria-label="Upcoming horizon"
+          >
+            {PM_UPCOMING_HORIZON_OPTIONS.map((option) => {
+              const active = upcomingHorizon === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={`one-eyrie-mobile-pm-horizon${active ? " one-eyrie-mobile-pm-horizon--active" : ""}`}
+                  onClick={() => setUpcomingHorizon(option.key)}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
       <div className="one-eyrie-mobile-search-wrap one-eyrie-mobile-pm-search-wrap pass-on-search-wrap">
@@ -155,9 +190,11 @@ export default function MobilePmGridSection() {
       <div className="one-eyrie-mobile-pm-grid-panel">
         {filteredTiles.length === 0 ? (
           <div className="one-eyrie-mobile-status">
-            {search.trim()
-              ? "No PM assignments match your search."
-              : "No PMs match the selected filters."}
+            {getPmTileEmptyMessage({
+              search,
+              activeFilters,
+              upcomingHorizon,
+            })}
           </div>
         ) : (
           <div className="one-eyrie-mobile-pm-grid">

@@ -20,7 +20,7 @@ import {
   buildDuplicatePmTemplateInput,
   toPmTemplateWithAssignment,
 } from "@/app/maintenance/lib/pm-template-duplicate";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   forestHoverHandlers,
   secondaryHoverHandlers,
@@ -159,6 +159,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   const [addingStandards, setAddingStandards] = useState(false);
   const [availableStandardCount, setAvailableStandardCount] = useState(0);
   const [showInactiveOnly, setShowInactiveOnly] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -452,6 +455,12 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         throw new Error(result.error || "Unable to delete PM template");
       }
 
+      setSelectedIds((prev) => {
+        if (!prev.has(templateId)) return prev;
+        const next = new Set(prev);
+        next.delete(templateId);
+        return next;
+      });
       await fetchData();
       setToast("PM template deleted.");
     } catch (error: unknown) {
@@ -459,6 +468,19 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         error instanceof Error ? error.message : "Unable to delete PM template"
       );
     }
+  }
+
+  function toggleSelect(templateId: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(templateId)) next.delete(templateId);
+      else next.add(templateId);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
   }
 
   const assignedTemplateIds = useMemo(
@@ -476,6 +498,60 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         : unassignedTemplates,
     [showInactiveOnly, unassignedTemplates]
   );
+
+  const selectableTemplateIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const template of visibleUnassignedTemplates) {
+      ids.add(template.id);
+    }
+    for (const group of filteredScheduleGroups) {
+      ids.add(group.templateId);
+    }
+    return ids;
+  }, [visibleUnassignedTemplates, filteredScheduleGroups]);
+
+  const selectedCount = selectedIds.size;
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(selectableTemplateIds));
+  }
+
+  async function bulkDeleteSelected() {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.all(
+        ids.map(async (templateId) => {
+          const response = await tenantFetch(`/api/pm-templates/${templateId}`, {
+            method: "DELETE",
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "Unable to delete PM template");
+          }
+          return templateId;
+        })
+      );
+
+      setBulkDeleteConfirmOpen(false);
+      clearSelection();
+      await fetchData();
+      setToast(
+        `Deleted ${results.length} PM template${
+          results.length === 1 ? "" : "s"
+        }.`
+      );
+    } catch (error: unknown) {
+      await fetchData();
+      const message =
+        error instanceof Error ? error.message : "Unable to delete PM templates";
+      setToast(`Error: ${message}`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const active = schedules.filter(
@@ -670,6 +746,98 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         )}
       </div>}
 
+      {canManageStandardPms && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+            marginBottom: "14px",
+          }}
+        >
+          <button
+            type="button"
+            style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
+            onClick={selectAllVisible}
+            disabled={selectableTemplateIds.size === 0 || bulkDeleting}
+            {...secondaryHoverHandlers(
+              selectableTemplateIds.size === 0 || bulkDeleting
+            )}
+          >
+            Select All
+          </button>
+          <button
+            type="button"
+            style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
+            onClick={clearSelection}
+            disabled={selectedCount === 0 || bulkDeleting}
+            {...secondaryHoverHandlers(selectedCount === 0 || bulkDeleting)}
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
+
+      {canManageStandardPms && selectedCount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+            marginBottom: "14px",
+            padding: "12px 14px",
+            borderRadius: "12px",
+            border: `1px solid ${ONE_EYRIE.gold}`,
+            background: "rgba(200,169,106,0.08)",
+          }}
+        >
+          <span
+            style={{
+              color: ONE_EYRIE.gold,
+              fontWeight: 800,
+              marginRight: "6px",
+            }}
+          >
+            {selectedCount} selected
+          </span>
+          <button
+            type="button"
+            style={{
+              ...secondaryButton,
+              ...SETTINGS_BUTTON_BASE,
+              height: "38px",
+              borderColor: FLAT_RED.border,
+              color: FLAT_RED.text,
+            }}
+            onClick={() => setBulkDeleteConfirmOpen(true)}
+            disabled={bulkDeleting}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 0 12px rgba(139, 82, 82, 0.35)";
+              e.currentTarget.style.borderColor = FLAT_RED.border;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = FLAT_RED.border;
+            }}
+          >
+            <Trash2 size={15} />
+            Delete Selected
+          </button>
+          <button
+            type="button"
+            style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
+            onClick={clearSelection}
+            disabled={bulkDeleting}
+            {...secondaryHoverHandlers(bulkDeleting)}
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
+
       {visibleUnassignedTemplates.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
           <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
@@ -685,8 +853,54 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           >
             Assign one or more property areas and a start date before scheduling begins.
           </div>
-          <div className="one-eyrie-pm-schedule-list one-eyrie-pm-schedule-list--unassigned">
+          <div
+            className={`one-eyrie-pm-schedule-list one-eyrie-pm-schedule-list--unassigned${
+              canManageStandardPms ? " one-eyrie-pm-schedule-list--selectable" : ""
+            }`}
+          >
             <div className="one-eyrie-pm-schedule-header">
+              {canManageStandardPms && (
+                <span>
+                  <input
+                    type="checkbox"
+                    checked={
+                      visibleUnassignedTemplates.length > 0 &&
+                      visibleUnassignedTemplates.every((template) =>
+                        selectedIds.has(template.id)
+                      )
+                    }
+                    ref={(el) => {
+                      if (!el) return;
+                      const selectedInList = visibleUnassignedTemplates.filter(
+                        (template) => selectedIds.has(template.id)
+                      ).length;
+                      el.indeterminate =
+                        selectedInList > 0 &&
+                        selectedInList < visibleUnassignedTemplates.length;
+                    }}
+                    onChange={() => {
+                      const allSelected = visibleUnassignedTemplates.every(
+                        (template) => selectedIds.has(template.id)
+                      );
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (allSelected) {
+                          visibleUnassignedTemplates.forEach((template) =>
+                            next.delete(template.id)
+                          );
+                        } else {
+                          visibleUnassignedTemplates.forEach((template) =>
+                            next.add(template.id)
+                          );
+                        }
+                        return next;
+                      });
+                    }}
+                    aria-label="Select all unassigned PM templates"
+                    disabled={bulkDeleting}
+                  />
+                </span>
+              )}
               <span>PM Name</span>
               <span>Assignment</span>
               <span>Frequency</span>
@@ -696,11 +910,24 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             {visibleUnassignedTemplates.map((template) => {
               const canModify =
                 !template.standardKey || canManageStandardPms;
+              const isSelected = selectedIds.has(template.id);
               return (
                 <div
                   key={template.id}
                   className="one-eyrie-pm-schedule-row"
+                  data-selected={isSelected ? "true" : "false"}
                 >
+                  {canManageStandardPms && (
+                    <span>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(template.id)}
+                        aria-label={`Select ${template.name}`}
+                        disabled={bulkDeleting}
+                      />
+                    </span>
+                  )}
                   <div className="one-eyrie-pm-schedule-row__name">
                     {template.name}
                   </div>
@@ -834,8 +1061,56 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                       </div>
                     ) : (
                       <>
-                        <div className="one-eyrie-pm-schedule-list">
+                        <div
+                          className={`one-eyrie-pm-schedule-list${
+                            canManageStandardPms
+                              ? " one-eyrie-pm-schedule-list--selectable"
+                              : ""
+                          }`}
+                        >
                           <div className="one-eyrie-pm-schedule-header">
+                            {canManageStandardPms && (
+                              <span>
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    items.length > 0 &&
+                                    items.every((group) =>
+                                      selectedIds.has(group.templateId)
+                                    )
+                                  }
+                                  ref={(el) => {
+                                    if (!el) return;
+                                    const selectedInList = items.filter((group) =>
+                                      selectedIds.has(group.templateId)
+                                    ).length;
+                                    el.indeterminate =
+                                      selectedInList > 0 &&
+                                      selectedInList < items.length;
+                                  }}
+                                  onChange={() => {
+                                    const allSelected = items.every((group) =>
+                                      selectedIds.has(group.templateId)
+                                    );
+                                    setSelectedIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (allSelected) {
+                                        items.forEach((group) =>
+                                          next.delete(group.templateId)
+                                        );
+                                      } else {
+                                        items.forEach((group) =>
+                                          next.add(group.templateId)
+                                        );
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                  aria-label={`Select all ${PM_FREQUENCY_LABELS[frequency]} PM templates`}
+                                  disabled={bulkDeleting}
+                                />
+                              </span>
+                            )}
                             <span>PM Name</span>
                             <span>Assignment</span>
                             <span>Start Date</span>
@@ -848,6 +1123,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                             const dueStyles = dueStatusStyles(dueStatus);
                             const canModify =
                               !group.standardKey || canManageStandardPms;
+                            const isSelected = selectedIds.has(group.templateId);
                             const locationLabels = group.schedules.map(areaLabel);
                             const startDates = Array.from(
                               new Set(
@@ -868,7 +1144,21 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                               <div
                                 key={group.templateId}
                                 className="one-eyrie-pm-schedule-row"
+                                data-selected={isSelected ? "true" : "false"}
                               >
+                                {canManageStandardPms && (
+                                  <span>
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() =>
+                                        toggleSelect(group.templateId)
+                                      }
+                                      aria-label={`Select ${group.templateName}`}
+                                      disabled={bulkDeleting}
+                                    />
+                                  </span>
+                                )}
                                 <div className="one-eyrie-pm-schedule-row__name">
                                   {group.templateName}
                                 </div>
@@ -1016,13 +1306,16 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
               }}
             >
               <p style={{ marginTop: 0 }}>
-                Add One Eyrie&apos;s standard preventive maintenance templates
-                to this property.
+                Add One Eyrie&apos;s standard preventive maintenance package to
+                this property. Start dates are staggered from today (Day 0)
+                using the Standard Library schedule blueprint, then continue on
+                each PM&apos;s frequency.
               </p>
               <p style={{ marginBottom: 0 }}>
-                These templates can be edited, assigned to one or multiple
-                locations, disabled, or deleted after they are added. Existing
-                standard templates will not be duplicated.
+                These templates can be edited, reassigned, disabled, or deleted
+                after they are added. Existing standard templates will not be
+                duplicated, and this property&apos;s edits will not change the
+                One Eyrie Standard PM Library.
               </p>
             </div>
             <div style={modalFooter}>
@@ -1043,6 +1336,76 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                 {...forestHoverHandlers()}
               >
                 {addingStandards ? "Adding…" : "Add Standard PMs"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkDeleteConfirmOpen && (
+        <div style={modalOverlay}>
+          <div
+            style={{ ...modalBox, width: "min(480px, 94vw)" }}
+            className="one-eyrie-modal"
+          >
+            <div style={modalHeader}>
+              <h2 style={{ margin: 0 }}>Delete PM Templates</h2>
+              <button
+                type="button"
+                style={closeButton}
+                onClick={() => setBulkDeleteConfirmOpen(false)}
+                disabled={bulkDeleting}
+                aria-label="Close"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div
+              style={{
+                color: ONE_EYRIE.textMuted,
+                fontSize: "14px",
+                lineHeight: 1.6,
+              }}
+            >
+              <p style={{ margin: 0 }}>
+                Delete {selectedCount} PM template
+                {selectedCount === 1 ? "" : "s"}? This will remove these PMs
+                from this property.
+              </p>
+            </div>
+            <div style={modalFooter}>
+              <button
+                type="button"
+                style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE }}
+                onClick={() => setBulkDeleteConfirmOpen(false)}
+                disabled={bulkDeleting}
+                {...secondaryHoverHandlers(bulkDeleting)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={{
+                  ...secondaryButton,
+                  ...SETTINGS_BUTTON_BASE,
+                  borderColor: FLAT_RED.border,
+                  color: FLAT_RED.text,
+                }}
+                onClick={() => void bulkDeleteSelected()}
+                disabled={bulkDeleting || selectedCount === 0}
+                onMouseEnter={(e) => {
+                  if (bulkDeleting) return;
+                  e.currentTarget.style.boxShadow =
+                    "0 0 12px rgba(139, 82, 82, 0.35)";
+                  e.currentTarget.style.borderColor = FLAT_RED.border;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.borderColor = FLAT_RED.border;
+                }}
+              >
+                <Trash2 size={15} />
+                {bulkDeleting ? "Deleting…" : "Delete Selected"}
               </button>
             </div>
           </div>

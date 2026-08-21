@@ -978,6 +978,18 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr) auto;
 }
 
+.one-eyrie-pm-schedule-list--selectable .one-eyrie-pm-schedule-header,
+.one-eyrie-pm-schedule-list--selectable .one-eyrie-pm-schedule-row {
+  grid-template-columns: 36px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(0, 0.85fr) auto;
+}
+
+.one-eyrie-pm-schedule-list--unassigned.one-eyrie-pm-schedule-list--selectable
+  .one-eyrie-pm-schedule-header,
+.one-eyrie-pm-schedule-list--unassigned.one-eyrie-pm-schedule-list--selectable
+  .one-eyrie-pm-schedule-row {
+  grid-template-columns: 36px minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr) auto;
+}
+
 .one-eyrie-pm-schedule-header > *,
 .one-eyrie-pm-schedule-row > * {
   min-width: 0;
@@ -1034,6 +1046,11 @@
 
 .one-eyrie-pm-schedule-row:hover {
   background: #181715;
+}
+
+.one-eyrie-pm-schedule-row[data-selected="true"] {
+  background: #181715;
+  box-shadow: inset 0 0 0 1px rgba(200, 169, 106, 0.22);
 }
 
 /* ── Rooms & Areas schedule list (settings) ── */

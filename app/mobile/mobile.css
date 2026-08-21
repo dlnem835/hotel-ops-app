@@ -821,6 +821,35 @@
   opacity: 0.9;
 }
 
+.one-eyrie-mobile-pm-grid-section__horizons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.one-eyrie-mobile-pm-horizon {
+  border: 1px solid #3a352e;
+  border-radius: 999px;
+  background: transparent;
+  color: #9ca3af;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.one-eyrie-mobile-pm-horizon--active {
+  border-color: #c8a96a;
+  background: rgba(200, 169, 106, 0.25);
+  color: #e0c47b;
+}
+
+.one-eyrie-mobile-pm-horizon:active {
+  opacity: 0.9;
+}
+
 .one-eyrie-mobile-pm-grid-section__count {
   color: #9ca3af;
   font-size: 12px;

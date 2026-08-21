@@ -1,0 +1,3198 @@
+{
+  "sourcePropertyName": "Springhill Suites Tampa Suncoast Parkway",
+  "sourcePropertyId": 1,
+  "sourceOrganizationId": 1,
+  "dayZeroSourceDate": "2026-08-31",
+  "capturedAt": "2026-08-21T17:28:13.801Z",
+  "templateCount": 47,
+  "templates": [
+    {
+      "key": "one-eyrie-pool-quarterly-v1",
+      "name": "Pool",
+      "description": "Quarterly pool water quality, equipment, and safety equipment inspection.",
+      "category": "Custom",
+      "frequency": "weekly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 0,
+      "defaultItems": [
+        {
+          "name": "Pool",
+          "areaName": "Pool"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the water level.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check the water temperature. Recommended temperatures are 85° for the pool.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Check water clarity. Drain and refill only if necessary.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check all pool chemical levels. Record appropriately in the Pool Operator’s Log. Ensure this is being completed daily.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Check the condition of all ladders, cove molding, and rescue equipment.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Vacuum and brush all tiled surfaces and pool floor as needed.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Make sure all proper signage is posted.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-elevator-checklist-monthly-v1",
+      "name": "Elevator Checklist",
+      "description": "Monthly elevator preventive maintenance and safety checklist. Assign this template to each applicable elevator or elevator equipment area.",
+      "category": "Custom",
+      "frequency": "monthly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 126,
+      "defaultItems": [
+        {
+          "name": "Elevator Checklist #1",
+          "areaName": "Elevator 1"
+        },
+        {
+          "name": "Elevator Checklist #2",
+          "areaName": "Elevator 2"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the general condition of all elevators.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check and clean elevator pits and tracks.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Test the fire recall system.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Test the elevator safety phone.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Check that elevator/pump rooms are clean.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Test emergency lighting.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Complete any required elevator safety inspections or checks applicable to the property.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-administrative-offices-quarterly-v1",
+      "name": "Administrative Offices",
+      "description": "Preventative Maintenance",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 127,
+      "defaultItems": [
+        {
+          "name": "Administrative Offices",
+          "areaName": "Back Office"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-0",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-fire-extinguishers-monthly-v1",
+      "name": "Fire Extinguishers",
+      "description": "Monthly fire extinguisher inspection. Assign this template to all applicable property locations; long-term vendor testing is managed separately.",
+      "category": "Custom",
+      "frequency": "monthly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 128,
+      "defaultItems": [
+        {
+          "name": "1st Floor Hallway",
+          "areaName": "1st Floor Hallway"
+        },
+        {
+          "name": "2nd Floor Hallway",
+          "areaName": "2nd Floor Hallway"
+        },
+        {
+          "name": "3rd Floor Hallway",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "4th Floor Hallway",
+          "areaName": "4th Floor Hallway"
+        },
+        {
+          "name": "5th Floor Hallway",
+          "areaName": "5th Floor Hallway"
+        },
+        {
+          "name": "Laundry",
+          "areaName": "Laundry"
+        },
+        {
+          "name": "Pool",
+          "areaName": "Pool"
+        },
+        {
+          "name": "Employee Breakroom",
+          "areaName": "Employee Breakroom"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the general condition of each fire extinguisher.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Confirm each extinguisher is present and properly positioned.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect cabinets and mounting brackets; clean as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect extinguisher hoses for visible damage.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Confirm inspection tags are signed and dated monthly and annually. ",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Confirm each extinguisher indicates proper charge.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-building-exterior-triannually-v1",
+      "name": "Building Exterior",
+      "description": "Triannual building exterior inspection covering finishes, openings, and visible deterioration. Assign to the property exterior or primary building area.",
+      "category": "Custom",
+      "frequency": "triannually",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 133,
+      "defaultItems": [
+        {
+          "name": "Building Exterior - North",
+          "areaName": "Exterior North"
+        },
+        {
+          "name": "Building Exterior - South",
+          "areaName": "Exterior South"
+        },
+        {
+          "name": "Building Exterior - East",
+          "areaName": "Exterior East"
+        },
+        {
+          "name": "Building Exterior -West",
+          "areaName": "Exterior West"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect building exterior for visible damage, deterioration, leaks, damaged finishes, windows, doors, seals, and caulking",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect parking lot, curbs, striping, and sidewalks for cracks, potholes, trip hazards, drainage issues, and needed repairs",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect landscaping and grounds for overgrowth, dead or damaged vegetation, irrigation issues, debris, and general condition",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect exterior lighting, signage, fencing, gates, and other exterior fixtures for damage or needed repairs",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Clean and complete minor routine repairs as needed",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Document deficiencies and create a work order or contact a qualified contractor when specialized repairs are required",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-corridors-hallways-quarterly-v1",
+      "name": "Corridors (Hallways)",
+      "description": "Quarterly corridor and hallway condition inspection by floor.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 133,
+      "defaultItems": [
+        {
+          "name": "1st Floor Hallway",
+          "areaName": "1st Floor Hallway"
+        },
+        {
+          "name": "2nd Floor Hallway",
+          "areaName": "2nd Floor Hallway"
+        },
+        {
+          "name": "3rd Floor Hallway",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "4th Floor Hallway",
+          "areaName": "4th Floor Hallway"
+        },
+        {
+          "name": "5th Floor Hallway",
+          "areaName": "5th Floor Hallway"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-boilers-water-heaters-quarterly-v1",
+      "name": "Boilers / Water Heaters",
+      "description": "PM Water Heaters #1, #2, #3, #4",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 140,
+      "defaultItems": [
+        {
+          "name": "Boilers / Water Heaters #1",
+          "areaName": "Water Heater Room"
+        },
+        {
+          "name": "Boilers / Water Heaters #2",
+          "areaName": "Water Heater Room"
+        },
+        {
+          "name": "Boilers / Water Heaters #3",
+          "areaName": "Water Heater Room"
+        },
+        {
+          "name": "Boilers / Water Heaters #4",
+          "areaName": "Water Heater Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-0",
+                "label": "Ensure there are no leaks and record the temperature.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782350110433",
+                "label": "Drain water off the bottom valve unit until clear water is present.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782350117566",
+                "label": "Ensure that the pressure relief valve is sized properly and there are no leaks. Record the temperature.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782350165967",
+                "label": "Check the water temperature in a room (120° - 125° maximum).",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782350172724",
+                "label": "Clean the burner assembly and check circulation pumps are working properly",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-dining-breakfast-area-quarterly-v1",
+      "name": "Dining & Breakfast Area",
+      "description": "Quarterly preventive maintenance for the dining and breakfast area.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 141,
+      "defaultItems": [
+        {
+          "name": "Dining & Breakfast Area",
+          "areaName": "Breakfast Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect breakfast-area tables and chairs for damage, loose components, nicks, or scratches.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Verify proper lighting and replace failed lamps as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Test GFCI outlets for proper operation.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-dumpster-area-quarterly-v1",
+      "name": "Dumpster Area",
+      "description": "Quarterly dumpster area inspection covering cleanliness, enclosure condition, and odor control.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 142,
+      "defaultItems": [
+        {
+          "name": "Dumpster Area",
+          "areaName": "Dumpster Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check for stains, odor and garbage.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Ensure that the closure works properly and can be closed completely.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Ensure the trash enclosure is in good condition.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Pressure wash dumpster area as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-employee-breakroom-quarterly-v1",
+      "name": "Employee Breakroom",
+      "description": "Preventative Maintenance",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 143,
+      "defaultItems": [
+        {
+          "name": "Employee Breakroom",
+          "areaName": "Employee Breakroom"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-0",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-employee-restroom-quarterly-v1",
+      "name": "Employee Restroom",
+      "description": "Preventative Maintenance",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 143,
+      "defaultItems": [
+        {
+          "name": "Employee Restroom",
+          "areaName": "Public Restrooms"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-0",
+                "label": "Check the following and repair as needed: Walls, floors, ceilings, hardware, toilet",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782170296875",
+                "label": "Touch up door frames",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782170317930",
+                "label": "Clean and inspect the exhaust fan.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-boiler-water-heater-room-quarterly-v1",
+      "name": "Boiler/Water Heater Room",
+      "description": "PM Hot Water Heater Room",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 144,
+      "defaultItems": [
+        {
+          "name": "Boiler/Water Heater Room",
+          "areaName": "Hot Water Heater Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-0",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782349792159",
+                "label": "Ensure that all electrical panels and disconnects are properly labeled.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1782349808839",
+                "label": "Organize and inventory tools and supplies.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-electrical-rooms-quarterly-v1",
+      "name": "Electrical Rooms",
+      "description": "Quarterly electrical room inspection covering room condition, exhaust, combustibles, and panel fillers.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 147,
+      "defaultItems": [
+        {
+          "name": "Electrical Room",
+          "areaName": "2nd Floor Hallway"
+        },
+        {
+          "name": "Electrical Room",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "Electrical Rooms",
+          "areaName": "4th Floor Hallway"
+        },
+        {
+          "name": "Electrical Rooms",
+          "areaName": "5th Floor Hallway"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Touch up the door frames.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Test all exhaust vents.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean and organize the entire room.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Ensure no combustibles present in room.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Ensure no missing breaker slots in the electrical panel. Place breaker filler as needed.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-emergency-lights-quarterly-v1",
+      "name": "Emergency Lights",
+      "description": "Quarterly emergency lighting inspection covering lamp operation, test buttons, and battery condition.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 151,
+      "defaultItems": [
+        {
+          "name": "Emergency Lights",
+          "areaName": "1st Floor Hallway"
+        },
+        {
+          "name": "Emergency Lights",
+          "areaName": "2nd Floor Hallway"
+        },
+        {
+          "name": "Emergency Lights",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "Emergency Lights",
+          "areaName": "4th Floor Hallway"
+        },
+        {
+          "name": "Emergency Lights",
+          "areaName": "5th Floor Hallway"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect all lights, and replace any that are burned out. All floors.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Ensure that all emergency lights work by pressing the red “Test” button.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Check the battery charge. Replace any defective or dead batteries as soon as possible.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-relay-quarterly-v1",
+      "name": "Relay",
+      "description": "Quarterly relay and beacon device battery and alarm function inspection.",
+      "category": "Custom",
+      "frequency": "yearly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 154,
+      "defaultItems": [
+        {
+          "name": "Relay / Beacon Devices",
+          "areaName": "Hotel / Building / Main"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Change beacon batteries located throughout the building.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Ensure all devices are working properly. Test alarm feature for all devices.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787111995053",
+                "label": "Relay Admin Portal and review beacon locations are functioning properly ",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-engineering-shop-quarterly-v1",
+      "name": "Engineering Shop",
+      "description": "Quarterly engineering shop inspection covering room finishes, organization, and cleanliness.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 155,
+      "defaultItems": [
+        {
+          "name": "Engineering Shop",
+          "areaName": "Engineering Office"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Touch up door frames.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Organize paperwork, tools and equipment",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-entry-foyer-quarterly-v1",
+      "name": "Entry Foyer",
+      "description": "Quarterly entry foyer inspection covering finishes, doors, locks, intercom, and luggage carts.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 157,
+      "defaultItems": [
+        {
+          "name": "Entry Foyer",
+          "areaName": "Entrance Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Touch up doors and door frames.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Test locks.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Test intercom.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Check overall condition of luggage carts and repair as needed.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-front-desk-public-space-vtec-unit-quarterly-v1",
+      "name": "Public Space AC Units",
+      "description": "Quarterly preventive maintenance for the front desk / public space VTEC unit.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 158,
+      "defaultItems": [
+        {
+          "name": "Front Desk -  AC Unit",
+          "areaName": "Front Desk Area"
+        },
+        {
+          "name": "Gym - AC Unit",
+          "areaName": "Fitness Center"
+        },
+        {
+          "name": "Laundry Room - AC Unit",
+          "areaName": "Laundry"
+        },
+        {
+          "name": "Lobby - AC Unit",
+          "areaName": "Lobby"
+        },
+        {
+          "name": "Meeting Room - AC Unit",
+          "areaName": "Meeting Room"
+        },
+        {
+          "name": "Public Restrooms - AC Unit",
+          "areaName": "Public Restrooms"
+        },
+        {
+          "name": "Kitchen - AC Unit",
+          "areaName": "Kitchen Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check/Clean evaporator coils and condenser coils as needed",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Clean and change air filter.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Clean and Vacuum drain line.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Ensure unit is not making any alarming or loud noises.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Using temperature gun ensure the unit is producing air between 55 to 64 degrees.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": [
+        "Front Desk - Public Space VTEC Unit"
+      ]
+    },
+    {
+      "key": "one-eyrie-fire-system-flow-quarterly-v1",
+      "name": "Fire System Flow",
+      "description": "Quarterly fire system flow and contracted inspection tracking checklist.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 163,
+      "defaultItems": [
+        {
+          "name": "Fire System Flow",
+          "areaName": "Riser Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Contract out - Annual Alarm Panel Inspection",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Contract out - Annual testing and Maintenance of Standpipe and Hose Systems",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Contract out - Quarterly Testing and Maintenance of Wet Pipe Sprinkler System",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Contract out - Annual Fire Hydrant Flow Test",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Contract Out - Annual, all Backflows, Prevention Assembly Test",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Contract out - Annual Testing and Maintenance of Wet Pipe Sprinkler System",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-fitness-center-quarterly-v1",
+      "name": "Fitness Center",
+      "description": "Quarterly fitness center finishes and equipment preventive maintenance.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 165,
+      "defaultItems": [
+        {
+          "name": "Fitness Center",
+          "areaName": "Fitness Center"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Ensure that all equipment works correctly. ",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-roof-maintenance-quarterly-v1",
+      "name": "Roof Maintenance",
+      "description": "Quarterly roof inspection covering drains, seams, flashing, and ventilation.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 169,
+      "defaultItems": [
+        {
+          "name": "Roof",
+          "areaName": "Roof"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the roof surface for damage, wear, ponding water, or other deterioration",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect seams, flashing, penetrations, parapets, and equipment curbs; repair/seal as needed",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Clean and clear roof drains",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect walk pads and roof access areas; ensure they are secure and in good condition ",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-rooftop-exhausts-quarterly-v1",
+      "name": "Rooftop Exhausts",
+      "description": "Quarterly rooftop exhaust inspection. Add additional exhaust items as needed; each item keeps independent history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 169,
+      "defaultItems": [
+        {
+          "name": "Rooftop Exhaust",
+          "areaName": "Roof"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the general condition and operation of rooftop exhausts.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check and tighten electrical connections.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Ensure that the wheel and blade are clean.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check alignment of belts and pulley.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Check all dampers.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Inspect control wiring.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Check fan-blade guard.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-rooftop-units-quarterly-v1",
+      "name": "Rooftop Units",
+      "description": "Quarterly rooftop unit (RTU) preventive maintenance. Checklist steps to be added later. Each RTU item keeps independent history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 169,
+      "defaultItems": [
+        {
+          "name": "RTU 1",
+          "areaName": "Roof"
+        },
+        {
+          "name": "RTU 2",
+          "areaName": "Roof"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1787112974056",
+                "label": "Inspect overall unit condition and operation; check for unusual noise, vibration, or damage",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787113094535",
+                "label": "Inspect and replace/clean filters as needed",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787113150634",
+                "label": "If specialized service or repairs are needed, contact a qualified technician",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-housekeeping-carts-quarterly-v1",
+      "name": "Housekeeping Carts",
+      "description": "Quarterly housekeeping cart inspection covering wheels, hardware, and finish.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 175,
+      "defaultItems": [
+        {
+          "name": "Housekeeping Carts",
+          "areaName": "Housekeeping Closet"
+        },
+        {
+          "name": "Housekeeping Carts #2",
+          "areaName": "Housekeeping Closet"
+        },
+        {
+          "name": "Housekeeping Carts #3",
+          "areaName": "Housekeeping Closet"
+        },
+        {
+          "name": "Housekeeping Carts #4",
+          "areaName": "Housekeeping Closet"
+        },
+        {
+          "name": "Housekeeping Carts #5",
+          "areaName": "Housekeeping Closet"
+        },
+        {
+          "name": "Housekeeping Carts #6",
+          "areaName": "Housekeeping Closet"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the wheels on all carts, and repair or replace as needed.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Tighten all nuts, bolts, and related supports.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "If needed, paint or touch up all carts.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-water-softener-quarterly-v1",
+      "name": "Water Softener",
+      "description": "Quarterly water softener inspection covering hardness, salt/brine levels, leaks, and valves.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 176,
+      "defaultItems": [
+        {
+          "name": "Water Softener",
+          "areaName": "Riser Room"
+        },
+        {
+          "name": "Water Softener #2",
+          "areaName": "Riser Room"
+        },
+        {
+          "name": "Water Softener #3",
+          "areaName": "Riser Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check alignment of the drain line over the floor drain.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect/test water hardness.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect salt and water levels in the tank according to manufacturer's recommendations.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Ensure brine tank automatic fill is operating properly.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect piping, fittings, and valves for leaks.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Lubricate all valves.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Clean the surrounding area.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-refrigerators-quarterly-v1",
+      "name": "Refrigerators and Freezers",
+      "description": "Quarterly refrigerator and cooler inspection. Add additional refrigerator items as needed; each item keeps independent history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 177,
+      "defaultItems": [
+        {
+          "name": "Market Cooler",
+          "areaName": "Market Area"
+        },
+        {
+          "name": "Market Freezer",
+          "areaName": "Market Area"
+        },
+        {
+          "name": "Kitchen Refrigerator #1",
+          "areaName": "Kitchen Area"
+        },
+        {
+          "name": "Kitchen Refrigerator #2",
+          "areaName": "Kitchen Area"
+        },
+        {
+          "name": "Bar Cooler",
+          "areaName": "Bar"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect and clean interior/exterior; check doors, hinges, gaskets, and seals.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Check temperature and verify proper airflow.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Clean condenser coils; inspect evaporator coils for debris, frost, or ice buildup",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Inspect and clean condensate pain and drain line as needed",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-9",
+                "label": "Inspect electrical supply, connections, and controls for proper operation ",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787111292998",
+                "label": "Check for unusual noise, vibration, leaks, or other signs of improper operation",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787111921021",
+                "label": "Clean under and behind the units ",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": [
+        "Refrigerators"
+      ]
+    },
+    {
+      "key": "one-eyrie-chlorine-feeders-semiannually-v1",
+      "name": "Chlorine Feeders",
+      "description": "Semiannual chlorine feeder inspection and routine maintenance. Assign to the pool equipment room or applicable chemical feed area.",
+      "category": "Custom",
+      "frequency": "semiannually",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 182,
+      "defaultItems": [
+        {
+          "name": "Chlorine Feeders #1",
+          "areaName": "Pool Mechanical Room"
+        },
+        {
+          "name": "Chlorine Feeders #2",
+          "areaName": "Pool Mechanical Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect general condition of chlorine feeder(s).",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect lid, seals, fittings, and connections for visible wear or damage.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect input and output hoses for leaks, cracks, deterioration, or loose connections.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean accessible components as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Verify feeder appears to be operating normally.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Contact the pool service provider or qualified contractor for chemical-system repairs or service beyond routine maintenance.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": [
+        "Chlorine Feeders – Twice Per Year"
+      ]
+    },
+    {
+      "key": "one-eyrie-juice-machine-quarterly-v1",
+      "name": "Juice Machine",
+      "description": "Quarterly juice machine electrical inspection and service checklist.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 183,
+      "defaultItems": [
+        {
+          "name": "Juice Machine",
+          "areaName": "Breakfast Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Clean and inspect machine",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect electrical cord, plug, and connections.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787026659913",
+                "label": "Inspect for any signs of leaking",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-ice-machines-quarterly-v1",
+      "name": "Ice Machines",
+      "description": "Quarterly ice machine inspection and basic mechanical service checklist.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 184,
+      "defaultItems": [
+        {
+          "name": "Ice Machine #1",
+          "areaName": "1st Floor Hallway"
+        },
+        {
+          "name": "Ice Machines #2",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "Ice Machines #3",
+          "areaName": "5th Floor Hallway"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the overall condition of all ice machines.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Ensure that discharge lines are aligned with the floor drains.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Ensure coil fins are straight.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Ensure the shroud is in its proper position.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Level each unit, front to rear and side to side.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Ensure all electrical connections are tight.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Repair or replace any parts as needed.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-dishwasher-sanitizer-quarterly-v1",
+      "name": "Dishwasher / Sanitizer",
+      "description": "Quarterly inspection, cleaning, and operational service for commercial dishwashing and sanitizing equipment.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 189,
+      "defaultItems": [
+        {
+          "name": "Dishwasher / Sanitizer",
+          "areaName": "Kitchen Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the unit, doors, racks, curtains, and accessible components for damage or abnormal wear.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect for water, chemical, or steam leaks and repair or create a work order as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect accessible electrical wiring and connections for visible damage, overheating, or looseness. Contact a qualified contractor when repair is required.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Verify wash and rinse temperatures meet the equipment manufacturer and applicable sanitation requirements.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Clean accessible screens, strainers, spray arms, nozzles, and interior surfaces as needed.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Drain and flush the unit according to manufacturer instructions.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Delime the unit according to manufacturer instructions using the property’s approved deliming product.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Run an operational cycle and verify proper filling, washing, rinsing, draining, and shutdown.",
+                "required": true,
+                "sortOrder": 7,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-commercial-dryer-triannually-v2",
+      "name": "Commercial Dryer",
+      "description": "Preventive maintenance for commercial dryers. Each unit keeps independent completion and maintenance history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 190,
+      "defaultItems": [
+        {
+          "name": "Commercial Dryer #1",
+          "areaName": "Laundry"
+        },
+        {
+          "name": "Commercial Dryer #2",
+          "areaName": "Laundry"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Run dryer and listen for excessive noise or vibration.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect and clean lint screen, lint compartment, and accessible lint buildup.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect drive belts for looseness, wear, cracks, or fraying.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect door, hinges, latch, and door gasket for wear or damage.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Inspect and clean accessible burner area and burner air openings.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect and clean accessible exhaust duct and vent for lint buildup or restriction.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Check accessible fasteners and hardware for looseness; tighten as needed.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-12",
+                "label": "Contact a qualified contractor for gas-system repairs, burner service, electrical repairs, or specialized repairs as needed.",
+                "required": true,
+                "sortOrder": 7,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-commercial-washing-machine-quarterly-v1",
+      "name": "Commercial Washing Machine",
+      "description": "Quarterly preventive maintenance for commercial washing machines. Each unit keeps independent completion and maintenance history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 190,
+      "defaultItems": [
+        {
+          "name": "Commercial Washing Machine #1",
+          "areaName": "Laundry"
+        },
+        {
+          "name": "Commercial Washing Machine #2",
+          "areaName": "Laundry"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Clean drain trough/lint trap.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check for loose, frayed, damaged, or overheated wiring. Create a work order or contact a qualified contractor if repair is required.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Check for water or chemical leaks.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check and clean accessible drain lines as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Grease/lubricate applicable fittings according to manufacturer recommendations.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Run a test cycle and verify proper operation.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-laundry-room-quarterly-v1",
+      "name": "Laundry Room",
+      "description": "Quarterly laundry room finishes, lighting, and linen chute inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 190,
+      "defaultItems": [
+        {
+          "name": "Laundry Room",
+          "areaName": "Laundry"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Clean and repair walls, floors, ceilings, electrical connection, signage, and hardware.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Touch up door frames as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Clean lights and pipes.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check the overall condition of the linen chute. Door closes properly. Chute is clear of obstructions. Chute is clean.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-lighting-signage-quarterly-v1",
+      "name": "Lighting & Signage",
+      "description": "Quarterly exterior lighting and signage inspection covering operation, focus, and cleanliness.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 191,
+      "defaultItems": [
+        {
+          "name": "Lighting & Signage",
+          "areaName": "Hotel / Building / Main"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Ensure that all lights are working and focused.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check and correct any lighting obstructions (for example, tree branches and bushes).",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Clean inside and outside of wall mounted lights as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-linen-and-storage-rooms-quarterly-v1",
+      "name": "Linen and Storage Rooms",
+      "description": "Quarterly linen and storage room inspection covering finishes, organization, and cleanliness.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 193,
+      "defaultItems": [
+        {
+          "name": "Linen and Storage Rooms #2",
+          "areaName": "2nd Floor Hallway"
+        },
+        {
+          "name": "Linen and Storage Rooms #3",
+          "areaName": "3rd Floor Hallway"
+        },
+        {
+          "name": "Linen and Storage Rooms #4",
+          "areaName": "4th Floor Hallway"
+        },
+        {
+          "name": "Linen and Storage Rooms #5",
+          "areaName": "5th Floor Hallway"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Be sure to check the following and repair as needed: Walls, floors, ceilings, electrical connections, signage, hardware.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Touch up door frames as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Organize shelves and replacement supplies.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-1787027190849",
+                "label": "Clean floors, light fixtures, electrical switches and plates, hand floor and mop sinks, fixtures and plumbing.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-guest-dryer-quarterly-v1",
+      "name": "Guest Dryer",
+      "description": "Quarterly guest dryer preventive maintenance for guest laundry.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 197,
+      "defaultItems": [
+        {
+          "name": "Guest Dryer #1",
+          "areaName": "Guest Laundry"
+        },
+        {
+          "name": "Guest Dryer #2",
+          "areaName": "Guest Laundry"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Run dryer and listen for excessive noise or vibration.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Pull out all unit: clean under and behind it.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect and clean accessible exhaust duct and vent for lint buildup or restriction",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean each unit thoroughly.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Run each unit through a complete cycle.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-guest-washer-quarterly-v1",
+      "name": "Guest Washer",
+      "description": "Quarterly guest washer preventive maintenance for guest laundry.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 197,
+      "defaultItems": [
+        {
+          "name": "Guest Washer #1",
+          "areaName": "Guest Laundry"
+        },
+        {
+          "name": "Guest Washer #2",
+          "areaName": "Guest Laundry"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Run each unit through a complete cycle.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Clean behind and under each unit.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Check all hoses & gaskets for leaks. Replace as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean each unit thoroughly.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Lubricate all bearings.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Pull out all units and clean behind them.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect and change all hoses as needed.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-lobby-front-desk-quarterly-v1",
+      "name": "Lobby & Front Desk",
+      "description": "Quarterly lobby, front desk, and market area public-space inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 200,
+      "defaultItems": [
+        {
+          "name": "Lobby & Front Desk",
+          "areaName": "Lobby"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the overall condition of your lobby and front desk; be sure to check each of the following, and touch up, repair, or replace as needed: Walls, floors, ceilings, signage, front desk, and furniture.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check the overall condition of Market Area; be sure to touch up, repair, or replace equipment and cabinetry as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Test all electrical outlets.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Ensure all common space TVs are working properly.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-vacuums-quarterly-v1",
+      "name": "Vacuums",
+      "description": "Quarterly vacuum cleaner inspection and service. Add additional vacuum items as needed; each item keeps independent history.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 203,
+      "defaultItems": [
+        {
+          "name": "Vacuum",
+          "areaName": "Hotel / Building / Main"
+        },
+        {
+          "name": "Vacuums #2",
+          "areaName": "Hotel / Building / Main"
+        },
+        {
+          "name": "Vacuums #3",
+          "areaName": "Hotel / Building / Main"
+        },
+        {
+          "name": "Vacuums #4",
+          "areaName": "Hotel / Building / Main"
+        },
+        {
+          "name": "Vacuums #5",
+          "areaName": "Hotel / Building / Main"
+        },
+        {
+          "name": "Vacuums #6",
+          "areaName": "Hotel / Building / Main"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check each machine's hose and attachments.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check each vacuum's switches, as well as the power cord. Replace any cords that are frayed or damaged.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Each vacuum should be completely disassembled. Then, clean each individual part.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check the condition of each machine's motor, as well as the roller assembly.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Check all parts, and repair or replace as necessary.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Clean debris from beater bar or brush.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Change brushes and belts as needed.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-meeting-room-quarterly-v1",
+      "name": "Meeting Room",
+      "description": "Quarterly meeting room AV, locks, phones, and HVAC inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 204,
+      "defaultItems": [
+        {
+          "name": "Meeting Room",
+          "areaName": "Meeting Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the overall condition of your meeting rooms, and be sure to check the following and repair or replace as needed: Lights, screens, and projector.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Test all locks.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Test all phones and jacks.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Ensure that enough extension cords are available.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Test HVAC.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-outdoor-furniture-quarterly-v1",
+      "name": "Outdoor Furniture",
+      "description": "Quarterly outdoor furniture inspection for pool and fire pit seating areas.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 205,
+      "defaultItems": [
+        {
+          "name": "Pool Furniture",
+          "areaName": "Pool"
+        },
+        {
+          "name": "Fire Pit Furniture",
+          "areaName": "Fire Pit Area"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect furniture for damage, cracks, loose parts, or excessive wear.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Tighten loose hardware and fasteners as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect tables and chairs for stability; repair as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean furniture and remove stains, dirt, mildew, and debris.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect finishes for fading, peeling, rust, or corrosion; touch up as needed.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Confirm furniture is properly positioned and the area is neat and orderly.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-pool-circulation-pumps-quarterly-v1",
+      "name": "Pool Circulation Pump",
+      "description": "Quarterly pool circulation pump inspection covering mounts, baskets, leaks, and wiring.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 206,
+      "defaultItems": [
+        {
+          "name": "Pool Circulation Pump",
+          "areaName": "Pool Mechanical Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect motor floor mounts, motor pump mounts, proper grounding, and proper flow of water (150).",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Clean baskets (purge air after if needed).",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Clean outside the motor to avoid oxidation.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check casing for leaks.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Secure the wiring assembly.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": [
+        "Pool Circulation Pumps"
+      ]
+    },
+    {
+      "key": "one-eyrie-pool-filter-quarterly-v1",
+      "name": "Pool Filter",
+      "description": "Quarterly pool filter inspection covering condition, backwash, leaks, and pressure.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 206,
+      "defaultItems": [
+        {
+          "name": "Pool Filter",
+          "areaName": "Pool Mechanical Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the general condition of all filters.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Check emergency shutoffs.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Backwash as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Check for any leaks, and repair if needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Clean entire unit.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Ensure that pressure is within recommended limits (over 100).",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Every 3 months clean inside all filters. Replace filter if needed.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-pool-heater-quarterly-v1",
+      "name": "Pool Heater",
+      "description": "Quarterly pool heater inspection covering shutoffs, ignition, pipes, fans, and burners.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 206,
+      "defaultItems": [
+        {
+          "name": "Pool Heater"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect the general condition of emergency shutoffs.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect the general condition of outgoing temperature.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect ignition device.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect pipes.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Check water temperature in pool.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Inspect room intake fan(s) and exhaust fan(s).",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Clean burners.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-phone-tv-computer-room-quarterly-v1",
+      "name": "Phone/TV/Computer Room",
+      "description": "Quarterly phone/TV/computer room finishes, temperature, and cleanliness inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 212,
+      "defaultItems": [
+        {
+          "name": "Phone/TV/Computer Room",
+          "areaName": "Mechanical Room"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check and repair walls, ceiling, floors, outlets, signage, hardware.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Room temperature. Must be maintained at 75° or less.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Touch up the door frames.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean the entire room.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-public-restrooms-quarterly-v1",
+      "name": "Public Restrooms",
+      "description": "Quarterly public restroom finishes, plumbing, and fixture inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 213,
+      "defaultItems": [
+        {
+          "name": "Public Restroom - Men",
+          "areaName": "Public Restrooms"
+        },
+        {
+          "name": "Public Restrooms - Woman"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check the overall condition of your public restrooms and repair as needed: Walls, floors, ceilings, signage, outlets, and hardware.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Touch up all door frames.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Test all plumbing.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect and clean exhaust fan.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Replace any tarnished or worn fixtures.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Check any vending machines and have them repaired or replaced as needed.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-stairwells-quarterly-v1",
+      "name": "Stairwells",
+      "description": "Quarterly stairwell finishes, lighting, and handrail inspection.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 217,
+      "defaultItems": [
+        {
+          "name": "Stairwell",
+          "areaName": "Staircase North"
+        },
+        {
+          "name": "Stairwells #2",
+          "areaName": "Staircase South"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Check all of the following, and clean, repair, re-paint, or replace as needed: walls, vinyl, door jambs, ceiling, carpets, cove base, outlets, signage, lights, and hand railing.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    }
+  ]
+}
