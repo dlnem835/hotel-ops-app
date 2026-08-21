@@ -3,8 +3,7 @@ import {
   countContentPoints,
   standardToPropertyContent,
 } from "./builders";
-import { HK_VACANT_READY } from "./hk-vacant-ready";
-import { RPM_GUEST_ROOM } from "./rpm-guest-room";
+import { STANDARD_INSPECTION_TEMPLATES } from "@/app/inspections/lib/standard-inspection-templates";
 import {
   StandardTemplateDefinition,
   StandardTemplateSummary,
@@ -31,9 +30,14 @@ export type {
   InspectionScore,
 } from "./types";
 
+export {
+  STANDARD_INSPECTION_LIBRARY_META,
+  STANDARD_INSPECTION_TEMPLATES,
+} from "@/app/inspections/lib/standard-inspection-templates";
+
+/** One Eyrie Standard Library — SpringHill Suites Room + RPM masters. */
 export const STANDARD_TEMPLATE_LIBRARY: StandardTemplateDefinition[] = [
-  HK_VACANT_READY,
-  RPM_GUEST_ROOM,
+  ...STANDARD_INSPECTION_TEMPLATES,
 ];
 
 export const STANDARD_TEMPLATE_MAP: Record<string, StandardTemplateDefinition> =

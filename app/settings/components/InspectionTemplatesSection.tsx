@@ -21,6 +21,7 @@ import { countContentItems } from "@/app/inspections/standards/builders";
 import { formatTemplateDate } from "@/app/inspections/lib/template-draft";
 import {
   getStandardTemplate,
+  STANDARD_INSPECTION_LIBRARY_META,
   STANDARD_TEMPLATE_LIBRARY,
 } from "@/app/inspections/standards";
 import {
@@ -168,7 +169,7 @@ export default function InspectionTemplatesSection({
   async function restoreStandard(id: number) {
     if (
       !confirm(
-        "Restore this template to the current One Eyrie standard? Your customizations will be replaced."
+        "Update this property template to the current One Eyrie standard from SpringHill Suites? Your customizations will be replaced."
       )
     ) {
       return;
@@ -188,7 +189,7 @@ export default function InspectionTemplatesSection({
     }
 
     await fetchData();
-    setToast("Template restored to One Eyrie standard.");
+    setToast("Template updated to the current One Eyrie standard.");
   }
 
   async function duplicateTemplate(id: number) {
@@ -322,8 +323,10 @@ export default function InspectionTemplatesSection({
             One Eyrie Standard Library
           </div>
           <p style={{ color: ONE_EYRIE.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
-            Built-in master templates ship with the app and cannot be edited.
-            Activate a template to create your property copy in Supabase.
+            Room and RPM masters are locked from{" "}
+            {STANDARD_INSPECTION_LIBRARY_META.sourcePropertyName}. They cannot be
+            edited here. Activate a template to create your property copy; new
+            inspections across desktop and mobile use that Active copy.
           </p>
         </div>
 
@@ -337,6 +340,8 @@ export default function InspectionTemplatesSection({
           {standards.map((standard) => {
             const state = activationMap.get(standard.key);
             const activated = state?.activated ?? false;
+            const updateAvailable = state?.updateAvailable ?? false;
+            const propertyTemplateId = state?.propertyTemplate?.id ?? null;
 
             return (
               <div
@@ -347,6 +352,7 @@ export default function InspectionTemplatesSection({
                 <div style={{ color: ONE_EYRIE.text, fontWeight: 800 }}>{standard.name}</div>
                 <div style={{ color: ONE_EYRIE.gold, fontSize: "12px", marginTop: "4px" }}>
                   {standard.templateType} · Standard v{standard.version}
+                  {updateAvailable ? " · Update available" : ""}
                 </div>
                 <div
                   style={{
@@ -378,7 +384,24 @@ export default function InspectionTemplatesSection({
                     <Eye size={14} />
                     Preview
                   </button>
-                  {activated ? (
+                  {updateAvailable && propertyTemplateId != null ? (
+                    <button
+                      type="button"
+                      style={{
+                        ...primaryButton,
+                        ...buttonBase,
+                        flex: 1,
+                        height: "38px",
+                        fontSize: "13px",
+                      }}
+                      onClick={() => restoreStandard(propertyTemplateId)}
+                      disabled={saving}
+                      {...forestHoverHandlers(saving)}
+                    >
+                      <RotateCcw size={14} />
+                      Update
+                    </button>
+                  ) : activated ? (
                     <span
                       style={{
                         ...statusPill,
@@ -454,10 +477,13 @@ export default function InspectionTemplatesSection({
         </div>
       ) : (
         filteredPropertyTemplates.map((template) => {
-          const standardVersion =
-            getStandardTemplate(template.standard_key || "")?.version ||
-            template.based_on_standard_version ||
-            "—";
+          const currentStandardVersion =
+            getStandardTemplate(template.standard_key || "")?.version || null;
+          const basedVersion = template.based_on_standard_version || "—";
+          const updateAvailable =
+            Boolean(template.standard_key) &&
+            Boolean(currentStandardVersion) &&
+            basedVersion !== currentStandardVersion;
 
           return (
             <div
@@ -476,9 +502,18 @@ export default function InspectionTemplatesSection({
               <div style={rowText}>{countContentItems(template.content)}</div>
               <div>{renderStatusPill(template.status)}</div>
               <div style={{ ...rowText, fontSize: "12px", lineHeight: 1.5 }}>
-                Std v{standardVersion}
+                Std v{basedVersion}
+                {currentStandardVersion ? ` → v${currentStandardVersion}` : ""}
                 <br />
                 Prop v{template.property_version}
+                {updateAvailable ? (
+                  <>
+                    <br />
+                    <span style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}>
+                      Update available
+                    </span>
+                  </>
+                ) : null}
               </div>
               <div style={actionCell}>
                 <button

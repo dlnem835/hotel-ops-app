@@ -1,0 +1,810 @@
+{
+  "sourcePropertyName": "Springhill Suites Tampa Suncoast Parkway",
+  "sourcePropertyId": 1,
+  "sourceOrganizationId": 1,
+  "capturedAt": "2026-08-21T19:17:12.136Z",
+  "templateCount": 2,
+  "templates": [
+    {
+      "key": "hk-vacant-ready",
+      "version": "2.0",
+      "name": "Housekeeping Vacant Ready",
+      "templateType": "Guest Room",
+      "description": "Complete vacant-room readiness checklist for guest arrival.",
+      "categories": [
+        {
+          "key": "entry",
+          "name": {
+            "en": "Entry",
+            "es": "Entrada"
+          },
+          "items": [
+            {
+              "key": "door",
+              "label": {
+                "en": "Door: Is the peephole, door, door frame and door lock clean?",
+                "es": "Puerta: ¿Están limpios el mirilla, la puerta, el marco y la cerradura?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "floor",
+              "label": {
+                "en": "Floor: Have the carpet edges been vacuumed around the door?",
+                "es": "Piso: ¿Se aspiraron los bordes de la alfombra alrededor de la puerta?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "smell",
+              "label": {
+                "en": "Fresh, Clean, Neutral Smell: Does the room smell fresh and clean upon entering the room?",
+                "es": "Olor fresco y limpio: ¿La habitación huele fresca y limpia al entrar?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "temperature",
+              "label": {
+                "en": "Correct Temperature: Is the temperature set correctly?",
+                "es": "Temperatura correcta: ¿Está la temperatura configurada correctamente?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "closet",
+          "name": {
+            "en": "Closet",
+            "es": "Closet"
+          },
+          "items": [
+            {
+              "key": "hangers",
+              "label": {
+                "en": "Hangers: Are the correct number of hangers present?",
+                "es": "Ganchos: ¿Hay la cantidad correcta de ganchos?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "laundry-bag",
+              "label": {
+                "en": "Laundry Bag/Ticket: Is the laundry bag and ticket present?",
+                "es": "Bolsa/Boleta de lavandería: ¿Están presentes la bolsa y la boleta?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "iron",
+              "label": {
+                "en": "Iron: Is the iron clean, no water?",
+                "es": "Plancha: ¿Está la plancha limpia y sin agua?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "ironing-board",
+              "label": {
+                "en": "Ironing Board: Is the ironing board clean with cover, caps on all legs?",
+                "es": "Tabla de planchar: ¿Está limpia con funda y tapones en todas las patas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "linen-bag",
+              "label": {
+                "en": "Linen Storage Bag: Is the vinyl zipper linen storage bag present, neat, and with pillow included?",
+                "es": "Bolsa de lino: ¿Está presente, ordenada y con almohada incluida?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "bedroom",
+          "name": {
+            "en": "Bedroom",
+            "es": "Dormitorio"
+          },
+          "items": [
+            {
+              "key": "bed",
+              "label": {
+                "en": "Bed: Is the bed made correctly with clean linens, proper turndown, and no wrinkles?",
+                "es": "Cama: ¿Está bien hecha con ropa limpia, sin arrugas?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "pillows",
+              "label": {
+                "en": "Pillows/Bedding: Are pillows fluffed, pillowcases clean, and bedspread even?",
+                "es": "Almohadas/Ropa de cama: ¿Almohadas esponjadas, fundas limpias y cobertor parejo?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "nightstands",
+              "label": {
+                "en": "Nightstands: Are nightstands clean, dust-free, and properly staged?",
+                "es": "Mesitas de noche: ¿Están limpias, sin polvo y bien presentadas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "lamps",
+              "label": {
+                "en": "Lamps: Are bedside and desk lamps clean, working, and shade aligned?",
+                "es": "Lámparas: ¿Están limpias, funcionando y con pantalla alineada?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "tv-remote",
+              "label": {
+                "en": "TV & Remote: Is the TV clean, operational, and the remote sanitized and present?",
+                "es": "TV y control: ¿TV limpio, operativo y control desinfectado y presente?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "furniture",
+              "label": {
+                "en": "Furniture: Are dressers, chairs, and desk clean with no dust or stains?",
+                "es": "Muebles: ¿Cómodas, sillas y escritorio limpios sin polvo ni manchas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "trash",
+              "label": {
+                "en": "Trash: Are wastebaskets empty with new liners?",
+                "es": "Basura: ¿Papeleras vacías con bolsas nuevas?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "carpet",
+              "label": {
+                "en": "Carpet/Floor: Is the bedroom carpet vacuumed with no debris or stains visible?",
+                "es": "Alfombra/Piso: ¿Alfombra aspirada sin residuos ni manchas visibles?"
+              },
+              "pointValue": 5,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "bath",
+          "name": {
+            "en": "Bath",
+            "es": "Baño"
+          },
+          "items": [
+            {
+              "key": "vanity",
+              "label": {
+                "en": "Vanity/Sink: Is the vanity, sink, and faucet clean and free of hair or residue?",
+                "es": "Vanidad/Lavabo: ¿Vanidad, lavabo y grifo limpios sin cabello ni residuo?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "shower-tub",
+              "label": {
+                "en": "Shower/Tub: Are shower walls, tub, and fixtures clean with no mold or soap buildup?",
+                "es": "Ducha/Tina: ¿Paredes, tina y accesorios limpios sin moho ni jabón acumulado?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "shower-curtain",
+              "label": {
+                "en": "Shower Curtain/Doors: Are shower doors or curtain clean, aligned, and mildew-free?",
+                "es": "Puertas/Cortina de ducha: ¿Limpias, alineadas y sin moho?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "toilet",
+              "label": {
+                "en": "Toilet: Is the toilet bowl, tank, seat, and handle clean and sanitized?",
+                "es": "Inodoro: ¿Taza, tanque, asiento y palanca limpios y desinfectados?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "towels",
+              "label": {
+                "en": "Towels: Are bath towels, hand towels, and washcloths folded and staged correctly?",
+                "es": "Toallas: ¿Toallas de baño, de mano y toallitas dobladas y presentadas correctamente?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "amenities",
+              "label": {
+                "en": "Amenities: Are soap, shampoo, conditioner, lotion, and tissue fully stocked?",
+                "es": "Amenidades: ¿Jabón, shampoo, acondicionador, loción y tissue completamente abastecidos?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "mirror",
+              "label": {
+                "en": "Mirror: Is the mirror streak-free and free of spots?",
+                "es": "Espejo: ¿Sin rayas ni manchas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "bath-floor",
+              "label": {
+                "en": "Bath Floor: Is the bathroom floor clean, dry, and free of hair?",
+                "es": "Piso del baño: ¿Limpio, seco y sin cabello?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "caulking",
+              "label": {
+                "en": "Caulking/Grout: Is caulking and grout clean and in good condition?",
+                "es": "Sellador/Lechada: ¿Limpios y en buen estado?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "exhaust-fan",
+              "label": {
+                "en": "Exhaust Fan: Is the bathroom exhaust fan clean and operational?",
+                "es": "Extractor: ¿Ventilador del baño limpio y operativo?"
+              },
+              "pointValue": 2,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "windows-drapes",
+          "name": {
+            "en": "Windows & Drapes",
+            "es": "Ventanas y cortinas"
+          },
+          "items": [
+            {
+              "key": "windows",
+              "label": {
+                "en": "Windows: Are windows clean, streak-free, and operational?",
+                "es": "Ventanas: ¿Limpias, sin rayas y operativas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "drapes",
+              "label": {
+                "en": "Drapes/Sheers: Are drapes and sheers aligned, clean, and free of stains?",
+                "es": "Cortinas/Visillos: ¿Alineados, limpios y sin manchas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "window-sills",
+              "label": {
+                "en": "Window Sills: Are window sills and tracks clean and dust-free?",
+                "es": "Alfeizares: ¿Alfeizares y rieles limpios y sin polvo?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "work-area",
+          "name": {
+            "en": "Work Area",
+            "es": "Área de trabajo"
+          },
+          "items": [
+            {
+              "key": "desk-chair",
+              "label": {
+                "en": "Desk/Chair: Is the desk and chair clean, stable, and properly positioned?",
+                "es": "Escritorio/Silla: ¿Limpios, estables y bien posicionados?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "desk-lamp",
+              "label": {
+                "en": "Desk Lamp: Is the desk lamp clean and working?",
+                "es": "Lámpara de escritorio: ¿Limpia y funcionando?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "notepad",
+              "label": {
+                "en": "Notepad/Pen: Are notepad and pen present and usable?",
+                "es": "Bloc/Lápiz: ¿Bloc y lápiz presentes y usables?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "wifi",
+              "label": {
+                "en": "Wi-Fi Info: Is Wi-Fi information visible and current?",
+                "es": "Info Wi-Fi: ¿Información de Wi-Fi visible y actualizada?"
+              },
+              "pointValue": 2,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "amenities-supplies",
+          "name": {
+            "en": "Amenities & Supplies",
+            "es": "Amenidades y suministros"
+          },
+          "items": [
+            {
+              "key": "coffee",
+              "label": {
+                "en": "Coffee/Tea Station: Is the coffee maker clean with cups, coffee, and supplies stocked?",
+                "es": "Estación de café/té: ¿Cafetera limpia con tazas, café y suministros abastecidos?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "ice-bucket",
+              "label": {
+                "en": "Ice Bucket/Glasses: Are ice bucket, liner, and glasses clean and present?",
+                "es": "Cubeta/Vasos: ¿Cubeta de hielo, bolsa y vasos limpios y presentes?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "guest-directory",
+              "label": {
+                "en": "Guest Directory: Is the guest directory/folio holder clean and correctly placed?",
+                "es": "Directorio: ¿Directorio/portafolio limpio y colocado correctamente?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "micro-fridge",
+              "label": {
+                "en": "Microwave/Refrigerator: Are microwave and refrigerator clean, empty, and operational?",
+                "es": "Micro/Refrigerador: ¿Limpios, vacíos y operativos?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "safe",
+              "label": {
+                "en": "Safe: Is the in-room safe clean, operational, and reset?",
+                "es": "Caja fuerte: ¿Limpia, operativa y restablecida?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "overall-room",
+          "name": {
+            "en": "Overall Room",
+            "es": "Habitación en general"
+          },
+          "items": [
+            {
+              "key": "walls-ceiling",
+              "label": {
+                "en": "Walls/Ceiling: Are walls and ceiling clean with no marks, scuffs, or cobwebs?",
+                "es": "Paredes/Techo: ¿Limpios sin marcas, raspones ni telarañas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "baseboards",
+              "label": {
+                "en": "Baseboards: Are baseboards clean and free of dust?",
+                "es": "Zócalos: ¿Limpios y sin polvo?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "artwork",
+              "label": {
+                "en": "Artwork/Mirrors: Is artwork and room mirror clean, secure, and level?",
+                "es": "Arte/Espejos: ¿Arte y espejo limpios, seguros y nivelados?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "hvac",
+              "label": {
+                "en": "HVAC: Is the thermostat set correctly and vents clean and unobstructed?",
+                "es": "HVAC: ¿Termostato correcto y rejillas limpias y despejadas?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "lighting",
+              "label": {
+                "en": "Lighting: Do all room lights work including closet and bathroom?",
+                "es": "Iluminación: ¿Todas las luces funcionan incluyendo closet y baño?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "phone",
+              "label": {
+                "en": "Phone: Is the phone clean, working, and message light reset?",
+                "es": "Teléfono: ¿Limpio, funcionando y luz de mensaje restablecida?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "smoke-detector",
+              "label": {
+                "en": "Smoke Detector: Is the smoke detector present, unobstructed, and indicator normal?",
+                "es": "Detector de humo: ¿Presente, despejado e indicador normal?"
+              },
+              "pointValue": 5,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "housekeeping-cart",
+          "name": {
+            "en": "Housekeeping Cart",
+            "es": "Carrito de limpieza"
+          },
+          "items": [
+            {
+              "key": "clean-organized-cart",
+              "label": {
+                "en": "Clean Organized Cart: Is the attendant's cart clean and organized, trash separated from clean and dirty linens, chemicals away from linens?",
+                "es": "Carrito limpio y organizado: ¿Está el carrito del camarista limpio y organizado, basura separada de ropa limpia y sucia, químicos alejados de la ropa?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "evidence-from-past-guest",
+          "name": {
+            "en": "Evidence from Past Guest",
+            "es": "Evidencia del huésped anterior"
+          },
+          "items": [
+            {
+              "key": "hair",
+              "label": {
+                "en": "Hair: Is the room free of hair?",
+                "es": "Cabello: ¿La habitación está libre de cabello?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "trash-debris-food",
+              "label": {
+                "en": "Trash / Debris / Food: Is the room free of trash, debris and food?",
+                "es": "Basura / Residuos / Comida: ¿La habitación está libre de basura, residuos y comida?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "clothes-lost-found",
+              "label": {
+                "en": "Clothes / Lost & Found Items: Is the room free of clothes, lost and found items?",
+                "es": "Ropa / Objetos perdidos: ¿La habitación está libre de ropa y objetos perdidos?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "bodily-fluids",
+              "label": {
+                "en": "Bodily Fluids: Is the room free of bodily fluids?",
+                "es": "Fluidos corporales: ¿La habitación está libre de fluidos corporales?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "bedding-stains",
+              "label": {
+                "en": "Bedding Stains: Is the bedding free of stains?",
+                "es": "Manchas en ropa de cama: ¿La ropa de cama está libre de manchas?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "pests",
+              "label": {
+                "en": "Pests / Signs of Pests: Is the room free of pests / signs of pests?",
+                "es": "Plagas / Señales de plagas: ¿La habitación está libre de plagas o señales de plagas?"
+              },
+              "pointValue": 40,
+              "required": true
+            },
+            {
+              "key": "other-evidence",
+              "label": {
+                "en": "Other Evidence from Past Guest: Is the room free of all other evidence from past guest?",
+                "es": "Otra evidencia del huésped anterior: ¿La habitación está libre de cualquier otra evidencia del huésped anterior?"
+              },
+              "pointValue": 40,
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "rpm-guest-room",
+      "version": "2.0",
+      "name": "RPM Guest Room",
+      "templateType": "RPM",
+      "description": "Routine preventative maintenance inspection for guest rooms.",
+      "categories": [
+        {
+          "key": "entry",
+          "name": {
+            "en": "Entry",
+            "es": "Entrada"
+          },
+          "items": [
+            {
+              "key": "door-lock",
+              "label": {
+                "en": "Door Lock: Is the entry door lock clean and in good condition with a solid green light when a key is used?",
+                "es": "Cerradura: ¿Está limpia y en buen estado con luz verde sólida al usar la llave?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "door-latch",
+              "label": {
+                "en": "Door Latch, Peephole and Door Frame: Is the entry door, latch, peephole and door frame secure, clean and in good condition?",
+                "es": "Pestillo, mirilla y marco: ¿Puerta, pestillo, mirilla y marco seguros, limpios y en buen estado?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "odor",
+              "label": {
+                "en": "Odor: Is the room free of odors?",
+                "es": "Olor: ¿La habitación está libre de olores?"
+              },
+              "pointValue": 5,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "bath",
+          "name": {
+            "en": "Bath",
+            "es": "Baño"
+          },
+          "items": [
+            {
+              "key": "faucets-shower",
+              "label": {
+                "en": "Faucets/Shower: Is the bathroom sink faucet and tub spout secure and in good condition?",
+                "es": "Grifos/Ducha: ¿Grifo del lavabo y tubo de la tina seguros y en buen estado?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "bath-doors",
+              "label": {
+                "en": "Bath Doors: Are the bathroom door and door frame clean and in good condition?",
+                "es": "Puertas del baño: ¿Puerta y marco del baño limpios y en buen estado?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "shower-doors",
+              "label": {
+                "en": "Shower Doors/Curtains: Are the bathroom shower doors or shower curtain secure, clean and in good condition?",
+                "es": "Puertas/Cortina de ducha: ¿Seguras, limpias y en buen estado?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "drains-odor",
+              "label": {
+                "en": "Drains/Odor: Are all the drains in the bathroom clear and free of odor?",
+                "es": "Desagües/Olor: ¿Todos los desagües despejados y sin olor?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "caulking",
+              "label": {
+                "en": "Caulking: Is the shower/tub and toilet caulking clean and in good condition?",
+                "es": "Sellador: ¿Sellador de ducha/tina e inodoro limpio y en buen estado?"
+              },
+              "pointValue": 10,
+              "required": true
+            },
+            {
+              "key": "toilet",
+              "label": {
+                "en": "Toilet: Is the toilet bowl, tank, seat, and handle clean, secure and in good condition?",
+                "es": "Inodoro: ¿Taza, tanque, asiento y palanca limpios, seguros y en buen estado?"
+              },
+              "pointValue": 4,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "bedroom",
+          "name": {
+            "en": "Bedroom",
+            "es": "Dormitorio"
+          },
+          "items": [
+            {
+              "key": "hvac",
+              "label": {
+                "en": "HVAC: Is the thermostat functioning and the air filter clean?",
+                "es": "HVAC: ¿Termostato funcionando y filtro de aire limpio?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "windows",
+              "label": {
+                "en": "Windows/Screens: Are windows operational with intact screens and clean tracks?",
+                "es": "Ventanas/Mallas: ¿Ventanas operativas con mallas intactas y rieles limpios?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "furniture",
+              "label": {
+                "en": "Furniture: Are dressers, chairs, and desk secure with no damage or missing hardware?",
+                "es": "Muebles: ¿Cómodas, sillas y escritorio seguros sin daños ni hardware faltante?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "electrical",
+              "label": {
+                "en": "Electrical: Do all outlets, switches, and lamps work properly?",
+                "es": "Eléctrico: ¿Todos los tomacorrientes, interruptores y lámparas funcionan?"
+              },
+              "pointValue": 5,
+              "required": true
+            },
+            {
+              "key": "tv-phone",
+              "label": {
+                "en": "TV/Phone: Are TV, remote, and phone operational?",
+                "es": "TV/Teléfono: ¿TV, control y teléfono operativos?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "ceiling-walls",
+              "label": {
+                "en": "Ceiling/Walls: Are ceiling, walls, and baseboards free of damage or water stains?",
+                "es": "Techo/Paredes: ¿Techo, paredes y zócalos sin daños ni manchas de agua?"
+              },
+              "pointValue": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "closet",
+          "name": {
+            "en": "Closet",
+            "es": "Closet"
+          },
+          "items": [
+            {
+              "key": "safe",
+              "label": {
+                "en": "Safe: Is the in-room safe clean, operational, and reset?",
+                "es": "Caja fuerte: ¿Limpia, operativa y restablecida?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "iron-board",
+              "label": {
+                "en": "Iron/Ironing Board: Are the iron and ironing board clean and in good condition?",
+                "es": "Plancha/Tabla: ¿Plancha y tabla limpias y en buen estado?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "hangers-rack",
+              "label": {
+                "en": "Hangers/Luggage Rack: Are hangers and luggage rack present and undamaged?",
+                "es": "Ganchos/Rack de equipaje: ¿Presentes y sin daños?"
+              },
+              "pointValue": 2,
+              "required": true
+            },
+            {
+              "key": "closet-door",
+              "label": {
+                "en": "Closet Door/Hardware: Does the closet door operate smoothly with intact hardware?",
+                "es": "Puerta del closet: ¿Opera suavemente con hardware intacto?"
+              },
+              "pointValue": 2,
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
