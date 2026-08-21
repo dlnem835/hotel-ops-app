@@ -10,6 +10,10 @@ import {
 import Link from "next/link";
 import type { AuthError, EmailOtpType } from "@supabase/supabase-js";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
+import {
+  ACCOUNT_SETUP_PATH,
+  fetchAccountSetupState,
+} from "@/app/lib/account-setup/account-setup-client";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
@@ -167,6 +171,14 @@ export default function ResetPasswordPage() {
       setError(
         updateError.message || "Unable to update password. The link may have expired."
       );
+      return;
+    }
+
+    // Invited users who never finished username setup should continue there
+    // while still signed in (e.g. recovery after an email-link prefetch).
+    const setupState = await fetchAccountSetupState();
+    if (setupState && !setupState.accountSetupComplete) {
+      window.location.replace(ACCOUNT_SETUP_PATH);
       return;
     }
 

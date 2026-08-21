@@ -86,8 +86,11 @@ export function buildInvitationEmail(
       <strong style="color:${T.text};">One Eyrie</strong>,
       the hotel operations platform designed to simplify hotel operations across one or multiple properties.
     </p>
-    <p style="margin:0${variables.recommendDesktop ? " 0 16px" : ""};">
+    <p style="margin:0 0 16px;">
       ${access.html}
+    </p>
+    <p style="margin:0${variables.recommendDesktop ? " 0 16px" : ""};">
+      After you accept, you&rsquo;ll choose a username and password to finish setting up your account.
     </p>
     ${
       variables.recommendDesktop
@@ -129,6 +132,8 @@ export function buildInvitationEmail(
     `${inviterName} has invited you to join One Eyrie, the hotel operations platform designed to simplify hotel operations across one or multiple properties.`,
     "",
     access.text,
+    "",
+    "After you accept, you'll choose a username and password to finish setting up your account.",
     ...(variables.recommendDesktop
       ? [
           "",
