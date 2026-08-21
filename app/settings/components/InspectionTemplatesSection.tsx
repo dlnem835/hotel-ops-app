@@ -29,12 +29,12 @@ import {
   StandardTemplateSummary,
 } from "@/app/inspections/standards/types";
 import {
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
   secondaryHoverHandlers,
+  settingsCardHoverHandlers,
   SETTINGS_BUTTON_BASE,
   SETTINGS_CARD_TRANSITION,
-  settingsCardHoverHandlers,
 } from "../lib/settings-ui-interactions";
 
 type ActivationInfo = {
@@ -396,7 +396,7 @@ export default function InspectionTemplatesSection({
                       }}
                       onClick={() => restoreStandard(propertyTemplateId)}
                       disabled={saving}
-                      {...forestHoverHandlers(saving)}
+                      {...goldFilledHoverHandlers(saving)}
                     >
                       <RotateCcw size={14} />
                       Update
@@ -424,7 +424,7 @@ export default function InspectionTemplatesSection({
                       }}
                       onClick={() => activateStandard(standard.key)}
                       disabled={saving}
-                      {...forestHoverHandlers(saving)}
+                      {...goldFilledHoverHandlers(saving)}
                     >
                       <Sparkles size={14} />
                       Activate

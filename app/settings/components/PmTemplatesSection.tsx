@@ -22,7 +22,7 @@ import {
 } from "@/app/maintenance/lib/pm-template-duplicate";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   secondaryHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "../lib/settings-ui-interactions";
@@ -614,7 +614,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           type="button"
           style={{ ...primaryButton, ...SETTINGS_BUTTON_BASE }}
           onClick={openNew}
-          {...forestHoverHandlers()}
+          {...goldFilledHoverHandlers()}
         >
           <Plus size={16} />
           New PM Template
@@ -1333,7 +1333,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                 style={primaryButton}
                 onClick={() => void addStandardPms()}
                 disabled={addingStandards || availableStandardCount === 0}
-                {...forestHoverHandlers()}
+                {...goldFilledHoverHandlers(
+                  addingStandards || availableStandardCount === 0
+                )}
               >
                 {addingStandards ? "Adding…" : "Add Standard PMs"}
               </button>

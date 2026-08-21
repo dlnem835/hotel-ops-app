@@ -49,6 +49,9 @@ type ItemDraft = {
   areaId: number | null;
 };
 
+/** Manual item count for equipment groups; room bulk can fill up to this. */
+const MAX_PM_ITEMS = 500;
+
 function getLocalDateString(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -129,6 +132,7 @@ export default function PmTemplateModal({
   const [noEndDate, setNoEndDate] = useState(true);
   const [form, setForm] = useState<PmTemplateInput>(emptyForm());
   const [items, setItems] = useState<ItemDraft[]>([emptyItem()]);
+  const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -136,6 +140,7 @@ export default function PmTemplateModal({
       if (!initial) {
         setForm(emptyForm());
         setItems([emptyItem()]);
+        setSelectedRoomIds([]);
         setNoEndDate(true);
         setError(null);
         return;
@@ -162,7 +167,13 @@ export default function PmTemplateModal({
           status: initial.assignment?.status || "Active",
         },
       });
-      setItems(toDraftItems(sourceItems, initial.name || ""));
+      const draftItems = toDraftItems(sourceItems, initial.name || "");
+      setItems(draftItems);
+      setSelectedRoomIds(
+        draftItems
+          .map((item) => item.areaId)
+          .filter((id): id is number => typeof id === "number")
+      );
       setNoEndDate(!initial.assignment?.end_date);
       setError(null);
     }, 0);
@@ -171,6 +182,21 @@ export default function PmTemplateModal({
 
   const areaOptions = useMemo(
     () => sortPmAreaOptions(areas),
+    [areas]
+  );
+  const guestRooms = useMemo(
+    () =>
+      areas
+        .filter(
+          (area) => area.area_type === "Guest Room" && area.status === "Active"
+        )
+        .slice()
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          })
+        ),
     [areas]
   );
   const draftPm = useMemo(
@@ -205,7 +231,7 @@ export default function PmTemplateModal({
   }
 
   function changeItemCount(value: number) {
-    const count = Math.max(1, Math.min(100, Math.trunc(value) || 1));
+    const count = Math.max(1, Math.min(MAX_PM_ITEMS, Math.trunc(value) || 1));
     setItems((current) => {
       if (count <= current.length) return current.slice(0, count);
       return [
@@ -223,6 +249,87 @@ export default function PmTemplateModal({
         item.clientKey === clientKey ? { ...item, ...patch } : item
       )
     );
+  }
+
+  function toggleRoomSelection(roomId: number) {
+    setSelectedRoomIds((current) =>
+      current.includes(roomId)
+        ? current.filter((id) => id !== roomId)
+        : [...current, roomId]
+    );
+  }
+
+  function selectAllGuestRooms() {
+    setSelectedRoomIds(guestRooms.map((room) => room.id));
+  }
+
+  function clearGuestRoomSelection() {
+    setSelectedRoomIds([]);
+  }
+
+  function mergeGuestRoomsIntoItems(rooms: BuildingArea[]) {
+    if (rooms.length === 0) {
+      setError("No active guest rooms are available for this property.");
+      return;
+    }
+
+    setItems((current) => {
+      const existingAreaIds = new Set(
+        current
+          .map((item) => item.areaId)
+          .filter((id): id is number => typeof id === "number")
+      );
+      const existingNames = new Set(
+        current.map((item) => item.name.trim().toLowerCase()).filter(Boolean)
+      );
+
+      const base =
+        current.length === 1 &&
+        !current[0].name.trim() &&
+        current[0].areaId == null &&
+        !current[0].assignmentId
+          ? []
+          : [...current];
+
+      const additions: ItemDraft[] = [];
+      for (const room of rooms) {
+        const roomName = room.name.trim();
+        if (!roomName) continue;
+        if (existingAreaIds.has(room.id)) continue;
+        if (existingNames.has(roomName.toLowerCase())) continue;
+        additions.push({
+          clientKey: `room-${room.id}`,
+          name: roomName,
+          areaId: room.id,
+        });
+        existingAreaIds.add(room.id);
+        existingNames.add(roomName.toLowerCase());
+      }
+
+      const merged = [...base, ...additions];
+      return (merged.length > 0 ? merged : [emptyItem(0, form.name)]).slice(
+        0,
+        MAX_PM_ITEMS
+      );
+    });
+    setError(null);
+  }
+
+  function applyAllGuestRooms() {
+    const roomIds = guestRooms.map((room) => room.id);
+    setSelectedRoomIds(roomIds);
+    mergeGuestRoomsIntoItems(guestRooms);
+  }
+
+  function applySelectedGuestRooms() {
+    const selected = guestRooms.filter((room) =>
+      selectedRoomIds.includes(room.id)
+    );
+    if (selected.length === 0) {
+      setError("Select at least one guest room first.");
+      return;
+    }
+    mergeGuestRoomsIntoItems(selected);
   }
 
   async function handleSave() {
@@ -420,7 +527,7 @@ export default function PmTemplateModal({
               <input
                 type="number"
                 min={1}
-                max={100}
+                max={MAX_PM_ITEMS}
                 value={items.length}
                 onChange={(event) =>
                   changeItemCount(Number(event.target.value))
@@ -428,6 +535,148 @@ export default function PmTemplateModal({
                 style={input}
               />
             </div>
+
+            {guestRooms.length > 0 ? (
+              <div
+                style={{
+                  marginBottom: "14px",
+                  padding: "12px",
+                  border: `1px solid ${ONE_EYRIE.border}`,
+                  borderRadius: "10px",
+                  background: ONE_EYRIE.surfaceInset,
+                }}
+              >
+                <div
+                  style={{
+                    color: ONE_EYRIE.gold,
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Guest Rooms ({guestRooms.length} active)
+                </div>
+                <p
+                  style={{
+                    margin: "0 0 10px",
+                    color: ONE_EYRIE.textMuted,
+                    fontSize: "12px",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Generate one PM item per room for PTAC/AC units, smoke
+                  detectors, refrigerators, and similar assets. Existing room
+                  items are not duplicated.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={applyAllGuestRooms}
+                    style={{
+                      ...GOLD_OUTLINE_BUTTON,
+                      height: "36px",
+                      minHeight: "36px",
+                      fontSize: "12px",
+                      padding: "0 12px",
+                    }}
+                    {...goldHoverHandlers("secondary")}
+                  >
+                    Apply to All Guest Rooms
+                  </button>
+                  <button
+                    type="button"
+                    onClick={selectAllGuestRooms}
+                    style={{
+                      ...secondaryButton,
+                      height: "36px",
+                      minHeight: "36px",
+                      fontSize: "12px",
+                      padding: "0 12px",
+                    }}
+                    {...neutralHoverHandlers()}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearGuestRoomSelection}
+                    style={{
+                      ...secondaryButton,
+                      height: "36px",
+                      minHeight: "36px",
+                      fontSize: "12px",
+                      padding: "0 12px",
+                    }}
+                    {...neutralHoverHandlers()}
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applySelectedGuestRooms}
+                    disabled={selectedRoomIds.length === 0}
+                    style={{
+                      ...GOLD_OUTLINE_BUTTON,
+                      height: "36px",
+                      minHeight: "36px",
+                      fontSize: "12px",
+                      padding: "0 12px",
+                      opacity: selectedRoomIds.length === 0 ? 0.55 : 1,
+                    }}
+                    {...goldHoverHandlers(
+                      "secondary",
+                      selectedRoomIds.length === 0
+                    )}
+                  >
+                    Add Selected ({selectedRoomIds.length})
+                  </button>
+                </div>
+                <div
+                  style={{
+                    maxHeight: "160px",
+                    overflowY: "auto",
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(110px, 1fr))",
+                    gap: "6px",
+                    paddingRight: "4px",
+                  }}
+                >
+                  {guestRooms.map((room) => {
+                    const checked = selectedRoomIds.includes(room.id);
+                    return (
+                      <label
+                        key={room.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          color: ONE_EYRIE.text,
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleRoomSelection(room.id)}
+                        />
+                        {room.name}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
             <div style={{ display: "grid", gap: "10px" }}>
               {items.map((item, index) => (
                 <div
@@ -491,6 +740,7 @@ export default function PmTemplateModal({
             >
               Each item uses this template&apos;s checklist and keeps its own
               result, history, failures, notes, photos, and work orders.
+              Manual item count supports equipment groups up to {MAX_PM_ITEMS}.
             </div>
           </section>
 

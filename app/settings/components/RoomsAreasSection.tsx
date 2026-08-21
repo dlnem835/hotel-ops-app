@@ -22,7 +22,7 @@ import {
 } from "../lib/rooms-areas-groups";
 import {
   applyGoldHover,
-  forestHoverHandlers,
+  goldFilledHoverHandlers,
   goldHoverHandlers,
   resetButtonHover,
   secondaryHoverHandlers,
@@ -955,7 +955,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           style={{ ...primaryButton, ...buttonBase }}
           onClick={openNew}
           disabled={saving}
-          {...forestHoverHandlers()}
+          {...goldFilledHoverHandlers()}
         >
           <Plus size={16} />
           New Area
@@ -1258,7 +1258,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 style={{ ...primaryButton, ...buttonBase }}
                 onClick={saveArea}
                 disabled={saving}
-                {...forestHoverHandlers(saving)}
+                {...goldFilledHoverHandlers(saving)}
               >
                 {saving ? "Saving..." : "Save"}
               </button>
@@ -1331,7 +1331,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                   type="button"
                   style={{ ...primaryButton, ...buttonBase, height: "38px" }}
                   onClick={addRoomRange}
-                  {...forestHoverHandlers(saving)}
+                  {...goldFilledHoverHandlers(saving)}
                 >
                   <Plus size={16} />
                   Add Floor
@@ -1626,7 +1626,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
                 style={{ ...primaryButton, ...buttonBase }}
                 onClick={runWizard}
                 disabled={saving || !canRunWizard}
-                {...forestHoverHandlers(saving || !canRunWizard)}
+                {...goldFilledHoverHandlers(saving || !canRunWizard)}
               >
                 {saving ? "Setting up..." : "Run Setup"}
               </button>

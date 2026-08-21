@@ -18,6 +18,7 @@ import {
 } from "../lib/work-order-location";
 import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
+import { uploadWorkOrderPhoto } from "@/app/maintenance/lib/work-order-photo-upload";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import "./work-order-modal.css";
@@ -130,20 +131,8 @@ export default function WorkOrderModal({
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await tenantFetch("/api/work-orders/photo", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Unable to upload photo");
-      }
-
-      setPhotoUrl(result.photoUrl as string);
+      const uploadedUrl = await uploadWorkOrderPhoto(file);
+      setPhotoUrl(uploadedUrl);
     } catch (uploadError) {
       setPhotoUrl(null);
       setError(
