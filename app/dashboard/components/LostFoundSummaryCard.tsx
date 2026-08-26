@@ -42,22 +42,22 @@ function SummaryLink({
       className="dashboard-clickable-card"
       style={{
         display: "block",
-        padding: "12px",
+        padding: "16px 14px",
         borderRadius: "12px",
         textDecoration: "none",
         background: style.background,
         border: style.border,
       }}
     >
-      <div style={{ color: style.labelColor, fontSize: "11px", fontWeight: 700 }}>
+      <div style={{ color: style.labelColor, fontSize: "12px", fontWeight: 700 }}>
         {label}
       </div>
       <div
         style={{
           color: style.valueColor,
-          fontSize: "24px",
+          fontSize: "28px",
           fontWeight: 800,
-          marginTop: "6px",
+          marginTop: "8px",
           lineHeight: 1,
         }}
       >
@@ -73,18 +73,24 @@ export default function LostFoundSummaryCard({
 }: LostFoundSummaryCardProps) {
   return (
     <DashboardCard className="dashboard-lost-found-card">
-      <DashboardSectionTitle title="Lost & Found" subtitle="Quick summary" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+      <DashboardSectionTitle
+        title="Lost & Found"
+        subtitle="Guest property needing action"
+      />
+      <div
+        className="dashboard-lost-found-kpi-grid"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}
+      >
         <SummaryLink
           label="Ready to Ship"
           value={readyToShip}
-          href="/lost-and-found"
+          href="/lost-and-found?kpi=ready-to-ship"
           tone="readyToShip"
         />
         <SummaryLink
           label="Stored Today"
           value={storedToday}
-          href="/lost-and-found"
+          href="/lost-and-found?kpi=stored-today"
           tone="storedToday"
         />
       </div>

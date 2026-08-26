@@ -1,38 +1,16 @@
-export type PassOnLogEntry = {
-  id: number;
-  subject: string;
-  author: string;
-  message: string;
-  priority: string;
-  entryDate: string;
-  createdAt: string;
-  editedAt?: string | null;
-};
-
-export type PassOnLogDay = "today" | "yesterday" | "tomorrow";
-
-export type DashboardWorkOrder = {
-  id: number;
-  subject: string;
-  priority: string;
-  areaLabel: string | null;
-  createdAt: string;
-  commentsUpdatedAt: string | null;
-};
-
 export type TodaysWorkCard = {
   label: string | null;
   href: string;
 };
 
-export type PastDueSummary = {
-  pms: number;
-  vrInspections: number;
-  rpmInspections: number;
+export type PassOnDashboardKpis = {
+  newEntries: number;
+  unread: number;
+  newReplies: number;
   hrefs: {
-    pms: string;
-    vrInspections: string;
-    rpmInspections: string;
+    newEntries: string;
+    unread: string;
+    newReplies: string;
   };
 };
 
@@ -41,9 +19,9 @@ export type OperationalDashboardPayload = {
     pms: TodaysWorkCard;
     rpms: TodaysWorkCard;
   };
-  pastDue: PastDueSummary;
-  passOnLog: Record<PassOnLogDay, PassOnLogEntry[]>;
-  workOrders: DashboardWorkOrder[];
+  passOnKpis: PassOnDashboardKpis;
+  /** Full open work orders — same shape/order as Maintenance WO Priority Queue. */
+  workOrders: import("@/app/maintenance/lib/maintenance-types").WorkOrder[];
   openWorkOrderCount: number;
   lostFound: {
     readyToShip: number;

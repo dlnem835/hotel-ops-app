@@ -7,13 +7,16 @@ import {
 
 export async function GET(request: Request) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
+    const { supabase, organizationId, propertyId, user } =
+      await resolveTenantRequest(request);
+    const payload = await buildOperationalDashboard(
+      supabase,
+      {
+        organizationId,
+        propertyId,
+      },
+      user.id
     );
-    const payload = await buildOperationalDashboard(supabase, {
-      organizationId,
-      propertyId,
-    });
     return NextResponse.json(payload);
   } catch (error: unknown) {
     return tenantErrorResponse(error);

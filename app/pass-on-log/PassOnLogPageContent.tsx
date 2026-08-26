@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -15,6 +15,7 @@ import {
   Calendar,
   SlidersHorizontal,
   Send,
+  X,
 } from "lucide-react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
@@ -34,6 +35,11 @@ import WorkOrderModal, {
 } from "@/app/maintenance/components/WorkOrderModal";
 import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+import {
+  matchesPassOnKpiFocus,
+  parsePassOnKpiFocus,
+  type PassOnKpiFocus,
+} from "@/app/pass-on-log/lib/pass-on-kpi";
 import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
 import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
@@ -68,8 +74,15 @@ const supabase = createClient(
 
 const gold = "#C8A96A";
 
+const PASS_ON_KPI_FOCUS_LABELS: Record<PassOnKpiFocus, string> = {
+  new: "New Entries",
+  unread: "Unread",
+  "new-replies": "New Replies",
+};
+
 export default function PassOnLogPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [entries, setEntries] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [entryDate, setEntryDate] = useState(() => getHotelBusinessDateString());
@@ -750,7 +763,17 @@ setTeamMembers(allTeamMembers || []);
     return Number.isFinite(id) && id > 0 ? id : null;
   }, [searchParams]);
 
+  const kpiFocus = useMemo(
+    () => parsePassOnKpiFocus(searchParams.get("focus")),
+    [searchParams]
+  );
+
   const deepLinkHandled = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!kpiFocus) return;
+    setDateFilter("All");
+  }, [kpiFocus]);
 
   useEffect(() => {
     if (!deepLinkEntryId || entries.length === 0) return;
@@ -766,6 +789,13 @@ setTeamMembers(allTeamMembers || []);
     queuePassOnReplyFocus(deepLinkEntryId);
     markAsViewed(deepLinkEntryId);
   }, [deepLinkEntryId, entries]);
+
+  function clearKpiFocus() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("focus");
+    const qs = params.toString();
+    router.replace(qs ? `/pass-on-log?${qs}` : "/pass-on-log");
+  }
 
   async function toggleViews(entryId: number) {
   setExpandedViewsEntry(expandedViewsEntry === entryId ? null : entryId);
@@ -874,7 +904,11 @@ setTeamMembers(allTeamMembers || []);
     customDate: entryDate,
   });
 
-  return matchesSearch && matchesDate;
+  const matchesFocus =
+    !kpiFocus ||
+    matchesPassOnKpiFocus(entry, kpiFocus, currentAuthUserId, readBaseline);
+
+  return matchesSearch && matchesDate && matchesFocus;
 });
 
 const groupedEntries = filteredEntries.reduce((acc: any, entry: any) => {
@@ -1325,6 +1359,44 @@ function dateHeader(dateString: string) {
   <option value="Yesterday">Yesterday</option>
 </select>
   </div>
+
+            {kpiFocus ? (
+              <div
+                className="pass-on-active-filter-pill"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "12px",
+                  padding: "6px 10px",
+                  borderRadius: "999px",
+                  border: `1px solid ${ONE_EYRIE.border}`,
+                  background: ONE_EYRIE.surfaceInset,
+                  color: ONE_EYRIE.text,
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                <span>Showing: {PASS_ON_KPI_FOCUS_LABELS[kpiFocus]}</span>
+                <button
+                  type="button"
+                  onClick={clearKpiFocus}
+                  aria-label={`Clear ${PASS_ON_KPI_FOCUS_LABELS[kpiFocus]} filter`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    border: "none",
+                    background: "transparent",
+                    color: ONE_EYRIE.textMuted,
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              </div>
+            ) : null}
   
             {showDraftCard ? (
               <div className="pass-on-draft-card-wrap">
@@ -1503,7 +1575,11 @@ function dateHeader(dateString: string) {
               style={{ marginTop: showDraftCard ? "0" : "18px" }}
             >
               {!filteredEntries.length ? (
-                <p style={{ color: "#9CA3AF" }}>No pass-on entries yet.</p>
+                <p style={{ color: "#9CA3AF" }}>
+                  {kpiFocus
+                    ? "No matching entries for this filter."
+                    : "No pass-on entries yet."}
+                </p>
               ) : (
              visibleGroupedEntryPairs.map(([dateKey, entriesForDate]: any) => (
   <div key={dateKey}>

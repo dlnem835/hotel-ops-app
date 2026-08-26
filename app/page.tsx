@@ -8,11 +8,10 @@ import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
-import TodaysWorkSection from "./dashboard/components/TodaysWorkSection";
-import PastDueSummaryBar from "./dashboard/components/PastDueSummaryBar";
-import PassOnLogSection from "./dashboard/components/PassOnLogSection";
-import OpenWorkOrdersSection from "./dashboard/components/OpenWorkOrdersSection";
 import LostFoundSummaryCard from "./dashboard/components/LostFoundSummaryCard";
+import PassOnKpiSection from "./dashboard/components/PassOnKpiSection";
+import DashboardWorkOrdersSection from "./dashboard/components/DashboardWorkOrdersSection";
+import TodaysWorkSection from "./dashboard/components/TodaysWorkSection";
 import "./dashboard/dashboard-responsive.css";
 import "./dashboard/dashboard-light-theme.css";
 
@@ -64,7 +63,7 @@ export default function DashboardPage() {
       <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>
         <OneEyriePageHeader
           title="Dashboard"
-          subtitle="What must be completed today?"
+          subtitle="Front Desk operations at a glance"
         />
 
         {error && (
@@ -90,40 +89,22 @@ export default function DashboardPage() {
             className="one-eyrie-dashboard-page"
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
+            <LostFoundSummaryCard
+              readyToShip={dashboard.lostFound.readyToShip}
+              storedToday={dashboard.lostFound.storedToday}
+            />
+
+            <PassOnKpiSection kpis={dashboard.passOnKpis} />
+
+            <DashboardWorkOrdersSection
+              workOrders={dashboard.workOrders}
+              openWorkOrderCount={dashboard.openWorkOrderCount}
+            />
+
             <TodaysWorkSection
               pms={dashboard.todaysWork.pms}
               rpms={dashboard.todaysWork.rpms}
             />
-
-            <PastDueSummaryBar pastDue={dashboard.pastDue} />
-
-            <div
-              className="dashboard-command-grid one-eyrie-split-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(360px, 1.55fr) minmax(300px, 1fr)",
-                gap: "16px",
-                alignItems: "start",
-              }}
-            >
-              <div className="dashboard-pass-on-panel">
-                <PassOnLogSection passOnLog={dashboard.passOnLog} />
-              </div>
-
-              <div
-                className="dashboard-command-sidebar"
-                style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-              >
-                <OpenWorkOrdersSection
-                  workOrders={dashboard.workOrders}
-                  totalCount={dashboard.openWorkOrderCount}
-                />
-                <LostFoundSummaryCard
-                  readyToShip={dashboard.lostFound.readyToShip}
-                  storedToday={dashboard.lostFound.storedToday}
-                />
-              </div>
-            </div>
           </div>
         )}
       </section>

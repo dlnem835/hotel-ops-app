@@ -259,61 +259,18 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget .on
 
 /* ── WO Priority Queue ── */
 
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section {
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-work-orders-section {
   background: var(--dash-lm-slate-panel) !important;
   border: 1px solid #6e665c !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
 }
 
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child > div:first-child > div:first-child {
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-work-orders-section > div:first-child > div:first-child {
   color: var(--dash-lm-gold) !important;
 }
 
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child > div:first-child > div:last-child {
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-work-orders-section > div:first-child > div:last-child {
   color: var(--dash-lm-text-muted-soft) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child a {
-  color: var(--dash-lm-gold) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:nth-child(2) > div {
-  color: var(--dash-lm-text-muted-soft) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card {
-  background: var(--dash-lm-pass-on-row) !important;
-  border-color: var(--dash-lm-border) !important;
-  box-shadow: 0 1px 2px var(--dash-lm-shadow) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card:hover {
-  background: var(--dash-lm-pass-on-row-hover) !important;
-  border-color: var(--dash-lm-hover-border) !important;
-  box-shadow: 0 4px 10px var(--dash-lm-shadow-hover) !important;
-  transform: translateY(-1px);
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__title {
-  color: var(--dash-lm-text) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__location {
-  color: var(--dash-lm-row-text-muted) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-priority-queue-card__opened {
-  color: var(--dash-lm-row-text-muted) !important;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__chevron {
-  color: var(--dash-lm-gold) !important;
-  opacity: 0.82;
-}
-
-html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card:hover .dashboard-list-card__chevron {
-  opacity: 1;
-  transform: translateX(1px);
 }
 
 /* WO priority badges — exact dark-mode colors */
@@ -369,6 +326,22 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-lost-found-card > 
   color: var(--dash-lm-stored-text) !important;
 }
 
+/* ── Pass-On KPIs ── */
+
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card {
+  background: var(--dash-lm-slate-panel) !important;
+  border: 1px solid #6e665c !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card > div:first-child > div:first-child {
+  color: var(--dash-lm-gold) !important;
+}
+
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card > div:first-child > div:last-child {
+  color: var(--dash-lm-text-muted-soft) !important;
+}
+
 /* ── Shared hover / focus (same motion as dark) ── */
 
 html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-clickable-card:hover {
@@ -414,7 +387,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-list-card:focus-vi
     background: #f1eee8 !important;
   }
 
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-open-work-orders-section {
+  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-work-orders-section {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
   }
 
@@ -422,40 +395,7 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-list-card:focus-vi
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
   }
 
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-widget {
+  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry {
-    background-color: var(--dash-lm-pass-on-row) !important;
-    border-color: var(--dash-lm-border) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry:hover {
-    background-color: var(--dash-lm-pass-on-row-hover) !important;
-    border-color: var(--dash-lm-hover-border) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry--expanded {
-    background-color: var(--dash-lm-pass-on-row-hover) !important;
-    border-color: rgba(200, 169, 106, 0.55) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__subject {
-    color: var(--dash-lm-text) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__meta {
-    color: var(--dash-lm-row-text-muted) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__message {
-    color: var(--dash-lm-text-subtle) !important;
-  }
-
-  html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__body {
-    background: #ffffff !important;
-    border-top-color: var(--dash-lm-border) !important;
-    color: var(--dash-lm-text-subtle) !important;
   }
 }

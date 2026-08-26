@@ -1,43 +1,15 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { buildDashboard as buildInspectionDashboard } from "@/app/inspections/lib/inspection-db";
-import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
-import { RoomGridTile } from "@/app/inspections/lib/inspection-types";
 import { buildMaintenanceDashboard } from "@/app/maintenance/lib/maintenance-dashboard";
 import { PmTile } from "@/app/maintenance/lib/maintenance-types";
+import { getHotelBusinessDateString } from "@/app/lib/hotel-business-date";
 import {
-  groupPassOnEntriesForDashboard,
-  passOnDashboardDateKeys,
-} from "@/app/lib/hotel-business-date";
+  getPassOnReadBaseline,
+  listPassOnEntries,
+} from "@/app/pass-on-log/lib/pass-on-server-db";
+import { countPassOnKpisForUser } from "@/app/pass-on-log/lib/pass-on-kpi";
 import { isStoredToday } from "./date-utils";
-import {
-  OperationalDashboardPayload,
-  PassOnLogEntry,
-} from "./operational-types";
-
-function normalizePassOnEntry(
-  row: {
-    id: number;
-    subject: string;
-    author: string;
-    message: string;
-    priority: string;
-    entry_date: string;
-    created_at: string;
-    edited_at?: string | null;
-  },
-  resolveAuthor: (author: string) => string
-): PassOnLogEntry {
-  return {
-    id: Number(row.id),
-    subject: String(row.subject || "Pass-on"),
-    author: resolveAuthor(String(row.author || "Unknown")),
-    message: String(row.message || ""),
-    priority: String(row.priority || "Normal"),
-    entryDate: String(row.entry_date),
-    createdAt: String(row.created_at || ""),
-    editedAt: row.edited_at ?? null,
-  };
-}
+import { OperationalDashboardPayload } from "./operational-types";
 
 function formatPmDueTodayLabel(tile: PmTile): string {
   if (tile.areaName) {
@@ -49,77 +21,42 @@ function formatPmDueTodayLabel(tile: PmTile): string {
   return tile.templateName;
 }
 
-function countPastDueInspectionRooms(rooms: RoomGridTile[]): number {
-  return rooms.filter(
-    (room) =>
-      room.neverInspectedForProgram ||
-      (room.neverInspectedInPeriod && Boolean(room.operationalLastCompletedAt))
-  ).length;
-}
-
 export async function buildOperationalDashboard(
   supabase: SupabaseClient,
-  scope?: { organizationId: number; propertyId: number }
+  scope: { organizationId: number; propertyId: number },
+  authUserId: string
 ): Promise<OperationalDashboardPayload> {
-  const [today, yesterday, tomorrow] = passOnDashboardDateKeys();
+  const today = getHotelBusinessDateString();
 
-  const [
-    maintenance,
-    inspectionRpmToday,
-    inspectionVrMtd,
-    inspectionRpmMtd,
-    passOnResult,
-    lostItemsResult,
-  ] = await Promise.all([
-    buildMaintenanceDashboard(supabase, scope),
-    buildInspectionDashboard(supabase, "today", "rpm", null, null, scope),
-    buildInspectionDashboard(supabase, "mtd", "vr", null, null, scope),
-    buildInspectionDashboard(supabase, "mtd", "rpm", null, null, scope),
-    (() => {
-      let query = supabase
-        .from("pass_on_log")
-        .select("id, subject, author, message, priority, entry_date, created_at, edited_at")
-        .in("entry_date", [today, yesterday, tomorrow])
-        .order("entry_date", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (scope) {
+  const [maintenance, inspectionRpmToday, passOnEntries, readBaseline, lostItemsResult] =
+    await Promise.all([
+      buildMaintenanceDashboard(supabase, scope),
+      buildInspectionDashboard(supabase, "today", "rpm", null, null, scope),
+      listPassOnEntries(supabase, scope),
+      getPassOnReadBaseline(supabase, authUserId, scope.propertyId),
+      (() => {
+        let query = supabase.from("lost_items").select("id, status, created_at");
         query = query
           .eq("organization_id", scope.organizationId)
           .eq("property_id", scope.propertyId);
-      }
-      return query;
-    })(),
-    (() => {
-      let query = supabase.from("lost_items").select("id, status, created_at");
-      if (scope) {
-        query = query
-          .eq("organization_id", scope.organizationId)
-          .eq("property_id", scope.propertyId);
-      }
-      return query;
-    })(),
-  ]);
-
-  if (passOnResult.error) {
-    throw new Error(passOnResult.error.message);
-  }
+        return query;
+      })(),
+    ]);
 
   if (lostItemsResult.error) {
     throw new Error(lostItemsResult.error.message);
   }
 
-  const memberResolver = await fetchMemberDisplayNameResolver(supabase);
-  const resolveAuthor = (author: string) =>
-    memberResolver.resolveStoredValue(author) || author || "Unknown";
-
-  const passOnEntries = (passOnResult.data || []).map((row) =>
-    normalizePassOnEntry(row, resolveAuthor)
+  const passOnKpiCounts = countPassOnKpisForUser(
+    passOnEntries,
+    authUserId,
+    readBaseline
   );
-  const passOnLog = groupPassOnEntriesForDashboard(passOnEntries);
 
   const lostItems = lostItemsResult.data || [];
   const readyToShip = lostItems.filter(
-    (item) => item.status === "Ready to Ship" || item.status === "Ready to be shipped"
+    (item) =>
+      item.status === "Ready to Ship" || item.status === "Ready to be shipped"
   ).length;
   const storedToday = lostItems.filter(
     (item) =>
@@ -143,25 +80,17 @@ export async function buildOperationalDashboard(
         href: "/inspections?period=today&program=rpm",
       },
     },
-    pastDue: {
-      pms: maintenance.metrics.pastDuePms,
-      vrInspections: countPastDueInspectionRooms(inspectionVrMtd.rooms),
-      rpmInspections: countPastDueInspectionRooms(inspectionRpmMtd.rooms),
+    passOnKpis: {
+      newEntries: passOnKpiCounts.newEntries,
+      unread: passOnKpiCounts.unread,
+      newReplies: passOnKpiCounts.newReplies,
       hrefs: {
-        pms: "/maintenance?filter=past_due",
-        vrInspections: "/inspections?period=mtd&program=vr",
-        rpmInspections: "/inspections?period=mtd&program=rpm",
+        newEntries: "/pass-on-log?focus=new",
+        unread: "/pass-on-log?focus=unread",
+        newReplies: "/pass-on-log?focus=new-replies",
       },
     },
-    passOnLog,
-    workOrders: maintenance.workOrders.slice(0, 6).map((order) => ({
-      id: order.id,
-      subject: order.subject,
-      priority: order.priority,
-      areaLabel: order.areaLabel,
-      createdAt: order.createdAt,
-      commentsUpdatedAt: order.commentsUpdatedAt,
-    })),
+    workOrders: maintenance.workOrders,
     openWorkOrderCount: maintenance.workOrders.length,
     lostFound: {
       readyToShip,

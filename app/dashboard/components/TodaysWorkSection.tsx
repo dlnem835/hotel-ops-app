@@ -32,9 +32,9 @@ function WorkCard({
         justifyContent: "center",
         textDecoration: "none",
         color: "inherit",
-        padding: "20px 22px",
+        padding: "14px 16px",
         minWidth: 0,
-        minHeight: "108px",
+        minHeight: "84px",
       }}
     >
       <div className="dashboard-todays-work-card__title">
@@ -43,7 +43,7 @@ function WorkCard({
       <div
         style={{
           color: hasWork ? ONE_EYRIE.gold : ONE_EYRIE.textMuted,
-          fontSize: hasWork ? "22px" : "15px",
+          fontSize: hasWork ? "16px" : "13px",
           fontWeight: hasWork ? 800 : 600,
           lineHeight: 1.35,
         }}
@@ -57,12 +57,12 @@ function WorkCard({
 export default function TodaysWorkSection({ pms, rpms }: TodaysWorkSectionProps) {
   return (
     <section className="dashboard-todays-work-section">
-      <div style={{ marginBottom: "12px" }}>
-        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "16px" }}>
-          Today&apos;s Work
+      <div style={{ marginBottom: "10px" }}>
+        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+          Today&apos;s PMs / RPMs
         </div>
         <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
-          What must be completed today
+          Compact links into Maintenance and Inspections
         </div>
       </div>
 
@@ -70,8 +70,8 @@ export default function TodaysWorkSection({ pms, rpms }: TodaysWorkSectionProps)
         className="dashboard-todays-work-row"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(280px, 1fr))",
-          gap: "12px",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: "10px",
         }}
       >
         <WorkCard

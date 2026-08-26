@@ -38,6 +38,10 @@ import {
   neutralHoverHandlers,
   START_WORK_BUTTON,
 } from "@/app/lib/oneEyrieButtons";
+import {
+  getHotelBusinessDateString,
+  isStoredOnHotelBusinessDate,
+} from "@/app/lib/hotel-business-date";
 import "./lost-and-found-responsive.css";
 
 const supabase = createClient(
@@ -48,7 +52,18 @@ const supabase = createClient(
 const gold = "#C8A96A";
 
 type LnfSortOrder = "newest" | "oldest" | "guest-az" | "guest-za";
-type LnfKpiFilter = "ready-to-ship" | "ready-to-discard";
+type LnfKpiFilter = "ready-to-ship" | "ready-to-discard" | "stored-today";
+
+function parseLnfKpiFilter(value: string | null | undefined): LnfKpiFilter | null {
+  if (
+    value === "ready-to-ship" ||
+    value === "ready-to-discard" ||
+    value === "stored-today"
+  ) {
+    return value;
+  }
+  return null;
+}
 
 const STATUS_FILTER_OPTIONS = [
   { label: "All", value: "All" },
@@ -106,6 +121,27 @@ export default function LostAndFoundPage() {
   const [commentEditItem, setCommentEditItem] = useState<any | null>(null);
   const [canDeleteItems, setCanDeleteItems] = useState(false);
   const [correctStatusItem, setCorrectStatusItem] = useState<any | null>(null);
+  const hotelToday = getHotelBusinessDateString();
+
+  useEffect(() => {
+    const initial = parseLnfKpiFilter(
+      new URLSearchParams(window.location.search).get("kpi")
+    );
+    if (initial) {
+      setKpiFilter(initial);
+      setStatusFilter("All");
+    }
+  }, []);
+
+  function syncKpiQuery(next: LnfKpiFilter | null) {
+    const url = new URL(window.location.href);
+    if (next) {
+      url.searchParams.set("kpi", next);
+    } else {
+      url.searchParams.delete("kpi");
+    }
+    window.history.replaceState({}, "", url.pathname + url.search);
+  }
 
   const readyToShipCount = lostItems.filter(
     (item) => displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
@@ -134,7 +170,13 @@ export default function LostAndFoundPage() {
         ? true
         : kpiFilter === "ready-to-ship"
           ? displayItemStatus(item.status) === LOST_ITEM_STATUS.readyToShip
-          : isEligibleForDiscard(item, discardCutoff);
+          : kpiFilter === "ready-to-discard"
+            ? isEligibleForDiscard(item, discardCutoff)
+            : displayItemStatus(item.status) === LOST_ITEM_STATUS.stored &&
+              isStoredOnHotelBusinessDate(
+                item.created_at ? String(item.created_at) : null,
+                hotelToday
+              );
 
     return matchesSearch && matchesStatus && matchesKpi;
   });
@@ -370,17 +412,23 @@ setTeamMembers(allTeamMembers || []);
   }
 
   function handleKpiFilter(filter: LnfKpiFilter) {
-    setKpiFilter((current) => (current === filter ? null : filter));
+    setKpiFilter((current) => {
+      const next = current === filter ? null : filter;
+      syncKpiQuery(next);
+      return next;
+    });
     setStatusFilter("All");
   }
 
   function handleStatusFilter(status: string) {
     setStatusFilter(status);
     setKpiFilter(null);
+    syncKpiQuery(null);
   }
 
   function clearKpiFilter() {
     setKpiFilter(null);
+    syncKpiQuery(null);
   }
 
   const activeKpiLabel =
@@ -388,7 +436,9 @@ setTeamMembers(allTeamMembers || []);
       ? "Ready to Ship"
       : kpiFilter === "ready-to-discard"
         ? "Ready to Discard"
-        : null;
+        : kpiFilter === "stored-today"
+          ? "Stored Today"
+          : null;
 
   return (
     <main style={APP_SHELL} className={APP_SHELL_CLASS}>

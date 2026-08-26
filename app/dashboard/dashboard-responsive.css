@@ -11,40 +11,6 @@
     0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }
 
-.dashboard-open-work-orders-section .dashboard-priority-queue__rows {
-  gap: 8px;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card {
-  padding: 10px 12px;
-  align-items: flex-end;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card .dashboard-list-card__title-row {
-  margin-bottom: 2px;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card .dashboard-list-card__title {
-  font-size: 13px;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card .dashboard-list-card__location {
-  margin-top: 2px;
-  font-size: 11px;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card__opened {
-  color: #9ca3af;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 4px;
-}
-
-.dashboard-open-work-orders-section .dashboard-priority-queue-card .dashboard-list-card__chevron {
-  margin-bottom: 1px;
-}
-
 .dashboard-row-card {
   background: #302d28;
   border: 1px solid #3a352e;
@@ -139,7 +105,7 @@
     color: var(--owl-feather-muted);
   }
 
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section {
+  .one-eyrie-dashboard-page .dashboard-work-orders-section {
     background: var(--owl-work-order-shell) !important;
     border-color: var(--owl-work-order-shell-border) !important;
     box-shadow:
@@ -147,58 +113,14 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child > div:first-child > div:first-child {
+  .one-eyrie-dashboard-page .dashboard-work-orders-section > div:first-child > div:first-child {
     color: #e0c47b;
     font-size: 15px;
   }
 
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:first-child > div:first-child > div:last-child {
+  .one-eyrie-dashboard-page .dashboard-work-orders-section > div:first-child > div:last-child {
     color: #9ca3af;
     font-size: 12px;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card {
-    background: #35312c;
-    border-color: #5c564d;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card:hover {
-    background: #403c37;
-    border-color: #6e665c;
-    transform: translateY(-1px);
-    box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.22),
-      0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__title {
-    color: #f9fafb;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__location {
-    color: #d1d5db;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card__chevron {
-    color: #c8a96a;
-    opacity: 0.82;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card:hover .dashboard-list-card__chevron {
-    opacity: 1;
-    transform: translateX(1px);
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section > div:nth-child(2) {
-    gap: 8px;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-open-work-orders-section .dashboard-list-card.dashboard-clickable-card:hover {
-    border-color: #6e665c !important;
-    box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.22),
-      0 1px 0 rgba(255, 255, 255, 0.06) !important;
   }
 
   .one-eyrie-dashboard-page .dashboard-lost-found-card {
@@ -238,15 +160,26 @@
     gap: 10px;
   }
 
+  .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card {
+    background: var(--owl-panel) !important;
+    border-color: var(--owl-feather-border) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  }
+
+  .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card > div:first-child > div:first-child {
+    color: #e0c47b;
+    font-size: 16px;
+  }
+
+  .one-eyrie-dashboard-page .dashboard-pass-on-kpi-card > div:first-child > div:last-child {
+    color: var(--owl-feather-text);
+  }
+
   .one-eyrie-dashboard-page .dashboard-list-card.dashboard-clickable-card:hover {
     border-color: var(--owl-feather-border, #5a534c) !important;
     box-shadow:
       0 4px 12px rgba(0, 0, 0, 0.22),
       0 1px 0 rgba(255, 255, 255, 0.04) !important;
-  }
-
-  .one-eyrie-dashboard-page .dashboard-pass-on-panel .dashboard-pass-on-entry__body {
-    color: #e5e7eb !important;
   }
 }
 
@@ -256,6 +189,14 @@
   }
 
   .dashboard-todays-work-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-pass-on-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-lost-found-kpi-grid {
     grid-template-columns: 1fr !important;
   }
 
