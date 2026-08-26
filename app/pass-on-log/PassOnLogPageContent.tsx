@@ -40,6 +40,13 @@ import {
   parsePassOnKpiFocus,
   type PassOnKpiFocus,
 } from "@/app/pass-on-log/lib/pass-on-kpi";
+import {
+  formatPassOnRoomAreaLabel,
+  passOnDraftTextFingerprint,
+  shouldRequestPassOnMaintenanceAi,
+  type PassOnMaintenanceSuggestion,
+} from "@/app/pass-on-log/lib/pass-on-maintenance-gate";
+import PassOnMaintenanceSuggestionBanner from "@/app/pass-on-log/components/PassOnMaintenanceSuggestionBanner";
 import { formatOneEyrieUpdatedTimestamp } from "@/app/lib/one-eyrie-updated-timestamp";
 import "@/app/lib/one-eyrie-updated-timestamp.css";
 import { priorityClassName } from "@/app/mobile/pass-on-log/lib/pass-on-priority";
@@ -122,6 +129,10 @@ export default function PassOnLogPageContent() {
   const [workOrderInitial, setWorkOrderInitial] = useState<
     WorkOrderModalInitialValues | undefined
   >(undefined);
+  const [maintenanceSuggestion, setMaintenanceSuggestion] =
+    useState<PassOnMaintenanceSuggestion | null>(null);
+  const [dismissedMaintenanceFingerprint, setDismissedMaintenanceFingerprint] =
+    useState<string | null>(null);
 
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const draftDateInputRef = useRef<HTMLInputElement | null>(null);
@@ -399,6 +410,8 @@ async function markAsViewed(entryId: number) {
     }
     resetDraftFields();
     resetDraftFeedbackState();
+    setMaintenanceSuggestion(null);
+    setDismissedMaintenanceFingerprint(null);
     setShowDraftCard(false);
   }
 
@@ -524,6 +537,8 @@ async function markAsViewed(entryId: number) {
     }
     resetDraftFields();
     resetDraftFeedbackState();
+    setMaintenanceSuggestion(null);
+    setDismissedMaintenanceFingerprint(null);
     setShowDraftCard(false);
 
     window.requestAnimationFrame(() => {
@@ -691,6 +706,105 @@ setTeamMembers(allTeamMembers || []);
     }),
     [draftSubject, draftPriority, draftEntryDate, draftMessage]
   );
+
+  const draftMaintenanceFingerprint = useMemo(
+    () => passOnDraftTextFingerprint(draftSubject, draftMessage),
+    [draftSubject, draftMessage]
+  );
+
+  useEffect(() => {
+    if (!showDraftCard) {
+      setMaintenanceSuggestion(null);
+      return;
+    }
+
+    if (
+      dismissedMaintenanceFingerprint &&
+      dismissedMaintenanceFingerprint === draftMaintenanceFingerprint
+    ) {
+      setMaintenanceSuggestion(null);
+      return;
+    }
+
+    if (!shouldRequestPassOnMaintenanceAi(draftSubject, draftMessage)) {
+      setMaintenanceSuggestion(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await tenantFetch("/api/pass-on/maintenance-suggestion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject: draftSubject,
+            message: draftMessage,
+          }),
+        });
+        const result = (await response.json().catch(() => ({}))) as
+          | PassOnMaintenanceSuggestion
+          | { error?: string };
+
+        if (cancelled) return;
+        if (
+          !response.ok ||
+          !("shouldSuggest" in result) ||
+          !result.shouldSuggest ||
+          !result.promptLabel
+        ) {
+          setMaintenanceSuggestion(null);
+          return;
+        }
+        setMaintenanceSuggestion(result);
+      } catch {
+        if (!cancelled) setMaintenanceSuggestion(null);
+      }
+    }, 900);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    showDraftCard,
+    draftSubject,
+    draftMessage,
+    draftMaintenanceFingerprint,
+    dismissedMaintenanceFingerprint,
+  ]);
+
+  function openSuggestedWorkOrderFromDraft() {
+    if (!maintenanceSuggestion?.shouldSuggest) return;
+    const passOnPriority =
+      draftPriority === "Urgent" || draftPriority === "Important"
+        ? draftPriority
+        : "Normal";
+    const roomLabel = maintenanceSuggestion.roomHint
+      ? formatPassOnRoomAreaLabel(maintenanceSuggestion.roomHint)
+      : null;
+
+    setWorkOrderInitial({
+      subject:
+        maintenanceSuggestion.subject?.trim() ||
+        draftSubject.trim() ||
+        maintenanceSuggestion.itemIssue ||
+        "Maintenance issue",
+      description: draftMessage.trim(),
+      item: maintenanceSuggestion.itemIssue || undefined,
+      priority: passOnPriority,
+      area_label: roomLabel,
+      source_module: "Pass-On",
+      source_note: draftMessage.trim(),
+      created_by: currentUserName,
+    });
+    setWorkOrderModalOpen(true);
+  }
+
+  function dismissMaintenanceSuggestion() {
+    setDismissedMaintenanceFingerprint(draftMaintenanceFingerprint);
+    setMaintenanceSuggestion(null);
+  }
 
   const hasUnsavedDraftChanges = useMemo(
     () => !passOnDraftSnapshotsEqual(currentDraftSnapshot, draftSavedBaseline),
@@ -1478,6 +1592,16 @@ function dateHeader(dateString: string) {
                       disabled={draftFieldsLocked}
                     />
                   </div>
+
+                  {maintenanceSuggestion?.shouldSuggest &&
+                  maintenanceSuggestion.promptLabel &&
+                  dismissedMaintenanceFingerprint !== draftMaintenanceFingerprint ? (
+                    <PassOnMaintenanceSuggestionBanner
+                      promptLabel={maintenanceSuggestion.promptLabel}
+                      onCreateWorkOrder={openSuggestedWorkOrderFromDraft}
+                      onDismiss={dismissMaintenanceSuggestion}
+                    />
+                  ) : null}
 
                   <div
                     className="pass-on-draft-card__actions"
