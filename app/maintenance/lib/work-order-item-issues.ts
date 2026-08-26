@@ -2,6 +2,7 @@ export const WORK_ORDER_ITEM_ISSUES = [
   "AC / HVAC",
   "Appliance",
   "Bed / Furniture",
+  "Bathroom Door",
   "Bugs / Pest",
   "Carpet / Flooring",
   "Ceiling",
@@ -21,6 +22,7 @@ export const WORK_ORDER_ITEM_ISSUES = [
   "Plumbing",
   "Pool / Spa",
   "Refrigerator",
+  "Shower Door",
   "Sink",
   "Toilet",
   "TV",
@@ -103,6 +105,14 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
     result: "Sink",
     patterns: [/\b(?:sink|basin|faucet)\b/i],
+  },
+  {
+    result: "Shower Door",
+    patterns: [/\bshower\s+door\b/i],
+  },
+  {
+    result: "Bathroom Door",
+    patterns: [/\bbathroom\s+door\b/i],
   },
   {
     result: "Drain",
