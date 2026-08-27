@@ -18,13 +18,27 @@ export function passOnDraftTextFingerprint(
  * Not a final decision — only decides whether to call the server.
  */
 const MAINTENANCE_SIGNAL =
-  /\b(?:broken|break(?:ing)?|leak(?:ing|y)?|clog(?:ged)?|damage(?:d)?|loose|stuck|not\s+working|won'?t\s+work|doesn'?t\s+work|out\s+of\s+order|odor|odour|smell(?:y|s)?|stink|bug(?:s)?|pest(?:s)?|roach(?:es)?|not\s+cool(?:ing)?|not\s+heat(?:ing)?|no\s+(?:a\/?c|heat|hot\s+water|power)|toilet\s+run(?:ning)?|light(?:s)?\s+(?:out|off|flicker)|flicker(?:ing)?|water\s+on\s+(?:the\s+)?floor|flood(?:ing|ed)?|dripping|crack(?:ed)?|missing|jammed|sparks?|trip(?:ped)?\s+breaker)\b/i;
+  /\b(?:broken|break(?:ing)?|leak(?:ing|y)?|clog(?:ged)?|damage(?:d)?|loose|stuck|not\s+working|won'?t\s+(?:work|close|open|flush|drain|lock)|will\s+not\s+(?:work|close|open|flush|drain|lock)|doesn'?t\s+(?:work|close|open)|not\s+clos(?:e|ing)|out\s+of\s+order|odor|odour|smell(?:y|s)?|stink|bug(?:s)?|pest(?:s)?|roach(?:es)?|not\s+cool(?:ing)?|not\s+heat(?:ing)?|no\s+(?:a\/?c|heat|hot\s+water|power)|toilet\s+run(?:ning)?|light(?:s)?\s+(?:out|off|flicker)|flicker(?:ing)?|water\s+on\s+(?:the\s+)?floor|flood(?:ing|ed)?|dripping|crack(?:ed)?|missing|jammed|sparks?|trip(?:ped)?\s+breaker)\b/i;
 
 /**
  * Strong “already done” phrasing — skip AI (and suggestions) when this dominates.
  */
 const RESOLVED_SIGNAL =
   /\b(?:(?:engineering|maintenance|tech(?:nician)?|vendor|we|i|staff)\s+)?(?:repaired|fixed|resolved|completed|replaced|restored|cleared|addressed)\b|\balready\s+(?:fixed|repaired|resolved|done|completed)\b|\bno\s+longer\b|\bissue\s+(?:is\s+)?(?:fixed|resolved|closed)\b/i;
+
+/**
+ * Soft local resolved check before network: skip server call for clear
+ * "already fixed" notes.
+ */
+export function isPassOnMaintenanceLikelyResolved(
+  subject: string,
+  message: string
+): boolean {
+  const text = `${subject} ${message}`.trim();
+  if (!RESOLVED_SIGNAL.test(text)) return false;
+  // Fresh need language overrides a resolved past-tense mention.
+  return !/\b(?:still|again|now|needs?|please|guest\s+report)\b/i.test(text);
+}
 
 export function shouldRequestPassOnMaintenanceAi(
   subject: string,
@@ -33,10 +47,7 @@ export function shouldRequestPassOnMaintenanceAi(
   const text = `${subject} ${message}`.trim();
   if (text.length < 12) return false;
   if (!MAINTENANCE_SIGNAL.test(text)) return false;
-  // If clearly resolved and no fresh “needs attention” framing, skip AI.
-  if (RESOLVED_SIGNAL.test(text) && !/\b(?:still|again|now|needs?|please|guest\s+report)/i.test(text)) {
-    return false;
-  }
+  if (isPassOnMaintenanceLikelyResolved(subject, message)) return false;
   return true;
 }
 

@@ -1,5 +1,6 @@
 import {
   getLatestReplyAt,
+  getPassOnEffectiveViewedAt,
   isPassOnReadByUser,
   type PassOnReplyRef,
   type PassOnViewRef,
@@ -36,26 +37,55 @@ export function isPassOnNewEntryForUser(
   readBaseline?: string | null
 ): boolean {
   if (!authUserId) return false;
-  const view = findUserView(entry, authUserId);
-  if (view) return false;
-  // Baseline treats pre-membership history as already read → not "new".
+  if (findUserView(entry, authUserId)) return false;
+
+  // Pre-baseline history is never "New" — replies after baseline resurface as
+  // Unread / New Replies instead.
+  if (
+    readBaseline &&
+    entry.created_at &&
+    new Date(entry.created_at).getTime() < new Date(readBaseline).getTime()
+  ) {
+    return false;
+  }
+
   return !isPassOnReadByUser(entry, authUserId, readBaseline);
 }
 
 /**
- * Previously viewed, but a newer reply arrived after the user's last view.
- * Counts the entry once (not each reply).
+ * Previously viewed (or baseline-treated as read), but a newer reply arrived
+ * after that effective view time. Counts the entry once (not each reply).
+ * Replies created before the baseline do not count.
  */
 export function isPassOnNewRepliesForUser(
   entry: PassOnEntryForKpi,
-  authUserId: string | null | undefined
+  authUserId: string | null | undefined,
+  readBaseline?: string | null
 ): boolean {
   if (!authUserId) return false;
-  const view = findUserView(entry, authUserId);
-  if (!view?.viewed_at) return false;
+
+  const effectiveViewedAt = getPassOnEffectiveViewedAt(
+    entry,
+    authUserId,
+    readBaseline
+  );
+  if (!effectiveViewedAt) return false;
+
   const latestReplyAt = getLatestReplyAt(entry);
   if (!latestReplyAt) return false;
-  return new Date(view.viewed_at).getTime() < new Date(latestReplyAt).getTime();
+
+  // Only replies after the user's effective view (and after baseline when set)
+  // count as New Replies.
+  if (
+    readBaseline &&
+    new Date(latestReplyAt).getTime() <= new Date(readBaseline).getTime()
+  ) {
+    return false;
+  }
+
+  return (
+    new Date(effectiveViewedAt).getTime() < new Date(latestReplyAt).getTime()
+  );
 }
 
 export function matchesPassOnKpiFocus(
@@ -70,7 +100,7 @@ export function matchesPassOnKpiFocus(
     case "unread":
       return !isPassOnReadByUser(entry, authUserId, readBaseline);
     case "new-replies":
-      return isPassOnNewRepliesForUser(entry, authUserId);
+      return isPassOnNewRepliesForUser(entry, authUserId, readBaseline);
     default:
       return true;
   }
@@ -88,7 +118,7 @@ export function countPassOnKpisForUser(
   for (const entry of entries) {
     if (isPassOnNewEntryForUser(entry, authUserId, readBaseline)) newEntries += 1;
     if (!isPassOnReadByUser(entry, authUserId, readBaseline)) unread += 1;
-    if (isPassOnNewRepliesForUser(entry, authUserId)) newReplies += 1;
+    if (isPassOnNewRepliesForUser(entry, authUserId, readBaseline)) newReplies += 1;
   }
 
   return { newEntries, unread, newReplies };

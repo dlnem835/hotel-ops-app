@@ -43,10 +43,14 @@ export async function assertReplyInTenant(
 }
 
 /**
- * Reads the user's Pass-On read baseline for the active property. Returns null
- * for legacy memberships (pre-044) or when the user has no explicit
- * user_properties row for this property (e.g. org-wide access), in which case
- * the client preserves legacy unread behavior.
+ * Resolves the user's Pass-On read baseline for the active property.
+ *
+ * Priority:
+ * 1) user_properties.pass_on_read_baseline when set (new memberships via 044 trigger)
+ * 2) NULL user_properties baseline → legacy membership, no cutoff (unchanged)
+ * 3) No user_properties row (org-wide access) → first-access stamp in
+ *    pass_on_access_baselines, unless the user already has Pass-On views at this
+ *    property (existing org-wide usage → no cutoff)
  */
 export async function getPassOnReadBaseline(
   supabase: SupabaseClient,
@@ -71,7 +75,96 @@ export async function getPassOnReadBaseline(
     }
     throw new Error(error.message);
   }
-  return (data?.pass_on_read_baseline as string | null | undefined) ?? null;
+
+  if (data) {
+    // Explicit membership row: non-null baseline from INSERT trigger, or NULL
+    // legacy membership that must keep historical unread behavior.
+    return (data.pass_on_read_baseline as string | null | undefined) ?? null;
+  }
+
+  return ensurePassOnAccessBaseline(supabase, userId, propertyId);
+}
+
+/**
+ * First sign-in / first access baseline for users who reach a property without
+ * a user_properties row (org-wide roles). Never overwrites an existing stamp.
+ * Never stamps users who already have Pass-On views at this property.
+ */
+async function ensurePassOnAccessBaseline(
+  supabase: SupabaseClient,
+  userId: string,
+  propertyId: number
+): Promise<string | null> {
+  const { data: existing, error: existingError } = await supabase
+    .from("pass_on_access_baselines")
+    .select("baseline_at")
+    .eq("user_id", userId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  if (existingError) {
+    if (
+      existingError.code === "42P01" ||
+      existingError.code === "42703" ||
+      /does not exist/i.test(existingError.message)
+    ) {
+      return null;
+    }
+    throw new Error(existingError.message);
+  }
+
+  if (existing?.baseline_at) {
+    return String(existing.baseline_at);
+  }
+
+  // Existing org-wide users who already engaged Pass-On here: no cutoff.
+  const { count, error: viewsError } = await supabase
+    .from("pass_on_log_views")
+    .select("id", { count: "exact", head: true })
+    .eq("auth_user_id", userId)
+    .eq("property_id", propertyId);
+
+  if (viewsError) {
+    console.error("[pass-on-baseline] views check failed", viewsError.message);
+  } else if ((count ?? 0) > 0) {
+    return null;
+  }
+
+  const baselineAt = new Date().toISOString();
+  const { data: inserted, error: insertError } = await supabase
+    .from("pass_on_access_baselines")
+    .upsert(
+      {
+        user_id: userId,
+        property_id: propertyId,
+        baseline_at: baselineAt,
+      },
+      { onConflict: "user_id,property_id", ignoreDuplicates: true }
+    )
+    .select("baseline_at")
+    .maybeSingle();
+
+  if (insertError) {
+    if (
+      insertError.code === "42P01" ||
+      insertError.code === "42703" ||
+      /does not exist/i.test(insertError.message)
+    ) {
+      return null;
+    }
+    // Race: another request inserted first — re-read.
+    const { data: raced } = await supabase
+      .from("pass_on_access_baselines")
+      .select("baseline_at")
+      .eq("user_id", userId)
+      .eq("property_id", propertyId)
+      .maybeSingle();
+    return raced?.baseline_at ? String(raced.baseline_at) : null;
+  }
+
+  return inserted?.baseline_at
+    ? String(inserted.baseline_at)
+    : baselineAt;
 }
 
 export async function listPassOnEntries(supabase: SupabaseClient, scope: PassOnScope) {

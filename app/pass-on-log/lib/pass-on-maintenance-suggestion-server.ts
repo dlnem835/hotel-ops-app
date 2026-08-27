@@ -1,12 +1,15 @@
 import "server-only";
 
 import OpenAI from "openai";
-import { WORK_ORDER_ITEM_ISSUES } from "@/app/maintenance/lib/work-order-item-issues";
-import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import {
+  WORK_ORDER_ITEM_ISSUES,
+  classifyWorkOrderItemIssue,
+} from "@/app/maintenance/lib/work-order-item-issues";
 import {
   EMPTY_PASS_ON_MAINTENANCE_SUGGESTION,
   extractPassOnRoomHint,
   isAllowedWorkOrderItemIssue,
+  isPassOnMaintenanceLikelyResolved,
   type PassOnMaintenanceSuggestion,
 } from "@/app/pass-on-log/lib/pass-on-maintenance-gate";
 
@@ -28,7 +31,7 @@ type AiPayload = {
   confidence: number;
 };
 
-function buildFallbackSuggestion(
+function buildLocalSuggestion(
   subject: string,
   message: string
 ): PassOnMaintenanceSuggestion {
@@ -38,21 +41,24 @@ function buildFallbackSuggestion(
     details: subject,
   });
   const roomPart = roomHint ? ` in Room ${roomHint}` : "";
-  const label = `${itemIssue}${roomPart}`;
   return {
     shouldSuggest: true,
     isLikelyResolved: false,
     roomHint,
     itemIssue,
     subject: subject.trim() || itemIssue,
-    promptLabel: label,
-    confidence: 0.45,
+    promptLabel: `${itemIssue}${roomPart}`,
+    confidence: 0.7,
   };
 }
 
 /**
  * AI classification for Pass-On draft maintenance suggestions.
  * Returns null when the provider is not configured (caller should not suggest).
+ *
+ * Local gate already confirmed maintenance language. AI's main job is to reject
+ * already-resolved notes; when AI is unsure/unavailable, fall back to a local
+ * deterministic suggestion so clear issues still surface.
  */
 export async function classifyPassOnMaintenanceSuggestion(input: {
   subject: string;
@@ -62,11 +68,19 @@ export async function classifyPassOnMaintenanceSuggestion(input: {
   const message = input.message.trim();
   if (!subject && !message) return EMPTY_PASS_ON_MAINTENANCE_SUGGESTION;
 
+  if (isPassOnMaintenanceLikelyResolved(subject, message)) {
+    return {
+      ...EMPTY_PASS_ON_MAINTENANCE_SUGGESTION,
+      isLikelyResolved: true,
+    };
+  }
+
   const client = getOpenAiClient();
   if (!client) return null;
 
   const itemList = WORK_ORDER_ITEM_ISSUES.join(", ");
   const localRoomHint = extractPassOnRoomHint(subject, message);
+  const localFallback = buildLocalSuggestion(subject, message);
 
   try {
     const completion = await client.chat.completions.create({
@@ -85,12 +99,12 @@ promptLabel (string|null — short phrase like "Shower Door in Room 303"),
 confidence (number 0-1).
 
 Rules:
-- shouldSuggest=true only for an ACTIVE maintenance issue that still needs work.
+- shouldSuggest=true for an ACTIVE maintenance issue that still needs work (broken, leaking, won't close, not cooling, etc.).
 - If the note says something was already repaired/fixed/resolved/completed, set isLikelyResolved=true and shouldSuggest=false.
 - Do not invent rooms. Prefer an explicit room number when present.
 - itemIssue must be from the provided catalog exactly, or null.
 - Never assign or invent Work Order priority.
-- Be conservative: when unsure whether work is still needed, shouldSuggest=false.`,
+- Prefer shouldSuggest=true when the note clearly reports a guest/staff maintenance problem that is not already fixed.`,
         },
         {
           role: "user",
@@ -107,17 +121,30 @@ Rules:
     const parsed = JSON.parse(raw) as Partial<AiPayload>;
 
     const isLikelyResolved = Boolean(parsed.isLikelyResolved);
-    let shouldSuggest = Boolean(parsed.shouldSuggest) && !isLikelyResolved;
+    if (isLikelyResolved) {
+      return {
+        ...EMPTY_PASS_ON_MAINTENANCE_SUGGESTION,
+        isLikelyResolved: true,
+        confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0)),
+      };
+    }
+
+    let shouldSuggest = Boolean(parsed.shouldSuggest);
     const confidence = Math.max(
       0,
       Math.min(1, Number(parsed.confidence) || 0)
     );
-    if (confidence < 0.55) shouldSuggest = false;
+
+    // Local gate already saw maintenance language. If AI is uncertain, still
+    // surface the deterministic local suggestion rather than staying silent.
+    if (!shouldSuggest || confidence < 0.4) {
+      return localFallback;
+    }
 
     const itemRaw = String(parsed.itemIssue || "").trim();
     const itemIssue = isAllowedWorkOrderItemIssue(itemRaw)
       ? itemRaw
-      : classifyWorkOrderItemIssue({ description: message, details: subject });
+      : localFallback.itemIssue;
 
     const roomHint =
       (parsed.roomHint && String(parsed.roomHint).trim()) ||
@@ -133,18 +160,6 @@ Rules:
       (parsed.promptLabel && String(parsed.promptLabel).trim()) ||
       (roomHint ? `${itemIssue} in Room ${roomHint}` : itemIssue);
 
-    if (!shouldSuggest) {
-      return {
-        shouldSuggest: false,
-        isLikelyResolved,
-        roomHint,
-        itemIssue,
-        subject: conciseSubject,
-        promptLabel,
-        confidence,
-      };
-    }
-
     return {
       shouldSuggest: true,
       isLikelyResolved: false,
@@ -156,7 +171,6 @@ Rules:
     };
   } catch (error) {
     console.error("[pass-on-maintenance-suggestion] openai failed", error);
-    // Soft fallback only when local gate already decided text is maintenance-like.
-    return buildFallbackSuggestion(subject, message);
+    return localFallback;
   }
 }
