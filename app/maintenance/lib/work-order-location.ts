@@ -4,18 +4,29 @@ import {
   sortAreasInGroup,
 } from "@/app/settings/lib/rooms-areas-groups";
 
+/** Rooms/areas selectable on work orders: Active and Out of Service (not Inactive). */
+function isWorkOrderLocationEligible(area: BuildingArea): boolean {
+  return area.status === "Active" || area.status === "Out of Service";
+}
+
 export function getActiveGuestRooms(areas: BuildingArea[]): BuildingArea[] {
   return sortAreasInGroup(
     areas.filter(
-      (area) => area.area_type === "Guest Room" && area.status === "Active"
+      (area) =>
+        area.area_type === "Guest Room" && isWorkOrderLocationEligible(area)
     )
   );
 }
 
 export function getActiveNonGuestAreas(areas: BuildingArea[]): BuildingArea[] {
-  return areas.filter(
-    (area) => area.area_type !== "Guest Room" && area.status === "Active"
-  );
+  return [...areas]
+    .filter(
+      (area) =>
+        area.area_type !== "Guest Room" && isWorkOrderLocationEligible(area)
+    )
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true })
+    );
 }
 
 export function getGroupedNonGuestAreas(areas: BuildingArea[]) {
@@ -35,6 +46,9 @@ export type WorkOrderLocationOption = {
 export function buildWorkOrderLocationOptions(
   areas: BuildingArea[]
 ): WorkOrderLocationOption[] {
+  // Keep guest rooms first (numerically), then other areas — do not merge-sort
+  // alphabetically or rooms get buried behind hallways and never appear in the
+  // default dropdown window.
   const roomOptions = getActiveGuestRooms(areas).map((room) => ({
     id: room.id,
     label: formatRoomLabel(room),
@@ -47,15 +61,13 @@ export function buildWorkOrderLocationOptions(
     searchText: `${area.name} ${area.area_type} ${area.floor_location}`.toLowerCase(),
   }));
 
-  return [...roomOptions, ...areaOptions].sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { numeric: true })
-  );
+  return [...roomOptions, ...areaOptions];
 }
 
 export function filterWorkOrderLocationOptions(
   options: WorkOrderLocationOption[],
   query: string,
-  limit = 20
+  limit = 200
 ): WorkOrderLocationOption[] {
   const trimmed = query.trim().toLowerCase();
   if (!trimmed) {

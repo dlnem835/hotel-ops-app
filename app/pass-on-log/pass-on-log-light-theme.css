@@ -298,6 +298,24 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__hint {
   color: var(--pol-lm-text-muted-soft) !important;
 }
 
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-maintenance-suggestion {
+  border-color: var(--pol-lm-border) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(200, 169, 106, 0.12) 0%,
+    var(--pol-lm-surface) 45%
+  ) !important;
+  box-shadow: 0 2px 8px var(--pol-lm-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-maintenance-suggestion__body {
+  color: var(--pol-lm-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-maintenance-suggestion__dismiss {
+  color: var(--pol-lm-row-text-muted) !important;
+}
+
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__actions {
   border-top-color: var(--pol-lm-border) !important;
 }

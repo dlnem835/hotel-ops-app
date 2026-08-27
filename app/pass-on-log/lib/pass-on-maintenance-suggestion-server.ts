@@ -31,6 +31,16 @@ type AiPayload = {
   confidence: number;
 };
 
+function buildConversationalPromptLabel(
+  itemIssue: string | null,
+  roomHint: string | null
+): string {
+  const issue = (itemIssue || "maintenance").trim();
+  const article = /^[aeiou]/i.test(issue) ? "an" : "a";
+  const roomPart = roomHint ? ` in Room ${roomHint}` : "";
+  return `This sounds like ${article} ${issue} issue${roomPart}.`;
+}
+
 function buildLocalSuggestion(
   subject: string,
   message: string
@@ -40,14 +50,13 @@ function buildLocalSuggestion(
     description: message,
     details: subject,
   });
-  const roomPart = roomHint ? ` in Room ${roomHint}` : "";
   return {
     shouldSuggest: true,
     isLikelyResolved: false,
     roomHint,
     itemIssue,
     subject: subject.trim() || itemIssue,
-    promptLabel: `${itemIssue}${roomPart}`,
+    promptLabel: buildConversationalPromptLabel(itemIssue, roomHint),
     confidence: 0.7,
   };
 }
@@ -95,7 +104,7 @@ Return JSON only with keys:
 shouldSuggest (boolean), isLikelyResolved (boolean), roomHint (string|null),
 itemIssue (string|null — must be one of: ${itemList}),
 subject (string|null — concise Work Order subject),
-promptLabel (string|null — short phrase like "Shower Door in Room 303"),
+promptLabel (string|null — one short conversational sentence like "This sounds like a Shower Door issue in Room 303."),
 confidence (number 0-1).
 
 Rules:
@@ -104,7 +113,8 @@ Rules:
 - Do not invent rooms. Prefer an explicit room number when present.
 - itemIssue must be from the provided catalog exactly, or null.
 - Never assign or invent Work Order priority.
-- Prefer shouldSuggest=true when the note clearly reports a guest/staff maintenance problem that is not already fixed.`,
+- Prefer shouldSuggest=true when the note clearly reports a guest/staff maintenance problem that is not already fixed.
+- promptLabel must be a single natural sentence starting with "This sounds like" — never mention AI.`,
         },
         {
           role: "user",
@@ -156,9 +166,11 @@ Rules:
       subject ||
       itemIssue;
 
+    const parsedLabel = parsed.promptLabel && String(parsed.promptLabel).trim();
     const promptLabel =
-      (parsed.promptLabel && String(parsed.promptLabel).trim()) ||
-      (roomHint ? `${itemIssue} in Room ${roomHint}` : itemIssue);
+      parsedLabel && /^this sounds like/i.test(parsedLabel)
+        ? parsedLabel
+        : buildConversationalPromptLabel(itemIssue, roomHint);
 
     return {
       shouldSuggest: true,

@@ -499,6 +499,8 @@ async function markAsViewed(entryId: number) {
 
     if (draftPublishButtonState !== "idle") return;
 
+    // Never show (or keep) a suggestion after Post starts — avoids flash during exit.
+    setMaintenanceSuggestion(null);
     setDraftPublishButtonState("publishing");
 
     const entryId = await insertPassOnEntry(
@@ -713,8 +715,8 @@ setTeamMembers(allTeamMembers || []);
   );
 
   useEffect(() => {
-    if (!showDraftCard) {
-      setMaintenanceSuggestion(null);
+    // Draft-only: never analyze after Post, and never while the card is hidden.
+    if (!showDraftCard || draftPublishButtonState !== "idle") {
       return;
     }
 
@@ -760,7 +762,7 @@ setTeamMembers(allTeamMembers || []);
       } catch {
         if (!cancelled) setMaintenanceSuggestion(null);
       }
-    }, 900);
+    }, 1500);
 
     return () => {
       cancelled = true;
@@ -768,11 +770,19 @@ setTeamMembers(allTeamMembers || []);
     };
   }, [
     showDraftCard,
+    draftPublishButtonState,
     draftSubject,
     draftMessage,
     draftMaintenanceFingerprint,
     dismissedMaintenanceFingerprint,
   ]);
+
+  // Drop any in-flight suggestion UI as soon as posting begins or the draft closes.
+  useEffect(() => {
+    if (!showDraftCard || draftPublishButtonState !== "idle") {
+      setMaintenanceSuggestion(null);
+    }
+  }, [showDraftCard, draftPublishButtonState]);
 
   function openSuggestedWorkOrderFromDraft() {
     if (!maintenanceSuggestion?.shouldSuggest) return;
@@ -783,21 +793,24 @@ setTeamMembers(allTeamMembers || []);
     const roomLabel = maintenanceSuggestion.roomHint
       ? formatPassOnRoomAreaLabel(maintenanceSuggestion.roomHint)
       : null;
+    const details = draftMessage.trim();
+    const woSubject =
+      maintenanceSuggestion.subject?.trim() ||
+      draftSubject.trim() ||
+      maintenanceSuggestion.itemIssue ||
+      "Maintenance issue";
 
     setWorkOrderInitial({
-      subject:
-        maintenanceSuggestion.subject?.trim() ||
-        draftSubject.trim() ||
-        maintenanceSuggestion.itemIssue ||
-        "Maintenance issue",
-      description: draftMessage.trim(),
+      subject: woSubject,
+      description: details,
       item: maintenanceSuggestion.itemIssue || undefined,
       priority: passOnPriority,
       area_label: roomLabel,
       source_module: "Pass-On",
-      source_note: draftMessage.trim(),
+      source_note: details,
       created_by: currentUserName,
     });
+    // Keep the Pass-On draft open; WO is review-only until the user submits.
     setWorkOrderModalOpen(true);
   }
 
@@ -1274,6 +1287,79 @@ function dateHeader(dateString: string) {
             font-size: 12px;
           }
 
+          .pass-on-maintenance-suggestion {
+            grid-column: 1 / -1;
+            margin: 0;
+            padding: 10px 12px 10px 14px;
+            border-radius: 14px 14px 14px 6px;
+            border: 1px solid #3a352e;
+            border-left: 3px solid #c8a96a;
+            background: linear-gradient(
+              135deg,
+              rgba(200, 169, 106, 0.1) 0%,
+              #151515 45%
+            );
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+          }
+
+          .pass-on-maintenance-suggestion__eyebrow {
+            color: #c8a96a;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+          }
+
+          .pass-on-maintenance-suggestion__body {
+            margin: 0 0 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+          }
+
+          .pass-on-maintenance-suggestion__actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 8px;
+          }
+
+          .pass-on-maintenance-suggestion__create,
+          .pass-on-maintenance-suggestion__dismiss {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+          }
+
+          .pass-on-maintenance-suggestion__create {
+            color: #c8a96a;
+          }
+
+          .pass-on-maintenance-suggestion__create:hover {
+            color: #e0c47b;
+            text-decoration: underline;
+          }
+
+          .pass-on-maintenance-suggestion__dismiss {
+            color: #9ca3af;
+            font-weight: 700;
+          }
+
+          .pass-on-maintenance-suggestion__dismiss:hover {
+            color: #e5e7eb;
+          }
+
+          .pass-on-maintenance-suggestion__sep {
+            color: #3a352e;
+            font-weight: 700;
+            user-select: none;
+          }
+
           .pass-on-draft-card__actions {
             margin-top: 14px;
             padding-top: 14px;
@@ -1585,15 +1671,9 @@ function dateHeader(dateString: string) {
                     disabled={draftFieldsLocked}
                   />
 
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <PassOnAttachments
-                      pendingFiles={draftAttachments}
-                      onPendingFilesChange={setDraftAttachments}
-                      disabled={draftFieldsLocked}
-                    />
-                  </div>
-
-                  {maintenanceSuggestion?.shouldSuggest &&
+                  {showDraftCard &&
+                  draftPublishButtonState === "idle" &&
+                  maintenanceSuggestion?.shouldSuggest &&
                   maintenanceSuggestion.promptLabel &&
                   dismissedMaintenanceFingerprint !== draftMaintenanceFingerprint ? (
                     <PassOnMaintenanceSuggestionBanner
@@ -1602,6 +1682,14 @@ function dateHeader(dateString: string) {
                       onDismiss={dismissMaintenanceSuggestion}
                     />
                   ) : null}
+
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <PassOnAttachments
+                      pendingFiles={draftAttachments}
+                      onPendingFilesChange={setDraftAttachments}
+                      disabled={draftFieldsLocked}
+                    />
+                  </div>
 
                   <div
                     className="pass-on-draft-card__actions"

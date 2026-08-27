@@ -55,7 +55,9 @@ export default function WorkOrderLocationField({
       window.clearTimeout(blurTimerRef.current);
     }
     setOpen(true);
-    setQuery(selectedLabel);
+    // Start with an empty filter so guest rooms (listed first) are visible
+    // instead of narrowing to the current label.
+    setQuery("");
   }
 
   function handleBlur() {

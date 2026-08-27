@@ -1,7 +1,5 @@
 "use client";
 
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
-
 type PassOnMaintenanceSuggestionBannerProps = {
   promptLabel: string;
   onCreateWorkOrder: () => void;
@@ -9,7 +7,7 @@ type PassOnMaintenanceSuggestionBannerProps = {
 };
 
 /**
- * Unobtrusive draft-card banner — no AI branding.
+ * Compact draft-only suggestion bubble — no AI branding, not a chat thread.
  */
 export default function PassOnMaintenanceSuggestionBanner({
   promptLabel,
@@ -17,71 +15,26 @@ export default function PassOnMaintenanceSuggestionBanner({
   onDismiss,
 }: PassOnMaintenanceSuggestionBannerProps) {
   return (
-    <div
-      className="pass-on-maintenance-suggestion"
-      role="status"
-      style={{
-        gridColumn: "1 / -1",
-        marginBottom: "4px",
-        padding: "12px 14px",
-        borderRadius: "10px",
-        border: `1px solid ${ONE_EYRIE.border}`,
-        background: ONE_EYRIE.surfaceInset,
-      }}
-    >
-      <div
-        style={{
-          color: ONE_EYRIE.gold,
-          fontSize: "11px",
-          fontWeight: 800,
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          marginBottom: "6px",
-        }}
-      >
+    <div className="pass-on-maintenance-suggestion" role="status" aria-live="polite">
+      <div className="pass-on-maintenance-suggestion__eyebrow">
         Possible maintenance issue
       </div>
-      <div
-        style={{
-          color: ONE_EYRIE.text,
-          fontSize: "14px",
-          fontWeight: 600,
-          lineHeight: 1.4,
-          marginBottom: "10px",
-        }}
-      >
-        Create a Work Order for {promptLabel}?
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+      <p className="pass-on-maintenance-suggestion__body">{promptLabel}</p>
+      <div className="pass-on-maintenance-suggestion__actions">
         <button
           type="button"
+          className="pass-on-maintenance-suggestion__create"
           onClick={onCreateWorkOrder}
-          style={{
-            border: "none",
-            borderRadius: "8px",
-            padding: "8px 12px",
-            background: ONE_EYRIE.gold,
-            color: ONE_EYRIE.black,
-            fontSize: "13px",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
         >
           Create Work Order
         </button>
+        <span className="pass-on-maintenance-suggestion__sep" aria-hidden="true">
+          |
+        </span>
         <button
           type="button"
+          className="pass-on-maintenance-suggestion__dismiss"
           onClick={onDismiss}
-          style={{
-            border: `1px solid ${ONE_EYRIE.border}`,
-            borderRadius: "8px",
-            padding: "8px 12px",
-            background: "transparent",
-            color: ONE_EYRIE.textMuted,
-            fontSize: "13px",
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
         >
           Dismiss
         </button>

@@ -89,7 +89,7 @@ export type PassOnMaintenanceSuggestion = {
   roomHint: string | null;
   itemIssue: WorkOrderItemIssue | null;
   subject: string | null;
-  /** Short phrase for the banner, e.g. "Shower Door in Room 303" */
+  /** Conversational one-liner for the draft bubble, e.g. "This sounds like a TV issue in Room 308." */
   promptLabel: string | null;
   confidence: number;
 };

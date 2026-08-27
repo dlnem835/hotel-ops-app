@@ -61,7 +61,7 @@ export default function ReportsWorkOrderAreaField({
       window.clearTimeout(blurTimerRef.current);
     }
     setOpen(true);
-    setQuery(selectedLabel);
+    setQuery("");
   }
 
   function handleBlur() {

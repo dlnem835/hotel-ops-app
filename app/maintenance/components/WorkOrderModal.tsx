@@ -58,13 +58,17 @@ export default function WorkOrderModal({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   useModalScrollLock(open);
 
-  const activeAreas = useMemo(
-    () => areas.filter((area) => area.status === "Active"),
+  const locationEligibleAreas = useMemo(
+    () =>
+      areas.filter(
+        (area) =>
+          area.status === "Active" || area.status === "Out of Service"
+      ),
     [areas]
   );
   const locationOptions = useMemo(
-    () => buildWorkOrderLocationOptions(areas),
-    [areas]
+    () => buildWorkOrderLocationOptions(locationEligibleAreas),
+    [locationEligibleAreas]
   );
 
   useEffect(() => {
@@ -176,7 +180,7 @@ export default function WorkOrderModal({
       : resolveWorkOrderLocationFromSelection({
           selectedLocationId,
           customLocation,
-          areas: activeAreas,
+          areas: locationEligibleAreas,
         });
     if (!location.area_id && !location.area_label) {
       setError("Location or custom location is required.");
