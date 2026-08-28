@@ -29,7 +29,7 @@ import type {
 import { PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { formatPmNextDueDate } from "../../lib/pm-tile-display";
 import { formatPmCompletionDate } from "../../lib/pm-urgency";
-import { classifyWorkOrderItemIssue } from "../../lib/work-order-item-issues";
+import { buildPmProgramTargetWorkOrderPrefill } from "../../lib/work-order-prefill";
 import {
   resolveMemberDisplayLabel,
   useMemberDisplayNameResolver,
@@ -353,28 +353,16 @@ export default function PmProgramPage() {
     target: PmProgramSessionTarget
   ): WorkOrderModalInitialValues {
     const label = targetLabel(target);
-    const note = targetNotes[target.assignmentId] || "";
-    return {
-      subject: `PM fail: ${session?.templateName || "Preventive Maintenance"}`,
-      description: note,
-      item: classifyWorkOrderItemIssue({
-        structuredItem: session?.templateName || "Preventive Maintenance",
-        description: note,
-      }),
-      priority: "Important",
-      area_id: target.areaId,
-      area_label: label,
-      lock_location: true,
-      source_module: "Maintenance",
-      source_record_id: target.occurrenceId
-        ? String(target.occurrenceId)
-        : String(templateId),
-      source_note: `${session?.templateName || "PM"} · ${label}${
-        note ? ` — ${note}` : ""
-      }`,
-      photo_url: targetPhotos[target.assignmentId] || null,
-      created_by: currentUserName,
-    };
+    return buildPmProgramTargetWorkOrderPrefill({
+      templateName: session?.templateName || "Preventive Maintenance",
+      targetLabel: label,
+      occurrenceId: target.occurrenceId,
+      templateId,
+      notes: targetNotes[target.assignmentId] || "",
+      photoUrl: targetPhotos[target.assignmentId] || null,
+      areaId: target.areaId,
+      createdBy: currentUserName,
+    });
   }
 
   function openTargetWorkOrder(initial: WorkOrderModalInitialValues) {

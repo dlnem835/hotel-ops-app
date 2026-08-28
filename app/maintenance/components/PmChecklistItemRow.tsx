@@ -7,7 +7,7 @@ import { WorkOrderModalInitialValues } from "@/app/maintenance/components/WorkOr
 import { FLAT_RED, FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { PmChecklistStep, PmStepOutcome } from "../lib/pm-types";
-import { classifyWorkOrderItemIssue } from "../lib/work-order-item-issues";
+import { buildPmChecklistWorkOrderPrefill } from "../lib/work-order-prefill";
 import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 
 export type PmFailedItemWorkOrderContext = {
@@ -35,11 +35,23 @@ type PmChecklistItemRowProps = {
   onPhotoRemove: () => void;
 };
 
-function locationLabel(context: PmFailedItemWorkOrderContext): string | null {
-  if (context.areaName && context.assetLabel) {
-    return `${context.assetLabel} — ${context.areaName}`;
-  }
-  return context.areaName || context.assetLabel || null;
+function buildPrefill(
+  step: PmChecklistStep,
+  notes: string,
+  photoUrl: string | null,
+  workOrderContext: PmFailedItemWorkOrderContext
+): WorkOrderModalInitialValues {
+  return buildPmChecklistWorkOrderPrefill({
+    templateName: workOrderContext.templateName,
+    stepLabel: step.label,
+    occurrenceId: workOrderContext.occurrenceId,
+    notes,
+    photoUrl,
+    areaId: workOrderContext.areaId,
+    areaName: workOrderContext.areaName,
+    assetLabel: workOrderContext.assetLabel,
+    createdBy: workOrderContext.completedBy,
+  });
 }
 
 export default function PmChecklistItemRow({
@@ -165,43 +177,16 @@ export default function PmChecklistItemRow({
                 compact
                 label="Create Work Order"
                 onOpen={() =>
-                  workOrderContext.onCreateWorkOrder({
-                    subject: `PM fail: ${step.label}`,
-                    description: notes || "",
-                    item: classifyWorkOrderItemIssue({
-                      structuredItem: step.label,
-                      description: notes,
-                    }),
-                    priority: "Important",
-                    area_id: workOrderContext.areaId,
-                    area_label: locationLabel(workOrderContext),
-                    source_module: "Maintenance",
-                    source_record_id: String(workOrderContext.occurrenceId),
-                    source_note: `${workOrderContext.templateName} · ${step.label}${
-                      notes ? ` — ${notes}` : ""
-                    }`,
-                    photo_url: photoUrl || null,
-                    created_by: workOrderContext.completedBy,
-                  })
+                  workOrderContext.onCreateWorkOrder(
+                    buildPrefill(step, notes, photoUrl, workOrderContext)
+                  )
                 }
-                initialValues={{
-                  subject: `PM fail: ${step.label}`,
-                  description: notes || "",
-                  item: classifyWorkOrderItemIssue({
-                    structuredItem: step.label,
-                    description: notes,
-                  }),
-                  priority: "Important",
-                  area_id: workOrderContext.areaId,
-                  area_label: locationLabel(workOrderContext),
-                  source_module: "Maintenance",
-                  source_record_id: String(workOrderContext.occurrenceId),
-                  source_note: `${workOrderContext.templateName} · ${step.label}${
-                    notes ? ` — ${notes}` : ""
-                  }`,
-                  photo_url: photoUrl || null,
-                  created_by: workOrderContext.completedBy,
-                }}
+                initialValues={buildPrefill(
+                  step,
+                  notes,
+                  photoUrl,
+                  workOrderContext
+                )}
               />
             </div>
           )}

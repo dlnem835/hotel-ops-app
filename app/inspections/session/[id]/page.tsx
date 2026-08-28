@@ -28,7 +28,7 @@ import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
 import CreateWorkOrderButton from "@/app/maintenance/components/CreateWorkOrderButton";
-import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import { buildInspectionWorkOrderPrefill } from "@/app/maintenance/lib/work-order-prefill";
 import {
   GeneralInspectionStandards,
   InspectionItemGuidanceHeading,
@@ -696,27 +696,18 @@ export default function InspectionSessionPage() {
                                 setWorkOrderInitial(initial);
                                 setWorkOrderModalOpen(true);
                               }}
-                              initialValues={{
-                                subject: "",
-                                description: "",
-                                item: classifyWorkOrderItemIssue({
-                                  structuredItem: item.label.en,
-                                  description: notes[key],
-                                }),
-                                priority: "Important",
-                                area_id: areaId,
-                                area_label: roomName ? `Room ${roomName}` : null,
-                                source_module:
-                                  program === "RPM"
-                                    ? "RPM Inspection"
-                                    : "Room Inspection",
-                                source_record_id: String(sessionId),
-                                source_note: `${templateName} · ${category.name.en} · ${item.label.en}${
-                                  notes[key] ? ` — ${notes[key]}` : ""
-                                }`,
-                                photo_url: photos[key] || null,
-                                created_by: inspectorName,
-                              }}
+                              initialValues={buildInspectionWorkOrderPrefill({
+                                program,
+                                sessionId,
+                                templateName,
+                                categoryName: category.name.en,
+                                itemLabel: item.label.en,
+                                notes: notes[key],
+                                photoUrl: photos[key] || null,
+                                areaId,
+                                roomName,
+                                createdBy: inspectorName,
+                              })}
                             />
                           </div>
                         )}

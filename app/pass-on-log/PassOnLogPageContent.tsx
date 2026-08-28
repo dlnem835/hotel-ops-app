@@ -33,7 +33,10 @@ import {
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "@/app/maintenance/components/WorkOrderModal";
-import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import {
+  buildPassOnDraftWorkOrderPrefill,
+  buildPassOnEntryWorkOrderPrefill,
+} from "@/app/maintenance/lib/work-order-prefill";
 import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 import {
   matchesPassOnKpiFocus,
@@ -41,9 +44,9 @@ import {
   type PassOnKpiFocus,
 } from "@/app/pass-on-log/lib/pass-on-kpi";
 import {
-  formatPassOnRoomAreaLabel,
   passOnDraftTextFingerprint,
   shouldRequestPassOnMaintenanceAi,
+  extractPassOnRoomHint,
   type PassOnMaintenanceSuggestion,
 } from "@/app/pass-on-log/lib/pass-on-maintenance-gate";
 import PassOnMaintenanceSuggestionBanner from "@/app/pass-on-log/components/PassOnMaintenanceSuggestionBanner";
@@ -151,7 +154,12 @@ export default function PassOnLogPageContent() {
   const [visibleDayCount, setVisibleDayCount] = useState(PASS_ON_DAYS_PER_PAGE);
   const [loadingMoreDays, setLoadingMoreDays] = useState(false);
   const [canDeleteAnyPassOn, setCanDeleteAnyPassOn] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  /** Entry IDs that matched the Dashboard KPI when this filtered session started. */
+  const [kpiFocusStickyIds, setKpiFocusStickyIds] = useState<Set<number> | null>(
+    null
+  );
+  const kpiFocusSessionKeyRef = useRef<string | null>(null);
 
   const memberResolver = useMemo(
     () => buildMemberDisplayNameResolver(teamMembers),
@@ -786,30 +794,18 @@ setTeamMembers(allTeamMembers || []);
 
   function openSuggestedWorkOrderFromDraft() {
     if (!maintenanceSuggestion?.shouldSuggest) return;
-    const passOnPriority =
-      draftPriority === "Urgent" || draftPriority === "Important"
-        ? draftPriority
-        : "Normal";
-    const roomLabel = maintenanceSuggestion.roomHint
-      ? formatPassOnRoomAreaLabel(maintenanceSuggestion.roomHint)
-      : null;
-    const details = draftMessage.trim();
-    const woSubject =
-      maintenanceSuggestion.subject?.trim() ||
-      draftSubject.trim() ||
-      maintenanceSuggestion.itemIssue ||
-      "Maintenance issue";
 
-    setWorkOrderInitial({
-      subject: woSubject,
-      description: details,
-      item: maintenanceSuggestion.itemIssue || undefined,
-      priority: passOnPriority,
-      area_label: roomLabel,
-      source_module: "Pass-On",
-      source_note: details,
-      created_by: currentUserName,
-    });
+    setWorkOrderInitial(
+      buildPassOnDraftWorkOrderPrefill({
+        draftSubject,
+        draftMessage,
+        draftPriority,
+        itemIssue: maintenanceSuggestion.itemIssue,
+        suggestedSubject: maintenanceSuggestion.subject,
+        roomHint: maintenanceSuggestion.roomHint,
+        createdBy: currentUserName,
+      })
+    );
     // Keep the Pass-On draft open; WO is review-only until the user submits.
     setWorkOrderModalOpen(true);
   }
@@ -895,12 +891,57 @@ setTeamMembers(allTeamMembers || []);
     [searchParams]
   );
 
+  /** Changes when focus changes or Dashboard KPI is clicked again (`s=` stamp). */
+  const kpiFocusSessionKey = useMemo(() => {
+    if (!kpiFocus) return null;
+    return `${kpiFocus}:${searchParams.get("s") || "default"}`;
+  }, [kpiFocus, searchParams]);
+
   const deepLinkHandled = useRef<number | null>(null);
 
   useEffect(() => {
     if (!kpiFocus) return;
     setDateFilter("All");
   }, [kpiFocus]);
+
+  // Sticky filtered list for Dashboard KPI sessions: freeze the qualifying
+  // entry set when the session starts so opening/marking read does not remove
+  // cards mid-interaction. Re-evaluate on refresh, leave/re-enter, clear, or
+  // a new KPI click (new session key).
+  useEffect(() => {
+    if (!kpiFocusSessionKey || !kpiFocus || !currentAuthUserId) {
+      kpiFocusSessionKeyRef.current = null;
+      setKpiFocusStickyIds(null);
+      return;
+    }
+
+    if (kpiFocusSessionKeyRef.current !== kpiFocusSessionKey) {
+      kpiFocusSessionKeyRef.current = kpiFocusSessionKey;
+      setKpiFocusStickyIds(null);
+    }
+  }, [kpiFocusSessionKey, kpiFocus, currentAuthUserId]);
+
+  useEffect(() => {
+    if (!kpiFocus || !kpiFocusSessionKey || !currentAuthUserId) return;
+    if (kpiFocusStickyIds !== null) return;
+    if (entries.length === 0) return;
+
+    const ids = new Set(
+      entries
+        .filter((entry) =>
+          matchesPassOnKpiFocus(entry, kpiFocus, currentAuthUserId, readBaseline)
+        )
+        .map((entry) => Number(entry.id))
+    );
+    setKpiFocusStickyIds(ids);
+  }, [
+    kpiFocus,
+    kpiFocusSessionKey,
+    kpiFocusStickyIds,
+    currentAuthUserId,
+    readBaseline,
+    entries,
+  ]);
 
   useEffect(() => {
     if (!deepLinkEntryId || entries.length === 0) return;
@@ -920,6 +961,7 @@ setTeamMembers(allTeamMembers || []);
   function clearKpiFocus() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("focus");
+    params.delete("s");
     const qs = params.toString();
     router.replace(qs ? `/pass-on-log?${qs}` : "/pass-on-log");
   }
@@ -1033,7 +1075,9 @@ setTeamMembers(allTeamMembers || []);
 
   const matchesFocus =
     !kpiFocus ||
-    matchesPassOnKpiFocus(entry, kpiFocus, currentAuthUserId, readBaseline);
+    (kpiFocusStickyIds
+      ? kpiFocusStickyIds.has(Number(entry.id))
+      : matchesPassOnKpiFocus(entry, kpiFocus, currentAuthUserId, readBaseline));
 
   return matchesSearch && matchesDate && matchesFocus;
 });
@@ -1960,21 +2004,19 @@ function dateHeader(dateString: string) {
                   <button
                     type="button"
                     onClick={() => {
-                      setWorkOrderInitial({
-                        subject: entry.subject,
-                        description: "",
-                        item: classifyWorkOrderItemIssue({
-                          description: entry.message,
-                          details: entry.subject,
-                        }),
-                        priority:
-                          (entry.priority as "Normal" | "Important" | "Urgent") ||
-                          "Normal",
-                        source_module: "Pass-On Log",
-                        source_record_id: String(entry.id),
-                        source_note: entry.message,
-                        created_by: currentUserName,
-                      });
+                      setWorkOrderInitial(
+                        buildPassOnEntryWorkOrderPrefill({
+                          entryId: entry.id,
+                          subject: entry.subject,
+                          message: entry.message,
+                          priority: entry.priority,
+                          createdBy: currentUserName,
+                          roomHint: extractPassOnRoomHint(
+                            entry.subject,
+                            entry.message
+                          ),
+                        })
+                      );
                       setWorkOrderModalOpen(true);
                     }}
                     className="pass-on-work-order-btn"

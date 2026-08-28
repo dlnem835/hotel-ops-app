@@ -98,10 +98,16 @@ export function mapWorkOrderSourceModule(
   const value = (sourceModule || "").trim();
 
   if (!value || value === "Maintenance") return "Manual";
-  if (value === "Pass-On Log") return "Pass-On Log";
+  if (value === "Pass-On Log" || value === "Pass-On") return "Pass-On Log";
   if (value === "Inspections" || value === "Room Inspection") return "Room Inspection";
   if (value === "RPM" || value === "RPM Inspection") return "RPM Inspection";
-  if (value === "Preventive Maintenance" || value === "PM") return "Preventive Maintenance";
+  if (
+    value === "Preventive Maintenance" ||
+    value === "PM" ||
+    value === "Preventative Maintenance"
+  ) {
+    return "Preventive Maintenance";
+  }
   if (value === "Lost & Found" || value === "Lost and Found") return "Lost & Found";
 
   // Future: add explicit source_module values as they are introduced in workflows.

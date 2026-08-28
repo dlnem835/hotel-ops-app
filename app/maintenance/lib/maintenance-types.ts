@@ -13,6 +13,7 @@ export type WorkOrderSourceModule =
   | "Inspections"
   | "Room Inspection"
   | "RPM Inspection"
+  | "Preventive Maintenance"
   | "Pass-On Log"
   | "Housekeeping";
 

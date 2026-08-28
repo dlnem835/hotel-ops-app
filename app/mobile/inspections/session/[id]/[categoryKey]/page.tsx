@@ -13,7 +13,7 @@ import {
   itemResponseKey,
   useMobileInspectionSession,
 } from "../MobileInspectionSessionProvider";
-import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import { buildInspectionWorkOrderPrefill } from "@/app/maintenance/lib/work-order-prefill";
 import {
   getInspectionItemGuidance,
   isGuidedInspectionTemplate,
@@ -158,25 +158,18 @@ export default function MobileInspectionCategoryPage() {
                     setWorkOrderInitial(initial);
                     setWorkOrderModalOpen(true);
                   }}
-                  initialValues={{
-                    subject: "",
-                    description: "",
-                    item: classifyWorkOrderItemIssue({
-                      structuredItem: item.label.en,
-                      description: notes[responseKey],
-                    }),
-                    priority: "Important",
-                    area_id: areaId,
-                    area_label: roomName ? `Room ${roomName}` : null,
-                    source_module:
-                      program === "RPM" ? "RPM Inspection" : "Room Inspection",
-                    source_record_id: String(sessionId),
-                    source_note: `${templateName} · ${categoryName} · ${item.label.en}${
-                      notes[responseKey] ? ` — ${notes[responseKey]}` : ""
-                    }`,
-                    photo_url: photos[responseKey] || null,
-                    created_by: inspectorName,
-                  }}
+                  initialValues={buildInspectionWorkOrderPrefill({
+                    program,
+                    sessionId,
+                    templateName,
+                    categoryName,
+                    itemLabel: item.label.en,
+                    notes: notes[responseKey],
+                    photoUrl: photos[responseKey] || null,
+                    areaId,
+                    roomName,
+                    createdBy: inspectorName,
+                  })}
                 />
               }
             />

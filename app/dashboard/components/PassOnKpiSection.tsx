@@ -9,6 +9,12 @@ type PassOnKpiSectionProps = {
   kpis: PassOnDashboardKpis;
 };
 
+/** Fresh session stamp so re-clicking a KPI re-evaluates the filtered Pass-On list. */
+function withKpiSession(href: string): string {
+  const separator = href.includes("?") ? "&" : "?";
+  return `${href}${separator}s=${Date.now()}`;
+}
+
 function KpiTile({
   label,
   value,
@@ -22,7 +28,7 @@ function KpiTile({
 
   return (
     <Link
-      href={href}
+      href={withKpiSession(href)}
       className="dashboard-clickable-card"
       style={{
         display: "block",
