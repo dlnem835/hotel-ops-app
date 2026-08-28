@@ -133,6 +133,7 @@ export default function PmTemplateModal({
   const [form, setForm] = useState<PmTemplateInput>(emptyForm());
   const [items, setItems] = useState<ItemDraft[]>([emptyItem()]);
   const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([]);
+  const [guestRoomsExpanded, setGuestRoomsExpanded] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -174,6 +175,7 @@ export default function PmTemplateModal({
           .map((item) => item.areaId)
           .filter((id): id is number => typeof id === "number")
       );
+      setGuestRoomsExpanded(false);
       setNoEndDate(!initial.assignment?.end_date);
       setError(null);
     }, 0);
@@ -546,134 +548,216 @@ export default function PmTemplateModal({
                   background: ONE_EYRIE.surfaceInset,
                 }}
               >
-                <div
-                  style={{
-                    color: ONE_EYRIE.gold,
-                    fontWeight: 800,
-                    fontSize: "13px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Guest Rooms ({guestRooms.length} active)
-                </div>
-                <p
-                  style={{
-                    margin: "0 0 10px",
-                    color: ONE_EYRIE.textMuted,
-                    fontSize: "12px",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  Generate one PM item per room for PTAC/AC units, smoke
-                  detectors, refrigerators, and similar assets. Existing room
-                  items are not duplicated.
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={applyAllGuestRooms}
+                {!guestRoomsExpanded ? (
+                  <div
                     style={{
-                      ...GOLD_OUTLINE_BUTTON,
-                      height: "36px",
-                      minHeight: "36px",
-                      fontSize: "12px",
-                      padding: "0 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      flexWrap: "wrap",
                     }}
-                    {...goldHoverHandlers("secondary")}
                   >
-                    Apply to All Guest Rooms
-                  </button>
-                  <button
-                    type="button"
-                    onClick={selectAllGuestRooms}
-                    style={{
-                      ...secondaryButton,
-                      height: "36px",
-                      minHeight: "36px",
-                      fontSize: "12px",
-                      padding: "0 12px",
-                    }}
-                    {...neutralHoverHandlers()}
-                  >
-                    Select All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearGuestRoomSelection}
-                    style={{
-                      ...secondaryButton,
-                      height: "36px",
-                      minHeight: "36px",
-                      fontSize: "12px",
-                      padding: "0 12px",
-                    }}
-                    {...neutralHoverHandlers()}
-                  >
-                    Clear Selection
-                  </button>
-                  <button
-                    type="button"
-                    onClick={applySelectedGuestRooms}
-                    disabled={selectedRoomIds.length === 0}
-                    style={{
-                      ...GOLD_OUTLINE_BUTTON,
-                      height: "36px",
-                      minHeight: "36px",
-                      fontSize: "12px",
-                      padding: "0 12px",
-                      opacity: selectedRoomIds.length === 0 ? 0.55 : 1,
-                    }}
-                    {...goldHoverHandlers(
-                      "secondary",
-                      selectedRoomIds.length === 0
-                    )}
-                  >
-                    Add Selected ({selectedRoomIds.length})
-                  </button>
-                </div>
-                <div
-                  style={{
-                    maxHeight: "160px",
-                    overflowY: "auto",
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(110px, 1fr))",
-                    gap: "6px",
-                    paddingRight: "4px",
-                  }}
-                >
-                  {guestRooms.map((room) => {
-                    const checked = selectedRoomIds.includes(room.id);
-                    return (
-                      <label
-                        key={room.id}
+                    <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+                      <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          color: ONE_EYRIE.text,
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer",
+                          color: ONE_EYRIE.gold,
+                          fontWeight: 800,
+                          fontSize: "13px",
+                          marginBottom: "4px",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleRoomSelection(room.id)}
-                        />
-                        {room.name}
-                      </label>
-                    );
-                  })}
-                </div>
+                        {selectedRoomIds.length > 0
+                          ? `Guest Rooms — ${selectedRoomIds.length} selected`
+                          : "Guest Rooms"}
+                      </div>
+                      {selectedRoomIds.length === 0 ? (
+                        <p
+                          style={{
+                            margin: 0,
+                            color: ONE_EYRIE.textMuted,
+                            fontSize: "12px",
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          Optional — replicate this PM to selected guest rooms
+                        </p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setGuestRoomsExpanded(true)}
+                      style={{
+                        ...GOLD_OUTLINE_BUTTON,
+                        height: "36px",
+                        minHeight: "36px",
+                        fontSize: "12px",
+                        padding: "0 12px",
+                        flexShrink: 0,
+                      }}
+                      {...goldHoverHandlers("secondary")}
+                    >
+                      {selectedRoomIds.length > 0
+                        ? "Edit"
+                        : "+ Add to Guest Rooms"}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "10px",
+                        marginBottom: "8px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: ONE_EYRIE.gold,
+                          fontWeight: 800,
+                          fontSize: "13px",
+                        }}
+                      >
+                        Guest Rooms ({guestRooms.length} active)
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setGuestRoomsExpanded(false)}
+                        style={{
+                          ...secondaryButton,
+                          height: "32px",
+                          minHeight: "32px",
+                          fontSize: "12px",
+                          padding: "0 10px",
+                        }}
+                        {...neutralHoverHandlers()}
+                      >
+                        Done
+                      </button>
+                    </div>
+                    <p
+                      style={{
+                        margin: "0 0 10px",
+                        color: ONE_EYRIE.textMuted,
+                        fontSize: "12px",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      Optional — generate one PM item per room for PTAC/AC units,
+                      smoke detectors, refrigerators, and similar assets.
+                      Existing room items are not duplicated.
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={applyAllGuestRooms}
+                        style={{
+                          ...GOLD_OUTLINE_BUTTON,
+                          height: "36px",
+                          minHeight: "36px",
+                          fontSize: "12px",
+                          padding: "0 12px",
+                        }}
+                        {...goldHoverHandlers("secondary")}
+                      >
+                        Apply to All Guest Rooms
+                      </button>
+                      <button
+                        type="button"
+                        onClick={selectAllGuestRooms}
+                        style={{
+                          ...secondaryButton,
+                          height: "36px",
+                          minHeight: "36px",
+                          fontSize: "12px",
+                          padding: "0 12px",
+                        }}
+                        {...neutralHoverHandlers()}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearGuestRoomSelection}
+                        style={{
+                          ...secondaryButton,
+                          height: "36px",
+                          minHeight: "36px",
+                          fontSize: "12px",
+                          padding: "0 12px",
+                        }}
+                        {...neutralHoverHandlers()}
+                      >
+                        Clear Selection
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applySelectedGuestRooms}
+                        disabled={selectedRoomIds.length === 0}
+                        style={{
+                          ...GOLD_OUTLINE_BUTTON,
+                          height: "36px",
+                          minHeight: "36px",
+                          fontSize: "12px",
+                          padding: "0 12px",
+                          opacity: selectedRoomIds.length === 0 ? 0.55 : 1,
+                        }}
+                        {...goldHoverHandlers(
+                          "secondary",
+                          selectedRoomIds.length === 0
+                        )}
+                      >
+                        Add Selected ({selectedRoomIds.length})
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        maxHeight: "160px",
+                        overflowY: "auto",
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fill, minmax(110px, 1fr))",
+                        gap: "6px",
+                        paddingRight: "4px",
+                      }}
+                    >
+                      {guestRooms.map((room) => {
+                        const checked = selectedRoomIds.includes(room.id);
+                        return (
+                          <label
+                            key={room.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              color: ONE_EYRIE.text,
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleRoomSelection(room.id)}
+                            />
+                            {room.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             ) : null}
 
