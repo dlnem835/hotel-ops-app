@@ -120,6 +120,7 @@ const SOURCE_ITEM_ALIASES: Record<string, WorkOrderItemIssue> = {
   "ice machine": "Appliance",
   "juice machine": "Appliance",
   "dishwasher / sanitizer": "Appliance",
+  "commercial dishwasher / sanitizer": "Appliance",
   dishwasher: "Appliance",
   "commercial dryer": "Appliance",
   "commercial washing machine": "Appliance",

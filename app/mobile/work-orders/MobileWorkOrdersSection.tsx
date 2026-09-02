@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import WorkOrderModal from "@/app/maintenance/components/WorkOrderModal";
 import {
   forestHoverHandlers,
@@ -10,6 +11,7 @@ import MobileWorkOrdersList from "./MobileWorkOrdersList";
 import { resolveWorkOrderCreatedBy } from "./lib/work-order-shared";
 
 export default function MobileWorkOrdersSection() {
+  const router = useRouter();
   const [workOrderModalOpen, setWorkOrderModalOpen] = useState(false);
   const [createdByName, setCreatedByName] = useState<string | null>(null);
   const [listRefreshKey, setListRefreshKey] = useState(0);
@@ -47,6 +49,10 @@ export default function MobileWorkOrdersSection() {
         onCreated={() => {
           setListRefreshKey((current) => current + 1);
           setWorkOrderModalOpen(false);
+        }}
+        onViewExistingWorkOrder={(id) => {
+          setWorkOrderModalOpen(false);
+          router.push(`/mobile/work-orders/${id}`);
         }}
       />
     </div>

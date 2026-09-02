@@ -15,11 +15,17 @@ import {
   classifyWorkOrderItemIssue,
   isWorkOrderItemIssue,
 } from "@/app/maintenance/lib/work-order-item-issues";
+import { fetchWorkOrderPhotos } from "@/app/maintenance/lib/work-order-photos-db";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-async function enrichWorkOrder(supabase: SupabaseClient, workOrder: WorkOrder) {
+async function enrichWorkOrder(
+  supabase: SupabaseClient,
+  workOrder: WorkOrder,
+  scope: { organizationId: number; propertyId: number }
+) {
   const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+  const photos = await fetchWorkOrderPhotos(supabase, workOrder.id, scope);
 
   return {
     ...workOrder,
@@ -29,6 +35,12 @@ async function enrichWorkOrder(supabase: SupabaseClient, workOrder: WorkOrder) {
     completedByLabel: workOrder.completedBy
       ? memberResolver.resolveStoredValue(workOrder.completedBy)
       : null,
+    photos: photos.map((photo) => ({
+      ...photo,
+      uploadedByLabel: photo.uploadedBy
+        ? memberResolver.resolveStoredValue(photo.uploadedBy)
+        : null,
+    })),
   };
 }
 
@@ -37,15 +49,15 @@ export async function GET(request: Request, context: RouteContext) {
     const { supabase, organizationId, propertyId } = await resolveTenantRequest(
       request
     );
+    const scope = { organizationId, propertyId };
     const { id } = await context.params;
-    const workOrder = await fetchWorkOrderById(supabase, Number(id), {
-      organizationId,
-      propertyId,
-    });
+    const workOrder = await fetchWorkOrderById(supabase, Number(id), scope);
     if (!workOrder) {
       return NextResponse.json({ error: "Work order not found." }, { status: 404 });
     }
-    return NextResponse.json({ workOrder: await enrichWorkOrder(supabase, workOrder) });
+    return NextResponse.json({
+      workOrder: await enrichWorkOrder(supabase, workOrder, scope),
+    });
   } catch (error: unknown) {
     return tenantErrorResponse(error);
   }
@@ -84,7 +96,9 @@ export async function PATCH(request: Request, context: RouteContext) {
           });
     }
     const workOrder = await updateWorkOrder(supabase, Number(id), body, scope);
-    return NextResponse.json({ workOrder: await enrichWorkOrder(supabase, workOrder) });
+    return NextResponse.json({
+      workOrder: await enrichWorkOrder(supabase, workOrder, scope),
+    });
   } catch (error: unknown) {
     return tenantErrorResponse(error);
   }

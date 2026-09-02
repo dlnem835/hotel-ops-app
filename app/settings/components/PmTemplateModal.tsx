@@ -103,6 +103,25 @@ function toDraftItems(
   }));
 }
 
+function guestRoomIdSetFromAreas(areas: BuildingArea[]) {
+  return new Set(
+    areas
+      .filter(
+        (area) => area.area_type === "Guest Room" && area.status === "Active"
+      )
+      .map((area) => area.id)
+  );
+}
+
+function guestRoomIdsFromItemAreaIds(
+  areaIds: Array<number | null | undefined>,
+  guestRoomIds: Set<number>
+) {
+  return areaIds.filter(
+    (id): id is number => typeof id === "number" && guestRoomIds.has(id)
+  );
+}
+
 export default function PmTemplateModal({
   open,
   editingId,
@@ -142,6 +161,7 @@ export default function PmTemplateModal({
         setForm(emptyForm());
         setItems([emptyItem()]);
         setSelectedRoomIds([]);
+        setGuestRoomsExpanded(false);
         setNoEndDate(true);
         setError(null);
         return;
@@ -170,17 +190,19 @@ export default function PmTemplateModal({
       });
       const draftItems = toDraftItems(sourceItems, initial.name || "");
       setItems(draftItems);
+      const guestRoomIds = guestRoomIdSetFromAreas(areas);
       setSelectedRoomIds(
-        draftItems
-          .map((item) => item.areaId)
-          .filter((id): id is number => typeof id === "number")
+        guestRoomIdsFromItemAreaIds(
+          draftItems.map((item) => item.areaId),
+          guestRoomIds
+        )
       );
       setGuestRoomsExpanded(false);
       setNoEndDate(!initial.assignment?.end_date);
       setError(null);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [open, initial]);
+  }, [open, initial, areas]);
 
   const areaOptions = useMemo(
     () => sortPmAreaOptions(areas),

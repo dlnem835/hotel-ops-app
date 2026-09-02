@@ -18,7 +18,9 @@ import {
 } from "../lib/work-order-location";
 import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
+import WorkOrderDuplicateWarningModal from "./WorkOrderDuplicateWarningModal";
 import { uploadWorkOrderPhoto } from "@/app/maintenance/lib/work-order-photo-upload";
+import type { DuplicateWorkOrderCandidate } from "@/app/maintenance/lib/work-order-duplicate-types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import "./work-order-modal.css";
@@ -34,6 +36,7 @@ type WorkOrderModalProps = {
   createdBy?: string | null;
   onClose: () => void;
   onCreated?: () => void;
+  onViewExistingWorkOrder?: (id: number) => void;
 };
 
 export default function WorkOrderModal({
@@ -42,6 +45,7 @@ export default function WorkOrderModal({
   createdBy,
   onClose,
   onCreated,
+  onViewExistingWorkOrder,
 }: WorkOrderModalProps) {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -56,6 +60,11 @@ export default function WorkOrderModal({
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [duplicateCandidates, setDuplicateCandidates] = useState<
+    DuplicateWorkOrderCandidate[]
+  >([]);
+  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<WorkOrderInput | null>(null);
   useModalScrollLock(open);
 
   const locationEligibleAreas = useMemo(
@@ -115,6 +124,9 @@ export default function WorkOrderModal({
       setPhotoUrl(initialValues?.photo_url ?? null);
       setUploadingPhoto(false);
       setError(null);
+      setDuplicateCandidates([]);
+      setDuplicateWarningOpen(false);
+      setPendingPayload(null);
 
       const selection = inferInitialLocationSelection(
         areas,
@@ -166,7 +178,32 @@ export default function WorkOrderModal({
     }
   }
 
-  async function handleSubmit() {
+  async function createWorkOrder(payload: WorkOrderInput) {
+    setSaving(true);
+    setError(null);
+
+    const response = await tenantFetch("/api/work-orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    setSaving(false);
+
+    if (!response.ok) {
+      setError(result.error || "Unable to create work order.");
+      return;
+    }
+
+    setDuplicateWarningOpen(false);
+    setPendingPayload(null);
+    setDuplicateCandidates([]);
+    onCreated?.();
+    onClose();
+  }
+
+  async function handleSubmit(options?: { skipDuplicateCheck?: boolean }) {
     if (!subject.trim()) {
       setError("Work order title is required.");
       return;
@@ -197,9 +234,6 @@ export default function WorkOrderModal({
       return;
     }
 
-    setSaving(true);
-    setError(null);
-
     const payload: WorkOrderInput = {
       subject: subject.trim(),
       description: description.trim(),
@@ -215,27 +249,45 @@ export default function WorkOrderModal({
       created_by: createdBy || initialValues?.created_by || null,
     };
 
-    const response = await tenantFetch("/api/work-orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-    setSaving(false);
-
-    if (!response.ok) {
-      setError(result.error || "Unable to create work order.");
-      return;
+    if (!options?.skipDuplicateCheck) {
+      setSaving(true);
+      setError(null);
+      try {
+        const dupResponse = await tenantFetch("/api/work-orders/duplicates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject: payload.subject,
+            description: payload.description,
+            item: payload.item,
+            area_id: payload.area_id,
+            area_label: payload.area_label,
+          }),
+        });
+        const dupResult = await dupResponse.json();
+        if (
+          dupResponse.ok &&
+          Array.isArray(dupResult.candidates) &&
+          dupResult.candidates.length > 0
+        ) {
+          setPendingPayload(payload);
+          setDuplicateCandidates(dupResult.candidates);
+          setDuplicateWarningOpen(true);
+          setSaving(false);
+          return;
+        }
+      } catch {
+        // If duplicate check fails, continue with create (warning is non-blocking).
+      }
     }
 
-    onCreated?.();
-    onClose();
+    await createWorkOrder(payload);
   }
 
   const submitDisabled = saving || uploadingPhoto;
 
   return (
+    <>
     <div className="work-order-modal-overlay one-eyrie-modal-overlay" onClick={onClose}>
       <div
         className="work-order-modal one-eyrie-modal"
@@ -400,5 +452,32 @@ export default function WorkOrderModal({
         </footer>
       </div>
     </div>
+    {duplicateWarningOpen ? (
+      <WorkOrderDuplicateWarningModal
+        candidates={duplicateCandidates}
+        busy={saving}
+        onCancel={() => {
+          setDuplicateWarningOpen(false);
+          setPendingPayload(null);
+        }}
+        onCreateAnyway={() => {
+          if (pendingPayload) {
+            void createWorkOrder(pendingPayload);
+          } else {
+            void handleSubmit({ skipDuplicateCheck: true });
+          }
+        }}
+        onViewExisting={(id) => {
+          setDuplicateWarningOpen(false);
+          setPendingPayload(null);
+          if (onViewExistingWorkOrder) {
+            onViewExistingWorkOrder(id);
+            return;
+          }
+          window.location.href = `/mobile/work-orders/${id}`;
+        }}
+      />
+    ) : null}
+    </>
   );
 }

@@ -17,9 +17,10 @@ import {
   resolveWorkOrderCreatedBy,
   saveWorkOrderComments,
 } from "./lib/work-order-shared";
-import WorkOrderPhotoAttachment from "@/app/maintenance/components/WorkOrderPhotoAttachment";
+import WorkOrderPhotosSection from "@/app/maintenance/components/WorkOrderPhotosSection";
 import WorkOrderResolutionModal from "@/app/maintenance/components/WorkOrderResolutionModal";
 import WorkOrderItemIssueSelect from "@/app/maintenance/components/WorkOrderItemIssueSelect";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type MobileWorkOrderDetailProps = {
   workOrderId: number;
@@ -48,7 +49,7 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
     let mounted = true;
 
     void fetchWorkOrderById(workOrderId)
-      .then((order) => {
+      .then(async (order) => {
         if (!mounted) return;
 
         if (!order) {
@@ -66,6 +67,17 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         setComments(order.comments || "");
         setItemIssue(order.item || "Other");
         setLoading(false);
+
+        try {
+          const response = await tenantFetch(`/api/work-orders/${workOrderId}`);
+          const result = await response.json();
+          if (!mounted || !response.ok || !result.workOrder) return;
+          setWorkOrder(result.workOrder);
+          setComments(result.workOrder.comments || "");
+          setItemIssue(result.workOrder.item || "Other");
+        } catch {
+          // Keep the first payload if enrichment fails.
+        }
       })
       .catch((loadError) => {
         if (!mounted) return;
@@ -197,19 +209,12 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         </p>
       ) : null}
 
-      {workOrder.photoUrl ? (
-        <WorkOrderPhotoAttachment
-          photoUrl={workOrder.photoUrl}
-          className="one-eyrie-mobile-work-order-detail__photo"
-        />
-      ) : null}
-      {workOrder.resolutionPhotoUrl ? (
-        <WorkOrderPhotoAttachment
-          photoUrl={workOrder.resolutionPhotoUrl}
-          label="Resolution Photo"
-          className="one-eyrie-mobile-work-order-detail__photo"
-        />
-      ) : null}
+      <WorkOrderPhotosSection
+        workOrder={workOrder}
+        uploadedBy={currentUserName}
+        className="one-eyrie-mobile-work-order-detail__photo"
+        onWorkOrderUpdated={setWorkOrder}
+      />
 
       <label className="one-eyrie-mobile-field">
         <span>Item / Issue</span>

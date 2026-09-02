@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import WorkOrderDetailMetadata from "@/app/maintenance/components/WorkOrderDetailMetadata";
-import WorkOrderPhotoAttachment from "@/app/maintenance/components/WorkOrderPhotoAttachment";
+import WorkOrderPhotosSection from "@/app/maintenance/components/WorkOrderPhotosSection";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
@@ -195,19 +195,14 @@ export default function DashboardWorkOrderDetailModal({
             Source note: {currentWorkOrder.sourceNote}
           </p>
         )}
-        {currentWorkOrder.photoUrl && (
-          <div style={{ marginBottom: "18px" }}>
-            <WorkOrderPhotoAttachment photoUrl={currentWorkOrder.photoUrl} />
-          </div>
-        )}
-        {currentWorkOrder.resolutionPhotoUrl && (
-          <div style={{ marginBottom: "18px" }}>
-            <WorkOrderPhotoAttachment
-              photoUrl={currentWorkOrder.resolutionPhotoUrl}
-              label="Resolution Photo"
-            />
-          </div>
-        )}
+        <WorkOrderPhotosSection
+          workOrder={currentWorkOrder}
+          uploadedBy={createdByName}
+          onWorkOrderUpdated={(updated) => {
+            setCurrentWorkOrder(updated);
+            onUpdated();
+          }}
+        />
         <label style={{ display: "block", marginBottom: "20px" }}>
           <div
             style={{

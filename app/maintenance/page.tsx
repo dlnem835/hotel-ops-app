@@ -35,7 +35,7 @@ import PmHealthDetailModal from "./components/PmHealthDetailModal";
 import WorkOrderModal, {
   WorkOrderModalInitialValues,
 } from "./components/WorkOrderModal";
-import WorkOrderPhotoAttachment from "./components/WorkOrderPhotoAttachment";
+import WorkOrderPhotosSection from "./components/WorkOrderPhotosSection";
 import WorkOrderDetailMetadata from "./components/WorkOrderDetailMetadata";
 import WorkOrderResolutionModal from "./components/WorkOrderResolutionModal";
 import WorkOrderItemIssueSelect from "./components/WorkOrderItemIssueSelect";
@@ -205,11 +205,22 @@ export default function MaintenancePage() {
     return applyWorkOrderListFilters(dashboard.workOrders, workOrderFilters);
   }, [dashboard, workOrderFilters]);
 
-  function openWorkOrderDetails(workOrder: WorkOrder) {
+  async function openWorkOrderDetails(workOrder: WorkOrder) {
     setSelectedWorkOrder(workOrder);
     setWorkOrderComments(workOrder.comments || "");
     setWorkOrderItemIssue(workOrder.item || "Other");
     setCommentsSaved(false);
+    try {
+      const response = await tenantFetch(`/api/work-orders/${workOrder.id}`);
+      const result = await response.json();
+      if (response.ok && result.workOrder) {
+        setSelectedWorkOrder(result.workOrder);
+        setWorkOrderComments(result.workOrder.comments || "");
+        setWorkOrderItemIssue(result.workOrder.item || "Other");
+      }
+    } catch {
+      // Keep list payload if detail refresh fails.
+    }
   }
 
   return (
@@ -313,6 +324,37 @@ export default function MaintenancePage() {
           createdBy={createdByName}
           onClose={() => setWorkOrderModalOpen(false)}
           onCreated={() => void loadDashboard()}
+          onViewExistingWorkOrder={(id) => {
+            setWorkOrderModalOpen(false);
+            const existing = dashboard?.workOrders.find((wo) => wo.id === id);
+            if (existing) {
+              void openWorkOrderDetails(existing);
+              return;
+            }
+            void openWorkOrderDetails({
+              id,
+              subject: "Work Order",
+              description: null,
+              priority: "Normal",
+              status: "Open",
+              areaId: null,
+              areaLabel: null,
+              sourceModule: null,
+              sourceRecordId: null,
+              sourceNote: null,
+              comments: null,
+              photoUrl: null,
+              resolutionPhotoUrl: null,
+              category: null,
+              item: null,
+              createdBy: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              commentsUpdatedAt: null,
+              completedAt: null,
+              completedBy: null,
+            });
+          }}
         />
 
         {dashboard ? (
@@ -408,19 +450,14 @@ export default function MaintenancePage() {
                   Source note: {selectedWorkOrder.sourceNote}
                 </p>
               )}
-              {selectedWorkOrder.photoUrl && (
-                <div style={{ marginBottom: "18px" }}>
-                  <WorkOrderPhotoAttachment photoUrl={selectedWorkOrder.photoUrl} />
-                </div>
-              )}
-              {selectedWorkOrder.resolutionPhotoUrl && (
-                <div style={{ marginBottom: "18px" }}>
-                  <WorkOrderPhotoAttachment
-                    photoUrl={selectedWorkOrder.resolutionPhotoUrl}
-                    label="Resolution Photo"
-                  />
-                </div>
-              )}
+              <WorkOrderPhotosSection
+                workOrder={selectedWorkOrder}
+                uploadedBy={createdByName}
+                onWorkOrderUpdated={(updated) => {
+                  setSelectedWorkOrder(updated);
+                  void loadDashboard();
+                }}
+              />
               <label style={{ display: "block", marginBottom: "20px" }}>
                 <div
                   style={{

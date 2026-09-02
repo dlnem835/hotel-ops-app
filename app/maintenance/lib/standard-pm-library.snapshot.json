@@ -4,7 +4,7 @@
   "sourceOrganizationId": 1,
   "dayZeroSourceDate": "2026-08-31",
   "capturedAt": "2026-08-21T17:28:13.801Z",
-  "templateCount": 47,
+  "templateCount": 49,
   "templates": [
     {
       "key": "one-eyrie-pool-quarterly-v1",
@@ -304,7 +304,7 @@
     {
       "key": "one-eyrie-building-exterior-triannually-v1",
       "name": "Building Exterior",
-      "description": "Triannual building exterior inspection covering finishes, openings, and visible deterioration. Assign to the property exterior or primary building area.",
+      "description": "Triannual building exterior/envelope inspection covering finishes, openings, seals, and visible deterioration. Assign to the property exterior or primary building area.",
       "category": "Custom",
       "frequency": "triannually",
       "estimatedMinutes": null,
@@ -337,44 +337,108 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect building exterior for visible damage, deterioration, leaks, damaged finishes, windows, doors, seals, and caulking",
+                "label": "Inspect building exterior walls, cladding, trim, and finishes for visible damage, deterioration, cracks, staining, or loose materials.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect parking lot, curbs, striping, and sidewalks for cracks, potholes, trip hazards, drainage issues, and needed repairs",
+                "label": "Inspect windows, doors, frames, seals, and caulking for damage, gaps, failed sealant, or signs of water intrusion.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect landscaping and grounds for overgrowth, dead or damaged vegetation, irrigation issues, debris, and general condition",
+                "label": "Inspect exterior building fixtures attached to the structure (such as soffits, fascia, and wall-mounted building elements) for damage or deterioration.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect exterior lighting, signage, fencing, gates, and other exterior fixtures for damage or needed repairs",
+                "label": "Clean and complete minor routine building-exterior repairs as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-parking-lot-grounds-quarterly-v1",
+      "name": "Parking Lot & Grounds",
+      "description": "Quarterly parking lot and grounds inspection covering pavement, sidewalks, striping, site fixtures, lighting, landscaping, and drainage.",
+      "category": "Custom",
+      "frequency": "quarterly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 132,
+      "defaultItems": [
+        {
+          "name": "Parking Lot & Grounds",
+          "areaName": "Parking Lot"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect parking lot pavement and drive lanes for potholes, cracking, settlement, deterioration, or other damage.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect sidewalks, curbs, ramps, and walking surfaces for cracks, uneven surfaces, damage, or trip hazards.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Inspect parking-space striping, directional markings, fire-lane markings, and accessible parking markings/signage for visibility and condition.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect wheel stops, bollards, fencing, gates, and other site fixtures where installed for damage or loose/unsafe conditions.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Clean and complete minor routine repairs as needed",
+                "label": "Inspect exterior site lighting and signage for damage and proper operation.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-7",
-                "label": "Document deficiencies and create a work order or contact a qualified contractor when specialized repairs are required",
+                "key": "step-6",
+                "label": "Inspect landscaping and grounds for overgrowth, dead or damaged vegetation, irrigation issues, erosion, or conditions affecting sidewalks, buildings, lighting, or guest access.",
                 "required": true,
                 "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect visible parking-lot/site drainage areas for blockage, standing water, erosion, or drainage problems.",
+                "required": true,
+                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -536,27 +600,27 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-3",
-                "label": "Inspect breakfast-area tables and chairs for damage, loose components, nicks, or scratches.",
+                "key": "step-2",
+                "label": "Inspect tables, chairs, and other furniture for damage, loose components, scratches, or finish wear. Tighten and make minor cosmetic repairs as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Verify proper lighting and replace failed lamps as needed.",
+                "key": "step-3",
+                "label": "Inspect breakfast/buffet counters, surfaces, hardware, and service fixtures for damage or deterioration.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-5",
+                "key": "step-4",
                 "label": "Test GFCI outlets for proper operation.",
                 "required": true,
                 "sortOrder": 3,
@@ -572,7 +636,7 @@
     {
       "key": "one-eyrie-dumpster-area-quarterly-v1",
       "name": "Dumpster Area",
-      "description": "Quarterly dumpster area inspection covering cleanliness, enclosure condition, and odor control.",
+      "description": "Quarterly dumpster area inspection covering cleanliness, enclosure condition, and surrounding maintenance needs.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -593,28 +657,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check for stains, odor and garbage.",
+                "label": "Inspect the dumpster area for trash, debris, stains, spills, and odors.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Ensure that the closure works properly and can be closed completely.",
+                "label": "Inspect the dumpster enclosure, gates, hinges, and latches for proper condition and operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Ensure the trash enclosure is in good condition.",
+                "label": "Inspect walls, pavement, curbs, and the surrounding area for damage or other maintenance needs.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Pressure wash dumpster area as needed.",
+                "label": "Clean and pressure wash the dumpster area as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -765,7 +829,7 @@
     {
       "key": "one-eyrie-electrical-rooms-quarterly-v1",
       "name": "Electrical Rooms",
-      "description": "Quarterly electrical room inspection covering room condition, exhaust, combustibles, and panel fillers.",
+      "description": "Quarterly electrical room area inspection covering room condition, ventilation, combustibles, and panel filler blanks.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -798,42 +862,42 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Touch up the door frames.",
+                "label": "Inspect doors, frames, and hardware; touch up or repair as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test all exhaust vents.",
+                "label": "Verify exhaust ventilation is operating and pulling air properly.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean and organize the entire room.",
+                "label": "Ensure the room is clean, clear, and accessible.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Ensure no combustibles present in room.",
+                "label": "Ensure no combustible materials are stored in the electrical room.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Ensure no missing breaker slots in the electrical panel. Place breaker filler as needed.",
+                "label": "Inspect electrical panels for open or missing breaker blanks; install approved fillers as needed.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
@@ -1014,7 +1078,7 @@
     {
       "key": "one-eyrie-entry-foyer-quarterly-v1",
       "name": "Entry Foyer",
-      "description": "Quarterly entry foyer inspection covering finishes, doors, locks, intercom, and luggage carts.",
+      "description": "Quarterly entry foyer inspection covering finishes, doors, locks/intercom, luggage cart parking area, and exterior entrance surfaces.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1035,35 +1099,35 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Touch up doors and door frames.",
+                "label": "Touch up doors and door frames as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Test locks.",
+                "key": "step-3",
+                "label": "Test entrance door locks and intercom, if applicable.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-5",
-                "label": "Test intercom.",
+                "key": "step-4",
+                "label": "Inspect the luggage cart storage/parking area and repair as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-6",
-                "label": "Check overall condition of luggage carts and repair as needed.",
+                "key": "step-5",
+                "label": "Power wash entrance walkways, walls, columns, and other exterior surfaces as needed.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
@@ -1077,8 +1141,8 @@
     },
     {
       "key": "one-eyrie-front-desk-public-space-vtec-unit-quarterly-v1",
-      "name": "Public Space AC Units",
-      "description": "Quarterly preventive maintenance for the front desk / public space VTEC unit.",
+      "name": "Public HVAC / Common Area AC Units",
+      "description": "Quarterly preventive maintenance for common-area HVAC / AC units, with each unit tracked as its own PM item.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1123,37 +1187,65 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check/Clean evaporator coils and condenser coils as needed",
+                "label": "Inspect the overall condition and operation of the HVAC unit; check for unusual noise, vibration, icing, corrosion, water leakage, or other visible deficiencies.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Clean and change air filter.",
+                "label": "Inspect air filter condition and clean or replace as needed; verify the filter is properly installed and seated.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean and Vacuum drain line.",
+                "label": "Inspect evaporator and condenser coils for dirt, debris, damage, corrosion, or bent fins; clean as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure unit is not making any alarming or loud noises.",
+                "label": "Clean and vacuum the condensate drain line. Inspect and clean the drain pan and verify proper drainage with no blockage, buildup, standing water, or leaks.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Using temperature gun ensure the unit is producing air between 55 to 64 degrees.",
+                "label": "Inspect blower/fan assembly, motor, and accessible components for cleanliness, secure mounting, damage, and abnormal noise or vibration.",
                 "required": true,
                 "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Inspect accessible electrical wiring, connections, disconnects, and components for looseness, damage, overheating, or corrosion.",
+                "required": true,
+                "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect accessible refrigerant lines and insulation for damage, deterioration, oil residue, icing, or other indications of a refrigerant-system problem.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Inspect belts, pulleys, and related drive components for wear, damage, alignment, and proper tension where equipped.",
+                "required": true,
+                "sortOrder": 7,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-9",
+                "label": "Verify thermostat/control operation and confirm the unit starts, operates, cycles, and shuts down properly.",
+                "required": true,
+                "sortOrder": 8,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1162,6 +1254,7 @@
         ]
       },
       "legacyNames": [
+        "Public Space AC Units",
         "Front Desk - Public Space VTEC Unit"
       ]
     },
@@ -1239,7 +1332,7 @@
     {
       "key": "one-eyrie-fitness-center-quarterly-v1",
       "name": "Fitness Center",
-      "description": "Quarterly fitness center finishes and equipment preventive maintenance.",
+      "description": "Quarterly fitness center area and equipment preventive maintenance.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1260,16 +1353,23 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect, clean, and repair the fitness center as needed: doors, locks, walls, floors, ceilings, lighting, signage, outlets, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-7",
-                "label": "Ensure that all equipment works correctly. ",
+                "key": "step-2",
+                "label": "Inspect fitness equipment for proper operation, loose or damaged components, hardware, cords, and connections. Tighten, lubricate, or repair as needed.",
                 "required": true,
                 "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Test fitness center door lock and guest key access for proper operation.",
+                "required": true,
+                "sortOrder": 2,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1281,8 +1381,8 @@
     },
     {
       "key": "one-eyrie-roof-maintenance-quarterly-v1",
-      "name": "Roof Maintenance",
-      "description": "Quarterly roof inspection covering drains, seams, flashing, and ventilation.",
+      "name": "Roof",
+      "description": "Quarterly roof and building-area inspection covering surface condition, flashing, drainage, access, ventilation, and shingle areas where applicable.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1303,30 +1403,44 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the roof surface for damage, wear, ponding water, or other deterioration",
+                "label": "Inspect the roof surface for damage, excessive wear, cracking, blistering, loose or missing roofing material, ponding water, or other deterioration.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect seams, flashing, penetrations, parapets, and equipment curbs; repair/seal as needed",
+                "label": "Inspect seams, flashing, pitch pockets, penetrations, parapets, and equipment curbs for gaps, damage, loose materials, failed sealant, or signs of water intrusion.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean and clear roof drains",
+                "label": "Clean and clear roof drains, scuppers, gutters, and strainers where installed; remove leaves, vegetation, and other debris from the roof.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect walk pads and roof access areas; ensure they are secure and in good condition ",
+                "label": "Inspect walk pads, roof access areas, ladders/hatches, and designated service paths for damage, looseness, or unsafe conditions.",
                 "required": true,
                 "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect visible roof ventilation components and verify vents are unobstructed and in good condition.",
+                "required": true,
+                "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "For shingled roof areas, inspect for loose, missing, damaged, or curled shingles, excessive granule loss, and exposed or popped fasteners.",
+                "required": true,
+                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1334,12 +1448,14 @@
           }
         ]
       },
-      "legacyNames": []
+      "legacyNames": [
+        "Roof Maintenance"
+      ]
     },
     {
       "key": "one-eyrie-rooftop-exhausts-quarterly-v1",
       "name": "Rooftop Exhausts",
-      "description": "Quarterly rooftop exhaust inspection. Add additional exhaust items as needed; each item keeps independent history.",
+      "description": "Quarterly rooftop exhaust fan preventive maintenance. Add additional exhaust items as needed; each item keeps independent history.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1360,49 +1476,49 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the general condition and operation of rooftop exhausts.",
+                "label": "Inspect the general condition and operation of the exhaust fan; check for unusual noise, vibration, corrosion, damage, or loose components.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check and tighten electrical connections.",
+                "label": "Inspect accessible electrical connections and control wiring for looseness, damage, overheating, or corrosion.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Ensure that the wheel and blade are clean.",
+                "label": "Inspect and clean the fan wheel/blades and fan-blade guard; verify components are secure and free of excessive buildup.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check alignment of belts and pulley.",
+                "label": "Inspect the motor and bearings for proper operation, excessive noise, vibration, overheating, or wear; lubricate only where required by the equipment manufacturer.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Check all dampers.",
+                "label": "Inspect belts and pulleys where equipped for wear, damage, proper tension, and alignment.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Inspect control wiring.",
+                "label": "Inspect dampers for damage, buildup, binding, and proper operation.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-7",
-                "label": "Check fan-blade guard.",
+                "label": "Inspect accessible ductwork and connections for damage, deterioration, loose connections, water intrusion, or trapped water.",
                 "required": true,
                 "sortOrder": 6,
                 "photoRequiredOnFail": false
@@ -1512,23 +1628,98 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the wheels on all carts, and repair or replace as needed.",
+                "label": "Inspect carts for overall condition, damage, loose components, and safe operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Tighten all nuts, bolts, and related supports.",
+                "label": "Inspect wheels and casters; tighten, repair, lubricate, or replace as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "If needed, paint or touch up all carts.",
+                "label": "Tighten loose nuts, bolts, handles, shelves, and supports as needed.",
                 "required": true,
                 "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean carts and touch up damaged finishes as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              }
+            ],
+            "sortOrder": 0
+          }
+        ]
+      },
+      "legacyNames": []
+    },
+    {
+      "key": "one-eyrie-luggage-carts-monthly-v1",
+      "name": "Luggage Carts",
+      "description": "Monthly luggage cart inspection covering wheels, hardware, carpet/platform, bumpers, and finish.",
+      "category": "Custom",
+      "frequency": "monthly",
+      "estimatedMinutes": null,
+      "assignedRole": "Maintenance",
+      "appliesTo": "asset",
+      "startOffsetDays": 174,
+      "defaultItems": [
+        {
+          "name": "Luggage Cart #1",
+          "areaName": "Lobby"
+        },
+        {
+          "name": "Luggage Cart #2",
+          "areaName": "Lobby"
+        }
+      ],
+      "checklist": {
+        "categories": [
+          {
+            "key": "checklist",
+            "name": "Checklist",
+            "steps": [
+              {
+                "key": "step-1",
+                "label": "Inspect cart for overall condition, damage, loose components, and safe operation.",
+                "required": true,
+                "sortOrder": 0,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-2",
+                "label": "Inspect wheels and casters; tighten, lubricate, repair, or replace as needed.",
+                "required": true,
+                "sortOrder": 1,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-3",
+                "label": "Tighten loose nuts, bolts, handles, rails, and supports as needed.",
+                "required": true,
+                "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect carpet/platform and protective bumpers; clean, secure, or repair as needed.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Clean and polish cart surfaces as needed.",
+                "required": true,
+                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1541,7 +1732,7 @@
     {
       "key": "one-eyrie-water-softener-quarterly-v1",
       "name": "Water Softener",
-      "description": "Quarterly water softener inspection covering hardness, salt/brine levels, leaks, and valves.",
+      "description": "Quarterly water softener inspection covering condition, salt/brine levels, hardness, leaks, and normal operation.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1570,51 +1761,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check alignment of the drain line over the floor drain.",
+                "label": "Inspect the overall condition and operation of the water softener for visible damage, leaks, corrosion, or abnormal conditions.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect/test water hardness.",
+                "label": "Inspect the salt/brine tank and verify salt and water levels are appropriate; check for salt bridging or excessive buildup.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect salt and water levels in the tank according to manufacturer's recommendations.",
+                "label": "Test water hardness to verify the system is providing properly softened water.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure brine tank automatic fill is operating properly.",
+                "label": "Inspect accessible piping, fittings, valves, and drain lines for leaks, damage, blockage, or improper drainage.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect piping, fittings, and valves for leaks.",
+                "label": "Verify the unit shows normal operation with no visible alarms, error codes, or other indications that service is required.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Lubricate all valves.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Clean the surrounding area.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1626,8 +1803,8 @@
     },
     {
       "key": "one-eyrie-refrigerators-quarterly-v1",
-      "name": "Refrigerators and Freezers",
-      "description": "Quarterly refrigerator and cooler inspection. Add additional refrigerator items as needed; each item keeps independent history.",
+      "name": "Refrigerators / Freezers / Coolers",
+      "description": "Quarterly preventive maintenance for refrigerators, freezers, buffet coolers, and similar self-contained refrigeration equipment. Each unit keeps independent history.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1664,49 +1841,49 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect and clean interior/exterior; check doors, hinges, gaskets, and seals.",
+                "label": "Inspect and clean the interior and exterior; inspect doors, hinges, gaskets, and seals for damage and proper closure/sealing.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-3",
-                "label": "Check temperature and verify proper airflow.",
+                "key": "step-2",
+                "label": "Check operating temperature and verify the unit is maintaining the proper temperature for its intended use; verify proper interior airflow and that vents are not obstructed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-7",
-                "label": "Clean condenser coils; inspect evaporator coils for debris, frost, or ice buildup",
+                "key": "step-3",
+                "label": "Inspect and clean condenser coils; inspect evaporator coils for dirt, debris, frost, ice buildup, damage, or bent fins and clean as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-8",
-                "label": "Inspect and clean condensate pain and drain line as needed",
+                "key": "step-4",
+                "label": "Inspect and clean the condensate pan and clear/clean the condensate drain line; verify proper drainage with no blockage, buildup, standing water, or leaks.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-9",
-                "label": "Inspect electrical supply, connections, and controls for proper operation ",
+                "key": "step-5",
+                "label": "Inspect the power cord, plug, accessible electrical connections, and controls for damage, looseness, overheating, or improper operation.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787111292998",
-                "label": "Check for unusual noise, vibration, leaks, or other signs of improper operation",
+                "key": "step-6",
+                "label": "Operate the unit and check for unusual noise, vibration, leaks, excessive cycling, icing, or other signs of improper operation.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787111921021",
-                "label": "Clean under and behind the units ",
+                "key": "step-7",
+                "label": "Clean underneath and behind the unit; remove dust, grease, debris, and anything obstructing ventilation.",
                 "required": true,
                 "sortOrder": 6,
                 "photoRequiredOnFail": false
@@ -1717,6 +1894,7 @@
         ]
       },
       "legacyNames": [
+        "Refrigerators and Freezers",
         "Refrigerators"
       ]
     },
@@ -1800,7 +1978,7 @@
     {
       "key": "one-eyrie-juice-machine-quarterly-v1",
       "name": "Juice Machine",
-      "description": "Quarterly juice machine electrical inspection and service checklist.",
+      "description": "Quarterly juice machine inspection covering operation, electrical connections, leaks, and sanitation.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1821,23 +1999,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Clean and inspect machine",
+                "label": "Clean and inspect the machine for proper operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect electrical cord, plug, and connections.",
+                "label": "Inspect the electrical cord, plug, and accessible connections for damage.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787026659913",
-                "label": "Inspect for any signs of leaking",
+                "key": "step-3",
+                "label": "Inspect for leaks and check accessible hoses, fittings, and connections.",
                 "required": true,
                 "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Clean and sanitize dispensing nozzles and accessible product-contact areas per manufacturer recommendations.",
+                "required": true,
+                "sortOrder": 3,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1850,7 +2035,7 @@
     {
       "key": "one-eyrie-ice-machines-quarterly-v1",
       "name": "Ice Machines",
-      "description": "Quarterly ice machine inspection and basic mechanical service checklist.",
+      "description": "Quarterly ice machine inspection covering operation, drains, condenser, leveling, ice quality, filter, and sanitation.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -1879,51 +2064,58 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the overall condition of all ice machines.",
+                "label": "Inspect the overall condition and operation of the ice machine.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Ensure that discharge lines are aligned with the floor drains.",
+                "label": "Inspect discharge/drain lines and ensure they are secure and properly directed to the drain.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Ensure coil fins are straight.",
+                "label": "Inspect condenser coil/fins; clean and straighten as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure the shroud is in its proper position.",
+                "label": "Inspect the unit for proper positioning and level.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Level each unit, front to rear and side to side.",
+                "label": "Inspect accessible electrical connections for damage or looseness.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Ensure all electrical connections are tight.",
+                "label": "Inspect ice cube size, shape, and overall ice quality.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-7",
-                "label": "Repair or replace any parts as needed.",
+                "label": "Inspect the water filter and replace as needed.",
                 "required": true,
                 "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Clean and sanitize accessible ice-making components and bin per manufacturer recommendations.",
+                "required": true,
+                "sortOrder": 7,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1935,17 +2127,17 @@
     },
     {
       "key": "one-eyrie-dishwasher-sanitizer-quarterly-v1",
-      "name": "Dishwasher / Sanitizer",
-      "description": "Quarterly inspection, cleaning, and operational service for commercial dishwashing and sanitizing equipment.",
+      "name": "Commercial Dishwasher / Sanitizer",
+      "description": "Monthly preventive maintenance for commercial dishwashing and sanitizing equipment.",
       "category": "Custom",
-      "frequency": "quarterly",
+      "frequency": "monthly",
       "estimatedMinutes": null,
       "assignedRole": "Maintenance",
       "appliesTo": "asset",
       "startOffsetDays": 189,
       "defaultItems": [
         {
-          "name": "Dishwasher / Sanitizer",
+          "name": "Commercial Dishwasher / Sanitizer",
           "areaName": "Kitchen Area"
         }
       ],
@@ -1957,56 +2149,56 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the unit, doors, racks, curtains, and accessible components for damage or abnormal wear.",
+                "label": "Inspect the unit for overall condition, cleanliness, and proper operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect for water, chemical, or steam leaks and repair or create a work order as needed.",
+                "label": "Inspect accessible electrical cord, plug, connections, hoses, and piping for damage or leaks.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect accessible electrical wiring and connections for visible damage, overheating, or looseness. Contact a qualified contractor when repair is required.",
+                "label": "Check water supply and verify proper water flow.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Verify wash and rinse temperatures meet the equipment manufacturer and applicable sanitation requirements.",
+                "label": "Verify wash and rinse temperatures are within the manufacturer's required operating range.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Clean accessible screens, strainers, spray arms, nozzles, and interior surfaces as needed.",
+                "label": "Clean accessible screens, spray arms, nozzles, filters, and internal surfaces as needed.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Drain and flush the unit according to manufacturer instructions.",
+                "label": "Delime the unit as needed according to manufacturer instructions and property water conditions.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-7",
-                "label": "Delime the unit according to manufacturer instructions using the property’s approved deliming product.",
+                "label": "Inspect and clean the drain and drain area as needed.",
                 "required": true,
                 "sortOrder": 6,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-8",
-                "label": "Run an operational cycle and verify proper filling, washing, rinsing, draining, and shutdown.",
+                "label": "Run a complete test cycle and verify proper operation.",
                 "required": true,
                 "sortOrder": 7,
                 "photoRequiredOnFail": false
@@ -2016,7 +2208,9 @@
           }
         ]
       },
-      "legacyNames": []
+      "legacyNames": [
+        "Dishwasher / Sanitizer"
+      ]
     },
     {
       "key": "one-eyrie-commercial-dryer-triannually-v2",
@@ -2135,44 +2329,72 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Clean drain trough/lint trap.",
+                "label": "Inspect the machine for damage, excessive vibration, unusual noise, or other abnormal conditions.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check for loose, frayed, damaged, or overheated wiring. Create a work order or contact a qualified contractor if repair is required.",
+                "label": "Clean the drain trough/lint trap and remove accumulated debris.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Check for water or chemical leaks.",
+                "label": "Inspect water supply hoses, valves, and connections for leaks, wear, or damage.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check and clean accessible drain lines as needed.",
+                "label": "Inspect chemical dispensing lines and connections for leaks or damage.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Grease/lubricate applicable fittings according to manufacturer recommendations.",
+                "label": "Inspect and clean accessible drain lines and components as needed.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Run a test cycle and verify proper operation.",
+                "label": "Inspect accessible wiring and electrical components for damage or signs of overheating.",
                 "required": true,
                 "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect accessible belts and mechanical components for excessive wear or damage.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Clean accessible equipment and service areas of dust, lint, and debris.",
+                "required": true,
+                "sortOrder": 7,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-9",
+                "label": "Lubricate serviceable components only as recommended by the equipment manufacturer.",
+                "required": true,
+                "sortOrder": 8,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-10",
+                "label": "Run a test cycle and verify proper filling, washing, draining, and extraction.",
+                "required": true,
+                "sortOrder": 9,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2185,7 +2407,7 @@
     {
       "key": "one-eyrie-laundry-room-quarterly-v1",
       "name": "Laundry Room",
-      "description": "Quarterly laundry room finishes, lighting, and linen chute inspection.",
+      "description": "Quarterly laundry room area inspection covering finishes, utilities, linen chute, and restricted access.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2206,28 +2428,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Clean and repair walls, floors, ceilings, electrical connection, signage, and hardware.",
+                "label": "Inspect, clean, and repair the laundry room as needed: walls, floors, ceilings, lighting, signage, outlets, doors, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Touch up door frames as needed.",
+                "label": "Inspect exposed pipes, drains, and utility connections for leaks, damage, or buildup.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean lights and pipes.",
+                "label": "Inspect the linen chute and chute door for damage, proper closure, cleanliness, and obstructions.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check the overall condition of the linen chute. Door closes properly. Chute is clear of obstructions. Chute is clean.",
+                "label": "Verify restricted/associate-only access is secure and functioning properly.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2241,8 +2463,8 @@
     },
     {
       "key": "one-eyrie-lighting-signage-quarterly-v1",
-      "name": "Lighting & Signage",
-      "description": "Quarterly exterior lighting and signage inspection covering operation, focus, and cleanliness.",
+      "name": "Property Lighting & Signage",
+      "description": "Quarterly property-wide interior and exterior lighting and signage inspection.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2251,7 +2473,7 @@
       "startOffsetDays": 191,
       "defaultItems": [
         {
-          "name": "Lighting & Signage",
+          "name": "Property Lighting & Signage",
           "areaName": "Hotel / Building / Main"
         }
       ],
@@ -2263,23 +2485,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Ensure that all lights are working and focused.",
+                "label": "Inspect all interior and exterior lighting; verify fixtures are working properly and replace failed lamps/bulbs as needed.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check and correct any lighting obstructions (for example, tree branches and bushes).",
+                "label": "Inspect and clean accessible lenses, covers, and fixtures as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean inside and outside of wall mounted lights as needed.",
+                "label": "Inspect exterior lighting for obstructions and correct as needed.",
                 "required": true,
                 "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Verify exterior lighting controls, timers, and photocells operate at the proper times.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Inspect interior and exterior signage for damage, visibility, illumination, and secure mounting; repair as needed.",
+                "required": true,
+                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2287,12 +2523,14 @@
           }
         ]
       },
-      "legacyNames": []
+      "legacyNames": [
+        "Lighting & Signage"
+      ]
     },
     {
       "key": "one-eyrie-linen-and-storage-rooms-quarterly-v1",
       "name": "Linen and Storage Rooms",
-      "description": "Quarterly linen and storage room inspection covering finishes, organization, and cleanliness.",
+      "description": "Quarterly linen and storage room area inspection covering finishes, shelving, plumbing, and clear access.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2325,28 +2563,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Be sure to check the following and repair as needed: Walls, floors, ceilings, electrical connections, signage, hardware.",
+                "label": "Inspect, clean, and repair the room as needed: walls, floors, ceilings, lighting, signage, outlets, doors, shelving, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-3",
-                "label": "Touch up door frames as needed.",
+                "key": "step-2",
+                "label": "Inspect shelving, cabinets, and storage racks for damage, loose components, and secure mounting.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Organize shelves and replacement supplies.",
+                "key": "step-3",
+                "label": "Inspect sinks, drains, and exposed plumbing for leaks or damage, where applicable.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787027190849",
-                "label": "Clean floors, light fixtures, electrical switches and plates, hand floor and mop sinks, fixtures and plumbing.",
+                "key": "step-4",
+                "label": "Verify aisles, doors, and access points remain clear and unobstructed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2386,37 +2624,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Run dryer and listen for excessive noise or vibration.",
+                "label": "Run dryer through a complete cycle and verify proper operation, heat, and no excessive noise or vibration.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Pull out all unit: clean under and behind it.",
+                "label": "Clean around and behind the unit; inspect for damage or loose components.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and clean accessible exhaust duct and vent for lint buildup or restriction",
+                "label": "Vacuum and clean accessible exhaust duct and vent; remove lint buildup as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean each unit thoroughly.",
+                "label": "Inspect power cord, connections, door, and lint screen for damage or proper operation.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Run each unit through a complete cycle.",
-                "required": true,
-                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2454,51 +2685,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Run each unit through a complete cycle.",
+                "label": "Run washer through a complete cycle and verify proper filling, washing, draining, spinning, and no excessive noise or vibration.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Clean behind and under each unit.",
+                "label": "Inspect hoses, connections, door/lid seal, and gaskets for leaks, wear, or damage.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Check all hoses & gaskets for leaks. Replace as needed.",
+                "label": "Clean around, behind, and under the unit; remove debris and inspect for signs of leaks.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean each unit thoroughly.",
+                "label": "Clean detergent/softener dispensers and accessible drain/filter areas as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Lubricate all bearings.",
+                "label": "Inspect power cord, controls, door/lid, and exterior for damage or proper operation.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Pull out all units and clean behind them.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect and change all hoses as needed.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2532,28 +2749,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the overall condition of your lobby and front desk; be sure to check each of the following, and touch up, repair, or replace as needed: Walls, floors, ceilings, signage, front desk, and furniture.",
+                "label": "Inspect, clean, and repair the lobby and front desk area as needed: walls, floors, ceilings, lighting, signage, outlets, doors, front desk, furniture, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check the overall condition of Market Area; be sure to touch up, repair, or replace equipment and cabinetry as needed.",
+                "label": "Inspect the Market area and repair or replace cabinetry, shelving, fixtures, and equipment as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test all electrical outlets.",
+                "label": "Test lobby/front desk door locks, access hardware, and intercom/communication equipment, where applicable.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure all common space TVs are working properly.",
+                "label": "Ensure all common-area TVs are working properly.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2609,49 +2826,49 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check each machine's hose and attachments.",
+                "label": "Inspect the overall condition of the vacuum, including housing, wheels, handle, hose, wand, and attachments for damage, excessive wear, or loose components.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check each vacuum's switches, as well as the power cord. Replace any cords that are frayed or damaged.",
+                "label": "Inspect the power cord, plug, switches, and accessible electrical components for fraying, cuts, damage, overheating, or improper operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Each vacuum should be completely disassembled. Then, clean each individual part.",
+                "label": "Inspect and clean the hose, wand, intake passages, and attachments; remove any clogs or obstructions.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check the condition of each machine's motor, as well as the roller assembly.",
+                "label": "Inspect and clean the brush roll/beater bar; remove hair, string, carpet fibers, and other wrapped debris.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Check all parts, and repair or replace as necessary.",
+                "label": "Inspect the brush roll, belt, and roller assembly for wear, damage, proper movement, and tension; replace worn components as needed.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Clean debris from beater bar or brush.",
+                "label": "Inspect and clean or replace bags and filters as applicable; verify filters are properly installed and airflow is not restricted.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-7",
-                "label": "Change brushes and belts as needed.",
+                "label": "Test-run the vacuum and verify proper suction, brush operation, normal sound, and overall working condition.",
                 "required": true,
                 "sortOrder": 6,
                 "photoRequiredOnFail": false
@@ -2666,7 +2883,7 @@
     {
       "key": "one-eyrie-meeting-room-quarterly-v1",
       "name": "Meeting Room",
-      "description": "Quarterly meeting room AV, locks, phones, and HVAC inspection.",
+      "description": "Quarterly meeting room area inspection covering finishes, flooring, AV/equipment, locks, and HVAC.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2687,35 +2904,35 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the overall condition of your meeting rooms, and be sure to check the following and repair or replace as needed: Lights, screens, and projector.",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, furniture, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Test all locks.",
+                "label": "Deep clean flooring as needed, including carpet extraction/shampooing or appropriate hard-floor cleaning.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test all phones and jacks.",
+                "label": "Inspect and test meeting room equipment as applicable, including screens, projectors/displays, phones, and connection jacks.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure that enough extension cords are available.",
+                "label": "Test doors and locks.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Test HVAC.",
+                "label": "Test HVAC operation and confirm the room reaches and maintains the appropriate temperature.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
@@ -2790,9 +3007,16 @@
               },
               {
                 "key": "step-6",
-                "label": "Confirm furniture is properly positioned and the area is neat and orderly.",
+                "label": "Inspect outdoor furniture surfaces for water intrusion, swelling, deterioration, or failed protective finish; reseal/waterproof as needed based on the furniture material.",
                 "required": true,
                 "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Confirm furniture is properly positioned and the area is neat and orderly.",
+                "required": true,
+                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2804,8 +3028,8 @@
     },
     {
       "key": "one-eyrie-pool-circulation-pumps-quarterly-v1",
-      "name": "Pool Circulation Pump",
-      "description": "Quarterly pool circulation pump inspection covering mounts, baskets, leaks, and wiring.",
+      "name": "Pool/Spa Circulation Pump",
+      "description": "Quarterly pool/spa circulation pump inspection covering mounting, flow, strainer, seals, wiring, and exterior condition.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2814,7 +3038,7 @@
       "startOffsetDays": 206,
       "defaultItems": [
         {
-          "name": "Pool Circulation Pump",
+          "name": "Pool/Spa Circulation Pump",
           "areaName": "Pool Mechanical Room"
         }
       ],
@@ -2826,37 +3050,44 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect motor floor mounts, motor pump mounts, proper grounding, and proper flow of water (150).",
+                "label": "Inspect pump and motor for overall condition, secure mounting, proper grounding, and normal operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Clean baskets (purge air after if needed).",
+                "label": "Verify proper water flow and listen for unusual noise or vibration.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean outside the motor to avoid oxidation.",
+                "label": "Clean pump basket/strainer and remove debris; purge air as needed after servicing.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check casing for leaks.",
+                "label": "Inspect pump housing, lid, seals, and accessible piping for leaks or deterioration.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-6",
-                "label": "Secure the wiring assembly.",
+                "key": "step-5",
+                "label": "Inspect accessible electrical wiring and connections for damage, looseness, or corrosion.",
                 "required": true,
                 "sortOrder": 4,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-6",
+                "label": "Clean exterior surfaces and remove dirt, moisture, or oxidation buildup.",
+                "required": true,
+                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2865,13 +3096,14 @@
         ]
       },
       "legacyNames": [
+        "Pool Circulation Pump",
         "Pool Circulation Pumps"
       ]
     },
     {
       "key": "one-eyrie-pool-filter-quarterly-v1",
-      "name": "Pool Filter",
-      "description": "Quarterly pool filter inspection covering condition, backwash, leaks, and pressure.",
+      "name": "Pool/Spa Filter",
+      "description": "Quarterly pool/spa filter inspection covering housing, pressure, valves, media service/backwash when applicable, flow, and exterior cleaning.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -2880,7 +3112,7 @@
       "startOffsetDays": 206,
       "defaultItems": [
         {
-          "name": "Pool Filter",
+          "name": "Pool/Spa Filter",
           "areaName": "Pool Mechanical Room"
         }
       ],
@@ -2892,49 +3124,49 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the general condition of all filters.",
+                "label": "Inspect filter tank/housing, piping, fittings, valves, clamps, and connections for leaks, cracks, deterioration, or damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check emergency shutoffs.",
+                "label": "Inspect the pressure gauge for proper condition and operation; compare operating pressure with the established clean/start pressure and manufacturer specifications.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Backwash as needed.",
+                "label": "Inspect and operate accessible valves, air-relief components, and emergency shutoffs; verify proper condition and operation.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check for any leaks, and repair if needed.",
+                "label": "Clean or service the filter as appropriate for the installed system (sand, cartridge, or DE); backwash when applicable and according to manufacturer requirements.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Clean entire unit.",
+                "label": "Inspect accessible filter elements/media, seals, O-rings, clamps, drain components, and hardware for wear, deterioration, or damage.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Ensure that pressure is within recommended limits (over 100).",
+                "label": "Verify proper water flow through the filtration system and investigate abnormal pressure or restricted flow.",
                 "required": true,
                 "sortOrder": 5,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-7",
-                "label": "Every 3 months clean inside all filters. Replace filter if needed.",
+                "label": "Clean the exterior of the filter and remove dirt, chemical residue, and buildup.",
                 "required": true,
                 "sortOrder": 6,
                 "photoRequiredOnFail": false
@@ -2944,7 +3176,9 @@
           }
         ]
       },
-      "legacyNames": []
+      "legacyNames": [
+        "Pool Filter"
+      ]
     },
     {
       "key": "one-eyrie-pool-heater-quarterly-v1",
@@ -3026,7 +3260,7 @@
     {
       "key": "one-eyrie-phone-tv-computer-room-quarterly-v1",
       "name": "Phone/TV/Computer Room",
-      "description": "Quarterly phone/TV/computer room finishes, temperature, and cleanliness inspection.",
+      "description": "Quarterly phone/TV/computer room area inspection covering finishes, temperature, access, cleanliness, and equipment clearance.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -3047,30 +3281,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check and repair walls, ceiling, floors, outlets, signage, hardware.",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Room temperature. Must be maintained at 75° or less.",
+                "label": "Verify room temperature is maintained at 75°F or below.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Touch up the door frames.",
+                "label": "Inspect door, frame, lock, and hardware; repair or touch up as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean the entire room.",
+                "label": "Ensure the room is clean, dry, unobstructed, and free of unnecessary storage.",
                 "required": true,
                 "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Verify equipment, panels, and electrical components have adequate clearance and ventilation.",
+                "required": true,
+                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3083,7 +3324,7 @@
     {
       "key": "one-eyrie-public-restrooms-quarterly-v1",
       "name": "Public Restrooms",
-      "description": "Quarterly public restroom finishes, plumbing, and fixture inspection.",
+      "description": "Quarterly public restroom area inspection covering finishes, fixtures, plumbing, accessibility hardware, ventilation, and drains.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -3096,7 +3337,8 @@
           "areaName": "Public Restrooms"
         },
         {
-          "name": "Public Restrooms - Woman"
+          "name": "Public Restroom - Women",
+          "areaName": "Public Restrooms"
         }
       ],
       "checklist": {
@@ -3107,44 +3349,72 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the overall condition of your public restrooms and repair as needed: Walls, floors, ceilings, signage, outlets, and hardware.",
+                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, doors, and general condition.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-3",
-                "label": "Touch up all door frames.",
+                "key": "step-2",
+                "label": "Inspect toilets, urinals, sinks, faucets, flush valves, supply lines, drains, and exposed plumbing for leaks, damage, proper operation, and proper drainage.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Test all plumbing.",
+                "key": "step-3",
+                "label": "Inspect restroom partitions, stall doors, latches, hinges, toilet seats, and hardware; tighten or repair as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-5",
-                "label": "Inspect and clean exhaust fan.",
+                "key": "step-4",
+                "label": "Inspect grab bars and other accessible restroom fixtures/hardware for secure mounting, damage, and unobstructed access.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-6",
-                "label": "Replace any tarnished or worn fixtures.",
+                "key": "step-5",
+                "label": "Inspect sinks, countertops, mirrors, dispensers, hand dryers, and other restroom accessories for damage and proper operation.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-7",
-                "label": "Check any vending machines and have them repaired or replaced as needed.",
+                "key": "step-6",
+                "label": "Inspect caulk, grout, and sealant around plumbing fixtures, countertops, walls, and flooring for cracking, separation, deterioration, mold, or water intrusion.",
                 "required": true,
                 "sortOrder": 5,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-7",
+                "label": "Inspect and clean the exhaust grille/fan; verify proper airflow and investigate excessive moisture or persistent odors.",
+                "required": true,
+                "sortOrder": 6,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-8",
+                "label": "Inspect floor drains, where installed, for blockage, drainage, and signs of odor or a dry trap.",
+                "required": true,
+                "sortOrder": 7,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-9",
+                "label": "Inspect applicable electrical receptacles/GFCI protection for damage and proper operation in accordance with property procedures.",
+                "required": true,
+                "sortOrder": 8,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-10",
+                "label": "Inspect vending or hygiene-product dispensers, where installed, for secure mounting and proper operation.",
+                "required": true,
+                "sortOrder": 9,
                 "photoRequiredOnFail": false
               }
             ],

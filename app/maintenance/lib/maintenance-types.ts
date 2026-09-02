@@ -8,6 +8,28 @@ export type WorkOrderPriority = "Normal" | "Important" | "Urgent";
 
 export type WorkOrderStatus = "Open" | "In Progress" | "Completed" | "Cancelled";
 
+export const WORK_ORDER_PHOTO_ACTIVE_STATUSES: WorkOrderStatus[] = [
+  "Open",
+  "In Progress",
+];
+
+export function isWorkOrderPhotoAddableStatus(
+  status: WorkOrderStatus | string
+): boolean {
+  return WORK_ORDER_PHOTO_ACTIVE_STATUSES.includes(status as WorkOrderStatus);
+}
+
+export type WorkOrderPhoto = {
+  id: number;
+  workOrderId: number;
+  photoUrl: string;
+  storagePath: string | null;
+  uploadedBy: string | null;
+  /** UI-only label resolved from team member first name */
+  uploadedByLabel?: string | null;
+  uploadedAt: string;
+};
+
 export type WorkOrderSourceModule =
   | "Maintenance"
   | "Inspections"
@@ -31,6 +53,8 @@ export type WorkOrder = {
   comments: string | null;
   photoUrl: string | null;
   resolutionPhotoUrl: string | null;
+  /** Additional photos added after create (append-only). */
+  photos?: WorkOrderPhoto[];
   category: WorkOrderCategory | null;
   item: string | null;
   createdBy: string | null;
