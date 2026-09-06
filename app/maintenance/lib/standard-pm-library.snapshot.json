@@ -3,7 +3,7 @@
   "sourcePropertyId": 1,
   "sourceOrganizationId": 1,
   "dayZeroSourceDate": "2026-08-31",
-  "capturedAt": "2026-08-21T17:28:13.801Z",
+  "capturedAt": "2026-09-06T16:36:37.727Z",
   "templateCount": 49,
   "templates": [
     {
@@ -30,51 +30,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the water level.",
+                "label": "Check pool water level, clarity, and temperature.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check the water temperature. Recommended temperatures are 85° for the pool.",
+                "label": "Check and record pool chemical levels in the pool log.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Check water clarity. Drain and refill only if necessary.",
+                "label": "Inspect ladders, cove molding, and rescue equipment.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Check all pool chemical levels. Record appropriately in the Pool Operator’s Log. Ensure this is being completed daily.",
+                "label": "Vacuum and brush pool surfaces as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Check the condition of all ladders, cove molding, and rescue equipment.",
+                "label": "Verify required pool signage is posted.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Vacuum and brush all tiled surfaces and pool floor as needed.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Make sure all proper signage is posted.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -112,51 +98,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check the general condition of all elevators.",
+                "label": "Inspect elevator condition, pits, and tracks; clean as needed.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check and clean elevator pits and tracks.",
+                "label": "Test fire recall, safety phone, and emergency lighting.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test the fire recall system.",
+                "label": "Inspect elevator/pump rooms for cleanliness and access.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Test the elevator safety phone.",
+                "label": "Complete applicable elevator safety checks for the property.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Check that elevator/pump rooms are clean.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Test emergency lighting.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Complete any required elevator safety inspections or checks applicable to the property.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -189,8 +154,8 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-0",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "key": "step-1",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
@@ -254,44 +219,23 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the general condition of each fire extinguisher.",
+                "label": "Inspect each extinguisher for condition, proper placement, and charge.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Confirm each extinguisher is present and properly positioned.",
+                "label": "Inspect cabinets, brackets, and hoses; clean as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect cabinets and mounting brackets; clean as needed.",
+                "label": "Confirm inspection tags are current.",
                 "required": true,
                 "sortOrder": 2,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-4",
-                "label": "Inspect extinguisher hoses for visible damage.",
-                "required": true,
-                "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Confirm inspection tags are signed and dated monthly and annually. ",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Confirm each extinguisher indicates proper charge.",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -337,28 +281,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect building exterior walls, cladding, trim, and finishes for visible damage, deterioration, cracks, staining, or loose materials.",
+                "label": "Inspect exterior walls, finishes, trim, and architectural surfaces for damage, deterioration, staining, cracks, or water intrusion.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect windows, doors, frames, seals, and caulking for damage, gaps, failed sealant, or signs of water intrusion.",
+                "label": "Inspect exterior doors, windows, frames, sealants, and penetrations for visible damage or deterioration.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect exterior building fixtures attached to the structure (such as soffits, fascia, and wall-mounted building elements) for damage or deterioration.",
+                "label": "Inspect exterior-mounted building signage, lighting, vents, and fixtures for damage or loose components.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean and complete minor routine building-exterior repairs as needed.",
+                "label": "Inspect the immediate building perimeter for conditions affecting the building exterior.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -394,51 +338,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect parking lot pavement and drive lanes for potholes, cracking, settlement, deterioration, or other damage.",
+                "label": "Inspect parking lot and drive areas for potholes, cracks, deterioration, standing water, or other damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect sidewalks, curbs, ramps, and walking surfaces for cracks, uneven surfaces, damage, or trip hazards.",
+                "label": "Inspect sidewalks, curbs, ramps, and walking surfaces for damage, uneven areas, or trip hazards.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect parking-space striping, directional markings, fire-lane markings, and accessible parking markings/signage for visibility and condition.",
+                "label": "Inspect striping, accessible parking markings/signage, wheel stops, bollards, exterior lighting, and other site fixtures for condition and proper operation.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect wheel stops, bollards, fencing, gates, and other site fixtures where installed for damage or loose/unsafe conditions.",
+                "label": "Inspect landscaping, grounds, and drainage areas for overgrowth, irrigation issues, erosion, blockage, or other visible deficiencies.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Inspect exterior site lighting and signage for damage and proper operation.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect landscaping and grounds for overgrowth, dead or damaged vegetation, irrigation issues, erosion, or conditions affecting sidewalks, buildings, lighting, or guest access.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect visible parking-lot/site drainage areas for blockage, standing water, erosion, or drainage problems.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -488,7 +411,7 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
@@ -535,36 +458,36 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-0",
-                "label": "Ensure there are no leaks and record the temperature.",
+                "key": "step-1",
+                "label": "Inspect the unit for leaks, proper temperature, and normal operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782350110433",
-                "label": "Drain water off the bottom valve unit until clear water is present.",
+                "key": "step-2",
+                "label": "Drain the tank bottom valve until clear water is present.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782350117566",
-                "label": "Ensure that the pressure relief valve is sized properly and there are no leaks. Record the temperature.",
+                "key": "step-3",
+                "label": "Inspect the pressure relief valve and circulation pumps.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782350165967",
-                "label": "Check the water temperature in a room (120° - 125° maximum).",
+                "key": "step-4",
+                "label": "Clean the burner assembly as applicable.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782350172724",
-                "label": "Clean the burner assembly and check circulation pumps are working properly",
+                "key": "step-5",
+                "label": "Verify hot-water temperature at a guest room (about 120–125°F max).",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
@@ -600,30 +523,23 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
+                "label": "Inspect the area for condition, cleanliness, damage, lighting, signage, and other visible deficiencies.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect tables, chairs, and other furniture for damage, loose components, scratches, or finish wear. Tighten and make minor cosmetic repairs as needed.",
+                "label": "Inspect tables, chairs, counters, and service fixtures for damage or loose components.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect breakfast/buffet counters, surfaces, hardware, and service fixtures for damage or deterioration.",
-                "required": true,
-                "sortOrder": 2,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-4",
                 "label": "Test GFCI outlets for proper operation.",
                 "required": true,
-                "sortOrder": 3,
+                "sortOrder": 2,
                 "photoRequiredOnFail": false
               }
             ],
@@ -664,21 +580,21 @@
               },
               {
                 "key": "step-2",
-                "label": "Inspect the dumpster enclosure, gates, hinges, and latches for proper condition and operation.",
+                "label": "Inspect enclosure, gates, hinges, and latches for condition and operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect walls, pavement, curbs, and the surrounding area for damage or other maintenance needs.",
+                "label": "Inspect walls, pavement, curbs, and surrounding area for damage.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean and pressure wash the dumpster area as needed.",
+                "label": "Clean and pressure wash as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -713,8 +629,8 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-0",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "key": "step-1",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
@@ -729,7 +645,7 @@
     {
       "key": "one-eyrie-employee-restroom-quarterly-v1",
       "name": "Employee Restroom",
-      "description": "Preventative Maintenance",
+      "description": "Quarterly public restroom area inspection covering finishes, fixtures, plumbing, accessibility hardware, ventilation, and drains.",
       "category": "Custom",
       "frequency": "quarterly",
       "estimatedMinutes": null,
@@ -749,24 +665,38 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-0",
-                "label": "Check the following and repair as needed: Walls, floors, ceilings, hardware, toilet",
+                "key": "step-1",
+                "label": "Inspect the restroom for overall condition, damage, lighting, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782170296875",
-                "label": "Touch up door frames",
+                "key": "step-2",
+                "label": "Inspect toilets, urinals, sinks, faucets, drains, and exposed plumbing for leaks or improper operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782170317930",
-                "label": "Clean and inspect the exhaust fan.",
+                "key": "step-3",
+                "label": "Inspect partitions, grab bars, counters, mirrors, dispensers, and restroom fixtures for damage or loose components.",
                 "required": true,
                 "sortOrder": 2,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-4",
+                "label": "Inspect caulk, grout, flooring, and drains for deterioration, water issues, or odors.",
+                "required": true,
+                "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Clean/inspect exhaust ventilation and verify proper operation.",
+                "required": true,
+                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -799,22 +729,22 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-0",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "key": "step-1",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782349792159",
-                "label": "Ensure that all electrical panels and disconnects are properly labeled.",
+                "key": "step-2",
+                "label": "Verify electrical panels and disconnects are properly labeled.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1782349808839",
-                "label": "Organize and inventory tools and supplies.",
+                "key": "step-3",
+                "label": "Keep the room clear and organized for safe access.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
@@ -862,44 +792,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-2",
-                "label": "Inspect doors, frames, and hardware; touch up or repair as needed.",
+                "key": "step-3",
+                "label": "Verify exhaust ventilation is pulling air properly.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-3",
-                "label": "Verify exhaust ventilation is operating and pulling air properly.",
+                "key": "step-4",
+                "label": "Ensure no combustibles are stored in the room.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Ensure the room is clean, clear, and accessible.",
+                "key": "step-5",
+                "label": "Inspect panels for open or missing breaker blanks; install approved fillers as needed.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Ensure no combustible materials are stored in the electrical room.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect electrical panels for open or missing breaker blanks; install approved fillers as needed.",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -949,23 +865,16 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect all lights, and replace any that are burned out. All floors.",
+                "label": "Inspect emergency lights and replace failed lamps as needed.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Ensure that all emergency lights work by pressing the red “Test” button.",
+                "label": "Test each unit with the test button and verify battery charge.",
                 "required": true,
                 "sortOrder": 1,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-3",
-                "label": "Check the battery charge. Replace any defective or dead batteries as soon as possible.",
-                "required": true,
-                "sortOrder": 2,
                 "photoRequiredOnFail": false
               }
             ],
@@ -999,21 +908,21 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Change beacon batteries located throughout the building.",
+                "label": "Inspect and test relay/beacon devices for proper operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Ensure all devices are working properly. Test alarm feature for all devices.",
+                "label": "Replace beacon batteries as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787111995053",
-                "label": "Relay Admin Portal and review beacon locations are functioning properly ",
+                "key": "step-3",
+                "label": "Verify device locations and status in the admin portal.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
@@ -1049,23 +958,16 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Touch up door frames.",
+                "label": "Organize tools and equipment for safe use and access.",
                 "required": true,
                 "sortOrder": 1,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-4",
-                "label": "Organize paperwork, tools and equipment",
-                "required": true,
-                "sortOrder": 2,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1099,35 +1001,35 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
+                "label": "Inspect entrance area, doors, frames, glass, lighting, signage, and hardware for condition and proper operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Touch up doors and door frames as needed.",
+                "label": "Test applicable locks, intercoms, and automatic entrance-door operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test entrance door locks and intercom, if applicable.",
+                "label": "Inspect mats, walking surfaces, curbs, and the immediate entrance area for damage or trip hazards.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect the luggage cart storage/parking area and repair as needed.",
+                "label": "Inspect luggage cart parking area and entrance fixtures for condition.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Power wash entrance walkways, walls, columns, and other exterior surfaces as needed.",
+                "label": "Clean glass and pressure-wash exterior entrance hardscape as needed.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
@@ -1187,65 +1089,44 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the overall condition and operation of the HVAC unit; check for unusual noise, vibration, icing, corrosion, water leakage, or other visible deficiencies.",
+                "label": "Inspect overall operation for unusual noise, vibration, leaks, icing, or visible damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect air filter condition and clean or replace as needed; verify the filter is properly installed and seated.",
+                "label": "Inspect and clean/replace the air filter as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect evaporator and condenser coils for dirt, debris, damage, corrosion, or bent fins; clean as needed.",
+                "label": "Inspect evaporator and condenser coils; clean as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean and vacuum the condensate drain line. Inspect and clean the drain pan and verify proper drainage with no blockage, buildup, standing water, or leaks.",
+                "label": "Clean and vacuum the condensate drain line and inspect the drain pan.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect blower/fan assembly, motor, and accessible components for cleanliness, secure mounting, damage, and abnormal noise or vibration.",
+                "label": "Inspect accessible electrical, refrigerant lines, belts, and moving components for visible problems.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Inspect accessible electrical wiring, connections, disconnects, and components for looseness, damage, overheating, or corrosion.",
+                "label": "Verify thermostat/control operation and proper unit operation.",
                 "required": true,
                 "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect accessible refrigerant lines and insulation for damage, deterioration, oil residue, icing, or other indications of a refrigerant-system problem.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Inspect belts, pulleys, and related drive components for wear, damage, alignment, and proper tension where equipped.",
-                "required": true,
-                "sortOrder": 7,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-9",
-                "label": "Verify thermostat/control operation and confirm the unit starts, operates, cycles, and shuts down properly.",
-                "required": true,
-                "sortOrder": 8,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1282,44 +1163,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Contract out - Annual Alarm Panel Inspection",
+                "label": "Confirm contracted alarm-panel inspection is current.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Contract out - Annual testing and Maintenance of Standpipe and Hose Systems",
+                "label": "Confirm contracted standpipe/hose testing and maintenance is current.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Contract out - Quarterly Testing and Maintenance of Wet Pipe Sprinkler System",
+                "label": "Confirm contracted wet-pipe sprinkler testing and maintenance is current.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Contract out - Annual Fire Hydrant Flow Test",
+                "label": "Confirm contracted fire-hydrant flow test is current.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Contract Out - Annual, all Backflows, Prevention Assembly Test",
+                "label": "Confirm contracted backflow-prevention assembly testing is current.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Contract out - Annual Testing and Maintenance of Wet Pipe Sprinkler System",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1353,21 +1227,21 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the fitness center as needed: doors, locks, walls, floors, ceilings, lighting, signage, outlets, and general condition.",
+                "label": "Inspect fitness center condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect fitness equipment for proper operation, loose or damaged components, hardware, cords, and connections. Tighten, lubricate, or repair as needed.",
+                "label": "Inspect fitness equipment for proper operation, loose/damaged parts, cords, and connections.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test fitness center door lock and guest key access for proper operation.",
+                "label": "Test door lock and guest key access.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
@@ -1403,44 +1277,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the roof surface for damage, excessive wear, cracking, blistering, loose or missing roofing material, ponding water, or other deterioration.",
+                "label": "Inspect roof surfaces for damage, deterioration, ponding water, or excessive wear.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect seams, flashing, pitch pockets, penetrations, parapets, and equipment curbs for gaps, damage, loose materials, failed sealant, or signs of water intrusion.",
+                "label": "Inspect seams, flashing, penetrations, parapets, curbs, and sealants for visible deficiencies.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean and clear roof drains, scuppers, gutters, and strainers where installed; remove leaves, vegetation, and other debris from the roof.",
+                "label": "Clean roof drains, scuppers, gutters, and accumulated debris where applicable.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect walk pads, roof access areas, ladders/hatches, and designated service paths for damage, looseness, or unsafe conditions.",
+                "label": "Inspect walk pads, roof access, and visible ventilation components.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect visible roof ventilation components and verify vents are unobstructed and in good condition.",
+                "label": "For shingled areas, inspect shingles and fasteners for visible damage or deterioration.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "For shingled roof areas, inspect for loose, missing, damaged, or curled shingles, excessive granule loss, and exposed or popped fasteners.",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1476,51 +1343,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the general condition and operation of the exhaust fan; check for unusual noise, vibration, corrosion, damage, or loose components.",
+                "label": "Inspect exhaust fan operation for damage, unusual noise, vibration, or buildup.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect accessible electrical connections and control wiring for looseness, damage, overheating, or corrosion.",
+                "label": "Inspect and clean fan wheel/blades, guard, motor, and accessible components.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and clean the fan wheel/blades and fan-blade guard; verify components are secure and free of excessive buildup.",
+                "label": "Inspect belts/pulleys where equipped for wear, tension, and alignment.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect the motor and bearings for proper operation, excessive noise, vibration, overheating, or wear; lubricate only where required by the equipment manufacturer.",
+                "label": "Inspect electrical/control wiring and dampers for visible problems and proper operation.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect belts and pulleys where equipped for wear, damage, proper tension, and alignment.",
+                "label": "Inspect accessible ductwork/connections for damage or water intrusion.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect dampers for damage, buildup, binding, and proper operation.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect accessible ductwork and connections for damage, deterioration, loose connections, water intrusion, or trapped water.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1557,22 +1410,22 @@
             "name": "Checklist",
             "steps": [
               {
-                "key": "step-1787112974056",
-                "label": "Inspect overall unit condition and operation; check for unusual noise, vibration, or damage",
+                "key": "step-1",
+                "label": "Inspect overall unit condition and operation for unusual noise, vibration, or damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787113094535",
-                "label": "Inspect and replace/clean filters as needed",
+                "key": "step-2",
+                "label": "Inspect and clean/replace filters as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-1787113150634",
-                "label": "If specialized service or repairs are needed, contact a qualified technician",
+                "key": "step-3",
+                "label": "Inspect accessible coils, drains, electrical, and moving components for visible problems.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
@@ -1635,14 +1488,14 @@
               },
               {
                 "key": "step-2",
-                "label": "Inspect wheels and casters; tighten, repair, lubricate, or replace as needed.",
+                "label": "Inspect wheels/casters and tighten, lubricate, or replace as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Tighten loose nuts, bolts, handles, shelves, and supports as needed.",
+                "label": "Tighten loose hardware, handles, shelves, and supports as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
@@ -1696,21 +1549,21 @@
               },
               {
                 "key": "step-2",
-                "label": "Inspect wheels and casters; tighten, lubricate, repair, or replace as needed.",
+                "label": "Inspect wheels/casters and tighten, lubricate, or replace as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Tighten loose nuts, bolts, handles, rails, and supports as needed.",
+                "label": "Tighten loose hardware, handles, rails, and supports as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect carpet/platform and protective bumpers; clean, secure, or repair as needed.",
+                "label": "Inspect carpet/platform and bumpers; clean or secure as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -1761,35 +1614,35 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the overall condition and operation of the water softener for visible damage, leaks, corrosion, or abnormal conditions.",
+                "label": "Inspect the water softener for leaks, corrosion, damage, or abnormal conditions.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the salt/brine tank and verify salt and water levels are appropriate; check for salt bridging or excessive buildup.",
+                "label": "Check salt/brine tank condition and levels.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test water hardness to verify the system is providing properly softened water.",
+                "label": "Test water hardness.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect accessible piping, fittings, valves, and drain lines for leaks, damage, blockage, or improper drainage.",
+                "label": "Inspect accessible piping, valves, and drain lines for leaks or drainage problems.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Verify the unit shows normal operation with no visible alarms, error codes, or other indications that service is required.",
+                "label": "Verify normal operation with no alarms or error conditions.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
@@ -1841,51 +1694,44 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect and clean the interior and exterior; inspect doors, hinges, gaskets, and seals for damage and proper closure/sealing.",
+                "label": "Inspect and clean the unit; check doors, hinges, gaskets, and seals.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Check operating temperature and verify the unit is maintaining the proper temperature for its intended use; verify proper interior airflow and that vents are not obstructed.",
+                "label": "Verify proper temperature and airflow.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and clean condenser coils; inspect evaporator coils for dirt, debris, frost, ice buildup, damage, or bent fins and clean as needed.",
+                "label": "Inspect and clean condenser/evaporator coils as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect and clean the condensate pan and clear/clean the condensate drain line; verify proper drainage with no blockage, buildup, standing water, or leaks.",
+                "label": "Clean the condensate pan/drain and check for leaks or blockage.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect the power cord, plug, accessible electrical connections, and controls for damage, looseness, overheating, or improper operation.",
+                "label": "Inspect cord, plug, controls, and overall operation for visible problems.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Operate the unit and check for unusual noise, vibration, leaks, excessive cycling, icing, or other signs of improper operation.",
+                "label": "Clean underneath/behind the unit and verify normal operation.",
                 "required": true,
                 "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Clean underneath and behind the unit; remove dust, grease, debris, and anything obstructing ventilation.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1926,44 +1772,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect general condition of chlorine feeder(s).",
+                "label": "Inspect feeder condition, lid, seals, fittings, and connections.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect lid, seals, fittings, and connections for visible wear or damage.",
+                "label": "Inspect input/output hoses for leaks, cracks, or loose connections.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect input and output hoses for leaks, cracks, deterioration, or loose connections.",
+                "label": "Clean accessible components as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean accessible components as needed.",
+                "label": "Verify the feeder appears to be operating normally.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Verify feeder appears to be operating normally.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Contact the pool service provider or qualified contractor for chemical-system repairs or service beyond routine maintenance.",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -1999,30 +1831,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Clean and inspect the machine for proper operation.",
+                "label": "Inspect and clean the machine exterior, dispensing area, and accessible components.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the electrical cord, plug, and accessible connections for damage.",
+                "label": "Inspect cord, plug, electrical connections, and controls for visible damage or improper operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect for leaks and check accessible hoses, fittings, and connections.",
+                "label": "Inspect condenser/ventilation areas for dirt or buildup and clean as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean and sanitize dispensing nozzles and accessible product-contact areas per manufacturer recommendations.",
+                "label": "Inspect for leaks, damage, unusual noise, or other signs of improper operation.",
                 "required": true,
                 "sortOrder": 3,
+                "photoRequiredOnFail": false
+              },
+              {
+                "key": "step-5",
+                "label": "Verify normal operation after maintenance.",
+                "required": true,
+                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2064,58 +1903,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the overall condition and operation of the ice machine.",
+                "label": "Inspect overall condition and operation of the ice machine.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect discharge/drain lines and ensure they are secure and properly directed to the drain.",
+                "label": "Inspect drain lines, condenser coils/fins, and unit level; clean as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect condenser coil/fins; clean and straighten as needed.",
+                "label": "Inspect accessible electrical connections, ice quality, and the water filter.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect the unit for proper positioning and level.",
+                "label": "Clean and sanitize accessible ice-making components and bin as needed.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Inspect accessible electrical connections for damage or looseness.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect ice cube size, shape, and overall ice quality.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect the water filter and replace as needed.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Clean and sanitize accessible ice-making components and bin per manufacturer recommendations.",
-                "required": true,
-                "sortOrder": 7,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2149,58 +1960,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the unit for overall condition, cleanliness, and proper operation.",
+                "label": "Inspect the unit for condition, cleanliness, and proper operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect accessible electrical cord, plug, connections, hoses, and piping for damage or leaks.",
+                "label": "Inspect accessible cord, connections, hoses, and piping for damage or leaks.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Check water supply and verify proper water flow.",
+                "label": "Check water supply and verify wash/rinse temperatures are in range.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Verify wash and rinse temperatures are within the manufacturer's required operating range.",
+                "label": "Clean accessible screens, spray arms, nozzles, filters, and drains as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Clean accessible screens, spray arms, nozzles, filters, and internal surfaces as needed.",
+                "label": "Delime as needed and run a complete test cycle.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Delime the unit as needed according to manufacturer instructions and property water conditions.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect and clean the drain and drain area as needed.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Run a complete test cycle and verify proper operation.",
-                "required": true,
-                "sortOrder": 7,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2240,58 +2030,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Run dryer and listen for excessive noise or vibration.",
+                "label": "Inspect the dryer for damage, unusual noise, vibration, or abnormal heat.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect and clean lint screen, lint compartment, and accessible lint buildup.",
+                "label": "Clean under/behind the unit and remove lint from accessible areas.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-4",
-                "label": "Inspect drive belts for looseness, wear, cracks, or fraying.",
+                "key": "step-3",
+                "label": "Inspect and clean accessible exhaust duct and vent for lint buildup.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-5",
-                "label": "Inspect door, hinges, latch, and door gasket for wear or damage.",
+                "key": "step-4",
+                "label": "Inspect cord, connections, door, and lint screen.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
-                "key": "step-6",
-                "label": "Inspect and clean accessible burner area and burner air openings.",
+                "key": "step-5",
+                "label": "Run a complete cycle and verify proper operation.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect and clean accessible exhaust duct and vent for lint buildup or restriction.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Check accessible fasteners and hardware for looseness; tighten as needed.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-12",
-                "label": "Contact a qualified contractor for gas-system repairs, burner service, electrical repairs, or specialized repairs as needed.",
-                "required": true,
-                "sortOrder": 7,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2329,72 +2098,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the machine for damage, excessive vibration, unusual noise, or other abnormal conditions.",
+                "label": "Inspect the machine for damage, excessive vibration, or unusual noise.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Clean the drain trough/lint trap and remove accumulated debris.",
+                "label": "Clean drain trough/lint trap and inspect hoses, valves, and chemical lines for leaks.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect water supply hoses, valves, and connections for leaks, wear, or damage.",
+                "label": "Inspect accessible wiring, belts, and mechanical components for wear or damage.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect chemical dispensing lines and connections for leaks or damage.",
+                "label": "Clean accessible equipment areas of dust, lint, and debris.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect and clean accessible drain lines and components as needed.",
+                "label": "Run a test cycle and verify proper fill, wash, drain, and extraction.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect accessible wiring and electrical components for damage or signs of overheating.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect accessible belts and mechanical components for excessive wear or damage.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Clean accessible equipment and service areas of dust, lint, and debris.",
-                "required": true,
-                "sortOrder": 7,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-9",
-                "label": "Lubricate serviceable components only as recommended by the equipment manufacturer.",
-                "required": true,
-                "sortOrder": 8,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-10",
-                "label": "Run a test cycle and verify proper filling, washing, draining, and extraction.",
-                "required": true,
-                "sortOrder": 9,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2428,28 +2162,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the laundry room as needed: walls, floors, ceilings, lighting, signage, outlets, doors, and general condition.",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, electrical components, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect exposed pipes, drains, and utility connections for leaks, damage, or buildup.",
+                "label": "Inspect and clean accessible lights, pipes, and room fixtures as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect the linen chute and chute door for damage, proper closure, cleanliness, and obstructions.",
+                "label": "Inspect linen chute where installed for damage, obstruction, cleanliness, and proper door operation.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Verify restricted/associate-only access is secure and functioning properly.",
+                "label": "Verify the room remains secure and restricted to authorized access.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2485,37 +2219,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect all interior and exterior lighting; verify fixtures are working properly and replace failed lamps/bulbs as needed.",
+                "label": "Inspect applicable lighting for proper operation, condition, cleanliness, and proper aiming/focus.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect and clean accessible lenses, covers, and fixtures as needed.",
+                "label": "Inspect signage for damage, deterioration, visibility, and secure mounting.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect exterior lighting for obstructions and correct as needed.",
+                "label": "Check for vegetation or other obstructions affecting lighting or signage.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Verify exterior lighting controls, timers, and photocells operate at the proper times.",
+                "label": "Verify applicable exterior lighting controls/timers operate appropriately for dusk/dawn conditions.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Inspect interior and exterior signage for damage, visibility, illumination, and secure mounting; repair as needed.",
-                "required": true,
-                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2563,28 +2290,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the room as needed: walls, floors, ceilings, lighting, signage, outlets, doors, shelving, and general condition.",
+                "label": "Inspect room condition, including walls, floors, ceilings, lighting, outlets, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect shelving, cabinets, and storage racks for damage, loose components, and secure mounting.",
+                "label": "Inspect shelving and cabinets for damage, loose components, or unsafe conditions.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect sinks, drains, and exposed plumbing for leaks or damage, where applicable.",
+                "label": "Inspect applicable sinks, plumbing, and drains for leaks, damage, or drainage problems.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Verify aisles, doors, and access points remain clear and unobstructed.",
+                "label": "Clean accumulated dust/debris from fixtures, shelving, door jambs, and other maintenance-related areas as needed.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2624,28 +2351,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Run dryer through a complete cycle and verify proper operation, heat, and no excessive noise or vibration.",
+                "label": "Run dryer through a complete cycle; verify heat and no excessive noise or vibration.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Clean around and behind the unit; inspect for damage or loose components.",
+                "label": "Clean around/behind the unit and inspect for damage or loose components.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Vacuum and clean accessible exhaust duct and vent; remove lint buildup as needed.",
+                "label": "Vacuum and clean accessible exhaust duct/vent; remove lint as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect power cord, connections, door, and lint screen for damage or proper operation.",
+                "label": "Inspect cord, connections, door, and lint screen.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2685,37 +2412,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Run washer through a complete cycle and verify proper filling, washing, draining, spinning, and no excessive noise or vibration.",
+                "label": "Run washer through a complete cycle; verify fill, wash, drain, spin, and no excessive noise or vibration.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect hoses, connections, door/lid seal, and gaskets for leaks, wear, or damage.",
+                "label": "Inspect hoses, connections, and door/lid seals for leaks or damage.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean around, behind, and under the unit; remove debris and inspect for signs of leaks.",
+                "label": "Clean around/behind/under the unit and dispensers/drain areas as needed.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean detergent/softener dispensers and accessible drain/filter areas as needed.",
+                "label": "Inspect cord, controls, door/lid, and exterior.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Inspect power cord, controls, door/lid, and exterior for damage or proper operation.",
-                "required": true,
-                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2749,28 +2469,28 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the lobby and front desk area as needed: walls, floors, ceilings, lighting, signage, outlets, doors, front desk, furniture, and general condition.",
+                "label": "Inspect lobby/front desk condition, including walls, floors, ceilings, lighting, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the Market area and repair or replace cabinetry, shelving, fixtures, and equipment as needed.",
+                "label": "Inspect front desk, cabinetry, laminate, counters, and furnishings for damage or deterioration.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Test lobby/front desk door locks, access hardware, and intercom/communication equipment, where applicable.",
+                "label": "Test applicable outlets, locks, and intercom equipment.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure all common-area TVs are working properly.",
+                "label": "Inspect lobby furniture and fixtures for damage, loose components, or excessive wear.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
@@ -2826,51 +2546,44 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the overall condition of the vacuum, including housing, wheels, handle, hose, wand, and attachments for damage, excessive wear, or loose components.",
+                "label": "Inspect vacuum, hose, attachments, wheels, and housing for damage or excessive wear.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the power cord, plug, switches, and accessible electrical components for fraying, cuts, damage, overheating, or improper operation.",
+                "label": "Inspect power cord, plug, and switches for damage and proper operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and clean the hose, wand, intake passages, and attachments; remove any clogs or obstructions.",
+                "label": "Clean hose/intake passages and remove clogs or obstructions.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect and clean the brush roll/beater bar; remove hair, string, carpet fibers, and other wrapped debris.",
+                "label": "Clean and inspect brush roll/beater bar, belt, and roller components where equipped.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect the brush roll, belt, and roller assembly for wear, damage, proper movement, and tension; replace worn components as needed.",
+                "label": "Clean/replace bags and filters as applicable.",
                 "required": true,
                 "sortOrder": 4,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-6",
-                "label": "Inspect and clean or replace bags and filters as applicable; verify filters are properly installed and airflow is not restricted.",
+                "label": "Test-run and verify proper suction and operation.",
                 "required": true,
                 "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Test-run the vacuum and verify proper suction, brush operation, normal sound, and overall working condition.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2904,37 +2617,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, furniture, and general condition.",
+                "label": "Inspect meeting room condition, including walls, ceilings, lighting, doors, hardware, and furnishings.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Deep clean flooring as needed, including carpet extraction/shampooing or appropriate hard-floor cleaning.",
+                "label": "Inspect/test installed screens, whiteboards, projectors/A/V equipment, phones, and applicable connections.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and test meeting room equipment as applicable, including screens, projectors/displays, phones, and connection jacks.",
+                "label": "Verify locks and HVAC are operating properly.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Test doors and locks.",
+                "label": "Inspect flooring for stains, wear, damage, or trip hazards; deep clean carpet or hard flooring as needed.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Test HVAC operation and confirm the room reaches and maintains the appropriate temperature.",
-                "required": true,
-                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -2972,51 +2678,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect furniture for damage, cracks, loose parts, or excessive wear.",
+                "label": "Inspect furniture for damage, excessive wear, loose components, or instability.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Tighten loose hardware and fasteners as needed.",
+                "label": "Tighten accessible hardware and clean furniture as needed.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect tables and chairs for stability; repair as needed.",
+                "label": "Inspect finishes for fading, peeling, rust, corrosion, or water deterioration.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean furniture and remove stains, dirt, mildew, and debris.",
+                "label": "Reseal/waterproof only when needed based on material and finish condition.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect finishes for fading, peeling, rust, or corrosion; touch up as needed.",
+                "label": "Verify furniture is safely positioned and in good condition.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect outdoor furniture surfaces for water intrusion, swelling, deterioration, or failed protective finish; reseal/waterproof as needed based on the furniture material.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Confirm furniture is properly positioned and the area is neat and orderly.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3050,44 +2742,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect pump and motor for overall condition, secure mounting, proper grounding, and normal operation.",
+                "label": "Inspect pump and motor for condition, secure mounting, and normal operation.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Verify proper water flow and listen for unusual noise or vibration.",
+                "label": "Verify proper water flow and check for unusual noise or vibration.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Clean pump basket/strainer and remove debris; purge air as needed after servicing.",
+                "label": "Clean the pump basket/strainer and remove debris.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect pump housing, lid, seals, and accessible piping for leaks or deterioration.",
+                "label": "Inspect housing, lid, seals, piping, and connections for leaks or deterioration.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect accessible electrical wiring and connections for damage, looseness, or corrosion.",
+                "label": "Inspect accessible electrical components and clean exterior buildup as needed.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Clean exterior surfaces and remove dirt, moisture, or oxidation buildup.",
-                "required": true,
-                "sortOrder": 5,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3124,51 +2809,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect filter tank/housing, piping, fittings, valves, clamps, and connections for leaks, cracks, deterioration, or damage.",
+                "label": "Inspect filter, piping, valves, fittings, and connections for leaks or damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the pressure gauge for proper condition and operation; compare operating pressure with the established clean/start pressure and manufacturer specifications.",
+                "label": "Check pressure gauge and verify normal operating pressure for the installed system.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect and operate accessible valves, air-relief components, and emergency shutoffs; verify proper condition and operation.",
+                "label": "Clean/service the filter as appropriate for the installed filter type.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Clean or service the filter as appropriate for the installed system (sand, cartridge, or DE); backwash when applicable and according to manufacturer requirements.",
+                "label": "Inspect accessible filter components, seals, clamps, and hardware for wear or damage.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect accessible filter elements/media, seals, O-rings, clamps, drain components, and hardware for wear, deterioration, or damage.",
+                "label": "Verify proper water flow and normal filtration operation.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Verify proper water flow through the filtration system and investigate abnormal pressure or restricted flow.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Clean the exterior of the filter and remove dirt, chemical residue, and buildup.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3203,51 +2874,23 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect the general condition of emergency shutoffs.",
+                "label": "Inspect heater condition, shutoffs, ignition, and burners; clean burners as needed.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect the general condition of outgoing temperature.",
+                "label": "Inspect piping, intake/exhaust fans, and outgoing temperature.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect ignition device.",
+                "label": "Verify pool water temperature is in the expected range.",
                 "required": true,
                 "sortOrder": 2,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-4",
-                "label": "Inspect pipes.",
-                "required": true,
-                "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Check water temperature in pool.",
-                "required": true,
-                "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect room intake fan(s) and exhaust fan(s).",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Clean burners.",
-                "required": true,
-                "sortOrder": 6,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3281,37 +2924,30 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, and general condition.",
+                "label": "Inspect the room for overall condition, cleanliness, lighting, outlets, and visible damage.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Verify room temperature is maintained at 75°F or below.",
+                "label": "Verify room temperature is 75°F or below.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect door, frame, lock, and hardware; repair or touch up as needed.",
+                "label": "Inspect door, lock, and hardware.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Ensure the room is clean, dry, unobstructed, and free of unnecessary storage.",
+                "label": "Ensure equipment/panels remain accessible with adequate clearance and ventilation.",
                 "required": true,
                 "sortOrder": 3,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-5",
-                "label": "Verify equipment, panels, and electrical components have adequate clearance and ventilation.",
-                "required": true,
-                "sortOrder": 4,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3349,72 +2985,37 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Inspect, clean, and repair the area as needed: walls, floors, ceilings, lighting, signage, outlets, doors, and general condition.",
+                "label": "Inspect the restroom for overall condition, damage, lighting, signage, doors, and hardware.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-2",
-                "label": "Inspect toilets, urinals, sinks, faucets, flush valves, supply lines, drains, and exposed plumbing for leaks, damage, proper operation, and proper drainage.",
+                "label": "Inspect toilets, urinals, sinks, faucets, drains, and exposed plumbing for leaks or improper operation.",
                 "required": true,
                 "sortOrder": 1,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-3",
-                "label": "Inspect restroom partitions, stall doors, latches, hinges, toilet seats, and hardware; tighten or repair as needed.",
+                "label": "Inspect partitions, grab bars, counters, mirrors, dispensers, and restroom fixtures for damage or loose components.",
                 "required": true,
                 "sortOrder": 2,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-4",
-                "label": "Inspect grab bars and other accessible restroom fixtures/hardware for secure mounting, damage, and unobstructed access.",
+                "label": "Inspect caulk, grout, flooring, and drains for deterioration, water issues, or odors.",
                 "required": true,
                 "sortOrder": 3,
                 "photoRequiredOnFail": false
               },
               {
                 "key": "step-5",
-                "label": "Inspect sinks, countertops, mirrors, dispensers, hand dryers, and other restroom accessories for damage and proper operation.",
+                "label": "Clean/inspect exhaust ventilation and verify proper operation.",
                 "required": true,
                 "sortOrder": 4,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-6",
-                "label": "Inspect caulk, grout, and sealant around plumbing fixtures, countertops, walls, and flooring for cracking, separation, deterioration, mold, or water intrusion.",
-                "required": true,
-                "sortOrder": 5,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-7",
-                "label": "Inspect and clean the exhaust grille/fan; verify proper airflow and investigate excessive moisture or persistent odors.",
-                "required": true,
-                "sortOrder": 6,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-8",
-                "label": "Inspect floor drains, where installed, for blockage, drainage, and signs of odor or a dry trap.",
-                "required": true,
-                "sortOrder": 7,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-9",
-                "label": "Inspect applicable electrical receptacles/GFCI protection for damage and proper operation in accordance with property procedures.",
-                "required": true,
-                "sortOrder": 8,
-                "photoRequiredOnFail": false
-              },
-              {
-                "key": "step-10",
-                "label": "Inspect vending or hygiene-product dispensers, where installed, for secure mounting and proper operation.",
-                "required": true,
-                "sortOrder": 9,
                 "photoRequiredOnFail": false
               }
             ],
@@ -3452,7 +3053,7 @@
             "steps": [
               {
                 "key": "step-1",
-                "label": "Check all of the following, and clean, repair, re-paint, or replace as needed: walls, vinyl, door jambs, ceiling, carpets, cove base, outlets, signage, lights, and hand railing.",
+                "label": "Inspect stairwells for condition, cleanliness, damage, lighting, signage, and handrails.",
                 "required": true,
                 "sortOrder": 0,
                 "photoRequiredOnFail": false
