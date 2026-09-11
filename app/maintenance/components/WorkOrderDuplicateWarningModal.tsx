@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   GOLD_FILLED_BUTTON,
@@ -27,14 +28,17 @@ export default function WorkOrderDuplicateWarningModal({
 }: WorkOrderDuplicateWarningModalProps) {
   const primary = candidates[0];
   if (!primary) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  // Portal above the create Work Order modal (z-index 999). An inline z-index
+  // below that previously hid this warning and blocked Create Anyway.
+  return createPortal(
     <div
       className="one-eyrie-modal-overlay"
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 80,
+        zIndex: 1100,
         background: "rgba(0,0,0,0.72)",
         display: "flex",
         alignItems: "center",
@@ -162,6 +166,7 @@ export default function WorkOrderDuplicateWarningModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

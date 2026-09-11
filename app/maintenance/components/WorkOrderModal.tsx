@@ -284,7 +284,7 @@ export default function WorkOrderModal({
     await createWorkOrder(payload);
   }
 
-  const submitDisabled = saving || uploadingPhoto;
+  const submitDisabled = saving || uploadingPhoto || duplicateWarningOpen;
 
   return (
     <>
