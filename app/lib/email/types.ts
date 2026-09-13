@@ -1,6 +1,5 @@
 /**
  * Transactional email kinds that share the One Eyrie layout foundation.
- * Invitation is implemented; remaining kinds reuse the same shell.
  */
 export type TransactionalEmailKind =
   | "invitation"
@@ -21,6 +20,11 @@ export type TransactionalEmailLayoutInput = {
   kind: TransactionalEmailKind;
   /** Inbox preview / preheader text */
   preheader?: string;
+  /**
+   * Small uppercase header subtitle (e.g. ACCOUNT INVITATION, LOST & FOUND).
+   * Defaults from `kind` when omitted.
+   */
+  headerSubtitle?: string;
   /** Primary heading inside the card */
   heading: string;
   /** Escaped/safe HTML for the main body (paragraphs, lists, etc.) */
@@ -28,19 +32,25 @@ export type TransactionalEmailLayoutInput = {
   cta?: TransactionalEmailCta;
   /** Escaped/safe HTML rendered under the CTA (expiry, ignore notice, etc.) */
   belowCtaHtml?: string;
-  /** Show the Need Help? support block (default true) */
+  /** Show the support block (default true) */
   showSupport?: boolean;
   /**
-   * Support blurb under “Need Help?”.
-   * Defaults to a generic onboarding help line.
+   * Append platform support mailto under the support blurb (default true).
+   * Set false for guest-facing hotel-contact blurbs.
+   */
+  showSupportEmail?: boolean;
+  /**
+   * Support blurb in the footer.
+   * Defaults to a generic One Eyrie help line + support email.
    */
   supportMessage?: string;
+  /** Subtle reference / debug line (already escaped HTML) */
+  referenceHtml?: string;
   /** Override © year (defaults to current UTC year) */
   currentYear?: number;
   /**
-   * Header brand treatment.
-   * - logo (default): stacked image logo
-   * - text: ONE / EYRIE wordmark (guest payment confirmation)
+   * @deprecated Logo header removed — text wordmark is always used.
+   * Kept so existing callers compile; ignored at render time.
    */
   headerVariant?: "logo" | "text";
 };

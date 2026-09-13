@@ -1,5 +1,9 @@
 import { escapeHtml } from "@/app/lib/email/escape-html";
-import { EMAIL_SUPPORT_ADDRESS, EMAIL_THEME as T } from "@/app/lib/email/brand";
+import { EMAIL_SUPPORT_ADDRESS } from "@/app/lib/email/brand";
+import {
+  ONE_EYRIE_EMAIL as C,
+  renderEmailParagraph,
+} from "@/app/lib/email/one-eyrie-email-shell";
 import { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
 
 export const PASSWORD_RESET_EMAIL_SUBJECT = "Reset your One Eyrie password";
@@ -30,7 +34,7 @@ function greetingLine(recipientName?: string | null): { html: string; text: stri
 }
 
 /**
- * Branded password-reset email using the shared transactional layout.
+ * Branded password-reset email using the shared One Eyrie transactional shell.
  */
 export function buildPasswordResetEmail(
   variables: PasswordResetEmailVariables
@@ -41,29 +45,28 @@ export function buildPasswordResetEmail(
   const expires = variables.expiration_label?.trim() || "1 hour";
 
   const bodyHtml = `
-    <p style="margin:0 0 16px;">${greeting.html}</p>
-    <p style="margin:0 0 16px;">
-      We received a request to reset the password for your
-      <strong style="color:${T.text};">One Eyrie</strong> account.
-    </p>
-    <p style="margin:0;">
-      Click the button below to choose a new password. This link expires in
-      <strong style="color:${T.text};">${escapeHtml(expires)}</strong>
-      and can only be used once.
-    </p>`;
+    ${renderEmailParagraph(greeting.html, 12)}
+    ${renderEmailParagraph(
+      `We received a request to reset the password for your <strong style="color:${C.primary};">One Eyrie</strong> account.`,
+      16
+    )}
+    ${renderEmailParagraph(
+      `Click the button below to choose a new password. This link expires in <strong style="color:${C.primary};">${escapeHtml(expires)}</strong> and can only be used once.`,
+      22
+    )}
+  `;
 
   const belowCtaHtml = `
-    <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${T.textSubtle};">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${C.secondary};">
       For your security, never share this email or reset link with anyone.
-    </p>
-    <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${T.textSubtle};">
-      If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
-    </p>`;
+      <br/>If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
+    </span>`;
 
   const html = renderTransactionalEmailHtml({
     kind: "password-reset",
+    headerSubtitle: "ACCOUNT",
     preheader: "Reset your One Eyrie password.",
-    heading: "Reset your password",
+    heading: "Reset Your Password",
     bodyHtml,
     cta: {
       label: "Reset Password",
@@ -77,7 +80,7 @@ export function buildPasswordResetEmail(
   });
 
   const text = [
-    "Reset your One Eyrie password",
+    "Reset Your Password",
     "",
     greeting.text,
     "",
@@ -89,7 +92,6 @@ export function buildPasswordResetEmail(
     "For your security, never share this email or reset link with anyone.",
     "If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.",
     "",
-    "Need Help?",
     "If you have questions about your account or this password reset, our team is happy to help.",
     EMAIL_SUPPORT_ADDRESS,
     "",

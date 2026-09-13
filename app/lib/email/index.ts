@@ -19,6 +19,13 @@ export {
   buildPasswordResetAcceptUrl,
   extractHashedToken,
 } from "@/app/lib/email/auth-link";
+export {
+  ONE_EYRIE_EMAIL,
+  paintEmail,
+  renderEmailDetailCard,
+  renderEmailParagraph,
+  renderOneEyrieEmailHtml,
+} from "@/app/lib/email/one-eyrie-email-shell";
 export { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
 export {
   INVITATION_EMAIL_SUBJECT,
@@ -33,7 +40,10 @@ export {
   type PasswordResetEmailContent,
   type PasswordResetEmailVariables,
 } from "@/app/lib/email/password-reset-email";
-export { dispatchPasswordResetEmail, resolveAuthUserForContactEmail } from "@/app/lib/email/dispatch-password-reset";
+export {
+  dispatchPasswordResetEmail,
+  resolveAuthUserForContactEmail,
+} from "@/app/lib/email/dispatch-password-reset";
 export { dispatchInvitationEmail } from "@/app/lib/email/dispatch-invitation-email";
 export { escapeHtml } from "@/app/lib/email/escape-html";
 export type {
@@ -41,4 +51,3 @@ export type {
   TransactionalEmailKind,
   TransactionalEmailLayoutInput,
 } from "@/app/lib/email/types";
-

@@ -1,5 +1,10 @@
 import { escapeHtml } from "@/app/lib/email/escape-html";
-import { EMAIL_SUPPORT_ADDRESS, EMAIL_THEME as T } from "@/app/lib/email/brand";
+import { EMAIL_SUPPORT_ADDRESS } from "@/app/lib/email/brand";
+import {
+  ONE_EYRIE_EMAIL as C,
+  renderEmailDetailCard,
+  renderEmailParagraph,
+} from "@/app/lib/email/one-eyrie-email-shell";
 import { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
 
 export const INVITATION_EMAIL_SUBJECT = "You're invited to join One Eyrie";
@@ -17,8 +22,8 @@ export type InvitationEmailVariables = {
   expiration_date?: string | null;
   current_year?: number;
   /**
-   * When true, include a short note that desktop is better for administrative
-   * setup (org-wide administrator invitations only).
+   * @deprecated No longer rendered in the email body.
+   * Kept so existing callers (org-admin invites) continue to compile.
    */
   recommendDesktop?: boolean;
 };
@@ -49,23 +54,9 @@ function expirationLabel(expirationDate?: string | null): string {
   return "7 days";
 }
 
-function accessLine(organizationName?: string | null): { html: string; text: string } {
-  const name = organizationName?.trim();
-  if (name) {
-    return {
-      html: `You&rsquo;ll be able to access <strong style="color:${T.text};">${escapeHtml(name)}</strong> and the properties assigned to you after creating your account.`,
-      text: `You'll be able to access ${name} and the properties assigned to you after creating your account.`,
-    };
-  }
-  return {
-    html: "You&rsquo;ll be able to access the organization and properties assigned to you after creating your account.",
-    text: "You'll be able to access the organization and properties assigned to you after creating your account.",
-  };
-}
-
 /**
  * Builds the branded invitation email (HTML + plain text + subject).
- * Safe for Resend / SMTP; layout is shared with future transactional emails.
+ * Uses the shared One Eyrie transactional shell (Item Found visual identity).
  */
 export function buildInvitationEmail(
   variables: InvitationEmailVariables
@@ -74,44 +65,50 @@ export function buildInvitationEmail(
   const acceptUrl = variables.accept_invitation_url.trim();
   const year = variables.current_year ?? new Date().getUTCFullYear();
   const greeting = greetingLine(variables.recipient_name);
-  const access = accessLine(variables.organization_name);
+  const orgName = variables.organization_name?.trim() || null;
   const expires = expirationLabel(variables.expiration_date);
   const expiresIsDate = Boolean(variables.expiration_date?.trim());
 
+  const orgCard = orgName
+    ? renderEmailDetailCard(
+        "Organization",
+        `<span style="color:${C.primary};">${escapeHtml(orgName)}</span>`
+      )
+    : "";
+
+  const accessHtml = orgName
+    ? `You&rsquo;ll receive access to <strong style="color:${C.primary};">${escapeHtml(orgName)}</strong> and the properties and features assigned to you after creating your account.`
+    : `You&rsquo;ll receive access to your assigned properties and features after creating your account.`;
+
+  const accessText = orgName
+    ? `You'll receive access to ${orgName} and the properties and features assigned to you after creating your account.`
+    : "You'll receive access to your assigned properties and features after creating your account.";
+
   const bodyHtml = `
-    <p style="margin:0 0 16px;">${greeting.html}</p>
-    <p style="margin:0 0 16px;">
-      <strong style="color:${T.text};">${escapeHtml(inviterName)}</strong>
-      has invited you to join
-      <strong style="color:${T.text};">One Eyrie</strong>,
-      the hotel operations platform designed to simplify hotel operations across one or multiple properties.
-    </p>
-    <p style="margin:0 0 16px;">
-      ${access.html}
-    </p>
-    <p style="margin:0${variables.recommendDesktop ? " 0 16px" : ""};">
-      After you accept, you&rsquo;ll choose a username and password to finish setting up your account.
-    </p>
-    ${
-      variables.recommendDesktop
-        ? `<p style="margin:0;font-size:14px;line-height:1.55;color:${T.textSubtle};">
-      For the full administrative experience, open this invitation on a computer. Mobile access is optimized for field operations.
-    </p>`
-        : ""
-    }`;
+    ${renderEmailParagraph(greeting.html, 12)}
+    ${renderEmailParagraph(
+      `<strong style="color:${C.primary};">${escapeHtml(inviterName)}</strong> has invited you to join <strong style="color:${C.primary};">One Eyrie</strong>.`,
+      18
+    )}
+    ${orgCard}
+    ${renderEmailParagraph(accessHtml, 12)}
+    ${renderEmailParagraph(
+      "After you accept, you&rsquo;ll choose a username and password to finish setting up your account.",
+      22
+    )}
+  `;
 
   const belowCtaHtml = `
-    <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${T.textSubtle};">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${C.secondary};">
       This invitation expires ${expiresIsDate ? `on ${escapeHtml(expires)}` : `in ${escapeHtml(expires)}`}.
-    </p>
-    <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:${T.textSubtle};">
-      If you weren&rsquo;t expecting this invitation, you can safely ignore this email.
-    </p>`;
+      <br/>If you weren&rsquo;t expecting this invitation, you can safely ignore this email.
+    </span>`;
 
   const html = renderTransactionalEmailHtml({
     kind: "invitation",
+    headerSubtitle: "ACCOUNT INVITATION",
     preheader: `${inviterName} invited you to join One Eyrie.`,
-    heading: "You're invited to One Eyrie",
+    heading: "You're Invited to One Eyrie",
     bodyHtml,
     cta: {
       label: "Accept Invitation",
@@ -125,21 +122,16 @@ export function buildInvitationEmail(
   });
 
   const text = [
-    "You're invited to One Eyrie",
+    "You're Invited to One Eyrie",
     "",
     greeting.text,
     "",
-    `${inviterName} has invited you to join One Eyrie, the hotel operations platform designed to simplify hotel operations across one or multiple properties.`,
+    `${inviterName} has invited you to join One Eyrie.`,
+    orgName ? `Organization: ${orgName}` : null,
     "",
-    access.text,
+    accessText,
     "",
     "After you accept, you'll choose a username and password to finish setting up your account.",
-    ...(variables.recommendDesktop
-      ? [
-          "",
-          "For the full administrative experience, open this invitation on a computer. Mobile access is optimized for field operations.",
-        ]
-      : []),
     "",
     `Accept Invitation: ${acceptUrl}`,
     "",
@@ -148,13 +140,14 @@ export function buildInvitationEmail(
       : `This invitation expires in ${expires}.`,
     "If you weren't expecting this invitation, you can safely ignore this email.",
     "",
-    "Need Help?",
     "If you have questions about your invitation, account setup, or onboarding, our team is happy to help.",
     EMAIL_SUPPORT_ADDRESS,
     "",
     `© ${year} One Eyrie`,
     "Hotel Operations Platform",
-  ].join("\n");
+  ]
+    .filter((line): line is string => line != null)
+    .join("\n");
 
   return {
     subject: INVITATION_EMAIL_SUBJECT,

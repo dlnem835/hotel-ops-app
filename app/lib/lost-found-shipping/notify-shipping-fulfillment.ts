@@ -4,7 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveAuthEmailConfig, resolveAppUrl } from "@/app/lib/email/auth-email-config";
 import { sendBrandedEmailViaResend } from "@/app/lib/email/send-branded-email";
 import { escapeHtml } from "@/app/lib/email/escape-html";
-import { EMAIL_THEME as T } from "@/app/lib/email/brand";
+import {
+  ONE_EYRIE_EMAIL as C,
+  renderEmailDetailCard,
+  renderEmailParagraph,
+} from "@/app/lib/email/one-eyrie-email-shell";
 import { renderTransactionalEmailHtml } from "@/app/lib/email/transactional-layout";
 import { displayCarrierServiceLabel } from "@/app/lib/lost-found-shipping/carrier-display";
 import { fetchPropertyShippingSettings } from "@/app/lib/lost-found-shipping/property-shipping-settings";
@@ -70,28 +74,32 @@ export async function sendGuestPaymentConfirmationEmail(input: {
     ? "Payment confirmed — your item is on the way"
     : "Payment confirmed";
   const bodyHtml = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${T.card}" style="width:100%;background-color:${T.card};">
-      <tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">${greeting}</td></tr>
-      <tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">
-        We received your payment${amountLabel ? ` of <strong style="color:${T.text} !important;">${escapeHtml(amountLabel)}</strong>` : ""} for return shipping of <strong style="color:${T.text} !important;">${escapeHtml(input.itemName)}</strong> from <strong style="color:${T.text} !important;">${escapeHtml(input.propertyName)}</strong>.
-      </td></tr>
-      ${
-        hasTracking
-          ? `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">
-              Tracking number: <strong style="color:${T.text} !important;">${escapeHtml(String(input.trackingNumber))}</strong>
-              ${carrierServiceLine ? `<br/>${carrierServiceLine}` : ""}
-            </td></tr>`
-          : `<tr><td bgcolor="${T.card}" style="padding:0 0 16px;background-color:${T.card};color:${T.textMuted} !important;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;">
-              Payment received — preparing shipping label. Use your secure link anytime to check status and tracking.
-            </td></tr>`
-      }
-    </table>
+    ${renderEmailParagraph(greeting, 12)}
+    ${renderEmailParagraph(
+      `We received your payment${amountLabel ? ` of <strong style="color:${C.primary};">${escapeHtml(amountLabel)}</strong>` : ""} for return shipping of <strong style="color:${C.primary};">${escapeHtml(input.itemName)}</strong> from <strong style="color:${C.primary};">${escapeHtml(input.propertyName)}</strong>.`,
+      16
+    )}
+    ${
+      hasTracking
+        ? renderEmailDetailCard(
+            "Tracking",
+            `<span style="color:${C.primary};">${escapeHtml(String(input.trackingNumber))}</span>${
+              carrierServiceLine
+                ? `<div style="margin-top:8px;font-size:14px;font-weight:600;color:${C.secondary};">${carrierServiceLine}</div>`
+                : ""
+            }`
+          )
+        : renderEmailParagraph(
+            "Payment received — preparing shipping label. Use your secure link anytime to check status and tracking.",
+            22
+          )
+    }
   `;
 
   const trackingLink = String(input.guestTrackingUrl || "").trim();
   const html = renderTransactionalEmailHtml({
     kind: "guest-shipping",
-    headerVariant: "text",
+    headerSubtitle: "LOST & FOUND",
     heading,
     preheader: hasTracking
       ? `Tracking ${input.trackingNumber}`
@@ -103,7 +111,8 @@ export async function sendGuestPaymentConfirmationEmail(input: {
           url: trackingLink,
         }
       : undefined,
-    supportMessage: `Questions? Contact the front desk at ${input.propertyName}.`,
+    supportMessage: `Questions? Contact the front desk at ${escapeHtml(input.propertyName)}.`,
+    showSupportEmail: false,
   });
 
   const text = [
@@ -179,34 +188,41 @@ export async function alertLabelCreationFailed(input: {
   const staffUrl = `${resolveAppUrl()}/lost-and-found`;
   const subject = `Payment received — label creation failed (${input.propertyName})`;
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      Stripe payment succeeded for <strong style="color:${T.text};">${escapeHtml(input.itemName)}</strong>
-      at <strong style="color:${T.text};">${escapeHtml(input.propertyName)}</strong>,
-      but Shippo label creation failed.
-    </p>
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      ${amountLabel ? `Amount: <strong style="color:${T.text};">${escapeHtml(amountLabel)}</strong><br/>` : ""}
-      Shipping request #${input.shippingRequestId}<br/>
-      Lost item #${input.lostItemId}<br/>
-      Guest: ${escapeHtml(input.guestEmail || "n/a")}
-    </p>
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      Provider error:<br/>
-      <strong style="color:${T.text};">${escapeHtml(input.errorMessage.slice(0, 500))}</strong>
-    </p>
-    <p style="margin:0;color:${T.textMuted};">
-      Open Lost &amp; Found and use <strong style="color:${T.text};">Retry Label Creation</strong>.
-      Do not charge the guest again.
-    </p>
+    ${renderEmailParagraph(
+      `Stripe payment succeeded for <strong style="color:${C.primary};">${escapeHtml(input.itemName)}</strong> at <strong style="color:${C.primary};">${escapeHtml(input.propertyName)}</strong>, but Shippo label creation failed.`,
+      16
+    )}
+    ${
+      amountLabel
+        ? renderEmailDetailCard(
+            "Amount",
+            `<span style="color:${C.primary};">${escapeHtml(amountLabel)}</span>`
+          )
+        : ""
+    }
+    ${renderEmailDetailCard(
+      "Guest",
+      `<span style="color:${C.primary};">${escapeHtml(input.guestEmail || "n/a")}</span>`
+    )}
+    ${renderEmailDetailCard(
+      "Provider Error",
+      `<span style="color:${C.primary};font-weight:600;">${escapeHtml(input.errorMessage.slice(0, 500))}</span>`
+    )}
+    ${renderEmailParagraph(
+      `Open Lost &amp; Found and use <strong style="color:${C.primary};">Retry Label Creation</strong>. Do not charge the guest again.`,
+      22
+    )}
   `;
   const html = renderTransactionalEmailHtml({
     kind: "guest-shipping",
+    headerSubtitle: "LOST & FOUND",
     heading: "Payment received — label creation failed",
     preheader: subject,
     bodyHtml,
     cta: { label: "Open Lost & Found", url: staffUrl },
     supportMessage:
       "One Eyrie will not re-charge the guest. Retry label purchase from the shipping summary.",
+    referenceHtml: `<span style="color:${C.muted};">Ref: shipping request #${input.shippingRequestId} · lost item #${input.lostItemId}</span>`,
   });
   const text = [
     subject,
@@ -317,47 +333,85 @@ export async function sendHotelLabelReadyEmail(input: {
 
   const staffUrl = `${resolveAppUrl()}/lost-and-found`;
   const subject = `Shipping label ready to print (${input.propertyName})`;
+  const carrierLabel = displayCarrierServiceLabel(input.carrier, "");
+  const serviceLabel = displayCarrierServiceLabel(input.service, "");
+  const carrierServiceValue =
+    carrierLabel && serviceLabel
+      ? `${carrierLabel} · ${serviceLabel}`
+      : carrierLabel || serviceLabel || "";
+
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      A return shipping label is ready for <strong style="color:${T.text};">${escapeHtml(input.itemName)}</strong>
-      at <strong style="color:${T.text};">${escapeHtml(input.propertyName)}</strong>.
-    </p>
-    <p style="margin:0 0 16px;color:${T.textMuted};">
-      ${input.trackingNumber ? `Tracking: <strong style="color:${T.text};">${escapeHtml(String(input.trackingNumber))}</strong><br/>` : ""}
-      ${input.carrier ? `Carrier: ${escapeHtml(String(input.carrier))}${input.service ? ` · ${escapeHtml(String(input.service))}` : ""}<br/>` : ""}
-      Shipping request #${input.shippingRequestId} · Lost item #${input.lostItemId}
-    </p>
-    <p style="margin:0;color:${T.textMuted};">
-      Open Lost &amp; Found and use <strong style="color:${T.text};">Print Label</strong>,
-      or open the secure PDF link below (expires in 7 days).
-    </p>
+    ${renderEmailParagraph(
+      "A return shipping label is ready to print for the item below.",
+      18
+    )}
+    ${renderEmailDetailCard(
+      "Item",
+      `<span style="color:${C.primary};">${escapeHtml(input.itemName)}</span>`
+    )}
+    ${renderEmailDetailCard(
+      "Property",
+      `<span style="color:${C.primary};">${escapeHtml(input.propertyName)}</span>`
+    )}
+    ${
+      input.trackingNumber
+        ? renderEmailDetailCard(
+            "Tracking Number",
+            `<span style="color:${C.primary};">${escapeHtml(String(input.trackingNumber))}</span>`
+          )
+        : ""
+    }
+    ${
+      carrierServiceValue
+        ? renderEmailDetailCard(
+            "Carrier / Service",
+            `<span style="color:${C.primary};">${escapeHtml(carrierServiceValue)}</span>`
+          )
+        : ""
+    }
+    ${renderEmailParagraph(
+      labelUrl
+        ? "Use the button below to open the secure printable label PDF, or open Lost &amp; Found and choose <strong style=\"color:" +
+          C.primary +
+          ';">Print Label</strong>.'
+        : "Open Lost &amp; Found and use <strong style=\"color:" +
+          C.primary +
+          ';">Print Label</strong>.',
+      22
+    )}
   `;
+
+  const belowCtaHtml = labelUrl
+    ? `<span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${C.secondary};">This printable label link expires in 7 days.</span>`
+    : undefined;
+
   const html = renderTransactionalEmailHtml({
     kind: "guest-shipping",
-    heading: "Printable shipping label ready",
+    headerSubtitle: "LOST & FOUND",
+    heading: "Shipping Label Ready",
     preheader: subject,
     bodyHtml,
     cta: labelUrl
-      ? { label: "Open printable label PDF", url: labelUrl }
+      ? { label: "Open Printable Label", url: labelUrl }
       : { label: "Open Lost & Found", url: staffUrl },
+    belowCtaHtml,
     supportMessage:
       "This label is for hotel staff only. Do not forward the PDF to the guest.",
+    referenceHtml: `<span style="color:${C.muted};">Ref: shipping request #${input.shippingRequestId} · lost item #${input.lostItemId}</span>`,
   });
   const text = [
-    subject,
+    "Shipping Label Ready",
     "",
     `Item: ${input.itemName}`,
     `Property: ${input.propertyName}`,
     input.trackingNumber ? `Tracking: ${input.trackingNumber}` : null,
-    input.carrier
-      ? `Carrier: ${input.carrier}${input.service ? ` · ${input.service}` : ""}`
-      : null,
-    `Shipping request #${input.shippingRequestId}`,
-    `Lost item #${input.lostItemId}`,
+    carrierServiceValue ? `Carrier / Service: ${carrierServiceValue}` : null,
     "",
     labelUrl || staffUrl,
+    labelUrl ? "This printable label link expires in 7 days." : null,
     "",
-    "Use Print Label in One Eyrie Lost & Found. Do not send the PDF to the guest.",
+    "This label is for hotel staff only. Do not forward the PDF to the guest.",
+    `Ref: shipping request #${input.shippingRequestId} · lost item #${input.lostItemId}`,
   ]
     .filter(Boolean)
     .join("\n");
