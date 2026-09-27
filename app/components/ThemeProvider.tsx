@@ -86,15 +86,11 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, [sessionResolved, lightModeAllowed]);
 
-  const setTheme = useCallback(
-    (next: OneEyrieTheme) => {
-      const effective = resolveEffectiveTheme(next, lightModeAllowed);
-      setThemeState(effective);
-      persistTheme(effective);
-      applyThemeToDocument(effective);
-    },
-    [lightModeAllowed]
-  );
+  const setTheme = useCallback((next: OneEyrieTheme) => {
+    setThemeState(next);
+    persistTheme(next);
+    applyThemeToDocument(next);
+  }, []);
 
   const value = useMemo(
     () => ({

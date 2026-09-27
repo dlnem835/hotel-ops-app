@@ -35,9 +35,9 @@ function areaLabel(tile: PmTile): string {
 
 function PmTileDetailLine({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ fontSize: "10px", lineHeight: 1.45 }}>
-      <div style={{ opacity: 0.78, fontWeight: 600, marginBottom: "1px" }}>{label}</div>
-      <div style={{ fontWeight: 700 }}>{value}</div>
+    <div className="maintenance-pm-tile-card__meta" style={{ fontSize: "10px", lineHeight: 1.45 }}>
+      <div className="maintenance-pm-tile-card__meta-label" style={{ opacity: 0.78, fontWeight: 600, marginBottom: "1px" }}>{label}</div>
+      <div className="maintenance-pm-tile-card__meta-value" style={{ fontWeight: 700 }}>{value}</div>
     </div>
   );
 }
@@ -165,6 +165,7 @@ export default function PmTileGrid({
           return (
             <span
               key={item.label}
+              className="maintenance-pm-legend-item"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -175,6 +176,7 @@ export default function PmTileGrid({
               }}
             >
               <span
+                className={`maintenance-pm-legend-swatch maintenance-pm-legend-swatch--${item.urgency}`}
                 style={{
                   width: "12px",
                   height: "12px",
@@ -198,7 +200,7 @@ export default function PmTileGrid({
 
         <div className="maintenance-pm-tile-grid-carousel__body">
           {totalCount === 0 ? (
-            <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "20px 4px" }}>
+            <div className="maintenance-pm-tile-empty" style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "20px 4px" }}>
               {emptyMessage}
             </div>
           ) : (
@@ -216,7 +218,7 @@ export default function PmTileGrid({
                   <button
                     key={tile.key}
                     type="button"
-                    className="maintenance-pm-tile-card"
+                    className={`maintenance-pm-tile-card maintenance-pm-tile-card--${tile.urgency}`}
                     onClick={() => onOpenPm(tile)}
                     style={{
                       textAlign: "left",
@@ -241,13 +243,13 @@ export default function PmTileGrid({
                       event.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: "13px", lineHeight: 1.35 }}>
+                    <div className="maintenance-pm-tile-card__title" style={{ fontWeight: 800, fontSize: "13px", lineHeight: 1.35 }}>
                       {tile.templateName}
                     </div>
-                    <div style={{ fontSize: "11px", opacity: 0.92, lineHeight: 1.35 }}>
+                    <div className="maintenance-pm-tile-card__area" style={{ fontSize: "11px", opacity: 0.92, lineHeight: 1.35 }}>
                       {areaLabel(tile)}
                     </div>
-                    <div style={{ fontSize: "11px", fontWeight: 700 }}>{tile.dueStatusLine}</div>
+                    <div className="maintenance-pm-tile-card__status" style={{ fontSize: "11px", fontWeight: 700 }}>{tile.dueStatusLine}</div>
                     <PmTileProgressPanel tile={tile} />
                   </button>
                 );

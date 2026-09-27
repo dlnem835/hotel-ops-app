@@ -1,0 +1,394 @@
+/**
+ * Shared Light Mode design system — approved Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ * Dashboard route/page selectors are excluded so the frozen Dashboard is unchanged.
+ */
+
+/* ── App shell (non-Dashboard) — defeat inline APP_SHELL #111 ── */
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) {
+  background: var(--oe-lm-page) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-main-content {
+  background: var(--oe-lm-page) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-sidebar {
+  background: var(--oe-lm-card) !important;
+  border-right-color: var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--eyrie {
+  color: var(--oe-gold-primary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--active) {
+  background: rgba(208, 160, 18, 0.12) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item--active,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item--active:hover,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item--active .one-eyrie-nav-item__label,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-nav-item--active .one-eyrie-nav-item__icon {
+  background: var(--oe-gold-wash) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-page-header h1 {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-page-header p {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-user-profile-menu__item--selected,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-user-profile-menu__check {
+  color: var(--oe-gold-text) !important;
+}
+
+/* ── Shared fields / search / dates / settings inputs ── */
+
+html[data-theme="light"] .one-eyrie-field,
+html[data-theme="light"] .work-order-modal__input,
+html[data-theme="light"] .work-order-modal__select,
+html[data-theme="light"] .work-order-modal__textarea,
+html[data-theme="light"] .start-inspection-form__select,
+html[data-theme="light"] .one-eyrie-settings-filter-select,
+html[data-theme="light"] .one-eyrie-date-input,
+html[data-theme="light"] .one-eyrie-date-picker__input,
+html[data-theme="light"] .one-eyrie-label-field,
+html[data-theme="light"] .one-eyrie-inspection-session-field,
+html[data-theme="light"] .one-eyrie-maintenance-field,
+html[data-theme="light"] .one-eyrie-failed-item-field,
+html[data-theme="light"] .one-eyrie-room-grid-search,
+html[data-theme="light"] .one-eyrie-pm-grid-search,
+html[data-theme="light"] .one-eyrie-pass-on-search,
+html[data-theme="light"] .one-eyrie-settings-search,
+html[data-theme="light"] .reports-search-wrap__input,
+html[data-theme="light"] .reports-pm-modal__field,
+html[data-theme="light"] .one-eyrie-modal input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="radio"]),
+html[data-theme="light"] .one-eyrie-modal select,
+html[data-theme="light"] .one-eyrie-modal textarea,
+html[data-theme="light"] .one-eyrie-settings-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
+html[data-theme="light"] .one-eyrie-settings-page select,
+html[data-theme="light"] .one-eyrie-settings-page textarea {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border: 1px solid var(--oe-lm-border) !important;
+  box-shadow: 0 1px 2px var(--oe-shadow) !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .one-eyrie-field::placeholder,
+html[data-theme="light"] .work-order-modal__input::placeholder,
+html[data-theme="light"] .work-order-modal__textarea::placeholder,
+html[data-theme="light"] .one-eyrie-label-field::placeholder,
+html[data-theme="light"] .one-eyrie-pass-on-search::placeholder,
+html[data-theme="light"] .one-eyrie-room-grid-search::placeholder,
+html[data-theme="light"] .one-eyrie-pm-grid-search::placeholder,
+html[data-theme="light"] .one-eyrie-settings-search::placeholder,
+html[data-theme="light"] .reports-search-wrap__input::placeholder,
+html[data-theme="light"] .one-eyrie-modal input::placeholder,
+html[data-theme="light"] .one-eyrie-modal textarea::placeholder,
+html[data-theme="light"] .one-eyrie-settings-page input::placeholder,
+html[data-theme="light"] .one-eyrie-settings-page textarea::placeholder {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-field:hover,
+html[data-theme="light"] .work-order-modal__input:hover,
+html[data-theme="light"] .work-order-modal__select:hover,
+html[data-theme="light"] .work-order-modal__textarea:hover,
+html[data-theme="light"] .start-inspection-form__select:hover,
+html[data-theme="light"] .one-eyrie-settings-filter-select:hover,
+html[data-theme="light"] .one-eyrie-date-input:hover,
+html[data-theme="light"] .one-eyrie-date-picker__input:hover,
+html[data-theme="light"] .one-eyrie-inspection-session-field:hover,
+html[data-theme="light"] .one-eyrie-maintenance-field:hover,
+html[data-theme="light"] .one-eyrie-failed-item-field:hover,
+html[data-theme="light"] .one-eyrie-room-grid-search:hover,
+html[data-theme="light"] .one-eyrie-pm-grid-search:hover,
+html[data-theme="light"] .one-eyrie-pass-on-search:hover,
+html[data-theme="light"] .one-eyrie-settings-search:hover,
+html[data-theme="light"] .reports-search-wrap__input:hover,
+html[data-theme="light"] .one-eyrie-modal input:hover,
+html[data-theme="light"] .one-eyrie-modal select:hover,
+html[data-theme="light"] .one-eyrie-modal textarea:hover,
+html[data-theme="light"] .one-eyrie-settings-page input:not([type="checkbox"]):hover,
+html[data-theme="light"] .one-eyrie-settings-page select:hover,
+html[data-theme="light"] .one-eyrie-settings-page textarea:hover {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-field:focus,
+html[data-theme="light"] .one-eyrie-field:focus-visible,
+html[data-theme="light"] .work-order-modal__input:focus,
+html[data-theme="light"] .work-order-modal__select:focus,
+html[data-theme="light"] .work-order-modal__textarea:focus,
+html[data-theme="light"] .one-eyrie-date-input:focus,
+html[data-theme="light"] .one-eyrie-date-picker__input:focus,
+html[data-theme="light"] .one-eyrie-inspection-session-field:focus,
+html[data-theme="light"] .one-eyrie-maintenance-field:focus,
+html[data-theme="light"] .one-eyrie-settings-search:focus,
+html[data-theme="light"] .reports-search-wrap__input:focus,
+html[data-theme="light"] .one-eyrie-modal input:focus,
+html[data-theme="light"] .one-eyrie-modal select:focus,
+html[data-theme="light"] .one-eyrie-modal textarea:focus,
+html[data-theme="light"] .one-eyrie-settings-page input:focus,
+html[data-theme="light"] .one-eyrie-settings-page select:focus,
+html[data-theme="light"] .one-eyrie-settings-page textarea:focus {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: 0 0 0 3px rgba(201, 151, 22, 0.14) !important;
+  outline: none;
+}
+
+/* ── Filters / menus ── */
+
+html[data-theme="light"] .one-eyrie-filter-btn {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-filter-btn:hover,
+html[data-theme="light"] .one-eyrie-filter-btn:focus,
+html[data-theme="light"] .one-eyrie-filter-btn[aria-expanded="true"] {
+  border-color: var(--oe-gold-hover) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .lnf-filter-menu,
+html[data-theme="light"] .one-eyrie-user-profile-menu__dropdown {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  box-shadow: 0 12px 32px var(--oe-shadow) !important;
+}
+
+html[data-theme="light"] .lnf-filter-menu__heading,
+html[data-theme="light"] .one-eyrie-menu-item {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .lnf-filter-menu__divider {
+  background: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-menu-item:hover {
+  background: var(--oe-lm-tile-hover) !important;
+  color: var(--oe-gold-text) !important;
+}
+
+/* ── Modals ── */
+
+html[data-theme="light"] .one-eyrie-modal {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
+  box-shadow: 0 12px 40px var(--oe-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-modal-overlay {
+  background: rgba(17, 24, 39, 0.45) !important;
+}
+
+html[data-theme="light"] .one-eyrie-modal__title,
+html[data-theme="light"] .one-eyrie-modal h2,
+html[data-theme="light"] .one-eyrie-modal h3 {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-modal__close,
+html[data-theme="light"] .one-eyrie-modal button[aria-label="Close"] {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-modal__footer {
+  border-top-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .work-order-modal.one-eyrie-modal,
+html[data-theme="light"] .start-inspection-modal,
+html[data-theme="light"] .reports-pm-modal,
+html[data-theme="light"] .reports-lnf-modal,
+html[data-theme="light"] .reports-schedule-modal {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+/* ── Tables / list rows (not Dashboard) ── */
+
+html[data-theme="light"] .one-eyrie-table-panel {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-table,
+html[data-theme="light"] .one-eyrie-lnf-table,
+html[data-theme="light"] .one-eyrie-table th,
+html[data-theme="light"] .one-eyrie-table td {
+  color: var(--oe-lm-ink) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-table th {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-list-row {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-list-row:hover {
+  background: var(--oe-lm-tile-hover) !important;
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card:hover {
+  background: var(--oe-lm-tile-hover) !important;
+  border-color: var(--oe-gold-hover) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card__title {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card__location,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card__meta,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card__description {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .dashboard-list-card__chevron {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .work-order-priority-badge--normal {
+  color: var(--oe-lm-muted) !important;
+  background: var(--oe-lm-tile) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .work-order-priority-badge--important {
+  color: var(--oe-lm-important-text) !important;
+  background: var(--oe-lm-important-bg) !important;
+  border: 1px solid var(--oe-lm-important-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .work-order-priority-badge--urgent {
+  color: var(--oe-lm-urgent-text) !important;
+  background: var(--oe-lm-urgent-bg) !important;
+  border: 1px solid var(--oe-lm-urgent-border) !important;
+}
+
+/* ── Buttons ── */
+
+html[data-theme="light"] .one-eyrie-btn--start-work {
+  background: var(--oe-lm-forest-bg) !important;
+  border-color: var(--oe-lm-forest-border) !important;
+  color: var(--oe-lm-forest-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--start-work:hover:not(:disabled) {
+  background: #e3f3ea !important;
+  border-color: #2f5a40 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--gold-outline {
+  background: transparent !important;
+  border-color: var(--oe-gold-border) !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--gold-outline:hover:not(:disabled) {
+  background: rgba(208, 160, 18, 0.1) !important;
+  border-color: var(--oe-gold-hover) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--gold-filled {
+  background: var(--oe-gold-primary) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--gold-filled:hover:not(:disabled) {
+  background: var(--oe-gold-hover) !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn--neutral {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-btn:disabled,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) button:disabled,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-field:disabled {
+  color: var(--oe-lm-disabled) !important;
+  opacity: 0.65;
+}
+
+/* ── Empty / loading / timestamps ── */
+
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .one-eyrie-updated-timestamp {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .reports-empty-tab,
+html[data-theme="light"] .maintenance-dashboard-loading,
+html[data-theme="light"] .lnf-empty-text,
+html[data-theme="light"] .admin-portal__empty-state,
+html[data-theme="light"] .admin-portal__loading,
+html[data-theme="light"] .one-eyrie-app-shell:not(.one-eyrie-dashboard-route) .oe-lm-secondary-text {
+  color: var(--oe-lm-secondary) !important;
+}
+
+/* ── Calendar / date chrome ── */
+
+html[data-theme="light"] .one-eyrie-pm-workload-calendar,
+html[data-theme="light"] .one-eyrie-date-picker {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .pass-on-search-wrap__icon,
+html[data-theme="light"] .reports-search-wrap__icon,
+html[data-theme="light"] .lnf-search-wrap svg {
+  color: var(--oe-lm-secondary) !important;
+}

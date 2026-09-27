@@ -1,0 +1,42 @@
+/**
+ * Inspections Light Mode — shared Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ */
+
+html[data-theme="light"] .one-eyrie-inspections-page,
+html[data-theme="light"] main.one-eyrie-inspections-route {
+  background: var(--oe-lm-page) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mobile-page-title,
+html[data-theme="light"] .one-eyrie-inspections-route .one-eyrie-page-header h1 {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-guidance-card,
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mobile-dashboard-grid > div,
+html[data-theme="light"] .one-eyrie-inspections-page .one-eyrie-split-grid > div {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .inspections-mtd-month-selector,
+html[data-theme="light"] .start-inspection-modal,
+html[data-theme="light"] .start-inspection-form {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page button[data-active="true"] {
+  background: var(--oe-gold-wash) !important;
+  color: var(--oe-lm-ink) !important;
+  border-color: var(--oe-gold-border) !important;
+}

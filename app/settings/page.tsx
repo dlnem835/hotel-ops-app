@@ -36,6 +36,7 @@ import {
   Building2,
   ChevronRight,
   ClipboardCheck,
+  Monitor,
   Package,
   Pencil,
   Plus,
@@ -47,6 +48,8 @@ import {
 } from "lucide-react";
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
+import PreferredInterfaceSection from "./components/PreferredInterfaceSection";
+import "./settings-light-theme.css";
 import PropertyShippingSettingsPanel from "./components/PropertyShippingSettingsPanel";
 import RoomsAreasSection from "./components/RoomsAreasSection";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
@@ -69,6 +72,7 @@ const supabase = createClient(
 
 type SectionId =
   | "home"
+  | "preferredInterface"
   | "team"
   | "roomsAreas"
   | "templates"
@@ -127,6 +131,12 @@ useEffect(() => {
 
 
   const settingsCards = [
+    {
+      id: "preferredInterface" as SectionId,
+      title: "Preferred Interface",
+      subtitle: "Choose Dark or Light theme. Dark is the default.",
+      icon: <Monitor size={26} />,
+    },
     {
       id: "team" as SectionId,
       title: "Team Members",
@@ -630,6 +640,7 @@ async function saveItem() {
               <button
                 key={card.id}
                 type="button"
+                className="one-eyrie-settings-home-card"
                 style={settingsCard}
                 onClick={() => {
                   setSearch("");
@@ -638,7 +649,7 @@ async function saveItem() {
                 onMouseEnter={settingsCardHoverHandlers().onMouseEnter}
                 onMouseLeave={settingsCardHoverHandlers().onMouseLeave}
               >
-                <div style={cardIcon}>{card.icon}</div>
+                <div className="one-eyrie-settings-home-card__icon" style={cardIcon}>{card.icon}</div>
                 <div style={{ flex: 1 }}>
                   <div style={cardTitle}>{card.title}</div>
                   <div style={cardSubtitle}>{card.subtitle}</div>
@@ -668,7 +679,9 @@ async function saveItem() {
               </div>
             </div>
 
-            {activeSection === "roomsAreas" ? (
+            {activeSection === "preferredInterface" ? (
+              <PreferredInterfaceSection panelStyle={sectionPanel} />
+            ) : activeSection === "roomsAreas" ? (
               <RoomsAreasSection
                 styles={{
                   sectionPanel,
@@ -750,7 +763,7 @@ async function saveItem() {
                 }}
               />
             ) : activeSection === "shipping" ? (
-              <div style={sectionPanel}>
+              <div className="one-eyrie-settings-section-panel" style={sectionPanel}>
                 <PropertyShippingSettingsPanel inputStyle={input} />
               </div>
             ) : (

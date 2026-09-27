@@ -25,6 +25,7 @@ import {
   AdminStatusBadge,
 } from "@/app/components/administration";
 import "@/app/admin/admin.css";
+import "@/app/settings/settings-light-theme.css";
 
 const ORG_ADMIN_BASE_PATH = "/api/org-admin";
 

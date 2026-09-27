@@ -26,6 +26,7 @@ import {
 } from "@/app/lib/lost-found-shipping/status";
 import CorrectShipmentStatusModal from "@/app/lost-and-found/components/CorrectShipmentStatusModal";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
+import "./lost-and-found-light-theme.css";
 import {
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
   ONE_EYRIE_MODAL_BOX,
@@ -441,7 +442,7 @@ setTeamMembers(allTeamMembers || []);
           : null;
 
   return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-lost-found-route`}>
       <OneEyrieSidebar active="Lost & Found" />
 
       <section style={MAIN_CONTENT} className={`${MAIN_CONTENT_CLASS} one-eyrie-lost-found-page`}>

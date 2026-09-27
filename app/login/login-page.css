@@ -1,0 +1,81 @@
+/* Login card — kept in a page-local stylesheet so the auth rules
+   cannot be dropped from the shared shell CSS chunk. */
+
+.one-eyrie-auth-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111111;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 20px 16px;
+}
+
+.one-eyrie-auth-card {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+  background: #211f1b;
+  border: 1px solid #c8a96a;
+  border-radius: 18px;
+  padding: 32px;
+}
+
+.one-eyrie-auth-card__eyebrow {
+  color: #c8a96a;
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.one-eyrie-auth-field {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.one-eyrie-auth-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #c8a96a;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.one-eyrie-auth-footer {
+  margin-top: 16px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.one-eyrie-auth-link {
+  color: #c8a96a;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.one-eyrie-auth-notice {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #c8a96a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.one-eyrie-auth-notice--debug {
+  border-color: rgba(200, 169, 106, 0.5);
+  background: rgba(0, 0, 0, 0.25);
+  color: #f7f5f1;
+  font-size: 13px;
+}

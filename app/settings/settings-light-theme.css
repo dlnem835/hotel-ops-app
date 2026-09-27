@@ -1,0 +1,63 @@
+/**
+ * Settings + Admin Portal Light Mode — shared Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ */
+
+html[data-theme="light"] .one-eyrie-settings-page {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page h1,
+html[data-theme="light"] .one-eyrie-settings-page h2,
+html[data-theme="light"] .one-eyrie-settings-home-card {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-home-card {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border) !important;
+  box-shadow: 0 1px 3px var(--oe-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-home-card:hover {
+  background: var(--oe-lm-tile-hover) !important;
+  border-color: var(--oe-gold-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-home-card__icon {
+  background: var(--oe-lm-tile) !important;
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-section-panel {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid,
+html[data-theme="light"] .one-eyrie-settings-page table {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page th {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page td {
+  color: var(--oe-lm-charcoal) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(21, 21, 21)"],
+html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(48, 45, 40)"],
+html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(33, 31, 27)"] {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(201, 201, 201)"],
+html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(229, 231, 235)"] {
+  color: var(--oe-lm-secondary) !important;
+}

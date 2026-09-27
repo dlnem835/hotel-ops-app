@@ -10,7 +10,7 @@ import WorkOrderModal, {
   type WorkOrderModalInitialValues,
 } from "../../components/WorkOrderModal";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import {
   GOLD_FILLED_BUTTON,
@@ -35,6 +35,7 @@ import {
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
 import "../../maintenance-responsive.css";
+import "../../maintenance-light-theme.css";
 import "@/app/inspections/inspections-responsive.css";
 
 const supabase = createClient(
@@ -379,9 +380,13 @@ export default function PmProgramPage() {
     : APP_SHELL;
 
   return (
-    <main style={pageStyle}>
+    <main
+      className={fromMobile ? undefined : `${APP_SHELL_CLASS} one-eyrie-maintenance-route`}
+      style={pageStyle}
+    >
       {!fromMobile ? <OneEyrieSidebar active="Maintenance" /> : null}
       <section
+        className={fromMobile ? undefined : "one-eyrie-maintenance-page"}
         style={
           fromMobile
             ? { padding: "20px 16px 36px" }

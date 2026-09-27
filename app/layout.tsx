@@ -11,6 +11,7 @@ import ThemeProvider from "./components/ThemeProvider";
 import "./globals.css";
 import "./one-eyrie-shell.css";
 import "./one-eyrie-themes.css";
+import "./one-eyrie-light-system.css";
 import "./one-eyrie-tenant-sidebar.css";
 import "./components/one-eyrie-modal.css";
 import "./one-eyrie-desktop-responsive.css";

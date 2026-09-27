@@ -29,7 +29,9 @@ function KpiTile({
   return (
     <Link
       href={withKpiSession(href)}
-      className="dashboard-clickable-card"
+      className={`dashboard-clickable-card dashboard-kpi-tile${
+        hasValue ? " dashboard-kpi-tile--attention" : " dashboard-kpi-tile--quiet"
+      }`}
       style={{
         display: "block",
         padding: "14px 12px",

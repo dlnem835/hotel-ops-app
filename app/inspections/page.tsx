@@ -32,6 +32,7 @@ import RoomHistoryDrawer from "./components/RoomHistoryDrawer";
 import InspectionMtdMonthSelector from "./components/InspectionMtdMonthSelector";
 import { formatMonthYearLabel } from "./lib/period-utils";
 import "./inspections-responsive.css";
+import "./inspections-light-theme.css";
 import "./components/start-inspection-modal.css";
 import "./components/inspections-mtd-month-selector.css";
 import { templateMatchesDashboard } from "./lib/program-map";
@@ -333,11 +334,11 @@ export default function InspectionsPage() {
       : PERIOD_LABELS[period];
 
   return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-inspections-route`}>
       <OneEyrieSidebar active="Inspections" />
 
       <section
-        className={`inspections-mobile-page-content ${MAIN_CONTENT_CLASS}`}
+        className={`inspections-mobile-page-content ${MAIN_CONTENT_CLASS} one-eyrie-inspections-page`}
         style={MAIN_CONTENT}
       >
         <OneEyriePageHeader

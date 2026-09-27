@@ -24,21 +24,48 @@ html:not([data-theme]) {
 html[data-theme="light"] {
   color-scheme: light;
 
-  /* Approved light shell: white main + warm off-white sidebar (all desktop tabs) */
+  /* Approved Dashboard Light Mode — shared design-system tokens.
+     Do not invent per-page whites, grays, or golds. */
+  --oe-lm-page: #f8f9fa;
+  --oe-lm-card: #ffffff;
+  --oe-lm-tile: #eceef1;
+  --oe-lm-tile-hover: #e4e6ea;
+  --oe-lm-border: #e5e7eb;
+  --oe-lm-border-strong: #d1d5db;
+  --oe-lm-ink: #111111;
+  --oe-lm-charcoal: #1a1a1a;
+  --oe-lm-secondary: #3f434c;
+  --oe-lm-muted: #52525b;
+  --oe-lm-disabled: #8b8f98;
+  --oe-lm-forest-bg: #e7f6ee;
+  --oe-lm-forest-border: #9ec9b0;
+  --oe-lm-forest-text: #1f4d34;
+  --oe-lm-urgent-bg: #f8eaea;
+  --oe-lm-urgent-border: #c98989;
+  --oe-lm-urgent-text: #7a2e2e;
+  --oe-lm-important-bg: #f7f1de;
+  --oe-lm-important-border: #c9a24a;
+  --oe-lm-important-text: #7d5f0a;
+
   --oe-bg-main: #ffffff;
-  --oe-bg-sidebar: #f7f5f1;
-  --oe-bg-app: var(--oe-bg-main);
-  --oe-bg-surface: #ffffff;
-  --oe-bg-elevated: #f1eee8;
-  --oe-bg-card: #ffffff;
-  --oe-text-primary: #2c2a26;
-  --oe-text-secondary: #4a4741;
-  --oe-text-muted: #6b6760;
-  --oe-border: #e4dfd6;
-  --oe-border-subtle: #ece7de;
+  --oe-bg-sidebar: var(--oe-lm-card);
+  --oe-bg-app: var(--oe-lm-page);
+  --oe-bg-surface: var(--oe-lm-card);
+  --oe-bg-elevated: var(--oe-lm-tile);
+  --oe-bg-card: var(--oe-lm-card);
+  --oe-text-primary: var(--oe-lm-ink);
+  --oe-text-secondary: var(--oe-lm-charcoal);
+  --oe-text-muted: var(--oe-lm-muted);
+  --oe-border: var(--oe-lm-border);
+  --oe-border-subtle: var(--oe-lm-border-strong);
   --oe-gold: #c8a96a;
   --oe-gold-soft: #b8944f;
-  --oe-shadow: rgba(44, 42, 38, 0.08);
+  --oe-gold-primary: #d0a012;
+  --oe-gold-hover: #d4a514;
+  --oe-gold-border: #c99716;
+  --oe-gold-text: #7d5f0a;
+  --oe-gold-wash: #f3e4a3;
+  --oe-shadow: rgba(17, 24, 39, 0.08);
 }
 
 body {

@@ -130,6 +130,7 @@ export default function DashboardWorkOrdersSection({
         </div>
 
         <WorkOrderMetricCards
+          className="dashboard-wo-metrics"
           openWorkOrders={previewOpenCount}
           workOrders={previewWorkOrders}
         />
@@ -144,6 +145,7 @@ export default function DashboardWorkOrdersSection({
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <Link
               href="/maintenance"
+              className="dashboard-view-all-link"
               style={{
                 color: ONE_EYRIE.gold,
                 fontSize: "13px",

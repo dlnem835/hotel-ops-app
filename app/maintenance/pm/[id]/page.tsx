@@ -13,7 +13,7 @@ import WorkOrderModal, {
 } from "../../components/WorkOrderModal";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
-import { APP_SHELL, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
+import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { PmChecklist, PmStepOutcome, PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { PmOccurrenceResponses } from "../../lib/maintenance-types";
 import {
@@ -33,6 +33,7 @@ import {
 } from "@/app/settings/lib/settings-ui-interactions";
 import "@/app/inspections/inspections-responsive.css";
 import "../../maintenance-responsive.css";
+import "../../maintenance-light-theme.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -293,7 +294,11 @@ export default function PmSessionPage() {
 
   return (
     <main
-      className={isMobileSession ? "maintenance-pm-session--mobile" : undefined}
+      className={
+        isMobileSession
+          ? "maintenance-pm-session--mobile"
+          : `${APP_SHELL_CLASS} one-eyrie-maintenance-route`
+      }
       style={
         isMobileSession
           ? {

@@ -7,56 +7,64 @@
 /* ── Design tokens (maintenance page) ── */
 
 html[data-theme="light"] .one-eyrie-maintenance-page {
-  --mnt-lm-sidebar-bg: var(--oe-bg-sidebar, #f7f5f1);
-  --mnt-lm-surface: #ffffff;
-  --mnt-lm-action-hover: #f1f3f5;
-  --mnt-lm-pass-on-row: #e8eaed;
-  --mnt-lm-pass-on-row-hover: #dfe2e6;
-  --mnt-lm-slate-panel: #545b69;
-  --mnt-lm-slate-panel-hover: #5e6573;
-  --mnt-lm-border: #e4dfd6;
-  --mnt-lm-text: #2c2a26;
-  --mnt-lm-text-muted: #9ca3af;
-  --mnt-lm-text-muted-soft: #c2c6ce;
-  --mnt-lm-row-text-muted: #7a7670;
-  --mnt-lm-text-subtle: #4a4741;
-  --mnt-lm-gold: #c8a96a;
-  --mnt-lm-shadow: rgba(44, 42, 38, 0.08);
-  --mnt-lm-shadow-hover: rgba(44, 42, 38, 0.12);
-  --mnt-lm-hover-border: rgba(200, 169, 106, 0.55);
-  --mnt-lm-forest-border: #3d6b4f;
-  --mnt-lm-forest-text: #b8d4c4;
-  --mnt-lm-forest-bg: #1c3428;
-  --mnt-lm-gold-status: #c8a96a;
-  --mnt-lm-wo-important-text: #8a6b35;
-  --mnt-lm-wo-important-border: #b8944f;
-  --mnt-lm-wo-urgent-text: #7a2e2e;
-  --mnt-lm-wo-urgent-border: #8b5252;
-  --mnt-lm-urgent-text: #c9a8a8;
-  --mnt-lm-urgent-border: #8b5252;
-  --mnt-lm-normal-wo-text: #9ca3af;
-  --mnt-lm-normal-wo-bg: rgba(20, 20, 20, 0.72);
-  --mnt-lm-normal-wo-border: rgba(61, 107, 79, 0.48);
-  --mnt-lm-overdue-text: #7a2e2e;
-  --mnt-lm-overdue-gold: #8a6b35;
+  --mnt-lm-sidebar-bg: var(--oe-lm-card);
+  --mnt-lm-page: var(--oe-lm-page);
+  --mnt-lm-surface: var(--oe-lm-card);
+  --mnt-lm-tile: var(--oe-lm-tile);
+  --mnt-lm-tile-hover: var(--oe-lm-tile-hover);
+  --mnt-lm-action-hover: var(--oe-lm-tile-hover);
+  --mnt-lm-pass-on-row: var(--oe-lm-tile);
+  --mnt-lm-pass-on-row-hover: var(--oe-lm-tile-hover);
+  --mnt-lm-slate-panel: var(--oe-lm-card);
+  --mnt-lm-slate-panel-hover: var(--oe-lm-tile-hover);
+  --mnt-lm-border: var(--oe-lm-border);
+  --mnt-lm-border-strong: var(--oe-lm-border-strong);
+  --mnt-lm-text: var(--oe-lm-ink);
+  --mnt-lm-text-muted: var(--oe-lm-secondary);
+  --mnt-lm-text-muted-soft: var(--oe-lm-secondary);
+  --mnt-lm-row-text-muted: var(--oe-lm-secondary);
+  --mnt-lm-text-subtle: var(--oe-lm-charcoal);
+  --mnt-lm-gold: var(--oe-gold-text);
+  --mnt-lm-gold-fill: var(--oe-gold-primary);
+  --mnt-lm-gold-border: var(--oe-gold-border);
+  --mnt-lm-gold-hover: var(--oe-gold-hover);
+  --mnt-lm-gold-wash: var(--oe-gold-wash);
+  --mnt-lm-shadow: var(--oe-shadow);
+  --mnt-lm-shadow-hover: var(--oe-shadow);
+  --mnt-lm-hover-border: var(--oe-gold-border);
+  --mnt-lm-forest-border: var(--oe-lm-forest-border);
+  --mnt-lm-forest-text: var(--oe-lm-forest-text);
+  --mnt-lm-forest-bg: var(--oe-lm-forest-bg);
+  --mnt-lm-gold-status: var(--oe-gold-text);
+  --mnt-lm-wo-important-text: var(--oe-lm-important-text);
+  --mnt-lm-wo-important-border: var(--oe-lm-important-border);
+  --mnt-lm-wo-urgent-text: var(--oe-lm-urgent-text);
+  --mnt-lm-wo-urgent-border: var(--oe-lm-urgent-border);
+  --mnt-lm-urgent-text: var(--oe-lm-urgent-text);
+  --mnt-lm-urgent-border: var(--oe-lm-urgent-border);
+  --mnt-lm-urgent-bg: var(--oe-lm-urgent-bg);
+  --mnt-lm-normal-wo-text: var(--oe-lm-charcoal);
+  --mnt-lm-normal-wo-bg: var(--oe-lm-tile);
+  --mnt-lm-normal-wo-border: var(--oe-lm-border-strong);
+  --mnt-lm-overdue-text: var(--oe-lm-urgent-text);
+  --mnt-lm-overdue-gold: var(--oe-gold-text);
+  background: var(--oe-lm-page) !important;
 }
 
 /* ── Sidebar wordmark + nav (Dashboard parity) ── */
 
 html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
-  color: #000000 !important;
+  color: var(--oe-lm-ink) !important;
 }
 
 html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--eyrie {
-  color: #c8a96a !important;
-  margin-top: 2px;
-  margin-left: 0.4em;
+  color: var(--oe-gold-primary) !important;
 }
 
 html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active,
 html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active .one-eyrie-nav-item__label,
 html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-nav-item--active .one-eyrie-nav-item__icon {
-  color: #000000 !important;
+  color: var(--oe-lm-ink) !important;
 }
 
 /* ── Page header + loading ── */
@@ -83,38 +91,79 @@ html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-section-header
   color: var(--mnt-lm-gold) !important;
 }
 
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-section-header__divider {
+  background: linear-gradient(
+    90deg,
+    rgba(201, 151, 22, 0.48) 0%,
+    rgba(201, 151, 22, 0.14) 55%,
+    rgba(201, 151, 22, 0.04) 100%
+  ) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .one-eyrie-btn--start-work,
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-btn--start-work {
+  background: var(--mnt-lm-forest-bg) !important;
+  border-color: var(--mnt-lm-forest-border) !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .one-eyrie-btn--start-work:hover:not(:disabled),
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-btn--start-work:hover:not(:disabled) {
+  background: #e3f3ea !important;
+  border-color: #2f5a40 !important;
+  color: #0f2418 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 /* ── KPI period filters ── */
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button {
-  background: transparent !important;
+  background: var(--mnt-lm-surface) !important;
   color: var(--mnt-lm-text) !important;
-  border: 1px solid var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+  border: 1px solid var(--mnt-lm-border-strong) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button[data-active="true"] {
-  background: var(--mnt-lm-gold) !important;
+  background: var(--mnt-lm-gold-fill) !important;
   color: #111111 !important;
-  border-color: var(--mnt-lm-gold) !important;
+  border-color: var(--mnt-lm-gold-border) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button:hover:not([data-active="true"]) {
-  border-color: var(--mnt-lm-hover-border) !important;
-  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
-  transform: translateY(-1px);
+  background: var(--mnt-lm-tile-hover) !important;
+  border-color: var(--mnt-lm-gold-hover) !important;
+  color: var(--mnt-lm-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-kpi-period-filters button[data-active="true"]:hover {
+  background: var(--mnt-lm-gold-hover) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* ── PM metric cards (white KPI cards) ── */
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-metric-card {
-  background: var(--mnt-lm-surface) !important;
+  background: var(--mnt-lm-tile) !important;
   border: 1px solid var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card--clickable:hover {
+  background: var(--mnt-lm-tile-hover) !important;
+  border-color: var(--mnt-lm-gold-hover) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card > div:first-child {
-  color: var(--mnt-lm-row-text-muted) !important;
+  color: var(--mnt-lm-text-subtle) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-metric-card > div:last-child {
@@ -136,83 +185,130 @@ html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-c
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button {
-  background: transparent !important;
+  background: var(--mnt-lm-surface) !important;
   color: var(--mnt-lm-text) !important;
-  border: 1px solid var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+  border: 1px solid var(--mnt-lm-border-strong) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button[data-active="true"] {
-  background: var(--mnt-lm-gold) !important;
+  background: var(--mnt-lm-gold-fill) !important;
   color: #111111 !important;
-  border-color: var(--mnt-lm-gold) !important;
+  border-color: var(--mnt-lm-gold-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls [role="group"] button[data-active="true"] {
+  background: var(--mnt-lm-gold-wash) !important;
+  color: var(--mnt-lm-gold) !important;
+  border-color: var(--mnt-lm-gold-border) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button:hover:not([data-active="true"]) {
-  border-color: var(--mnt-lm-hover-border) !important;
-  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
-  transform: translateY(-1px);
-}
-
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls > div:nth-child(3) {
-  color: var(--mnt-lm-row-text-muted) !important;
-}
-
-/* ── PM tile grid panel (charcoal feature panel) ── */
-
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel {
-  background: var(--mnt-lm-slate-panel) !important;
-  border: 1px solid #6e665c !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
-}
-
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .pass-on-search-wrap__icon {
-  color: var(--mnt-lm-text-muted-soft) !important;
-}
-
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field {
-  background: var(--mnt-lm-surface) !important;
+  background: var(--mnt-lm-tile-hover) !important;
+  border-color: var(--mnt-lm-gold-hover) !important;
   color: var(--mnt-lm-text) !important;
-  border: 1px solid rgba(200, 169, 106, 0.78) !important;
-  box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.35),
-    0 0 14px rgba(200, 169, 106, 0.18) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field::placeholder {
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-dashboard-pm-controls button[data-active="true"]:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-showing-label {
   color: var(--mnt-lm-text-muted) !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:hover,
+/* ── PM tile grid panel (grouped module, gold-accented containment) ── */
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel {
+  background: #ffffff !important;
+  border: 1px solid #d0a012 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .pass-on-search-wrap__icon {
+  color: var(--mnt-lm-text-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:focus,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-grid-search-wrap .one-eyrie-field:focus-visible {
-  background: var(--mnt-lm-surface) !important;
-  border-color: rgba(200, 169, 106, 0.78) !important;
-  box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.35),
-    0 0 14px rgba(200, 169, 106, 0.18) !important;
+  background: #ffffff !important;
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel > div:nth-child(2) > span {
-  color: var(--mnt-lm-text-muted-soft) !important;
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-legend-item {
+  color: #35383f !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel .maintenance-pm-tile-grid-carousel__body > div:first-child {
-  color: var(--mnt-lm-text-muted-soft) !important;
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-legend-swatch--past_due {
+  background: var(--mnt-lm-urgent-bg) !important;
+  border-color: var(--mnt-lm-urgent-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-legend-swatch--due_today {
+  background: var(--mnt-lm-tile) !important;
+  border-color: var(--mnt-lm-gold-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-legend-swatch--upcoming {
+  background: var(--mnt-lm-tile) !important;
+  border-color: var(--mnt-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-legend-swatch--current {
+  background: #eceef1 !important;
+  border-color: #d0a012 !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-empty {
+  color: var(--mnt-lm-text-muted) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-carousel-arrow button {
   background: var(--mnt-lm-surface) !important;
-  border-color: var(--mnt-lm-border) !important;
+  border-color: var(--mnt-lm-border-strong) !important;
   color: var(--mnt-lm-gold) !important;
-  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-carousel-arrow button:hover:not(:disabled) {
+  border-color: var(--mnt-lm-gold-hover) !important;
+  background: var(--mnt-lm-tile-hover) !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-carousel-arrow button:disabled {
+  color: var(--oe-lm-disabled) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-more,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-previous {
   background: var(--mnt-lm-surface) !important;
-  border-color: var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+  border-color: var(--mnt-lm-border-strong) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-more {
@@ -220,21 +316,68 @@ html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-more {
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-show-previous {
-  color: var(--mnt-lm-row-text-muted) !important;
+  color: var(--mnt-lm-text-muted) !important;
 }
 
-/* PM tiles keep dark-mode urgency colors on charcoal panel (Dashboard Today's Work parity) */
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--upcoming,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--due_tomorrow,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--due_today,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--completed,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--current {
+  background: #eceef1 !important;
+  border: 1px solid #d0a012 !important;
+  color: #1a1a1a !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--past_due {
+  background: var(--mnt-lm-urgent-bg) !important;
+  border-color: var(--mnt-lm-urgent-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card__title,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card__meta-value {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card__area,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card__meta-label {
+  color: #3f434c !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card__status {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--past_due .maintenance-pm-tile-card__status {
+  color: var(--mnt-lm-urgent-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card:hover {
+  background: #e4e6ea !important;
+  border-color: #d4a514 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-card--past_due:hover {
+  background: #f3e0e0 !important;
+  border-color: var(--mnt-lm-urgent-border) !important;
+}
 
 /* ── WO KPI cards ── */
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card {
-  background: var(--mnt-lm-surface) !important;
+  background: var(--mnt-lm-tile) !important;
   border: 1px solid var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__label {
-  color: var(--mnt-lm-row-text-muted) !important;
+  color: var(--mnt-lm-text-subtle) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__value {
@@ -249,16 +392,16 @@ html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-kpi-card__v
 
 @media (min-width: 768px) {
   html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-workspace {
-    border-left-color: var(--mnt-lm-border) !important;
+    border-left-color: rgba(201, 151, 22, 0.22) !important;
   }
 }
 
 /* ── Work order panel (charcoal — Dashboard WO Priority Queue parity) ── */
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel {
-  background: var(--mnt-lm-slate-panel) !important;
-  border: 1px solid #6e665c !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+  background: var(--mnt-lm-surface) !important;
+  border: 1px solid var(--mnt-lm-gold-border) !important;
+  box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel__header-copy > div:first-child {
@@ -273,26 +416,28 @@ html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-pan
   color: var(--mnt-lm-text-muted-soft) !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card {
-  background: var(--mnt-lm-pass-on-row) !important;
-  border-color: var(--mnt-lm-border) !important;
-  box-shadow: 0 1px 2px var(--mnt-lm-shadow) !important;
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card.maintenance-work-order-card {
+  background: #eceef1 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: none !important;
 }
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card:hover {
-  background: var(--mnt-lm-pass-on-row-hover) !important;
-  border-color: var(--mnt-lm-hover-border) !important;
-  box-shadow: 0 4px 10px var(--mnt-lm-shadow-hover) !important;
-  transform: translateY(-1px);
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card:hover,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card.maintenance-work-order-card:hover {
+  background: #e4e6ea !important;
+  border-color: #d4a514 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card__title {
-  color: var(--mnt-lm-text) !important;
+  color: #111111 !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card__location,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .maintenance-work-order-card__opened {
-  color: var(--mnt-lm-row-text-muted) !important;
+  color: #3f434c !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .one-eyrie-updated-timestamp {
@@ -330,26 +475,31 @@ html[data-theme="light"] .one-eyrie-maintenance-page .work-order-priority-badge-
 
 /* ── WO filters dropdown ── */
 
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn {
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn svg {
   background: var(--mnt-lm-surface) !important;
-  border: 1px solid rgba(200, 169, 106, 0.78) !important;
-  color: var(--mnt-lm-text) !important;
-  box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.35),
-    0 0 14px rgba(200, 169, 106, 0.18) !important;
+  border: 1px solid var(--mnt-lm-border-strong) !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn svg {
+  border: 0 !important;
+  background: transparent !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:hover,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:focus,
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:focus-visible,
-html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn[aria-expanded="true"] {
-  background: var(--mnt-lm-surface) !important;
-  border-color: rgba(200, 169, 106, 0.78) !important;
-  color: var(--mnt-lm-text) !important;
-  transform: none;
-  box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.35),
-    0 0 14px rgba(200, 169, 106, 0.18) !important;
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn[aria-expanded="true"],
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn:hover svg,
+html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .one-eyrie-filter-btn[aria-expanded="true"] svg {
+  background: var(--mnt-lm-tile-hover) !important;
+  border-color: var(--mnt-lm-gold-hover) !important;
+  color: #111111 !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-wo-filters-dropdown .lnf-filter-menu {
@@ -527,11 +677,12 @@ html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance
 
 @media (min-width: 769px) {
   html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-pm-tile-grid-panel {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid #d0a012 !important;
+    box-shadow: none !important;
   }
 
   html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 1px 3px var(--mnt-lm-shadow) !important;
   }
 
   html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card {

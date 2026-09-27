@@ -126,6 +126,7 @@ export default function PassOnAttachments({
           >
             <button
               type="button"
+              className="pass-on-attach-action"
               disabled={disabled || uploading}
               onClick={() => cameraInputRef.current?.click()}
               style={{
@@ -146,6 +147,7 @@ export default function PassOnAttachments({
             </button>
             <button
               type="button"
+              className="pass-on-attach-action"
               disabled={disabled || uploading}
               onClick={() => uploadInputRef.current?.click()}
               style={{
@@ -212,6 +214,7 @@ export default function PassOnAttachments({
                     pendingFiles.filter((_, fileIndex) => fileIndex !== index)
                   )
                 }
+                className="pass-on-attach-remove"
                 style={{
                   border: 0,
                   background: "transparent",
@@ -262,7 +265,7 @@ export default function PassOnAttachments({
               >
                 {attachment.original_filename}
               </span>
-              <span style={{ color: "#9CA3AF", whiteSpace: "nowrap" }}>
+              <span className="pass-on-attach-meta" style={{ color: "#9CA3AF", whiteSpace: "nowrap" }}>
                 {formatBytes(attachment.byte_size)}
               </span>
             </button>

@@ -108,6 +108,7 @@ export default function WorkOrderPhotosSection({
   return (
     <div className={className} style={{ marginBottom: "18px" }}>
       <div
+        className="oe-lm-secondary-text"
         style={{
           color: "#9CA3AF",
           fontSize: "12px",

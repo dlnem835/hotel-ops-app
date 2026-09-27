@@ -1,0 +1,84 @@
+/**
+ * Lost & Found Light Mode — shared Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ */
+
+html[data-theme="light"] .one-eyrie-lost-found-page {
+  --owl-panel: var(--oe-lm-card);
+  --owl-card-warm: var(--oe-lm-card);
+  --owl-card-warm-hover: var(--oe-lm-tile-hover);
+  --owl-slate: var(--oe-lm-tile);
+  --owl-slate-hover: var(--oe-lm-tile-hover);
+  --owl-header-slate: var(--oe-lm-card);
+  --owl-bronze-row: var(--oe-lm-tile);
+  --owl-bronze-row-alt: var(--oe-lm-card);
+  --owl-bronze-row-hover: var(--oe-lm-tile-hover);
+  --owl-bronze-row-alt-hover: var(--oe-lm-tile-hover);
+  --owl-feather-border: var(--oe-lm-border);
+  --owl-feather-divider: var(--oe-lm-border);
+  --owl-feather-text: var(--oe-lm-ink);
+  --owl-feather-muted: var(--oe-lm-secondary);
+  --owl-input-fill: var(--oe-lm-card);
+  --owl-input-border: var(--oe-lm-border);
+  --owl-success-bg: var(--oe-lm-forest-bg);
+  --owl-success-border: var(--oe-lm-forest-border);
+  --owl-success-text: var(--oe-lm-forest-text);
+  --owl-stored-bg: var(--oe-lm-tile);
+  --owl-stored-border: var(--oe-lm-border-strong);
+  --owl-stored-text: var(--oe-lm-charcoal);
+  --owl-warning-bg: var(--oe-lm-important-bg);
+  --owl-warning-border: var(--oe-lm-important-border);
+  --owl-warning-text: var(--oe-lm-important-text);
+  --owl-feather-surface: var(--oe-lm-tile);
+  --owl-feather-surface-hover: var(--oe-lm-tile-hover);
+  --owl-feather-light: var(--oe-lm-tile);
+  --owl-feather-lighter: var(--oe-lm-tile-hover);
+  --owl-feather-highlight: var(--oe-lm-border-strong);
+  --owl-feather-text-bright: var(--oe-lm-ink);
+  --owl-feather-text-light: var(--oe-lm-charcoal);
+  --owl-work-order-shell: var(--oe-lm-card);
+  --owl-work-order-shell-border: var(--oe-lm-border);
+  color: var(--oe-lm-ink);
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--success {
+  background: var(--oe-lm-forest-bg) !important;
+  border-color: var(--oe-lm-forest-border) !important;
+  color: var(--oe-lm-forest-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-table-panel {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-status-pill,
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-status-pill--stored {
+  background: var(--oe-lm-tile) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-charcoal) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-success-toast {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-active-filter-pill {
+  background: var(--oe-gold-wash) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+}

@@ -44,3 +44,41 @@
     --owl-work-order-shell-border: #6e665c;
   }
 }
+
+html[data-theme="light"] .one-eyrie-lost-found-page,
+html[data-theme="light"] .one-eyrie-pass-on-log-page {
+  --owl-panel: var(--oe-lm-card);
+  --owl-card-warm: var(--oe-lm-card);
+  --owl-card-warm-hover: var(--oe-lm-tile-hover);
+  --owl-slate: var(--oe-lm-tile);
+  --owl-slate-hover: var(--oe-lm-tile-hover);
+  --owl-header-slate: var(--oe-lm-card);
+  --owl-bronze-row: var(--oe-lm-tile);
+  --owl-bronze-row-alt: var(--oe-lm-card);
+  --owl-bronze-row-hover: var(--oe-lm-tile-hover);
+  --owl-bronze-row-alt-hover: var(--oe-lm-tile-hover);
+  --owl-feather-border: var(--oe-lm-border);
+  --owl-feather-divider: var(--oe-lm-border);
+  --owl-feather-text: var(--oe-lm-ink);
+  --owl-feather-muted: var(--oe-lm-muted);
+  --owl-input-fill: var(--oe-lm-card);
+  --owl-input-border: var(--oe-lm-border);
+  --owl-success-bg: var(--oe-lm-forest-bg);
+  --owl-success-border: var(--oe-lm-forest-border);
+  --owl-success-text: var(--oe-lm-forest-text);
+  --owl-stored-bg: var(--oe-lm-tile);
+  --owl-stored-border: var(--oe-lm-border-strong);
+  --owl-stored-text: var(--oe-lm-charcoal);
+  --owl-warning-bg: var(--oe-lm-important-bg);
+  --owl-warning-border: var(--oe-lm-important-border);
+  --owl-warning-text: var(--oe-lm-important-text);
+  --owl-feather-surface: var(--oe-lm-tile);
+  --owl-feather-surface-hover: var(--oe-lm-tile-hover);
+  --owl-feather-light: var(--oe-lm-tile);
+  --owl-feather-lighter: var(--oe-lm-tile-hover);
+  --owl-feather-highlight: var(--oe-lm-border-strong);
+  --owl-feather-text-bright: var(--oe-lm-ink);
+  --owl-feather-text-light: var(--oe-lm-charcoal);
+  --owl-work-order-shell: var(--oe-lm-card);
+  --owl-work-order-shell-border: var(--oe-lm-border);
+}

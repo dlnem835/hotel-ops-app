@@ -1,0 +1,62 @@
+/**
+ * Platform Admin Light Mode — shared Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ */
+
+html[data-theme="light"] .admin-portal {
+  background: var(--oe-lm-page) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .admin-portal__header,
+html[data-theme="light"] .admin-portal__nav {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .admin-portal__title {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .admin-portal__subtitle,
+html[data-theme="light"] .admin-portal__loading,
+html[data-theme="light"] .admin-portal__empty-state,
+html[data-theme="light"] .admin-portal__denied-text {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .admin-portal__card,
+html[data-theme="light"] .admin-portal__denied-card {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .admin-portal__denied-title,
+html[data-theme="light"] .admin-portal__table,
+html[data-theme="light"] .admin-portal__form {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .admin-portal__table th {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .admin-portal input,
+html[data-theme="light"] .admin-portal select,
+html[data-theme="light"] .admin-portal textarea {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .admin-portal__button {
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .admin-portal__confirm-warning {
+  background: var(--oe-lm-urgent-bg) !important;
+  border-color: var(--oe-lm-urgent-border) !important;
+  color: var(--oe-lm-urgent-text) !important;
+}

@@ -13,6 +13,7 @@ import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 import { useIsMobileInspectionLayout } from "../../lib/use-inspection-breakpoint";
 import "../../inspections-responsive.css";
+import "../../inspections-light-theme.css";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { calculateInspectionScore, formatInspectionScoreDisplay } from "../../lib/scoring";
 import { ItemResponseInput } from "../../lib/inspection-types";
@@ -369,7 +370,7 @@ export default function InspectionSessionPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: ONE_EYRIE.black, color: ONE_EYRIE.text, padding: 40 }}>
+      <main className="one-eyrie-inspections-route" style={{ minHeight: "100vh", background: ONE_EYRIE.black, color: ONE_EYRIE.text, padding: 40 }}>
         Loading inspection...
       </main>
     );
@@ -378,6 +379,7 @@ export default function InspectionSessionPage() {
   if (isCompleted && content) {
     return (
       <main
+        className="one-eyrie-app-shell one-eyrie-inspections-route"
         style={{
           minHeight: "100vh",
           background: ONE_EYRIE.black,
@@ -422,6 +424,7 @@ export default function InspectionSessionPage() {
 
   return (
     <main
+      className="one-eyrie-app-shell one-eyrie-inspections-route"
       style={{
         minHeight: "100vh",
         background: ONE_EYRIE.black,

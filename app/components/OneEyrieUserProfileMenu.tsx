@@ -27,12 +27,12 @@ function buildMenuItems(
     {
       type: "appearance",
       id: "appearance",
-      label: "Appearance",
+      label: "Theme",
       value: theme,
       onChange: setTheme,
       options: [
-        { value: "dark", label: "Dark", description: "Production" },
-        { value: "light", label: "Light", description: "Admin preview" },
+        { value: "dark", label: "Dark" },
+        { value: "light", label: "Light" },
       ],
     },
     {
@@ -213,7 +213,7 @@ export default function OneEyrieUserProfileMenu({
                   </button>
 
                   {appearanceOpen ? (
-                    <div className="one-eyrie-user-profile-menu__submenu" role="group" aria-label="Appearance">
+                    <div className="one-eyrie-user-profile-menu__submenu" role="group" aria-label="Theme">
                       {item.options.map((option) => {
                         const selected = item.value === option.value;
                         return (

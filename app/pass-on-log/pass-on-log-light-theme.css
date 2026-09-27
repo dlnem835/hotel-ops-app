@@ -7,40 +7,38 @@
 /* ── Design tokens (pass-on page) ── */
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page {
-  --pol-lm-sidebar-bg: var(--oe-bg-sidebar, #f7f5f1);
-  --pol-lm-surface: #ffffff;
-  --pol-lm-action-hover: #f1f3f5;
-  --pol-lm-pass-on-row: #e8eaed;
-  --pol-lm-pass-on-row-hover: #dfe2e6;
-  --pol-lm-slate-panel: #545b69;
-  --pol-lm-border: #e4dfd6;
-  --pol-lm-text: #2c2a26;
-  --pol-lm-text-muted: #9ca3af;
-  --pol-lm-text-muted-soft: #c2c6ce;
-  --pol-lm-row-text-muted: #7a7670;
-  --pol-lm-text-subtle: #4a4741;
-  --pol-lm-gold: #c8a96a;
-  --pol-lm-shadow: rgba(44, 42, 38, 0.08);
-  --pol-lm-shadow-hover: rgba(44, 42, 38, 0.12);
-  --pol-lm-hover-border: rgba(200, 169, 106, 0.55);
+  --pol-lm-sidebar-bg: var(--oe-lm-card);
+  --pol-lm-surface: var(--oe-lm-card);
+  --pol-lm-action-hover: var(--oe-lm-tile-hover);
+  --pol-lm-pass-on-row: var(--oe-lm-tile);
+  --pol-lm-pass-on-row-hover: var(--oe-lm-tile-hover);
+  --pol-lm-slate-panel: var(--oe-lm-card);
+  --pol-lm-border: var(--oe-lm-border);
+  --pol-lm-text: var(--oe-lm-ink);
+  --pol-lm-text-muted: var(--oe-lm-secondary);
+  --pol-lm-text-muted-soft: var(--oe-lm-secondary);
+  --pol-lm-row-text-muted: var(--oe-lm-secondary);
+  --pol-lm-text-subtle: var(--oe-lm-charcoal);
+  --pol-lm-gold: var(--oe-gold-text);
+  --pol-lm-shadow: var(--oe-shadow);
+  --pol-lm-shadow-hover: var(--oe-shadow);
+  --pol-lm-hover-border: var(--oe-gold-border);
 }
 
 /* ── Sidebar wordmark colors (size from shared shell CSS) ── */
 
 html[data-theme="light"] main.one-eyrie-pass-on-log-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
-  color: #000000 !important;
+  color: var(--oe-lm-ink) !important;
 }
 
 html[data-theme="light"] main.one-eyrie-pass-on-log-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--eyrie {
-  color: #c8a96a !important;
-  margin-top: 2px;
-  margin-left: 0.4em;
+  color: var(--oe-gold-primary) !important;
 }
 
 html[data-theme="light"] main.one-eyrie-pass-on-log-route .one-eyrie-nav-item--active,
 html[data-theme="light"] main.one-eyrie-pass-on-log-route .one-eyrie-nav-item--active .one-eyrie-nav-item__label,
 html[data-theme="light"] main.one-eyrie-pass-on-log-route .one-eyrie-nav-item--active .one-eyrie-nav-item__icon {
-  color: #000000 !important;
+  color: var(--oe-lm-ink) !important;
 }
 
 /* ── Page header ── */
@@ -56,9 +54,9 @@ html[data-theme="light"] .one-eyrie-pass-on-log-route .one-eyrie-page-header p {
 /* ── Charcoal feature panel ── */
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-log-panel {
-  background: var(--pol-lm-slate-panel) !important;
-  border: 1px solid #6e665c !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border) !important;
+  box-shadow: 0 1px 3px var(--oe-shadow) !important;
 }
 
 /* ── Toolbar: search, calendar, date filter ── */
@@ -77,9 +75,9 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar 
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar > button:hover,
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-toolbar > select:hover {
-  border-color: #d4b87a !important;
-  box-shadow: 0 4px 10px var(--pol-lm-shadow-hover) !important;
-  transform: translateY(-1px);
+  border-color: var(--oe-gold-hover) !important;
+  box-shadow: none !important;
+  transform: none;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-field {
@@ -156,15 +154,15 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entr
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:hover {
   background-color: var(--pol-lm-pass-on-row-hover) !important;
   border-color: var(--pol-lm-hover-border) !important;
-  box-shadow: 0 4px 12px var(--pol-lm-shadow-hover) !important;
-  transform: translateY(-1px);
+  box-shadow: none !important;
+  transform: none;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row--selected,
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row--selected:hover {
   background-color: var(--pol-lm-pass-on-row-hover) !important;
   border-color: var(--pol-lm-hover-border) !important;
-  transform: translateY(-1px);
+  transform: none;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-entry-row > button {
@@ -235,8 +233,8 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .original-post-box.pass-on-
 html[data-theme="light"] .one-eyrie-pass-on-log-page .reply-preview-box:hover {
   border-color: var(--pol-lm-hover-border) !important;
   border-left-color: var(--pol-lm-gold) !important;
-  box-shadow: 0 4px 12px var(--pol-lm-shadow-hover) !important;
-  transform: translateY(-1px);
+  box-shadow: none !important;
+  transform: none;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .reply-preview-box {
@@ -256,9 +254,40 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .reply-input-wrap:focus-wit
   box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.12) !important;
 }
 
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-action:not(:disabled) {
+  color: var(--oe-lm-charcoal) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-action:not(:disabled) svg {
+  color: var(--oe-lm-charcoal) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-action:disabled {
+  color: var(--oe-lm-disabled) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-action:disabled svg {
+  color: var(--oe-lm-disabled) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-remove:not(:disabled),
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-remove:not(:disabled) svg {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-remove:disabled,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-remove:disabled svg {
+  color: var(--oe-lm-disabled) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-attach-meta {
+  color: var(--oe-lm-secondary) !important;
+}
+
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-work-order-btn {
-  color: var(--pol-lm-gold) !important;
-  border-color: var(--pol-lm-gold) !important;
+  color: #5a4508 !important;
+  border-color: var(--oe-gold-border) !important;
+  background: transparent !important;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-work-order-btn:hover {
@@ -273,8 +302,8 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-send-reply-btn {
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-send-reply-btn:hover {
-  background: #d4b87a !important;
-  border-color: #d4b87a !important;
+  background: var(--oe-gold-hover) !important;
+  border-color: var(--oe-gold-hover) !important;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-viewed-by-row {
@@ -366,7 +395,7 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-discard-btn:
   }
 
   html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row:hover {
-    transform: translateY(-1px);
+    transform: none;
   }
 
   html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-log-panel {

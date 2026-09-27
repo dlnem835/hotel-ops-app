@@ -30,6 +30,7 @@ import {
   type WorkOrderReportId,
 } from "@/app/reports/lib/report-definitions";
 import "./reports-responsive.css";
+import "./reports-light-theme.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,7 +104,7 @@ export default function ReportsPage() {
   }, []);
 
   return (
-    <main style={APP_SHELL} className={APP_SHELL_CLASS}>
+    <main style={APP_SHELL} className={`${APP_SHELL_CLASS} one-eyrie-reports-route`}>
       <OneEyrieSidebar active="Reports" />
 
       <section style={MAIN_CONTENT} className={MAIN_CONTENT_CLASS}>

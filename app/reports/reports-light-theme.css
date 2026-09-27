@@ -1,0 +1,119 @@
+/**
+ * Reports Light Mode — shared Dashboard tokens.
+ * ALL rules scoped to html[data-theme="light"].
+ */
+
+html[data-theme="light"] .one-eyrie-reports-page {
+  color: var(--oe-lm-ink);
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-tabs {
+  border-bottom-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab:hover {
+  color: var(--oe-lm-ink) !important;
+  background: rgba(208, 160, 18, 0.1) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab--active {
+  color: var(--oe-gold-text) !important;
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+  border-bottom-color: var(--oe-lm-card) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border-color: var(--oe-gold-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-section {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__header,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-section__header {
+  background: var(--oe-lm-tile) !important;
+  border-bottom-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__title,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-section__title {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link:hover,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn:hover {
+  color: var(--oe-gold-text) !important;
+  background: rgba(208, 160, 18, 0.1) !important;
+}
+
+html[data-theme="light"] .reports-date-presets__btn {
+  border-color: var(--oe-lm-border) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .reports-date-presets__btn--active {
+  color: var(--oe-gold-text) !important;
+  background: var(--oe-gold-wash) !important;
+  border-color: var(--oe-gold-border) !important;
+}
+
+html[data-theme="light"] .reports-pm-modal,
+html[data-theme="light"] .reports-lnf-modal,
+html[data-theme="light"] .reports-schedule-modal,
+html[data-theme="light"] .reports-pm-modal__body {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .reports-pm-modal__results,
+html[data-theme="light"] .reports-pm-results__table th,
+html[data-theme="light"] .reports-pm-results__table td {
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .reports-pm-results__table-wrap {
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .reports-pm-results__table th {
+  color: var(--oe-gold-text) !important;
+  background: var(--oe-lm-tile) !important;
+}
+
+html[data-theme="light"] .reports-pm-results__table td,
+html[data-theme="light"] .reports-pm-results__lead {
+  color: var(--oe-lm-charcoal) !important;
+}
+
+html[data-theme="light"] .reports-pm-results__source-link {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page [class*="reports-"] {
+  --reports-surface: var(--oe-lm-card);
+}
+
+html[data-theme="light"] .one-eyrie-reports-page table th {
+  color: var(--oe-gold-text) !important;
+  background: var(--oe-lm-tile) !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page table td {
+  color: var(--oe-lm-charcoal) !important;
+  border-color: var(--oe-lm-border) !important;
+}

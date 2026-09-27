@@ -39,7 +39,11 @@ function SummaryLink({
   return (
     <Link
       href={href}
-      className="dashboard-clickable-card"
+      className={`dashboard-clickable-card dashboard-kpi-tile${
+        tone === "readyToShip"
+          ? " dashboard-kpi-tile--success"
+          : " dashboard-kpi-tile--neutral"
+      }`}
       style={{
         display: "block",
         padding: "16px 14px",

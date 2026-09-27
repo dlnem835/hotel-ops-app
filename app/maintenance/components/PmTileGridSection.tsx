@@ -196,6 +196,7 @@ export default function PmTileGridSection({ tiles, onOpenPm, className }: PmTile
         ) : null}
 
         <div
+          className="maintenance-pm-showing-label"
           style={{
             color: ONE_EYRIE.textMuted,
             fontSize: "12px",

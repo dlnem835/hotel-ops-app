@@ -20,6 +20,7 @@ import { resolveAuthenticatedAppHome } from "@/app/lib/resolve-app-home";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
+import "./login-page.css";
 
 /**
  * Completes any pending invitation, then routes based on account-setup state.
@@ -117,7 +118,12 @@ export default function LoginPage() {
       }
     }
 
-    const target = await resolvePostAuthTarget();
+    const target = await Promise.race([
+      resolvePostAuthTarget(),
+      new Promise<string>((resolve) => {
+        window.setTimeout(() => resolve("/"), 12000);
+      }),
+    ]);
     setAuthDebug(`Session created, redirecting… → ${target}`);
     window.location.assign(target);
   }
