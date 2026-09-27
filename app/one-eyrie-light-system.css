@@ -192,24 +192,30 @@ html[data-theme="light"] .one-eyrie-user-profile-menu__item:hover:not(:disabled)
   color: #111111 !important;
 }
 
-html[data-theme="light"] .one-eyrie-user-profile-menu__appearance-label {
+html[data-theme="light"] .one-eyrie-user-profile-menu__appearance-label,
+html[data-theme="light"] .one-eyrie-user-profile-menu--mobile .one-eyrie-user-profile-menu__appearance-label {
   color: #3f434c !important;
 }
 
-html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn {
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn,
+html[data-theme="light"] .one-eyrie-user-profile-menu--mobile .one-eyrie-user-profile-menu__theme-btn {
   background: #ffffff !important;
   border-color: #c4c8ce !important;
   color: #111111 !important;
+  font-weight: 700 !important;
 }
 
-html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn:hover {
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn:hover,
+html[data-theme="light"] .one-eyrie-user-profile-menu--mobile .one-eyrie-user-profile-menu__theme-btn:hover {
   border-color: #d4a514 !important;
 }
 
-html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn--selected {
-  background: #f8f1da !important;
-  border-color: #c99716 !important;
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn--selected,
+html[data-theme="light"] .one-eyrie-user-profile-menu--mobile .one-eyrie-user-profile-menu__theme-btn--selected {
+  background: #f3e4a3 !important;
+  border-color: #d0a012 !important;
   color: #5a4508 !important;
+  font-weight: 800 !important;
 }
 
 html[data-theme="light"] .one-eyrie-user-profile-menu__divider {

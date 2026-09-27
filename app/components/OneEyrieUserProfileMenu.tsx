@@ -19,6 +19,95 @@ type OneEyrieUserProfileMenuProps = {
   variant?: "sidebar" | "mobile" | "header";
 };
 
+type PreferenceOptionProps = {
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+};
+
+function PreferenceOption({ label, selected, onSelect }: PreferenceOptionProps) {
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={selected}
+      className={`one-eyrie-user-profile-menu__theme-btn${
+        selected ? " one-eyrie-user-profile-menu__theme-btn--selected" : ""
+      }`}
+      onClick={onSelect}
+    >
+      {label}
+    </button>
+  );
+}
+
+type ProfilePreferencePanelProps = {
+  theme: OneEyrieTheme;
+  shell: AppShell;
+  onThemeSelect: (theme: OneEyrieTheme) => void;
+  onInterfaceSelect: (shell: AppShell) => void;
+  onLogout: () => void;
+};
+
+function ProfilePreferencePanel({
+  theme,
+  shell,
+  onThemeSelect,
+  onInterfaceSelect,
+  onLogout,
+}: ProfilePreferencePanelProps) {
+  return (
+    <div className="one-eyrie-profile-prefs">
+      <div className="one-eyrie-user-profile-menu__appearance-label">Appearance</div>
+      <div
+        className="one-eyrie-user-profile-menu__theme-toggle"
+        role="group"
+        aria-label="Appearance"
+      >
+        <PreferenceOption
+          label="Light"
+          selected={theme === "light"}
+          onSelect={() => onThemeSelect("light")}
+        />
+        <PreferenceOption
+          label="Dark"
+          selected={theme === "dark"}
+          onSelect={() => onThemeSelect("dark")}
+        />
+      </div>
+
+      <div className="one-eyrie-user-profile-menu__appearance-label">Interface</div>
+      <div
+        className="one-eyrie-user-profile-menu__theme-toggle"
+        role="group"
+        aria-label="Interface"
+      >
+        <PreferenceOption
+          label="Desktop"
+          selected={shell === "desktop"}
+          onSelect={() => onInterfaceSelect("desktop")}
+        />
+        <PreferenceOption
+          label="Mobile"
+          selected={shell === "mobile"}
+          onSelect={() => onInterfaceSelect("mobile")}
+        />
+      </div>
+
+      <div className="one-eyrie-user-profile-menu__divider" role="separator" />
+
+      <button
+        type="button"
+        role="menuitem"
+        className="one-eyrie-user-profile-menu__item"
+        onClick={onLogout}
+      >
+        <span>Logout</span>
+      </button>
+    </div>
+  );
+}
+
 export default function OneEyrieUserProfileMenu({
   variant = "sidebar",
 }: OneEyrieUserProfileMenuProps) {
@@ -122,89 +211,16 @@ export default function OneEyrieUserProfileMenu({
           className="one-eyrie-user-profile-menu__dropdown"
           aria-label="User menu"
         >
-          <div className="one-eyrie-user-profile-menu__appearance-label">
-            Appearance
-          </div>
-          <div
-            className="one-eyrie-user-profile-menu__theme-toggle"
-            role="group"
-            aria-label="Appearance"
-          >
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={theme === "light"}
-              className={`one-eyrie-user-profile-menu__theme-btn${
-                theme === "light"
-                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
-                  : ""
-              }`}
-              onClick={() => handleThemeSelect("light")}
-            >
-              Light
-            </button>
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={theme === "dark"}
-              className={`one-eyrie-user-profile-menu__theme-btn${
-                theme === "dark"
-                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
-                  : ""
-              }`}
-              onClick={() => handleThemeSelect("dark")}
-            >
-              Dark
-            </button>
-          </div>
-          <div className="one-eyrie-user-profile-menu__appearance-label">
-            Interface
-          </div>
-          <div
-            className="one-eyrie-user-profile-menu__theme-toggle"
-            role="group"
-            aria-label="Interface"
-          >
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={shell === "desktop"}
-              className={`one-eyrie-user-profile-menu__theme-btn${
-                shell === "desktop"
-                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
-                  : ""
-              }`}
-              onClick={() => handleInterfaceSelect("desktop")}
-            >
-              Desktop
-            </button>
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={shell === "mobile"}
-              className={`one-eyrie-user-profile-menu__theme-btn${
-                shell === "mobile"
-                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
-                  : ""
-              }`}
-              onClick={() => handleInterfaceSelect("mobile")}
-            >
-              Mobile
-            </button>
-          </div>
-          <div className="one-eyrie-user-profile-menu__divider" role="separator" />
-
-          <button
-            type="button"
-            role="menuitem"
-            className="one-eyrie-user-profile-menu__item"
-            onClick={() => {
+          <ProfilePreferencePanel
+            theme={theme}
+            shell={shell}
+            onThemeSelect={handleThemeSelect}
+            onInterfaceSelect={handleInterfaceSelect}
+            onLogout={() => {
               setOpen(false);
               void signOutAndRedirect();
             }}
-          >
-            <span>Logout</span>
-          </button>
+          />
         </div>
       ) : null}
     </div>

@@ -328,6 +328,11 @@ html[data-theme="light"] .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--acti
   background: var(--oe-border-subtle);
 }
 
+.one-eyrie-profile-prefs {
+  display: flex;
+  flex-direction: column;
+}
+
 .one-eyrie-user-profile-menu__appearance-label {
   padding: 8px 10px 6px;
   font-size: 11px;
