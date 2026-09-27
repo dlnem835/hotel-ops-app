@@ -35,6 +35,7 @@ export default function RoomHistoryDrawer({
 
   return (
     <div
+      className="inspection-history-overlay"
       style={{
         position: "fixed",
         inset: 0,
@@ -46,6 +47,7 @@ export default function RoomHistoryDrawer({
       onClick={onClose}
     >
       <div
+        className="inspection-history-drawer"
         style={{
           width: "min(460px, 100vw)",
           height: "100%",
@@ -65,15 +67,16 @@ export default function RoomHistoryDrawer({
           }}
         >
           <div>
-            <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "22px" }}>
+            <div className="inspection-history-drawer__title" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "22px" }}>
               Room {room.name}
             </div>
-            <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", marginTop: "4px" }}>
+            <div className="inspection-history-drawer__sub" style={{ color: ONE_EYRIE.textSubtle, fontSize: "13px", marginTop: "4px" }}>
               Inspection history
             </div>
           </div>
           <button
             type="button"
+            className="inspection-history-drawer__close"
             onClick={onClose}
             style={{
               ...SETTINGS_BUTTON_BASE,
@@ -89,6 +92,7 @@ export default function RoomHistoryDrawer({
 
         <button
           type="button"
+          className="inspection-history-drawer__start"
           onClick={() => onStartInspection(room.areaId)}
           style={{
             ...SETTINGS_BUTTON_BASE,
@@ -106,15 +110,16 @@ export default function RoomHistoryDrawer({
         </button>
 
         {loading ? (
-          <div style={{ color: ONE_EYRIE.textMuted }}>Loading history...</div>
+          <div className="inspection-history-drawer__muted" style={{ color: ONE_EYRIE.textMuted }}>Loading history...</div>
         ) : history.length === 0 ? (
-          <div style={{ color: ONE_EYRIE.textMuted, lineHeight: 1.6 }}>
+          <div className="inspection-history-drawer__muted" style={{ color: ONE_EYRIE.textMuted, lineHeight: 1.6 }}>
             No completed inspections for this room yet.
           </div>
         ) : (
           <>
             {hasMore && (
               <div
+                className="inspection-history-drawer__muted"
                 style={{
                   color: ONE_EYRIE.textSubtle,
                   fontSize: "11px",
@@ -129,6 +134,7 @@ export default function RoomHistoryDrawer({
             return (
               <div
                 key={entry.id}
+                className="inspection-history-entry"
                 style={{
                   border: `1px solid ${ONE_EYRIE.border}`,
                   borderRadius: "10px",
@@ -137,10 +143,11 @@ export default function RoomHistoryDrawer({
                   background: ONE_EYRIE.surfacePanel,
                 }}
               >
-                <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "13px" }}>
+                <div className="inspection-history-entry__label" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "13px" }}>
                   {entry.template_name} · {entry.inspection_program}
                 </div>
                 <div
+                  className="inspection-history-entry__score"
                   style={{
                     color: ONE_EYRIE.text,
                     fontWeight: 800,
@@ -161,6 +168,7 @@ export default function RoomHistoryDrawer({
                   </span>
                 </div>
                 <div
+                  className="inspection-history-entry__meta"
                   style={{
                     color: ONE_EYRIE.textMuted,
                     fontSize: "12px",
@@ -181,6 +189,7 @@ export default function RoomHistoryDrawer({
                   <div style={{ marginTop: "12px" }}>
                     <button
                       type="button"
+                      className="inspection-history-failed-btn"
                       onClick={() => setExpandedId(expanded ? null : entry.id)}
                       style={{
                         ...SETTINGS_BUTTON_BASE,
@@ -205,6 +214,7 @@ export default function RoomHistoryDrawer({
                         {entry.failedItems.map((failedItem) => (
                           <div
                             key={`${failedItem.categoryKey}::${failedItem.itemKey}`}
+                            className="inspection-history-failed-item"
                             style={{
                               border: `1px solid ${FLAT_RED.border}`,
                               borderRadius: "8px",
@@ -257,6 +267,7 @@ export default function RoomHistoryDrawer({
                 <Link
                   href={`/inspections/session/${entry.id}?from=history&roomId=${room.areaId}&roomName=${encodeURIComponent(room.name)}`}
                   onClick={onClose}
+                  className="inspection-history-entry__review"
                   style={{
                     display: "flex",
                     alignItems: "center",

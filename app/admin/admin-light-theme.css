@@ -1,62 +1,454 @@
 /**
- * Platform Admin Light Mode — shared Dashboard tokens.
+ * Admin Portal Light Mode — shared Dashboard tokens.
  * ALL rules scoped to html[data-theme="light"].
+ * Selectors target admin-portal__* so tenant /admin-portal (no .admin-portal
+ * wrapper) and platform /admin both receive Light treatment.
  */
 
 html[data-theme="light"] .admin-portal {
   background: var(--oe-lm-page) !important;
-  color: var(--oe-lm-ink) !important;
+  color: #111111 !important;
 }
 
 html[data-theme="light"] .admin-portal__header,
 html[data-theme="light"] .admin-portal__nav {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
 }
 
 html[data-theme="light"] .admin-portal__title {
-  color: var(--oe-gold-text) !important;
+  color: #7d5f0a !important;
 }
 
 html[data-theme="light"] .admin-portal__subtitle,
 html[data-theme="light"] .admin-portal__loading,
 html[data-theme="light"] .admin-portal__empty-state,
-html[data-theme="light"] .admin-portal__denied-text {
-  color: var(--oe-lm-secondary) !important;
+html[data-theme="light"] .admin-portal__denied-text,
+html[data-theme="light"] .admin-portal__muted {
+  color: #3f434c !important;
 }
 
 html[data-theme="light"] .admin-portal__card,
-html[data-theme="light"] .admin-portal__denied-card {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
-  color: var(--oe-lm-ink) !important;
+html[data-theme="light"] .admin-portal__denied-card,
+html[data-theme="light"] .admin-portal__stat {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06) !important;
 }
 
 html[data-theme="light"] .admin-portal__denied-title,
-html[data-theme="light"] .admin-portal__table,
+html[data-theme="light"] .admin-portal__section-title,
+html[data-theme="light"] .admin-portal__stat-value,
 html[data-theme="light"] .admin-portal__form {
-  color: var(--oe-lm-ink) !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__stat-label {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__meta-item dt {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__meta-item dd {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__meta-grid {
+  margin-bottom: 0;
+}
+
+html[data-theme="light"] .admin-portal__link,
+html[data-theme="light"] .admin-portal__back-link,
+html[data-theme="light"] .admin-portal__link-button,
+html[data-theme="light"] .admin-portal__nav-link--active,
+html[data-theme="light"] .admin-portal__nav-link:hover {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .admin-portal__nav-link {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__toast {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+  color: #5a4508 !important;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.08) !important;
+}
+
+html[data-theme="light"] .admin-portal__error {
+  color: #7a2e2e !important;
+}
+
+/* ── Leader cards: hug content, no oversized empty dark field ── */
+
+html[data-theme="light"] .admin-portal__admin-cards {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 440px)) !important;
+  justify-content: start;
+  align-items: start;
+}
+
+html[data-theme="light"] .admin-portal__admin-card {
+  background: #f7f8f9 !important;
+  border: 1px solid #d1d5db !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-head {
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-name {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-role {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-field dt,
+html[data-theme="light"] .admin-portal__admin-card-actions-label {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-field dd {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__admin-card-actions {
+  margin-top: 0 !important;
+  border-top-color: #d1d5db !important;
+}
+
+/* ── Properties table ── */
+
+html[data-theme="light"] .admin-portal__table-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+html[data-theme="light"] .admin-portal__table {
+  color: #111111 !important;
+  background: #ffffff !important;
 }
 
 html[data-theme="light"] .admin-portal__table th {
-  color: var(--oe-gold-text) !important;
+  background: #6e581c !important;
+  color: #f5f0e8 !important;
+  border-bottom: none !important;
 }
 
-html[data-theme="light"] .admin-portal input,
-html[data-theme="light"] .admin-portal select,
-html[data-theme="light"] .admin-portal textarea {
-  background: var(--oe-lm-card) !important;
-  color: var(--oe-lm-ink) !important;
-  border-color: var(--oe-lm-border) !important;
+html[data-theme="light"] .admin-portal__table td {
+  color: #111111 !important;
+  border-bottom-color: #e4e6ea !important;
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .admin-portal__table tbody tr:nth-child(even) td {
+  background: #f7f8f9 !important;
+}
+
+html[data-theme="light"] .admin-portal__table tbody tr:hover td {
+  background: #eceef1 !important;
+}
+
+html[data-theme="light"] .admin-portal__badge--active {
+  background: #cfe6d8 !important;
+  border: 1px solid #4d7f62 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .admin-portal__badge--pending {
+  background: #f8f1da !important;
+  border: 1px solid #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .admin-portal__badge--inactive,
+html[data-theme="light"] .admin-portal__badge--suspended {
+  background: #f4f5f7 !important;
+  border: 1px solid #c4c8ce !important;
+  color: #3f434c !important;
 }
 
 html[data-theme="light"] .admin-portal__button {
-  border-color: var(--oe-gold-border) !important;
-  color: var(--oe-gold-text) !important;
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__button:hover:not(:disabled) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__button--primary {
+  background: #d0a012 !important;
+  border-color: #b8860b !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__button--primary:hover:not(:disabled) {
+  background: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__button--danger {
+  background: #ffffff !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .admin-portal__button--danger:hover:not(:disabled) {
+  background: #f8eaea !important;
+}
+
+html[data-theme="light"] .admin-portal__button:disabled,
+html[data-theme="light"] .admin-portal__button--primary:disabled {
+  background: #f4f5f7 !important;
+  border-color: #d1d5db !important;
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .admin-portal__button:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .admin-portal__more-actions-menu {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12) !important;
+}
+
+html[data-theme="light"] .admin-portal__more-actions-item {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__more-actions-item:hover:not(:disabled),
+html[data-theme="light"] .admin-portal__more-actions-item:focus-visible {
+  background: #f8f1da !important;
+}
+
+html[data-theme="light"] .admin-portal__more-actions-item--danger {
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .admin-portal__more-actions-item--danger:hover:not(:disabled) {
+  background: #f8eaea !important;
+}
+
+/* ── Forms / inputs / radios ── */
+
+html[data-theme="light"] .admin-portal__field span,
+html[data-theme="light"] .admin-portal__field legend {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+html[data-theme="light"] .admin-portal__field select,
+html[data-theme="light"] .admin-portal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+html[data-theme="light"] .admin-portal select,
+html[data-theme="light"] .admin-portal textarea {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .admin-portal__field input::placeholder,
+html[data-theme="light"] .admin-portal input::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__field input:hover:not(:disabled):not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] .admin-portal__field select:hover:not(:disabled) {
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__field input:focus:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] .admin-portal__field select:focus {
+  border-color: #c99716 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .admin-portal__checkbox-field {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__checkbox-field .admin-portal__muted,
+html[data-theme="light"] .admin-portal__field .admin-portal__muted {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__checkbox-field input[type="radio"],
+html[data-theme="light"] .admin-portal__checkbox-field input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  accent-color: #d0a012 !important;
+  flex-shrink: 0;
+}
+
+html[data-theme="light"] .admin-portal__static-value {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__edit-section {
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__edit-section-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .admin-portal__confirm-details {
+  background: #f7f8f9 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__confirm-details-row dt {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__confirm-details-row dd {
+  color: #111111 !important;
 }
 
 html[data-theme="light"] .admin-portal__confirm-warning {
-  background: var(--oe-lm-urgent-bg) !important;
-  border-color: var(--oe-lm-urgent-border) !important;
-  color: var(--oe-lm-urgent-text) !important;
+  background: #f8f1da !important;
+  border: 1px solid #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .admin-portal__reduction-confirm {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+}
+
+html[data-theme="light"] .admin-portal__checklist {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__list-item {
+  background: #f7f8f9 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__list-title {
+  color: #111111 !important;
+}
+
+/* ── Dropdowns / property multi-select ── */
+
+html[data-theme="light"] .admin-portal__timezone-trigger,
+html[data-theme="light"] .admin-portal__property-multi-trigger {
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-trigger-label,
+html[data-theme="light"] .admin-portal__property-multi-summary {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-trigger-id,
+html[data-theme="light"] .admin-portal__timezone-option-id,
+html[data-theme="light"] .admin-portal__timezone-trigger-placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-panel,
+html[data-theme="light"] .admin-portal__property-multi-panel {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12) !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-search-wrap {
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-search-wrap input {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-option {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-option-label {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-option:hover,
+html[data-theme="light"] .admin-portal__timezone-option--selected {
+  background: #f8f1da !important;
+}
+
+html[data-theme="light"] .admin-portal__property-chip {
+  background: #eceef1 !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__timezone-chevron {
+  color: #7d5f0a !important;
+}
+
+/* ── Modals (Add Leader, email, password reset, ownership, etc.) ── */
+
+html[data-theme="light"] .admin-portal__modal-overlay {
+  background: rgba(17, 24, 39, 0.45) !important;
+}
+
+html[data-theme="light"] .admin-portal__modal {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+  box-shadow: 0 12px 40px rgba(17, 24, 39, 0.16) !important;
+}
+
+html[data-theme="light"] .admin-portal__modal .admin-portal__section-title {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__modal-close {
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .admin-portal__modal-close:hover:not(:disabled) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .admin-portal__modal-close:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .admin-portal__modal-close:disabled {
+  color: #6b7280 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .admin-portal__modal select option {
+  background: #ffffff !important;
+  color: #111111 !important;
 }

@@ -22,6 +22,7 @@ function MetricCard({
 }) {
   return (
     <div
+      className="inspection-metric-card"
       style={{
         background: ONE_EYRIE.listRow,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -31,6 +32,7 @@ function MetricCard({
       }}
     >
       <div
+        className="inspection-metric-card__label"
         style={{
           color: ONE_EYRIE.textSubtle,
           fontSize: "12px",
@@ -41,6 +43,15 @@ function MetricCard({
         {label}
       </div>
       <div
+        className={
+          accent === FOREST.text
+            ? "inspection-metric-card__value inspection-metric-card__value--forest"
+            : accent === ONE_EYRIE.gold
+              ? "inspection-metric-card__value inspection-metric-card__value--gold"
+              : accent === "#C9A8A8"
+                ? "inspection-metric-card__value inspection-metric-card__value--urgent"
+                : "inspection-metric-card__value"
+        }
         style={{
           color: accent || ONE_EYRIE.text,
           fontSize: "24px",
@@ -51,7 +62,7 @@ function MetricCard({
         {value}
       </div>
       {sub && (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", marginTop: "6px" }}>
+        <div className="inspection-metric-card__sub" style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", marginTop: "6px" }}>
           {sub}
         </div>
       )}

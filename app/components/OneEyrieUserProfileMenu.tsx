@@ -1,101 +1,43 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { signOutAndRedirect } from "@/app/lib/auth";
 import { useOneEyrieTheme } from "@/app/components/ThemeProvider";
+import { useRoleAccess } from "@/app/components/RoleAccessProvider";
 import { useCurrentUserProfile } from "@/app/lib/use-current-user-profile";
 import type { OneEyrieTheme } from "@/app/lib/one-eyrie-theme";
+import { resolveHomeForPermissions } from "@/app/lib/resolve-app-home";
 import {
   persistInterfacePreference,
-  readInterfacePreference,
-  type InterfacePreference,
+  resolvePreferredShell,
+  type AppShell,
 } from "@/app/lib/viewport-interface";
-import type { UserMenuItem } from "@/app/components/user-menu/types";
 
 type OneEyrieUserProfileMenuProps = {
   variant?: "sidebar" | "mobile" | "header";
 };
-
-function buildMenuItems(
-  theme: OneEyrieTheme,
-  setTheme: (theme: OneEyrieTheme) => void,
-  interfacePreference: InterfacePreference,
-  setInterfacePreference: (value: InterfacePreference) => void
-): UserMenuItem[] {
-  return [
-    {
-      type: "appearance",
-      id: "appearance",
-      label: "Theme",
-      value: theme,
-      onChange: setTheme,
-      options: [
-        { value: "dark", label: "Dark" },
-        { value: "light", label: "Light" },
-      ],
-    },
-    {
-      type: "interface",
-      id: "interface",
-      label: "Preferred interface",
-      value: interfacePreference,
-      onChange: setInterfacePreference,
-      options: [
-        {
-          value: "automatic",
-          label: "Automatic",
-          description: "Match screen size",
-        },
-        { value: "mobile", label: "Mobile", description: "Phone layout" },
-        { value: "desktop", label: "Desktop", description: "Full layout" },
-      ],
-    },
-    {
-      type: "action",
-      id: "my-account",
-      label: "My Account",
-      hint: "Coming soon",
-      disabled: true,
-      onClick: () => {},
-    },
-    { type: "divider", id: "before-logout" },
-    {
-      type: "action",
-      id: "logout",
-      label: "Logout",
-      onClick: () => void signOutAndRedirect(),
-    },
-  ];
-}
 
 export default function OneEyrieUserProfileMenu({
   variant = "sidebar",
 }: OneEyrieUserProfileMenuProps) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const { theme, setTheme, canUseLightMode } = useOneEyrieTheme();
+  const pathname = usePathname();
+  const { theme, setTheme } = useOneEyrieTheme();
+  const { permissions } = useRoleAccess();
   const { profile, loading } = useCurrentUserProfile();
   const [open, setOpen] = useState(false);
-  const [appearanceOpen, setAppearanceOpen] = useState(false);
-  const [interfaceOpen, setInterfaceOpen] = useState(false);
-  const [interfacePreference, setInterfacePreferenceState] =
-    useState<InterfacePreference>("automatic");
+  const [shell, setShell] = useState<AppShell>("desktop");
 
   const displayName = profile?.displayName ?? "User";
   const jobTitle = profile?.jobTitle ?? "Team Member";
   const initials = profile?.initials ?? "U";
 
   useEffect(() => {
-    setInterfacePreferenceState(readInterfacePreference());
-  }, []);
-
-  const menuItems = buildMenuItems(
-    theme,
-    setTheme,
-    interfacePreference,
-    setInterfacePreferenceState
-  ).filter((item) => item.type !== "appearance" || canUseLightMode);
+    setShell(resolvePreferredShell());
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,16 +45,12 @@ export default function OneEyrieUserProfileMenu({
     function handlePointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
-        setAppearanceOpen(false);
-        setInterfaceOpen(false);
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
-        setAppearanceOpen(false);
-        setInterfaceOpen(false);
       }
     }
 
@@ -124,29 +62,27 @@ export default function OneEyrieUserProfileMenu({
     };
   }, [open]);
 
-  function toggleOpen() {
-    setOpen((current) => {
-      if (current) {
-        setAppearanceOpen(false);
-        setInterfaceOpen(false);
-      }
-      return !current;
-    });
-  }
-
   function handleThemeSelect(next: OneEyrieTheme) {
     setTheme(next);
-    setAppearanceOpen(false);
-    setOpen(false);
   }
 
-  function handleInterfaceSelect(next: InterfacePreference) {
+  function handleInterfaceSelect(next: AppShell) {
     persistInterfacePreference(next);
-    setInterfacePreferenceState(next);
-    setInterfaceOpen(false);
-    setOpen(false);
-    // Reload current path so shell routing re-evaluates without a flash loop.
-    window.location.assign(window.location.pathname);
+    setShell(next);
+
+    const onMobile =
+      pathname === "/mobile" || (pathname?.startsWith("/mobile/") ?? false);
+    const alreadyOnShell =
+      (next === "mobile" && onMobile) || (next === "desktop" && !onMobile);
+    if (alreadyOnShell) return;
+
+    const target = permissions
+      ? resolveHomeForPermissions(permissions, next)
+      : next === "mobile"
+        ? "/mobile"
+        : "/";
+
+    window.location.replace(target);
   }
 
   return (
@@ -157,7 +93,7 @@ export default function OneEyrieUserProfileMenu({
       <button
         type="button"
         className="one-eyrie-user-profile-menu__trigger"
-        onClick={toggleOpen}
+        onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
@@ -186,151 +122,89 @@ export default function OneEyrieUserProfileMenu({
           className="one-eyrie-user-profile-menu__dropdown"
           aria-label="User menu"
         >
-          {menuItems.map((item) => {
-            if (item.type === "divider") {
-              return <div key={item.id} className="one-eyrie-user-profile-menu__divider" role="separator" />;
-            }
+          <div className="one-eyrie-user-profile-menu__appearance-label">
+            Appearance
+          </div>
+          <div
+            className="one-eyrie-user-profile-menu__theme-toggle"
+            role="group"
+            aria-label="Appearance"
+          >
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={theme === "light"}
+              className={`one-eyrie-user-profile-menu__theme-btn${
+                theme === "light"
+                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
+                  : ""
+              }`}
+              onClick={() => handleThemeSelect("light")}
+            >
+              Light
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={theme === "dark"}
+              className={`one-eyrie-user-profile-menu__theme-btn${
+                theme === "dark"
+                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
+                  : ""
+              }`}
+              onClick={() => handleThemeSelect("dark")}
+            >
+              Dark
+            </button>
+          </div>
+          <div className="one-eyrie-user-profile-menu__appearance-label">
+            Interface
+          </div>
+          <div
+            className="one-eyrie-user-profile-menu__theme-toggle"
+            role="group"
+            aria-label="Interface"
+          >
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={shell === "desktop"}
+              className={`one-eyrie-user-profile-menu__theme-btn${
+                shell === "desktop"
+                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
+                  : ""
+              }`}
+              onClick={() => handleInterfaceSelect("desktop")}
+            >
+              Desktop
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={shell === "mobile"}
+              className={`one-eyrie-user-profile-menu__theme-btn${
+                shell === "mobile"
+                  ? " one-eyrie-user-profile-menu__theme-btn--selected"
+                  : ""
+              }`}
+              onClick={() => handleInterfaceSelect("mobile")}
+            >
+              Mobile
+            </button>
+          </div>
+          <div className="one-eyrie-user-profile-menu__divider" role="separator" />
 
-            if (item.type === "appearance") {
-              return (
-                <div key={item.id} className="one-eyrie-user-profile-menu__section">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="one-eyrie-user-profile-menu__item one-eyrie-user-profile-menu__item--submenu"
-                    onClick={() => {
-                      setInterfaceOpen(false);
-                      setAppearanceOpen((current) => !current);
-                    }}
-                    aria-expanded={appearanceOpen}
-                  >
-                    <span>{item.label}</span>
-                    <ChevronRight
-                      size={15}
-                      className={`one-eyrie-user-profile-menu__submenu-chevron${appearanceOpen ? " one-eyrie-user-profile-menu__submenu-chevron--open" : ""}`}
-                      aria-hidden
-                    />
-                  </button>
-
-                  {appearanceOpen ? (
-                    <div className="one-eyrie-user-profile-menu__submenu" role="group" aria-label="Theme">
-                      {item.options.map((option) => {
-                        const selected = item.value === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={selected}
-                            className={`one-eyrie-user-profile-menu__item one-eyrie-user-profile-menu__item--option${selected ? " one-eyrie-user-profile-menu__item--selected" : ""}`}
-                            onClick={() => handleThemeSelect(option.value)}
-                          >
-                            <span className="one-eyrie-user-profile-menu__option-label">
-                              {option.label}
-                              {option.description ? (
-                                <span className="one-eyrie-user-profile-menu__option-hint">
-                                  {" "}
-                                  ({option.description})
-                                </span>
-                              ) : null}
-                            </span>
-                            {selected ? (
-                              <span className="one-eyrie-user-profile-menu__check" aria-hidden>
-                                ●
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            }
-
-            if (item.type === "interface") {
-              return (
-                <div key={item.id} className="one-eyrie-user-profile-menu__section">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="one-eyrie-user-profile-menu__item one-eyrie-user-profile-menu__item--submenu"
-                    onClick={() => {
-                      setAppearanceOpen(false);
-                      setInterfaceOpen((current) => !current);
-                    }}
-                    aria-expanded={interfaceOpen}
-                  >
-                    <span>{item.label}</span>
-                    <ChevronRight
-                      size={15}
-                      className={`one-eyrie-user-profile-menu__submenu-chevron${interfaceOpen ? " one-eyrie-user-profile-menu__submenu-chevron--open" : ""}`}
-                      aria-hidden
-                    />
-                  </button>
-
-                  {interfaceOpen ? (
-                    <div
-                      className="one-eyrie-user-profile-menu__submenu"
-                      role="group"
-                      aria-label="Preferred interface"
-                    >
-                      {item.options.map((option) => {
-                        const selected = item.value === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={selected}
-                            className={`one-eyrie-user-profile-menu__item one-eyrie-user-profile-menu__item--option${selected ? " one-eyrie-user-profile-menu__item--selected" : ""}`}
-                            onClick={() => handleInterfaceSelect(option.value)}
-                          >
-                            <span className="one-eyrie-user-profile-menu__option-label">
-                              {option.label}
-                              {option.description ? (
-                                <span className="one-eyrie-user-profile-menu__option-hint">
-                                  {" "}
-                                  ({option.description})
-                                </span>
-                              ) : null}
-                            </span>
-                            {selected ? (
-                              <span className="one-eyrie-user-profile-menu__check" aria-hidden>
-                                ●
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="menuitem"
-                className="one-eyrie-user-profile-menu__item"
-                onClick={() => {
-                  if (item.disabled) return;
-                  item.onClick();
-                  setOpen(false);
-                  setAppearanceOpen(false);
-                  setInterfaceOpen(false);
-                }}
-                disabled={item.disabled}
-              >
-                <span>{item.label}</span>
-                {item.hint ? (
-                  <span className="one-eyrie-user-profile-menu__hint">{item.hint}</span>
-                ) : null}
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            role="menuitem"
+            className="one-eyrie-user-profile-menu__item"
+            onClick={() => {
+              setOpen(false);
+              void signOutAndRedirect();
+            }}
+          >
+            <span>Logout</span>
+          </button>
         </div>
       ) : null}
     </div>

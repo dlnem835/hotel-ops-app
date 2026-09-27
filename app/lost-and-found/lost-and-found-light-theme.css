@@ -10,10 +10,10 @@ html[data-theme="light"] .one-eyrie-lost-found-page {
   --owl-slate: var(--oe-lm-tile);
   --owl-slate-hover: var(--oe-lm-tile-hover);
   --owl-header-slate: var(--oe-lm-card);
-  --owl-bronze-row: var(--oe-lm-tile);
-  --owl-bronze-row-alt: var(--oe-lm-card);
-  --owl-bronze-row-hover: var(--oe-lm-tile-hover);
-  --owl-bronze-row-alt-hover: var(--oe-lm-tile-hover);
+  --owl-bronze-row: #eceef1;
+  --owl-bronze-row-alt: #f4f5f7;
+  --owl-bronze-row-hover: #e4e6ea;
+  --owl-bronze-row-alt-hover: #e4e6ea;
   --owl-feather-border: var(--oe-lm-border);
   --owl-feather-divider: var(--oe-lm-border);
   --owl-feather-text: var(--oe-lm-ink);
@@ -42,20 +42,103 @@ html[data-theme="light"] .one-eyrie-lost-found-page {
 }
 
 html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card {
-  background: var(--oe-lm-tile) !important;
-  border-color: var(--oe-lm-border) !important;
-  color: var(--oe-lm-ink) !important;
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+  color: #111111 !important;
 }
 
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship,
 html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--success {
-  background: var(--oe-lm-forest-bg) !important;
-  border-color: var(--oe-lm-forest-border) !important;
-  color: var(--oe-lm-forest-text) !important;
+  background: #e7f6ee !important;
+  border-color: #9ec9b0 !important;
+  color: #1f4d34 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--discard {
+  background: #eceef1 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__title,
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--discard .lnf-kpi-card__title {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__muted,
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--discard .lnf-kpi-card__muted {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card__value {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card:hover {
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--discard:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship:hover {
+  background: #e3f3ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--active,
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-kpi-card--discard.lnf-kpi-card--active {
+  border-color: #c99716 !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-table-panel {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
+  background: transparent !important;
+  border-color: #d1d5db !important;
+}
+
+/* Visual test: muted bronze header (not nav gold, not near-black) */
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table thead tr,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table thead th {
+  background: #6e581c !important;
+  color: #f5f0e8 !important;
+  border-bottom-color: #4a3c14 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td {
+  border-top-color: #d1d5db !important;
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td:first-child {
+  border-left-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row td:last-child {
+  border-right-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:hover td {
+  border-top-color: #d4a514 !important;
+  border-bottom-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:hover td:first-child {
+  border-left-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-table-row:hover td:last-child {
+  border-right-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-table .one-eyrie-icon-btn:hover,
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-row-actions__trigger:hover {
+  color: #7d5f0a !important;
+  background: rgba(208, 160, 18, 0.12) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-lnf-status-select-wrap:hover {
+  box-shadow: 0 0 0 1px #d4a514 !important;
 }
 
 html[data-theme="light"] .one-eyrie-lost-found-page .lnf-status-pill,
@@ -77,8 +160,52 @@ html[data-theme="light"] .one-eyrie-lost-found-page .lnf-active-filter-pill {
   color: var(--oe-gold-text) !important;
 }
 
-html[data-theme="light"] .one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field,
-html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn {
+html[data-theme="light"] .one-eyrie-lost-found-page .lnf-search-wrap .one-eyrie-field {
   background: var(--oe-lm-card) !important;
   color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn svg {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: #c99716 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn svg {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn:hover,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn:focus,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn:focus-visible,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn[aria-expanded="true"],
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn:hover svg,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn[aria-expanded="true"] svg {
+  background: #eceef1 !important;
+  color: #111111 !important;
+  border-color: #d4a514 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn:hover svg,
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-filter-btn[aria-expanded="true"] svg {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-btn--start-work {
+  background: #e7f6ee !important;
+  border-color: #6b9f80 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-lost-found-page .one-eyrie-btn--start-work:hover:not(:disabled) {
+  background: #e3f3ea !important;
+  border-color: #2f5a40 !important;
+  color: #0f2418 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }

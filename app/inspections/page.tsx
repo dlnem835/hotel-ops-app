@@ -362,6 +362,8 @@ export default function InspectionsPage() {
               <button
                 key={entry}
                 type="button"
+                className="inspections-period-filter"
+                data-active={period === entry ? "true" : undefined}
                 onClick={() => setPeriod(entry)}
                 style={{
                   ...SETTINGS_BUTTON_BASE,
@@ -388,6 +390,8 @@ export default function InspectionsPage() {
               <button
                 key={entry}
                 type="button"
+                className="inspections-program-btn"
+                data-active={program === entry ? "true" : undefined}
                 onClick={() => setProgram(entry)}
                 style={{
                   ...SETTINGS_BUTTON_BASE,
@@ -408,6 +412,7 @@ export default function InspectionsPage() {
 
         {error && (
           <div
+            className="inspections-error-banner"
             style={{
               marginBottom: "16px",
               padding: "12px 14px",
@@ -426,7 +431,7 @@ export default function InspectionsPage() {
         )}
 
         {loading || !dashboard ? (
-          <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
+          <div className="inspections-loading-text" style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
             Loading inspection dashboard...
           </div>
         ) : (
@@ -454,6 +459,7 @@ export default function InspectionsPage() {
                   />
                 ) : null}
                 <div
+                  className="inspections-section-heading"
                   style={{
                     color: ONE_EYRIE.gold,
                     fontWeight: 800,

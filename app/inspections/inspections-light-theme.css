@@ -1,42 +1,497 @@
 /**
- * Inspections Light Mode — shared Dashboard tokens.
- * ALL rules scoped to html[data-theme="light"].
+ * Inspections Light Mode — approved Dashboard Light palette.
+ * ALL rules scoped to html[data-theme="light"] on the inspections route.
+ * Dark Mode is untouched.
  */
 
 html[data-theme="light"] .one-eyrie-inspections-page,
 html[data-theme="light"] main.one-eyrie-inspections-route {
-  background: var(--oe-lm-page) !important;
-  color: var(--oe-lm-ink) !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-sidebar {
+  background: #ffffff !important;
+  border-right-color: #d1d5db !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--one {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-wordmark--sidebar .one-eyrie-wordmark__line--eyrie {
+  color: var(--oe-gold-primary) !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--active) {
+  background: rgba(208, 160, 18, 0.12) !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item--active,
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item--active:hover,
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item--active .one-eyrie-nav-item__label,
+html[data-theme="light"] main.one-eyrie-inspections-route .one-eyrie-nav-item--active .one-eyrie-nav-item__icon {
+  background: var(--oe-gold-wash) !important;
+  color: #111111 !important;
 }
 
 html[data-theme="light"] .one-eyrie-inspections-page .inspections-mobile-page-title,
 html[data-theme="light"] .one-eyrie-inspections-route .one-eyrie-page-header h1 {
-  color: var(--oe-lm-ink) !important;
+  color: #111111 !important;
 }
 
-html[data-theme="light"] .one-eyrie-inspections-page .inspection-guidance-card,
-html[data-theme="light"] .one-eyrie-inspections-page .inspections-mobile-dashboard-grid > div,
-html[data-theme="light"] .one-eyrie-inspections-page .one-eyrie-split-grid > div {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
-  color: var(--oe-lm-ink) !important;
+html[data-theme="light"] .one-eyrie-inspections-route .one-eyrie-page-header p,
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-loading-text {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-section-heading {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-error-banner {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-error-banner div {
+  color: #3f434c !important;
+}
+
+/* ── Period / program filters ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-period-filter {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-period-filter[data-active="true"] {
+  background: #d0a012 !important;
+  color: #111111 !important;
+  border-color: #c99716 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-period-filter:hover:not([data-active="true"]) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-period-filter[data-active="true"]:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-program-btn {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-program-btn[data-active="true"] {
+  background: #e7f6ee !important;
+  color: #163826 !important;
+  border-color: #9ec9b0 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-program-btn:hover:not([data-active="true"]) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+}
+
+/* ── Month navigation ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mtd-month-selector__label {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mtd-month-selector__arrow {
+  background: #ffffff !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mtd-month-selector__arrow:hover:not(:disabled) {
+  border-color: #d4a514 !important;
+  color: #7d5f0a !important;
+  background: #eceef1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-mtd-month-selector__arrow:disabled {
+  color: #8b8f98 !important;
+}
+
+/* ── KPI tiles ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__label {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__sub {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__value {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__value--forest {
+  color: #1f4d34 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__value--gold {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-metric-card__value--urgent {
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rpm-compliance-track {
+  background: #d1d5db !important;
+  border-color: #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rpm-compliance-card__value--excellent {
+  color: #1f4d34 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rpm-compliance-card__value--good {
+  color: #2f4a63 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rpm-compliance-card__value--needs-attention {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rpm-compliance-card__value--critical {
+  color: #7a2e2e !important;
+}
+
+/* ── Guest Room Grid ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-panel {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-item {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-swatch--strong,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile--strong {
+  background: #e7f6ee !important;
+  border-color: #9ec9b0 !important;
+  color: #1f4d34 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-swatch--watch,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile--watch {
+  background: #f7f1de !important;
+  border-color: #c9a24a !important;
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-swatch--low,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile--low {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-swatch--not_inspected,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile--not_inspected {
+  background: #ffffff !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-legend-swatch--oos,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile--oos {
+  background: #e4e6ea !important;
+  border-color: #8b8f98 !important;
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile span {
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tile:hover {
+  box-shadow: none !important;
+  transform: translateY(-1px) !important;
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .pass-on-search-wrap__icon {
+  color: #1a1a1a !important;
 }
 
 html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field {
-  background: var(--oe-lm-card) !important;
-  color: var(--oe-lm-ink) !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
 }
 
-html[data-theme="light"] .inspections-mtd-month-selector,
-html[data-theme="light"] .start-inspection-modal,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field:focus,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-grid-search-wrap .one-eyrie-field:focus-visible {
+  background: #ffffff !important;
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tooltip {
+  background: #ffffff !important;
+  border-color: #d0a012 !important;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12) !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tooltip__title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tooltip__line {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-room-tooltip__hint {
+  color: #1f4d34 !important;
+}
+
+/* ── Priority Queue ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-pq-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-pq-sub,
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-pq-empty {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel .dashboard-list-card {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel .dashboard-list-card:hover {
+  background: #ffffff !important;
+  border-color: #d4a514 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel .dashboard-list-card__title {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel .dashboard-list-card__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-priority-queue-panel .dashboard-list-card__chevron {
+  color: #d0a012 !important;
+}
+
+/* ── Rankings ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-panel {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-sub,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-empty,
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-row {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-row:hover {
+  background: #f7f8f9 !important;
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-name {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspection-rankings-score {
+  color: #1f4d34 !important;
+}
+
+/* ── Start Inspection ── */
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-start-btn {
+  background: #e7f6ee !important;
+  border-color: #6b9f80 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-page .inspections-start-btn:hover:not(:disabled) {
+  background: #e3f3ea !important;
+  border-color: #2f5a40 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .start-inspection-modal {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__header,
+html[data-theme="light"] .start-inspection-modal__footer {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__title {
+  color: #111111 !important;
+}
+
 html[data-theme="light"] .start-inspection-form {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
-  color: var(--oe-lm-ink) !important;
+  background: #ffffff !important;
+  color: #111111 !important;
 }
 
-html[data-theme="light"] .one-eyrie-inspections-page button[data-active="true"] {
-  background: var(--oe-gold-wash) !important;
-  color: var(--oe-lm-ink) !important;
-  border-color: var(--oe-gold-border) !important;
+html[data-theme="light"] .start-inspection-form__label {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .start-inspection-form__hint {
+  background: #e7f6ee !important;
+  border-color: #9ec9b0 !important;
+  color: #163826 !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__btn--cancel {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: #c4c8ce !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__btn--cancel:hover:not(:disabled) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__btn--submit {
+  background: #e7f6ee !important;
+  border-color: #6b9f80 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .start-inspection-modal__btn--submit:hover:not(:disabled) {
+  background: #e3f3ea !important;
+  border-color: #2f5a40 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .inspection-history-drawer {
+  background: #ffffff !important;
+  border-left-color: #d0a012 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-history-drawer__title,
+html[data-theme="light"] .inspection-history-entry__score {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-history-entry__score span {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .inspection-history-drawer__sub,
+html[data-theme="light"] .inspection-history-drawer__muted,
+html[data-theme="light"] .inspection-history-entry__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .inspection-history-drawer__close {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-history-drawer__start {
+  background: #e7f6ee !important;
+  border-color: #6b9f80 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .inspection-history-entry {
+  background: #eceef1 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .inspection-history-entry__label {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-history-entry__review {
+  color: #7d5f0a !important;
+  border-color: #c99716 !important;
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .inspection-history-failed-btn {
+  color: #7a2e2e !important;
+  border-color: #c98989 !important;
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .inspection-history-failed-item {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #111111 !important;
 }

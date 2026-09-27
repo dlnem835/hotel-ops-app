@@ -308,10 +308,10 @@ export default function InspectionTemplateModal({
         >
           <div style={{ ...modalHeader, marginBottom: "12px" }}>
             <div>
-              <h2 style={{ margin: 0, color: ONE_EYRIE.text, fontWeight: 800 }}>
+              <h2 className="inspection-template-modal__title" style={{ margin: 0, color: ONE_EYRIE.text, fontWeight: 800 }}>
                 {readOnly ? `Standard: ${draft.name}` : draft.name || "Inspection Template"}
               </h2>
-              <div style={metaLine}>
+              <div className="inspection-template-modal__meta" style={metaLine}>
                 {standardMeta && (
                   <span>
                     Standard{" "}
@@ -340,6 +340,7 @@ export default function InspectionTemplateModal({
             </div>
             <button
               type="button"
+              className="inspection-template-modal__close"
               style={{ ...closeButton, ...buttonBase }}
               onClick={onClose}
               {...goldHoverHandlers("icon")}
@@ -356,7 +357,7 @@ export default function InspectionTemplateModal({
               flexWrap: "wrap",
               borderBottom: `1px solid ${ONE_EYRIE.border}`,
             }}
-            className="no-print"
+            className="inspection-template-modal__toolbar no-print"
           >
             {!readOnly && (
               <button
@@ -373,6 +374,7 @@ export default function InspectionTemplateModal({
             )}
             <button
               type="button"
+              className="inspection-template-modal__toolbar-btn"
               style={toolbarButton}
               onClick={handlePrint}
               {...secondaryHoverHandlers()}
@@ -382,6 +384,11 @@ export default function InspectionTemplateModal({
             </button>
             <button
               type="button"
+              className={
+                language === "es"
+                  ? "inspection-template-modal__toolbar-btn inspection-template-modal__toolbar-btn--active"
+                  : "inspection-template-modal__toolbar-btn"
+              }
               style={{
                 ...toolbarButton,
                 borderColor: language === "es" ? ONE_EYRIE.gold : undefined,
@@ -396,6 +403,7 @@ export default function InspectionTemplateModal({
             {!readOnly && propertyTemplate?.standard_key && (
               <button
                 type="button"
+                className="inspection-template-modal__toolbar-btn"
                 style={toolbarButton}
                 onClick={handleRestoreStandard}
                 disabled={saving}
@@ -419,6 +427,7 @@ export default function InspectionTemplateModal({
           >
             {readOnly && (
               <div
+                className="inspection-template-modal__banner"
                 style={{
                   padding: "12px 14px",
                   borderRadius: "10px",
@@ -477,15 +486,15 @@ export default function InspectionTemplateModal({
 
             <div
               style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "14px" }}
-              className="print-template-title"
+              className="print-template-title inspection-template-modal__section-title"
             >
               {draft.name} {language === "es" ? "(Español)" : ""}
             </div>
 
             {draft.categories.map((category) => (
-              <div key={category.clientId} style={categoryCard}>
+              <div key={category.clientId} className="inspection-template-modal__category" style={categoryCard}>
                 {readOnly ? (
-                  <div style={categoryHeader}>
+                  <div className="inspection-template-modal__category-title" style={categoryHeader}>
                     {getDraftCategoryName(category, language) || "Category"}
                   </div>
                 ) : (
@@ -509,7 +518,7 @@ export default function InspectionTemplateModal({
                   />
                 )}
 
-                <div style={columnHeader}>
+                <div className="inspection-template-modal__columns" style={columnHeader}>
                   <div>{language === "es" ? "Pregunta" : "Item / Question"}</div>
                   <div>{language === "es" ? "Peso" : "Weight"}</div>
                   <div>{language === "es" ? "Requerido" : "Required"}</div>
@@ -519,6 +528,7 @@ export default function InspectionTemplateModal({
                   readOnly ? (
                     <div
                       key={item.clientId}
+                      className="inspection-template-modal__item-row"
                       style={{
                         display: "grid",
                         gridTemplateColumns: "1fr 90px 80px",
@@ -533,6 +543,7 @@ export default function InspectionTemplateModal({
                       }}
                     >
                       <div
+                        className="inspection-template-modal__item-label"
                         style={{
                           color: ONE_EYRIE.textRow,
                           fontSize: "14px",
@@ -543,6 +554,7 @@ export default function InspectionTemplateModal({
                         {getDraftLabel(item, language)}
                       </div>
                       <div
+                        className="inspection-template-modal__item-weight"
                         style={{
                           color: ONE_EYRIE.gold,
                           fontWeight: 800,
@@ -553,6 +565,7 @@ export default function InspectionTemplateModal({
                         {item.pointValue}
                       </div>
                       <div
+                        className="inspection-template-modal__item-required"
                         style={{
                           color: ONE_EYRIE.textSubtle,
                           fontSize: "12px",

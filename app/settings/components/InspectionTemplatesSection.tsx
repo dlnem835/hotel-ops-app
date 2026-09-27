@@ -271,6 +271,11 @@ export default function InspectionTemplatesSection({
     const isActive = status === "Active";
     return (
       <span
+        className={
+          isActive
+            ? "inspection-templates-status-pill inspection-templates-status-pill--active"
+            : "inspection-templates-status-pill inspection-templates-status-pill--inactive"
+        }
         style={{
           ...statusPill,
           borderColor: isActive ? FOREST.border : NEUTRAL_PILL.border,
@@ -293,9 +298,10 @@ export default function InspectionTemplatesSection({
   } as const;
 
   return (
-    <div style={sectionPanel}>
+    <div className="one-eyrie-inspection-templates" style={sectionPanel}>
       {toast && (
         <div
+          className="inspection-templates-toast"
           style={{
             marginBottom: "14px",
             padding: "12px 14px",
@@ -310,6 +316,7 @@ export default function InspectionTemplatesSection({
       )}
 
       <div
+        className="inspection-templates-library"
         style={{
           border: `1px solid ${ONE_EYRIE.gold}`,
           borderRadius: "16px",
@@ -319,10 +326,10 @@ export default function InspectionTemplatesSection({
         }}
       >
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "18px" }}>
+          <div className="inspection-templates-library__title" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "18px" }}>
             One Eyrie Standard Library
           </div>
-          <p style={{ color: ONE_EYRIE.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
+          <p className="inspection-templates-library__lead" style={{ color: ONE_EYRIE.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
             Room and RPM masters are locked from{" "}
             {STANDARD_INSPECTION_LIBRARY_META.sourcePropertyName}. They cannot be
             edited here. Activate a template to create your property copy; new
@@ -346,15 +353,17 @@ export default function InspectionTemplatesSection({
             return (
               <div
                 key={standard.key}
+                className="inspection-templates-standard-card"
                 style={standardCardBase}
                 {...settingsCardHoverHandlers()}
               >
-                <div style={{ color: ONE_EYRIE.text, fontWeight: 800 }}>{standard.name}</div>
-                <div style={{ color: ONE_EYRIE.gold, fontSize: "12px", marginTop: "4px" }}>
+                <div className="inspection-templates-standard-card__title" style={{ color: ONE_EYRIE.text, fontWeight: 800 }}>{standard.name}</div>
+                <div className="inspection-templates-standard-card__meta" style={{ color: ONE_EYRIE.gold, fontSize: "12px", marginTop: "4px" }}>
                   {standard.templateType} · Standard v{standard.version}
                   {updateAvailable ? " · Update available" : ""}
                 </div>
                 <div
+                  className="inspection-templates-standard-card__desc"
                   style={{
                     color: ONE_EYRIE.textMuted,
                     fontSize: "13px",
@@ -364,13 +373,14 @@ export default function InspectionTemplatesSection({
                 >
                   {standard.description}
                 </div>
-                <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "8px" }}>
+                <div className="inspection-templates-standard-card__counts" style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "8px" }}>
                   {standard.categoryCount} categories · {standard.itemCount} items
                 </div>
 
                 <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
                   <button
                     type="button"
+                    className="inspection-templates-btn inspection-templates-btn--secondary"
                     style={{
                       ...secondaryButton,
                       ...buttonBase,
@@ -387,6 +397,7 @@ export default function InspectionTemplatesSection({
                   {updateAvailable && propertyTemplateId != null ? (
                     <button
                       type="button"
+                      className="inspection-templates-btn inspection-templates-btn--primary"
                       style={{
                         ...primaryButton,
                         ...buttonBase,
@@ -403,6 +414,7 @@ export default function InspectionTemplatesSection({
                     </button>
                   ) : activated ? (
                     <span
+                      className="inspection-templates-status-pill inspection-templates-status-pill--active"
                       style={{
                         ...statusPill,
                         alignSelf: "center",
@@ -415,6 +427,7 @@ export default function InspectionTemplatesSection({
                   ) : (
                     <button
                       type="button"
+                      className="inspection-templates-btn inspection-templates-btn--primary"
                       style={{
                         ...primaryButton,
                         ...buttonBase,
@@ -437,28 +450,30 @@ export default function InspectionTemplatesSection({
         </div>
       </div>
 
-      <div style={{ ...sectionToolbar, flexWrap: "wrap" }}>
-        <div style={searchWrap}>
+      <div className="inspection-templates-toolbar" style={{ ...sectionToolbar, flexWrap: "wrap" }}>
+        <div className="inspection-templates-search-wrap" style={searchWrap}>
           <Search
             size={18}
             color="#E5E7EB"
+            className="inspection-templates-search__icon"
             style={{ position: "absolute", left: 16, top: 14 }}
           />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search property templates..."
+            className="inspection-templates-search"
             style={searchInput}
           />
         </div>
       </div>
 
-      <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px", marginBottom: "12px" }}>
+      <div className="inspection-templates-table-title" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px", marginBottom: "12px" }}>
         Property Templates
       </div>
 
       <div
-        className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates"
+        className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates inspection-templates-table-header"
         style={{ ...tableHeader, gridTemplateColumns: undefined }}
       >
         <div>Template</div>
@@ -470,9 +485,9 @@ export default function InspectionTemplatesSection({
       </div>
 
       {loading ? (
-        <div style={emptyState}>Loading templates...</div>
+        <div className="inspection-templates-empty" style={emptyState}>Loading templates...</div>
       ) : filteredPropertyTemplates.length === 0 ? (
-        <div style={emptyState}>
+        <div className="inspection-templates-empty" style={emptyState}>
           No property templates yet. Activate a standard template above.
         </div>
       ) : (
@@ -488,20 +503,20 @@ export default function InspectionTemplatesSection({
           return (
             <div
               key={template.id}
-              className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates"
+              className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--templates inspection-templates-table-row"
               style={{ ...tableRow, gridTemplateColumns: undefined }}
             >
               <div>
-                <div style={rowTitle}>{template.name}</div>
-                <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", marginTop: "3px" }}>
+                <div className="inspection-templates-row-title" style={rowTitle}>{template.name}</div>
+                <div className="inspection-templates-row-sub" style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", marginTop: "3px" }}>
                   {template.standard_key ? "Based on standard" : "Custom copy"} ·
                   Modified {formatTemplateDate(template.last_modified_at)}
                 </div>
               </div>
-              <div style={rowText}>{template.template_type}</div>
-              <div style={rowText}>{countContentItems(template.content)}</div>
+              <div className="inspection-templates-row-text" style={rowText}>{template.template_type}</div>
+              <div className="inspection-templates-row-text" style={rowText}>{countContentItems(template.content)}</div>
               <div>{renderStatusPill(template.status)}</div>
-              <div style={{ ...rowText, fontSize: "12px", lineHeight: 1.5 }}>
+              <div className="inspection-templates-row-version" style={{ ...rowText, fontSize: "12px", lineHeight: 1.5 }}>
                 Std v{basedVersion}
                 {currentStandardVersion ? ` → v${currentStandardVersion}` : ""}
                 <br />
@@ -509,15 +524,16 @@ export default function InspectionTemplatesSection({
                 {updateAvailable ? (
                   <>
                     <br />
-                    <span style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}>
+                    <span className="inspection-templates-row-update" style={{ color: ONE_EYRIE.gold, fontWeight: 700 }}>
                       Update available
                     </span>
                   </>
                 ) : null}
               </div>
-              <div style={actionCell}>
+              <div className="inspection-templates-row-actions" style={actionCell}>
                 <button
                   type="button"
+                  className="inspection-templates-row-action"
                   style={{ ...iconButton, ...buttonBase }}
                   onClick={() => openPropertyEdit(template)}
                   title="Edit"
@@ -527,6 +543,7 @@ export default function InspectionTemplatesSection({
                 </button>
                 <button
                   type="button"
+                  className="inspection-templates-row-action"
                   style={{ ...iconButton, ...buttonBase }}
                   onClick={() => duplicateTemplate(template.id)}
                   title="Duplicate"
@@ -536,6 +553,7 @@ export default function InspectionTemplatesSection({
                 </button>
                 <button
                   type="button"
+                  className="inspection-templates-row-action"
                   style={{ ...iconButton, ...buttonBase }}
                   onClick={() => openPropertyEdit(template)}
                   title="Print"
@@ -546,6 +564,7 @@ export default function InspectionTemplatesSection({
                 {template.standard_key && (
                   <button
                     type="button"
+                    className="inspection-templates-row-action"
                     style={{ ...iconButton, ...buttonBase }}
                     onClick={() => restoreStandard(template.id)}
                     title="Restore Standard"
@@ -557,6 +576,7 @@ export default function InspectionTemplatesSection({
                 {template.status === "Active" ? (
                   <button
                     type="button"
+                    className="inspection-templates-row-action"
                     style={{ ...iconButton, ...buttonBase }}
                     onClick={() => setTemplateStatus(template.id, "Inactive")}
                     title="Deactivate"
@@ -567,6 +587,7 @@ export default function InspectionTemplatesSection({
                 ) : (
                   <button
                     type="button"
+                    className="inspection-templates-row-action"
                     style={{ ...iconButton, ...buttonBase }}
                     onClick={() => setTemplateStatus(template.id, "Active")}
                     title="Activate"
@@ -577,6 +598,7 @@ export default function InspectionTemplatesSection({
                 )}
                 <button
                   type="button"
+                  className="inspection-templates-row-action"
                   style={{ ...iconButton, ...buttonBase }}
                   onClick={() => deleteTemplate(template.id)}
                   title="Delete"

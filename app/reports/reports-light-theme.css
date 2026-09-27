@@ -8,56 +8,111 @@ html[data-theme="light"] .one-eyrie-reports-page {
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-tabs {
-  border-bottom-color: var(--oe-lm-border) !important;
+  border-bottom-color: #d1d5db !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab {
-  color: var(--oe-lm-secondary) !important;
+  color: #3f434c !important;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab:hover {
-  color: var(--oe-lm-ink) !important;
-  background: rgba(208, 160, 18, 0.1) !important;
+  color: #111111 !important;
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-tabs__tab--active {
-  color: var(--oe-gold-text) !important;
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
-  border-bottom-color: var(--oe-lm-card) !important;
+  color: #111111 !important;
+  background: #f3e4a3 !important;
+  border-color: #c99716 !important;
+  border-bottom-color: #f3e4a3 !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__icon {
+  color: #1a1a1a !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input {
-  background: var(--oe-lm-card) !important;
-  color: var(--oe-lm-ink) !important;
-  border-color: var(--oe-gold-border) !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input:focus,
+html[data-theme="light"] .one-eyrie-reports-page .reports-search-wrap__input:focus-visible {
+  background: #ffffff !important;
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-card,
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-section {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__header,
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-section__header {
-  background: var(--oe-lm-tile) !important;
-  border-bottom-color: var(--oe-lm-border) !important;
+  background: transparent !important;
+  border-bottom: 1px solid #8a7340 !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__title,
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-section__title {
-  color: var(--oe-lm-ink) !important;
+  color: #6e581c !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link {
-  color: var(--oe-gold-text) !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link--disabled,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link--disabled:hover {
+  color: #8b8f98 !important;
+  background: transparent !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__row:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__row:hover .reports-category-card__link:not(.reports-category-card__link--disabled) {
+  background: transparent !important;
+  color: #111111 !important;
 }
 
 html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link:hover,
-html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn:hover {
-  color: var(--oe-gold-text) !important;
-  background: rgba(208, 160, 18, 0.1) !important;
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__link:focus-visible {
+  background: #e4e6ea !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn {
+  color: #8b8f98 !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn--active {
+  color: #d0a012 !important;
+}
+
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn:hover,
+html[data-theme="light"] .one-eyrie-reports-page .reports-category-card__favorite-btn:focus-visible {
+  color: #d4a514 !important;
+  background: rgba(208, 160, 18, 0.12) !important;
 }
 
 html[data-theme="light"] .reports-date-presets__btn {

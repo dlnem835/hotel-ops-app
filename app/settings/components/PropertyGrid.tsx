@@ -23,6 +23,7 @@ export function StatusLegend() {
 
   return (
     <div
+      className="rooms-areas-legend"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -36,9 +37,11 @@ export function StatusLegend() {
       {items.map((item) => (
         <span
           key={item.label}
+          className="rooms-areas-legend__item"
           style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
         >
           <span
+            className={`rooms-areas-legend__swatch rooms-areas-legend__swatch--${item.label.toLowerCase().replace(/\s+/g, "-")}`}
             style={{
               width: "12px",
               height: "12px",
@@ -59,23 +62,30 @@ export default function PropertyGrid({ areas, onTileClick }: PropertyGridProps) 
 
   if (sortedAreas.length === 0) {
     return (
-      <div style={emptyGrid}>
+      <div className="rooms-areas-grid rooms-areas-grid--empty" style={emptyGrid}>
         No locations yet. Use Bulk Manage to get started.
       </div>
     );
   }
 
   return (
-    <div style={gridWrap}>
+    <div className="rooms-areas-grid" style={gridWrap}>
       {sortedAreas.map((area) => {
         const style = getTileStyle(area.area_type, area.status);
         const label = getTileLabel(area.name, area.area_type);
         const abbrev = getAreaTypeAbbrev(area.area_type);
+        const statusClass =
+          area.status === "Out of Service"
+            ? "rooms-areas-tile--oos"
+            : area.status === "Inactive"
+              ? "rooms-areas-tile--inactive"
+              : "rooms-areas-tile--active";
 
         return (
           <button
             key={area.id}
             type="button"
+            className={`rooms-areas-tile ${statusClass}`}
             onClick={() => onTileClick(area)}
             title={`${area.name} — ${area.area_type} — ${area.status}`}
             onMouseEnter={(e) => {

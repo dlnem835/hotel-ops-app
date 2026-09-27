@@ -208,6 +208,7 @@ export default function HotelPropertyInfoPanel({
         <>
           {!draft.addressComplete ? (
             <div
+              className="one-eyrie-hotel-property-panel__notice"
               style={{
                 marginBottom: "10px",
                 padding: "8px 10px",

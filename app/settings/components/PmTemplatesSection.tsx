@@ -573,18 +573,20 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
   }, [schedules, templates, gridSummaries]);
 
   return (
-    <div style={sectionPanel}>
-      <div style={sectionToolbar}>
-        <div style={searchWrap}>
+    <div className="one-eyrie-pm-templates" style={sectionPanel}>
+      <div className="pm-templates-toolbar" style={sectionToolbar}>
+        <div className="pm-templates-search-wrap" style={searchWrap}>
           <Search
             size={16}
             color={ONE_EYRIE.textSubtle}
+            className="pm-templates-search__icon"
             style={{ position: "absolute", left: 12, top: 12 }}
           />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search PM templates or areas..."
+            className="pm-templates-search"
             style={searchInput}
           />
         </div>
@@ -592,6 +594,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         {canManageStandardPms && (
           <button
             type="button"
+            className="pm-templates-btn pm-templates-btn--secondary"
             style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE }}
             onClick={() => setStandardModalOpen(true)}
             disabled={addingStandards}
@@ -612,6 +615,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
         <button
           type="button"
+          className="pm-templates-btn pm-templates-btn--primary"
           style={{ ...primaryButton, ...SETTINGS_BUTTON_BASE }}
           onClick={openNew}
           {...goldFilledHoverHandlers()}
@@ -623,6 +627,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
       {toast && (
         <div
+          className={`pm-templates-toast${toast.startsWith("Error:") ? " pm-templates-toast--error" : ""}`}
           style={{
             marginBottom: "12px",
             padding: "10px 12px",
@@ -668,10 +673,17 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         ].map((item) => {
           const tileContent = (
             <>
-            <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
+            <div className="pm-templates-kpi__label" style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", fontWeight: 700 }}>
               {item.label}
             </div>
             <div
+              className={`pm-templates-kpi__value${
+                item.accent === "#E0C47B"
+                  ? " pm-templates-kpi__value--due"
+                  : item.accent
+                    ? " pm-templates-kpi__value--muted"
+                    : ""
+              }`}
               style={{
                 color: item.accent || ONE_EYRIE.gold,
                 fontSize: "26px",
@@ -684,6 +696,9 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             </div>
             </>
           );
+          const tileClassName = `pm-templates-kpi${
+            item.inactiveFilter && showInactiveOnly ? " pm-templates-kpi--selected" : ""
+          }`;
           const tileStyle: React.CSSProperties = {
             background: ONE_EYRIE.surface,
             border: `1px solid ${
@@ -701,6 +716,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             <button
               key={item.label}
               type="button"
+              className={tileClassName}
               aria-pressed={showInactiveOnly}
               title={
                 showInactiveOnly
@@ -713,7 +729,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
               {tileContent}
             </button>
           ) : (
-            <div key={item.label} style={tileStyle}>
+            <div key={item.label} className={tileClassName} style={tileStyle}>
               {tileContent}
             </div>
           );
@@ -721,10 +737,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       </div>
 
       {!showInactiveOnly && <div style={{ marginBottom: "20px" }}>
-        <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
+        <div className="pm-templates-heading" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
           PM Assignment Grid
         </div>
         <div
+          className="pm-templates-help"
           style={{
             color: ONE_EYRIE.textSubtle,
             fontSize: "12px",
@@ -736,7 +753,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         </div>
         <PmGridLegend />
         {loading ? (
-          <div style={emptyState}>Loading PM coverage…</div>
+          <div className="pm-templates-empty" style={emptyState}>Loading PM coverage…</div>
         ) : (
           <PmAssignmentGrid
             areas={areas}
@@ -758,6 +775,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         >
           <button
             type="button"
+            className="pm-templates-btn pm-templates-btn--secondary"
             style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
             onClick={selectAllVisible}
             disabled={selectableTemplateIds.size === 0 || bulkDeleting}
@@ -769,6 +787,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           </button>
           <button
             type="button"
+            className="pm-templates-btn pm-templates-btn--muted"
             style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
             onClick={clearSelection}
             disabled={selectedCount === 0 || bulkDeleting}
@@ -781,6 +800,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
       {canManageStandardPms && selectedCount > 0 && (
         <div
+          className="pm-templates-selection-bar"
           style={{
             display: "flex",
             alignItems: "center",
@@ -794,6 +814,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           }}
         >
           <span
+            className="pm-templates-selection-count"
             style={{
               color: ONE_EYRIE.gold,
               fontWeight: 800,
@@ -804,6 +825,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           </span>
           <button
             type="button"
+            className="pm-templates-btn pm-templates-btn--danger"
             style={{
               ...secondaryButton,
               ...SETTINGS_BUTTON_BASE,
@@ -828,6 +850,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
           </button>
           <button
             type="button"
+            className="pm-templates-btn pm-templates-btn--muted"
             style={{ ...secondaryButton, ...SETTINGS_BUTTON_BASE, height: "38px" }}
             onClick={clearSelection}
             disabled={bulkDeleting}
@@ -840,10 +863,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
 
       {visibleUnassignedTemplates.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
-          <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
+          <div className="pm-templates-heading" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
             Unassigned PM Templates
           </div>
           <div
+            className="pm-templates-help"
             style={{
               color: ONE_EYRIE.textSubtle,
               fontSize: "12px",
@@ -938,13 +962,23 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                     {PM_FREQUENCY_LABELS[template.frequency]}
                   </div>
                   <div>
-                    <span style={statusPill}>{template.status}</span>
+                    <span
+                      className={`pm-templates-status-pill${
+                        template.status === "Active"
+                          ? " pm-templates-status-pill--active"
+                          : " pm-templates-status-pill--inactive"
+                      }`}
+                      style={statusPill}
+                    >
+                      {template.status}
+                    </span>
                   </div>
-                  <div style={actionCell}>
+                  <div className="pm-templates-row-actions" style={actionCell}>
                     {canModify && (
                       <>
                         <button
                           type="button"
+                          className="pm-templates-row-action"
                           style={iconButton}
                           title="Duplicate PM Template"
                           onClick={() => void openDuplicate(template.id)}
@@ -953,6 +987,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                         </button>
                         <button
                           type="button"
+                          className="pm-templates-row-action"
                           style={iconButton}
                           title="Edit PM template"
                           onClick={() => void openEdit(template.id)}
@@ -964,6 +999,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                     {canManageStandardPms && (
                       <button
                         type="button"
+                        className="pm-templates-row-action"
                         style={iconButton}
                         title="Delete PM template"
                         onClick={() => void deleteTemplate(template.id)}
@@ -980,10 +1016,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
       )}
 
       <div>
-        <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
+        <div className="pm-templates-heading" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "15px" }}>
           PM Templates by Frequency
         </div>
         <div
+          className="pm-templates-help"
           style={{
             color: ONE_EYRIE.textSubtle,
             fontSize: "12px",
@@ -995,7 +1032,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
         </div>
 
         {loading ? (
-          <div style={emptyState}>Loading templates…</div>
+          <div className="pm-templates-empty" style={emptyState}>Loading templates…</div>
         ) : (
           PM_FREQUENCIES.map((frequency) => {
             const items = schedulesByFrequency.get(frequency) || [];
@@ -1004,6 +1041,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
             return (
               <div
                 key={frequency}
+                className="pm-templates-frequency-group"
                 style={{
                   border: `1px solid ${ONE_EYRIE.border}`,
                   borderRadius: "12px",
@@ -1014,6 +1052,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
               >
                 <button
                   type="button"
+                  className="pm-templates-frequency-toggle"
                   onClick={() => toggleFrequency(frequency)}
                   style={{
                     width: "100%",
@@ -1029,10 +1068,11 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                     textAlign: "left",
                   }}
                 >
-                  <span style={{ fontWeight: 800, fontSize: "14px" }}>
+                  <span className="pm-templates-frequency-label" style={{ fontWeight: 800, fontSize: "14px" }}>
                     {PM_FREQUENCY_LABELS[frequency]}
                   </span>
                   <span
+                    className="pm-templates-frequency-meta"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -1051,6 +1091,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                   <div style={{ padding: "10px 12px 14px" }}>
                     {items.length === 0 ? (
                       <div
+                        className="pm-templates-empty"
                         style={{
                           padding: "8px 4px",
                           color: ONE_EYRIE.textMuted,
@@ -1185,6 +1226,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                 </div>
                                 <div>
                                   <span
+                                    className={`pm-templates-due-pill pm-templates-due-pill--${dueStatus}`}
                                     style={{
                                       ...statusPill,
                                       ...dueStyles,
@@ -1193,11 +1235,12 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                     {formatDueStatusLabel(dueStatus)}
                                   </span>
                                 </div>
-                                <div style={actionCell}>
+                                <div className="pm-templates-row-actions" style={actionCell}>
                                   {canModify && (
                                     <>
                                       <button
                                         type="button"
+                                        className="pm-templates-row-action"
                                         style={iconButton}
                                         title="Duplicate PM Template"
                                         onClick={() =>
@@ -1208,6 +1251,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                       </button>
                                       <button
                                         type="button"
+                                        className="pm-templates-row-action"
                                         style={iconButton}
                                         title="Edit PM template"
                                         onClick={() =>
@@ -1221,6 +1265,7 @@ export default function PmTemplatesSection({ styles }: PmTemplatesSectionProps) 
                                   {canManageStandardPms && (
                                     <button
                                       type="button"
+                                      className="pm-templates-row-action"
                                       style={iconButton}
                                       title="Delete PM template"
                                       onClick={() =>

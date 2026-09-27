@@ -174,9 +174,43 @@ html[data-theme="light"] .one-eyrie-filter-btn[aria-expanded="true"] {
 
 html[data-theme="light"] .lnf-filter-menu,
 html[data-theme="light"] .one-eyrie-user-profile-menu__dropdown {
-  background: var(--oe-lm-card) !important;
-  border-color: var(--oe-lm-border) !important;
-  box-shadow: 0 12px 32px var(--oe-shadow) !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.12) !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__item {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__item:hover:not(:disabled) {
+  background: #eceef1 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__appearance-label {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn {
+  background: #ffffff !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn:hover {
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__theme-btn--selected {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-user-profile-menu__divider {
+  background: #d1d5db !important;
 }
 
 html[data-theme="light"] .lnf-filter-menu__heading,

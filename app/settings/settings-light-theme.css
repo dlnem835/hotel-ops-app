@@ -61,3 +61,1069 @@ html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(201, 201, 201)"],
 html[data-theme="light"] .one-eyrie-settings-page [style*="rgb(229, 231, 235)"] {
   color: var(--oe-lm-secondary) !important;
 }
+
+/* ── Team Members Light (scoped; other Settings sections unchanged) ── */
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search:focus,
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search:focus-visible {
+  background: #ffffff !important;
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-toolbar--team .one-eyrie-settings-search__icon {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid--team-header {
+  background: #6e581c !important;
+  color: #f5f0e8 !important;
+  border-bottom-color: #4a3c14 !important;
+  border-radius: 10px;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid--team-header > div {
+  color: #f5f0e8 !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid--team-row {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid--team-row:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-settings-data-grid--team-row > div {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-row-sub {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-admin-label {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-status-pill--active {
+  background: #d8ebe0 !important;
+  border: 1px solid #5a8f6e !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-status-pill--inactive {
+  background: #f4f5f7 !important;
+  border-color: #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-row-action {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .settings-team-row-action:hover {
+  color: #7d5f0a !important;
+  background: rgba(208, 160, 18, 0.12) !important;
+  border-radius: 8px;
+}
+
+/* ── Rooms & Areas Light (scoped) ── */
+
+html[data-theme="light"] .one-eyrie-rooms-areas {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__field span,
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__status {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__saved {
+  color: #1f4d34 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__error,
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__notice {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel input,
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel select {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__save:disabled {
+  background: #f3e4a3 !important;
+  border: 1px solid #c99716 !important;
+  color: #5a4508 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-hotel-property-panel__save:not(:disabled) {
+  background: #d0a012 !important;
+  border: 1px solid #c99716 !important;
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-kpi {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-kpi__label {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-kpi__value {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-kpi__value--urgent {
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-legend {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-legend__swatch--active {
+  background: #e7f6ee !important;
+  border-color: #9ec9b0 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-legend__swatch--out-of-service {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-legend__swatch--inactive {
+  background: #e4e6ea !important;
+  border-color: #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-grid {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-tile--active {
+  background: #f7f8f9 !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-tile--oos {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-tile--inactive {
+  background: #e4e6ea !important;
+  border-color: #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-tile:hover {
+  box-shadow: none !important;
+  transform: translateY(-1px) !important;
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search:hover {
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search:focus,
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search:focus-visible {
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-search__icon {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-btn--secondary {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-btn--secondary:hover:not(:disabled) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-btn--primary {
+  background: #d0a012 !important;
+  border: 1px solid #b8860b !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-btn--primary:hover:not(:disabled) {
+  background: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-settings-filter-select {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-settings-filter-select:hover {
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-list-title {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-list-help,
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-select-all {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-group {
+  background: #eceef1 !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-group__toggle,
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-group__label {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-group__toggle:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-group__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-list {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-header {
+  background: #f4f5f7 !important;
+  color: #1a1a1a !important;
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-row {
+  background: #ffffff !important;
+  border-bottom-color: #e5e7eb !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-row:hover,
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-row[data-selected="true"] {
+  background: #eceef1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-row__name {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .one-eyrie-area-schedule-row__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-status-pill--active {
+  background: #cfe6d8 !important;
+  border: 1px solid #4d7f62 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-status-pill--oos {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-rooms-areas .rooms-areas-status-pill--inactive {
+  background: #f4f5f7 !important;
+  border-color: #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+/* ── Inspection Templates Light (scoped; Dark unchanged) ── */
+
+html[data-theme="light"] .one-eyrie-inspection-templates {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+  overflow: visible !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-toast {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-library {
+  background: #3a342c !important;
+  border: 1px solid #c99716 !important;
+  color: #f5f0e8 !important;
+  box-shadow: 0 1px 4px rgba(58, 52, 44, 0.18) !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-inspection-templates .inspection-templates-library__title {
+  color: #e0c47b !important;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .one-eyrie-inspection-templates .inspection-templates-library__lead {
+  color: #f7f5f1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.08) !important;
+  color: #111111 !important;
+  padding: 18px !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card:hover {
+  border-color: #c99716 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card__title {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card__meta {
+  color: #7d5f0a !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card__desc {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-standard-card__counts {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--secondary {
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--secondary:hover:not(:disabled) {
+  background: #f4f5f7 !important;
+  border-color: #c99716 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--secondary:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--primary {
+  background: #d0a012 !important;
+  border: 1px solid #c99716 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--primary:hover:not(:disabled) {
+  background: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--primary:disabled {
+  background: #f3e4a3 !important;
+  border-color: #e0c56a !important;
+  color: #5a4508 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-btn--primary:focus-visible {
+  outline: 2px solid #7d5f0a;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search:focus,
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search:focus-visible {
+  background: #ffffff !important;
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-search__icon {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-table-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-empty {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .one-eyrie-settings-data-grid--templates {
+  grid-template-columns:
+    minmax(140px, 1.2fr)
+    minmax(72px, 0.65fr)
+    minmax(44px, 0.35fr)
+    minmax(76px, 0.5fr)
+    minmax(88px, 0.65fr)
+    minmax(248px, max-content) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .one-eyrie-settings-data-grid--templates > *:last-child {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  min-width: 248px;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .one-eyrie-settings-data-grid--templates > *:not(:last-child) {
+  min-width: 0;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-table-header {
+  background: #6e581c !important;
+  color: #f5f0e8 !important;
+  border-bottom: none !important;
+  border-radius: 10px;
+  padding: 12px 14px !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-table-header > div {
+  color: #f5f0e8 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-table-row {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  border-bottom: 1px solid #d1d5db !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-table-row:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-title,
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-text {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-sub {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-version {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-update {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-status-pill--active {
+  background: #cfe6d8 !important;
+  border: 1px solid #4d7f62 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-status-pill--inactive {
+  background: #f4f5f7 !important;
+  border: 1px solid #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 4px !important;
+  overflow: visible !important;
+  min-width: 248px;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-action {
+  color: #111111 !important;
+  background: transparent !important;
+  flex: 0 0 auto;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-action svg {
+  stroke: currentColor !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-action:hover {
+  color: #7d5f0a !important;
+  background: rgba(208, 160, 18, 0.12) !important;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .one-eyrie-inspection-templates .inspection-templates-row-action:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 1px;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .inspection-template-overlay {
+  background: rgba(17, 24, 39, 0.45) !important;
+}
+
+html[data-theme="light"] .inspection-template-modal.one-eyrie-modal {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__title {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__meta span[style] {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__close {
+  color: #111111 !important;
+  background: transparent !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__close:hover {
+  color: #7d5f0a !important;
+  background: rgba(208, 160, 18, 0.12) !important;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .inspection-template-modal__close:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar {
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar-btn {
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar-btn:hover:not(:disabled) {
+  background: #f4f5f7 !important;
+  border-color: #c99716 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar-btn--active {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar-btn:disabled {
+  background: #f4f5f7 !important;
+  border-color: #d1d5db !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__toolbar-btn:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .one-eyrie-settings-page .inspection-template-modal__banner,
+html[data-theme="light"] .inspection-template-modal__banner {
+  background: #3a342c !important;
+  border-color: #c99716 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__section-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__category {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__category-title {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__columns {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__item-row {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__item-label {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__item-weight {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .inspection-template-modal__item-required {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .inspection-template-modal .inspection-template-print-area {
+  scrollbar-color: #8b8f98 #eceef1;
+}
+
+html[data-theme="light"] .inspection-template-modal .inspection-template-print-area::-webkit-scrollbar {
+  width: 10px;
+}
+
+html[data-theme="light"] .inspection-template-modal .inspection-template-print-area::-webkit-scrollbar-track {
+  background: #eceef1;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .inspection-template-modal .inspection-template-print-area::-webkit-scrollbar-thumb {
+  background: #8b8f98;
+  border-radius: 8px;
+  border: 2px solid #eceef1;
+}
+
+html[data-theme="light"] .inspection-template-modal .no-print {
+  border-top-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .inspection-template-modal select option {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .inspection-template-modal input[readonly],
+html[data-theme="light"] .inspection-template-modal select:disabled {
+  background: #f4f5f7 !important;
+  color: #3f434c !important;
+  border-color: #d1d5db !important;
+  cursor: default !important;
+}
+
+/* ── PM Templates Light (scoped; Dark unchanged) ── */
+
+html[data-theme="light"] .one-eyrie-pm-templates {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #c4c8ce !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search::placeholder {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search:hover {
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search:focus,
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search:focus-visible {
+  border-color: #c99716 !important;
+  box-shadow: 0 0 0 2px rgba(208, 160, 18, 0.16) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-search__icon {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--primary {
+  background: #d0a012 !important;
+  border: 1px solid #b8860b !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--primary:hover:not(:disabled) {
+  background: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--secondary {
+  background: #ffffff !important;
+  border: 1px solid #c4c8ce !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--secondary:hover:not(:disabled) {
+  background: #eceef1 !important;
+  border-color: #d4a514 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--muted {
+  background: #eceef1 !important;
+  border: 1px solid #c4c8ce !important;
+  color: #3f434c !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--muted:hover:not(:disabled) {
+  background: #e4e6ea !important;
+  border-color: #b8bcc4 !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn--danger {
+  background: #ffffff !important;
+  border: 1px solid #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn:disabled {
+  background: #f4f5f7 !important;
+  border-color: #d1d5db !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-btn:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-toast {
+  color: #3f434c !important;
+  border-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-toast--error {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi--selected {
+  border-color: #c99716 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates button.pm-templates-kpi:hover {
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi__label {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi__value {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi__value--due {
+  color: #7d5f0a !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-kpi__value--muted {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-heading {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-help,
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-empty {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-legend {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-legend__current {
+  background: #f7f8f9 !important;
+  border-color: #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid,
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-empty {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile--active {
+  background: #f7f8f9 !important;
+  border-color: #c4c8ce !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile--oos {
+  background: #f8eaea !important;
+  border-color: #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile--inactive {
+  background: #e4e6ea !important;
+  border-color: #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile__label,
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile__type {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile__type {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile--oos .one-eyrie-pm-grid-tile__type {
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
+  border-color: #d4a514 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-grid-tile:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 2px;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-selection-bar {
+  background: #f8f1da !important;
+  border-color: #c99716 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-selection-count {
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-group {
+  background: #eceef1 !important;
+  border: 1px solid #d1d5db !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-toggle {
+  background: transparent !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-toggle:hover {
+  background: #e4e6ea !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-toggle:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: -2px;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-label {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-frequency-meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-list {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-header {
+  background: #f4f5f7 !important;
+  color: #1a1a1a !important;
+  border-bottom-color: #d1d5db !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row {
+  background: #ffffff !important;
+  border-bottom-color: #e4e6ea !important;
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row:hover {
+  background: #eceef1 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row[data-selected="true"] {
+  background: #f8f1da !important;
+  box-shadow: inset 0 0 0 1px #c99716 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row__name {
+  color: #111111 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row__area,
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row__meta {
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .one-eyrie-pm-schedule-row > *:last-child {
+  overflow: visible !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-row-action {
+  color: #111111 !important;
+  background: transparent !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-row-action svg {
+  stroke: currentColor !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-row-action:hover {
+  color: #7d5f0a !important;
+  background: rgba(208, 160, 18, 0.12) !important;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-row-action:focus-visible {
+  outline: 2px solid #c99716;
+  outline-offset: 1px;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-status-pill--active {
+  background: #cfe6d8 !important;
+  border: 1px solid #4d7f62 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-status-pill--inactive {
+  background: #f4f5f7 !important;
+  border: 1px solid #c4c8ce !important;
+  color: #3f434c !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-due-pill--current {
+  background: #cfe6d8 !important;
+  border: 1px solid #4d7f62 !important;
+  color: #0f2418 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-due-pill--due_soon {
+  background: #f8f1da !important;
+  border: 1px solid #c99716 !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-due-pill--overdue {
+  background: #f8eaea !important;
+  border: 1px solid #c98989 !important;
+  color: #7a2e2e !important;
+}
+
+html[data-theme="light"] .one-eyrie-pm-templates .pm-templates-due-pill--inactive {
+  background: #f4f5f7 !important;
+  border: 1px solid #c4c8ce !important;
+  color: #3f434c !important;
+}

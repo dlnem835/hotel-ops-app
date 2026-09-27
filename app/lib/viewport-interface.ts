@@ -13,7 +13,12 @@
  *
  * Preference override (localStorage, per browser — not locked at setup):
  * - automatic (default): use breakpoints above
- * - mobile / desktop: force that shell until the user changes it
+ * - mobile: force the existing `/mobile` Field Operations shell
+ * - desktop: force the existing desktop shell
+ *
+ * Desktop and Mobile are chosen from the profile menu. Those explicit
+ * values always win, including when testing the other shell at a
+ * mismatched viewport width.
  */
 
 export type InterfacePreference = "automatic" | "mobile" | "desktop";

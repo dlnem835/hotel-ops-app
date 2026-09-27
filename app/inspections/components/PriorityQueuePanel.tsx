@@ -32,16 +32,16 @@ export default function PriorityQueuePanel({
       }}
     >
       <div>
-        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+        <div className="inspections-pq-title" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
           Priority Queue
         </div>
-        <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
+        <div className="inspections-pq-sub" style={{ color: ONE_EYRIE.textSubtle, fontSize: "12px", marginTop: "4px" }}>
           {program === "VR" ? "Vacant Ready / Stayover" : "RPM"} · Most overdue
         </div>
       </div>
 
       {items.length === 0 ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "12px 0" }}>
+        <div className="inspections-pq-empty" style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", padding: "12px 0" }}>
           No priority rooms right now. All guest rooms are current.
         </div>
       ) : (

@@ -133,6 +133,10 @@
     border-color: var(--owl-success-border) !important;
   }
 
+  html:not([data-theme="light"]) .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship:hover:not(.lnf-kpi-card--active) {
+    border-color: #c8a96a !important;
+  }
+
   .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__title,
   .one-eyrie-lost-found-page .lnf-kpi-card--ready-ship .lnf-kpi-card__muted {
     color: #ffffff !important;

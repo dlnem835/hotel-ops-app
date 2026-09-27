@@ -14,6 +14,7 @@ export default function TopInspectorsPanel({
 }: TopInspectorsPanelProps) {
   return (
     <div
+      className="inspection-rankings-panel"
       style={{
         background: ONE_EYRIE.surfaceInset,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -23,16 +24,16 @@ export default function TopInspectorsPanel({
       }}
     >
       <div style={{ marginBottom: "12px" }}>
-        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+        <div className="inspection-rankings-title" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
           Top Inspectors
         </div>
-        <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "3px" }}>
+        <div className="inspection-rankings-sub" style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "3px" }}>
           {periodLabel}
         </div>
       </div>
 
       {inspectors.length === 0 ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", lineHeight: 1.5 }}>
+        <div className="inspection-rankings-empty" style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", lineHeight: 1.5 }}>
           No completed inspections in this period yet.
         </div>
       ) : (
@@ -40,6 +41,7 @@ export default function TopInspectorsPanel({
           {inspectors.map((entry, index) => (
             <div
               key={entry.inspectorId}
+              className="inspection-rankings-row"
               style={{
                 padding: "10px 12px",
                 borderRadius: "8px",
@@ -47,10 +49,11 @@ export default function TopInspectorsPanel({
                 border: `1px solid ${ONE_EYRIE.borderDivider}`,
               }}
             >
-              <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "13px" }}>
+              <div className="inspection-rankings-name" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "13px" }}>
                 {index + 1}. {entry.name}
               </div>
               <div
+                className="inspection-rankings-meta"
                 style={{
                   color: ONE_EYRIE.textMuted,
                   fontSize: "12px",

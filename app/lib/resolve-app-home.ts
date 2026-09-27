@@ -15,6 +15,7 @@ import {
   readInterfacePreference,
   resolvePreferredShell,
   type AppShell,
+  type InterfacePreference,
 } from "@/app/lib/viewport-interface";
 
 function homeForShell(
@@ -61,8 +62,9 @@ export async function resolveAuthenticatedAppHome(options?: {
 
 /** Home for the preferred shell given already-loaded permissions. */
 export function resolveHomeForPermissions(
-  permissions: ModulePermissions
+  permissions: ModulePermissions,
+  preference: InterfacePreference = readInterfacePreference()
 ): string {
-  const shell = resolvePreferredShell(readInterfacePreference());
+  const shell = resolvePreferredShell(preference);
   return homeForShell(shell, permissions);
 }

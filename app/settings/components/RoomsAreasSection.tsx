@@ -107,6 +107,7 @@ function AreaAccordion({
 
   return (
     <div
+      className="rooms-areas-group"
       style={{
         border: `1px solid ${ONE_EYRIE.border}`,
         borderRadius: "12px",
@@ -117,6 +118,7 @@ function AreaAccordion({
     >
       <button
         type="button"
+        className="rooms-areas-group__toggle"
         onClick={() => onToggleExpanded(groupKey)}
         style={{
           width: "100%",
@@ -132,8 +134,9 @@ function AreaAccordion({
           textAlign: "left",
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: "14px" }}>{label}</span>
+        <span className="rooms-areas-group__label" style={{ fontWeight: 800, fontSize: "14px" }}>{label}</span>
         <span
+          className="rooms-areas-group__meta"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -260,9 +263,14 @@ function StatTile({
   accent?: string;
 }) {
   return (
-    <div style={statTile}>
-      <div style={statLabel}>{label}</div>
-      <div style={{ ...statValue, color: accent || GOLD }}>{value}</div>
+    <div className="rooms-areas-kpi" style={statTile}>
+      <div className="rooms-areas-kpi__label" style={statLabel}>{label}</div>
+      <div
+        className={`rooms-areas-kpi__value${accent ? " rooms-areas-kpi__value--urgent" : ""}`}
+        style={{ ...statValue, color: accent || GOLD }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -851,6 +859,13 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
     return (
       <span
+        className={
+          isActive
+            ? "rooms-areas-status-pill rooms-areas-status-pill--active"
+            : isOutOfService
+              ? "rooms-areas-status-pill rooms-areas-status-pill--oos"
+              : "rooms-areas-status-pill rooms-areas-status-pill--inactive"
+        }
         style={{
           ...statusPill,
           borderColor: isActive ? FOREST.border : isOutOfService ? FLAT_RED.border : NEUTRAL_PILL.border,
@@ -865,7 +880,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
   const buttonBase = SETTINGS_BUTTON_BASE;
 
   return (
-    <div style={sectionPanel}>
+    <div className="one-eyrie-rooms-areas" style={sectionPanel}>
       {toast && (
         <div
           style={{
@@ -903,23 +918,26 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
       <PropertyGrid areas={areas} onTileClick={openEdit} />
 
-      <div style={{ ...sectionToolbar, flexWrap: "wrap" }}>
-        <div style={searchWrap}>
+      <div className="rooms-areas-toolbar" style={{ ...sectionToolbar, flexWrap: "wrap" }}>
+        <div className="rooms-areas-search-wrap" style={searchWrap}>
           <Search
             size={18}
             color="#E5E7EB"
+            className="rooms-areas-search__icon"
             style={{ position: "absolute", left: 16, top: 14 }}
           />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search rooms & areas..."
+            className="rooms-areas-search"
             style={searchInput}
           />
         </div>
 
         <button
           type="button"
+          className="rooms-areas-btn rooms-areas-btn--secondary"
           style={{ ...secondaryButton, ...buttonBase }}
           onClick={() => void addMissingStandardAreas()}
           disabled={saving}
@@ -941,6 +959,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
         <button
           type="button"
+          className="rooms-areas-btn rooms-areas-btn--secondary"
           style={{ ...secondaryButton, ...buttonBase }}
           onClick={openWizard}
           disabled={saving}
@@ -952,6 +971,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
         <button
           type="button"
+          className="rooms-areas-btn rooms-areas-btn--primary"
           style={{ ...primaryButton, ...buttonBase }}
           onClick={openNew}
           disabled={saving}
@@ -1047,6 +1067,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
           <button
             type="button"
+            className="rooms-areas-btn rooms-areas-btn--secondary"
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Active")}
             disabled={saving}
@@ -1057,6 +1078,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
           <button
             type="button"
+            className="rooms-areas-btn rooms-areas-btn--secondary"
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Out of Service")}
             disabled={saving}
@@ -1067,6 +1089,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
           <button
             type="button"
+            className="rooms-areas-btn rooms-areas-btn--secondary"
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={() => bulkUpdateStatus("Inactive")}
             disabled={saving}
@@ -1077,6 +1100,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
           <button
             type="button"
+            className="rooms-areas-btn rooms-areas-btn--secondary"
             style={{ ...secondaryButton, ...buttonBase, height: "38px" }}
             onClick={clearSelection}
             disabled={saving}
@@ -1089,6 +1113,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
       <div style={{ marginTop: "8px" }}>
         <div
+          className="rooms-areas-list-title"
           style={{
             color: ONE_EYRIE.text,
             fontWeight: 800,
@@ -1099,6 +1124,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
           Rooms &amp; Areas List
         </div>
         <div
+          className="rooms-areas-list-help"
           style={{
             color: ONE_EYRIE.textSubtle,
             fontSize: "12px",
@@ -1110,6 +1136,7 @@ export default function RoomsAreasSection({ styles }: RoomsAreasSectionProps) {
 
         {filteredAreas.length > 0 && (
           <label
+            className="rooms-areas-select-all"
             style={{
               display: "inline-flex",
               alignItems: "center",

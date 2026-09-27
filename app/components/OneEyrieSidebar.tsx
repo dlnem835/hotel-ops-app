@@ -33,6 +33,10 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
 
       <OneEyriePropertySelector />
 
+      <div className="one-eyrie-sidebar__profile">
+        <OneEyrieUserProfileMenu variant="sidebar" />
+      </div>
+
       <nav className="one-eyrie-sidebar__nav" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = item.label === active;
@@ -79,10 +83,6 @@ export default function OneEyrieSidebar({ active }: OneEyrieSidebarProps) {
           </Link>
         ) : null}
       </nav>
-
-      <div className="one-eyrie-sidebar__profile">
-        <OneEyrieUserProfileMenu variant="sidebar" />
-      </div>
     </aside>
   );
 }

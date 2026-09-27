@@ -14,6 +14,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
 
   return (
     <div
+      className="inspection-metric-card inspection-rpm-compliance-card"
       style={{
         background: ONE_EYRIE.listRow,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -23,6 +24,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
       }}
     >
       <div
+        className="inspection-metric-card__label"
         style={{
           color: ONE_EYRIE.textSubtle,
           fontSize: "12px",
@@ -34,6 +36,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
       </div>
 
       <div
+        className={`inspection-rpm-compliance-card__value inspection-rpm-compliance-card__value--${grade.label.toLowerCase().replace(/\s+/g, "-")}`}
         style={{
           color: grade.accent,
           fontSize: "28px",
@@ -46,6 +49,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
       </div>
 
       <div
+        className="inspection-rpm-compliance-track"
         style={{
           height: "6px",
           borderRadius: "999px",
@@ -67,6 +71,7 @@ export default function RpmComplianceCard({ compliance }: RpmComplianceCardProps
       </div>
 
       <div
+        className="inspection-metric-card__sub"
         style={{
           color: ONE_EYRIE.textMuted,
           fontSize: "11px",

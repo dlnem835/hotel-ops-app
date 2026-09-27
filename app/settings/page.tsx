@@ -36,7 +36,6 @@ import {
   Building2,
   ChevronRight,
   ClipboardCheck,
-  Monitor,
   Package,
   Pencil,
   Plus,
@@ -48,7 +47,6 @@ import {
 } from "lucide-react";
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
-import PreferredInterfaceSection from "./components/PreferredInterfaceSection";
 import "./settings-light-theme.css";
 import PropertyShippingSettingsPanel from "./components/PropertyShippingSettingsPanel";
 import RoomsAreasSection from "./components/RoomsAreasSection";
@@ -72,7 +70,6 @@ const supabase = createClient(
 
 type SectionId =
   | "home"
-  | "preferredInterface"
   | "team"
   | "roomsAreas"
   | "templates"
@@ -131,12 +128,6 @@ useEffect(() => {
 
 
   const settingsCards = [
-    {
-      id: "preferredInterface" as SectionId,
-      title: "Preferred Interface",
-      subtitle: "Choose Dark or Light theme. Dark is the default.",
-      icon: <Monitor size={26} />,
-    },
     {
       id: "team" as SectionId,
       title: "Team Members",
@@ -348,11 +339,12 @@ async function saveItem() {
 
     return (
       <div style={sectionPanel}>
-        <div className="one-eyrie-settings-toolbar" style={sectionToolbar}>
+        <div className="one-eyrie-settings-toolbar one-eyrie-settings-toolbar--team" style={sectionToolbar}>
           <div className="one-eyrie-section-toolbar__search" style={searchWrap}>
             <Search
               size={18}
               color="#E5E7EB"
+              className="one-eyrie-settings-search__icon"
               style={{ position: "absolute", left: 16, top: 14 }}
             />
             <input
@@ -377,7 +369,7 @@ async function saveItem() {
         </div>
 
         <div
-          className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team"
+          className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team one-eyrie-settings-data-grid--team-header"
           style={tableHeader}
         >
           <div>Name</div>
@@ -390,18 +382,18 @@ async function saveItem() {
         {currentRows.map((item) => (
           <div
             key={item.id}
-            className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team"
+            className="one-eyrie-settings-data-grid one-eyrie-settings-data-grid--team one-eyrie-settings-data-grid--team-row"
             style={tableRow}
           >
             <div>
               <div style={rowTitle}>{getName(item)}</div>
-              <div style={rowSub}>{item.email || "No email"}</div>
+              <div className="settings-team-row-sub" style={rowSub}>{item.email || "No email"}</div>
             </div>
 
             <div style={rowText}>
               <div>{item.job_title || item.role || "—"}</div>
               {item.is_administrator ? (
-                <div style={{ ...rowSub, color: gold }}>Administrator</div>
+                <div className="settings-team-admin-label" style={{ ...rowSub, color: gold }}>Administrator</div>
               ) : null}
             </div>
 
@@ -409,6 +401,11 @@ async function saveItem() {
 
             <div>
               <span
+                className={
+                  item.status === "Active"
+                    ? "settings-team-status-pill settings-team-status-pill--active"
+                    : "settings-team-status-pill settings-team-status-pill--inactive"
+                }
                 style={{
                   ...statusPill,
                   borderColor: item.status === "Active" ? FOREST.border : NEUTRAL_PILL.border,
@@ -422,6 +419,7 @@ async function saveItem() {
             <div style={actionCell}>
               <button
                 type="button"
+                className="settings-team-row-action"
                 style={iconButton}
                 onClick={() => openEdit("team", item)}
               >
@@ -430,6 +428,7 @@ async function saveItem() {
 
               <button
                 type="button"
+                className="settings-team-row-action"
                 style={iconButton}
                 onClick={() => deleteItem("team", item.id)}
               >
@@ -679,9 +678,7 @@ async function saveItem() {
               </div>
             </div>
 
-            {activeSection === "preferredInterface" ? (
-              <PreferredInterfaceSection panelStyle={sectionPanel} />
-            ) : activeSection === "roomsAreas" ? (
+            {activeSection === "roomsAreas" ? (
               <RoomsAreasSection
                 styles={{
                   sectionPanel,

@@ -16,6 +16,7 @@ export default function AssociateRankingsPanel({
 }: AssociateRankingsPanelProps) {
   return (
     <div
+      className="inspection-rankings-panel"
       style={{
         background: ONE_EYRIE.surfaceInset,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -25,16 +26,16 @@ export default function AssociateRankingsPanel({
       }}
     >
       <div style={{ marginBottom: "12px" }}>
-        <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
+        <div className="inspection-rankings-title" style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
           Associate Rankings
         </div>
-        <div style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "3px" }}>
+        <div className="inspection-rankings-sub" style={{ color: ONE_EYRIE.textSubtle, fontSize: "11px", marginTop: "3px" }}>
           {program === "VR" ? "VR / SO" : "RPM"} · {periodLabel}
         </div>
       </div>
 
       {rankings.length === 0 ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", lineHeight: 1.5 }}>
+        <div className="inspection-rankings-empty" style={{ color: ONE_EYRIE.textMuted, fontSize: "12px", lineHeight: 1.5 }}>
           No associate-linked inspections in this period yet.
         </div>
       ) : (
@@ -42,6 +43,7 @@ export default function AssociateRankingsPanel({
           {rankings.map((entry, index) => (
             <div
               key={entry.associateId}
+              className="inspection-rankings-row"
               style={{
                 padding: "10px 12px",
                 borderRadius: "8px",
@@ -49,10 +51,11 @@ export default function AssociateRankingsPanel({
                 border: `1px solid ${ONE_EYRIE.borderDivider}`,
               }}
             >
-              <div style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "13px" }}>
+              <div className="inspection-rankings-name" style={{ color: ONE_EYRIE.text, fontWeight: 800, fontSize: "13px" }}>
                 {index + 1}. {entry.name}
               </div>
               <div
+                className="inspection-rankings-score"
                 style={{
                   color: FOREST.text,
                   fontWeight: 800,
@@ -63,6 +66,7 @@ export default function AssociateRankingsPanel({
                 {entry.averageScore === null ? "—" : `${entry.averageScore}%`}
               </div>
               <div
+                className="inspection-rankings-meta"
                 style={{
                   color: ONE_EYRIE.textSubtle,
                   fontSize: "11px",

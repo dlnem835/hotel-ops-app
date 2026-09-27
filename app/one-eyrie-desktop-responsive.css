@@ -52,7 +52,8 @@
   }
 
   .one-eyrie-sidebar__profile {
-    padding-top: 12px;
+    padding-top: 0;
+    padding-bottom: 8px;
   }
 
   .one-eyrie-user-profile-menu__trigger {

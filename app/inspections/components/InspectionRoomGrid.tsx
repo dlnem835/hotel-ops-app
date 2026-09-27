@@ -71,6 +71,7 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
 
   return (
     <div
+      className="inspection-room-grid-panel"
       style={{
         background: ONE_EYRIE.surfaceInset,
         border: `1px solid ${ONE_EYRIE.border}`,
@@ -95,6 +96,7 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
             return (
               <span
                 key={item.label}
+                className="inspection-room-legend-item"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -105,6 +107,7 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
                 }}
               >
                 <span
+                  className={`inspection-room-legend-swatch inspection-room-legend-swatch--${item.state}`}
                   style={{
                     width: "10px",
                     height: "10px",
@@ -144,6 +147,7 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
           return (
             <div
               key={room.areaId}
+              className={`inspection-room-tile inspection-room-tile--${room.gridState}`}
               onClick={() => onViewHistory?.(room)}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -193,6 +197,7 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
 
       {hoveredRoom && (
         <div
+          className="inspection-room-tooltip"
           style={{
             position: "fixed",
             left: tooltipPos.x,
@@ -212,6 +217,13 @@ export default function InspectionRoomGrid({ rooms, onViewHistory }: InspectionR
           {buildTooltipLinesWithHistory(hoveredRoom, Boolean(onViewHistory)).map((line, index) => (
             <div
               key={line}
+              className={
+                index === 0
+                  ? "inspection-room-tooltip__title"
+                  : line === "Click to view history"
+                    ? "inspection-room-tooltip__hint"
+                    : "inspection-room-tooltip__line"
+              }
               style={{
                 color:
                   index === 0

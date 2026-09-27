@@ -23,6 +23,7 @@ import {
 } from "@/app/components/administration";
 import "@/app/admin/admin.css";
 import "@/app/settings/settings-light-theme.css";
+import "@/app/admin/admin-light-theme.css";
 
 const ORG_ADMIN_BASE_PATH = "/api/org-admin";
 

@@ -88,6 +88,7 @@ export function PmGridLegend() {
 
   return (
     <div
+      className="one-eyrie-pm-grid-legend"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -107,6 +108,7 @@ export function PmGridLegend() {
             <AlertTriangle size={12} color="#9CA3AF" />
           ) : item.marker === "none" ? (
             <span
+              className="one-eyrie-pm-grid-legend__current"
               style={{
                 width: "12px",
                 height: "12px",
@@ -145,14 +147,14 @@ export default function PmAssignmentGrid({
 
   if (gridAreas.length === 0) {
     return (
-      <div style={emptyGrid}>
+      <div className="one-eyrie-pm-grid-empty" style={emptyGrid}>
         No building areas yet. Add areas in Rooms &amp; Areas first.
       </div>
     );
   }
 
   return (
-    <div style={gridWrap}>
+    <div className="one-eyrie-pm-grid" style={gridWrap}>
       {gridAreas.map((area) => {
         const style = getTileStyle(area.area_type, area.status);
         const label = getTileLabel(area.name, area.area_type);
@@ -173,7 +175,13 @@ export default function PmAssignmentGrid({
             type="button"
             title={buildTooltip(summary)}
             onClick={() => onAreaClick?.(area.id)}
-            className="one-eyrie-pm-grid-tile"
+            className={`one-eyrie-pm-grid-tile ${
+              area.status === "Out of Service"
+                ? "one-eyrie-pm-grid-tile--oos"
+                : area.status === "Inactive"
+                  ? "one-eyrie-pm-grid-tile--inactive"
+                  : "one-eyrie-pm-grid-tile--active"
+            }`}
             style={{
               ...tile,
               position: "relative",
@@ -187,9 +195,9 @@ export default function PmAssignmentGrid({
           >
             <MarkerDot marker={summary.marker} />
             {style.showTypeLabel && abbrev && (
-              <span style={typeBadge}>{abbrev}</span>
+              <span className="one-eyrie-pm-grid-tile__type" style={typeBadge}>{abbrev}</span>
             )}
-            <span style={tileLabel}>{label}</span>
+            <span className="one-eyrie-pm-grid-tile__label" style={tileLabel}>{label}</span>
           </button>
         );
       })}
