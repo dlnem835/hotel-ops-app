@@ -104,7 +104,10 @@ html[data-theme="light"] .reports-search-wrap__input::placeholder,
 html[data-theme="light"] .one-eyrie-modal input::placeholder,
 html[data-theme="light"] .one-eyrie-modal textarea::placeholder,
 html[data-theme="light"] .one-eyrie-settings-page input::placeholder,
-html[data-theme="light"] .one-eyrie-settings-page textarea::placeholder {
+html[data-theme="light"] .one-eyrie-settings-page textarea::placeholder,
+html[data-theme="light"] .one-eyrie-inspection-session-field::placeholder,
+html[data-theme="light"] .one-eyrie-failed-item-field::placeholder,
+html[data-theme="light"] .inspection-failed-details-note::placeholder {
   color: var(--oe-lm-secondary) !important;
 }
 
@@ -425,4 +428,40 @@ html[data-theme="light"] .pass-on-search-wrap__icon,
 html[data-theme="light"] .reports-search-wrap__icon,
 html[data-theme="light"] .lnf-search-wrap svg {
   color: var(--oe-lm-secondary) !important;
+}
+
+/* ── QA: inspection Inspect helper + WO/PM metadata (Light only) ── */
+
+html[data-theme="light"] .inspection-item-guidance__inspect {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .inspection-item-guidance__inspect-label {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .inspection-general-standards {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .inspection-general-standards__toggle,
+html[data-theme="light"] .inspection-general-standards__body {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .inspection-general-standards__body {
+  border-top-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .maintenance-wo-detail-metadata__line,
+html[data-theme="light"] .maintenance-audit-metadata-line,
+html[data-theme="light"] .pm-session-metadata__line,
+html[data-theme="light"] .maintenance-wo-photo-meta {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .maintenance-audit-metadata-line__label,
+html[data-theme="light"] .pm-session-metadata__label {
+  color: var(--oe-lm-charcoal) !important;
 }

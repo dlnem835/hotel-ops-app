@@ -10,6 +10,7 @@ export function GeneralInspectionStandards() {
 
   return (
     <section
+      className="inspection-general-standards"
       style={{
         marginBottom: "14px",
         border: `1px solid ${ONE_EYRIE.borderDivider}`,
@@ -19,6 +20,7 @@ export function GeneralInspectionStandards() {
     >
       <button
         type="button"
+        className="inspection-general-standards__toggle"
         onClick={() => setExpanded((current) => !current)}
         aria-expanded={expanded}
         style={{
@@ -51,6 +53,7 @@ export function GeneralInspectionStandards() {
 
       {expanded ? (
         <div
+          className="inspection-general-standards__body"
           style={{
             borderTop: `1px solid ${ONE_EYRIE.borderDivider}`,
             padding: "10px 14px 12px",
@@ -128,6 +131,7 @@ export function InspectionItemGuidanceHeading({
 
       {expanded ? (
         <div
+          className="inspection-item-guidance__inspect"
           style={{
             marginTop: "6px",
             color: ONE_EYRIE.textMuted,
@@ -136,7 +140,12 @@ export function InspectionItemGuidanceHeading({
             lineHeight: 1.4,
           }}
         >
-          <span style={{ color: ONE_EYRIE.textSubtle, fontWeight: 700 }}>Inspect: </span>
+          <span
+            className="inspection-item-guidance__inspect-label"
+            style={{ color: ONE_EYRIE.textSubtle, fontWeight: 700 }}
+          >
+            Inspect:{" "}
+          </span>
           {inspect.join(" · ")}
         </div>
       ) : null}

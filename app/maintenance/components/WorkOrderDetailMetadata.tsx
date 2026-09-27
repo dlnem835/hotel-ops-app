@@ -31,7 +31,10 @@ export default function WorkOrderDetailMetadata({
         marginBottom: "18px",
       }}
     >
-      <div style={{ color: "#9ca3af", fontSize: "13px", lineHeight: 1.55 }}>
+      <div
+        className="maintenance-wo-detail-metadata__line"
+        style={{ color: "#9ca3af", fontSize: "13px", lineHeight: 1.55 }}
+      >
         {locationLabel}
         {sourceModule ? ` · from ${sourceModule}` : ""}
       </div>

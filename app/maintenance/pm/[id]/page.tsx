@@ -32,6 +32,7 @@ import {
   GOLD_OUTLINE_ACTION_BUTTON,
 } from "@/app/settings/lib/settings-ui-interactions";
 import "@/app/inspections/inspections-responsive.css";
+import "@/app/mobile/mobile-light-theme.css";
 import "../../maintenance-responsive.css";
 import "../../maintenance-light-theme.css";
 
@@ -296,8 +297,8 @@ export default function PmSessionPage() {
     <main
       className={
         isMobileSession
-          ? "maintenance-pm-session--mobile"
-          : `${APP_SHELL_CLASS} one-eyrie-maintenance-route`
+          ? "one-eyrie-maintenance-route maintenance-pm-session maintenance-pm-session--mobile"
+          : `${APP_SHELL_CLASS} one-eyrie-maintenance-route maintenance-pm-session`
       }
       style={
         isMobileSession
@@ -333,6 +334,7 @@ export default function PmSessionPage() {
           ) : (
             <button
               type="button"
+              className="maintenance-pm-session__back"
               onClick={() => router.push(pmReturnPath)}
               style={{
                 display: "inline-flex",
@@ -394,11 +396,13 @@ export default function PmSessionPage() {
           }
         >
           {loading ? (
-            <div style={{ color: ONE_EYRIE.textMuted }}>Loading PM checklist...</div>
+            <div className="pm-session-status-text" style={{ color: ONE_EYRIE.textMuted }}>
+              Loading PM checklist...
+            </div>
           ) : (
             <>
               {allSteps.length === 0 ? (
-                <div style={{ color: ONE_EYRIE.textMuted, marginBottom: "16px" }}>
+                <div className="pm-session-status-text" style={{ color: ONE_EYRIE.textMuted, marginBottom: "16px" }}>
                   This PM template has no checklist items. Add notes and complete when done.
                 </div>
               ) : (
@@ -433,6 +437,7 @@ export default function PmSessionPage() {
               {!isCompleted && (
                 <label style={{ display: "block", marginTop: "12px" }}>
                   <div
+                    className="pm-session-notes-label"
                     style={{
                       color: ONE_EYRIE.textSubtle,
                       fontSize: "12px",
@@ -499,6 +504,7 @@ export default function PmSessionPage() {
                   </button>
                   {saveMessage && (
                     <span
+                      className="pm-session-save-message"
                       style={{
                         color: ONE_EYRIE.textMuted,
                         fontSize: "13px",

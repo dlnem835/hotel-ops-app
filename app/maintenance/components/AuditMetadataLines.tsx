@@ -5,8 +5,13 @@ import { formatPmSessionTimestamp } from "../lib/pm-session-display";
 
 function MetadataLine({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}>
-      <span style={{ color: ONE_EYRIE.textSubtle }}>{label}: </span>
+    <div
+      className="maintenance-audit-metadata-line"
+      style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}
+    >
+      <span className="maintenance-audit-metadata-line__label" style={{ color: ONE_EYRIE.textSubtle }}>
+        {label}:{" "}
+      </span>
       {value}
     </div>
   );

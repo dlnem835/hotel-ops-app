@@ -34,13 +34,21 @@ export default function PmSessionMetadata({
         marginTop: "8px",
       }}
     >
-      <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}>
+      <div
+        className="pm-session-metadata__line"
+        style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}
+      >
         {locationLabel}
       </div>
 
       {frequencyLabel ? (
-        <div style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}>
-          <span style={{ color: ONE_EYRIE.textSubtle }}>Frequency: </span>
+        <div
+          className="pm-session-metadata__line"
+          style={{ color: ONE_EYRIE.textMuted, fontSize: "13px", lineHeight: 1.55 }}
+        >
+          <span className="pm-session-metadata__label" style={{ color: ONE_EYRIE.textSubtle }}>
+            Frequency:{" "}
+          </span>
           {frequencyLabel}
         </div>
       ) : null}

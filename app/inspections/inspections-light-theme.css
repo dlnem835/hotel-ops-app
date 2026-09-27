@@ -495,3 +495,56 @@ html[data-theme="light"] .inspection-history-failed-item {
   border-color: #c98989 !important;
   color: #111111 !important;
 }
+
+/* ── Session item cards + Inspect helper ── */
+
+html[data-theme="light"] .inspection-session-item-card,
+html[data-theme="light"] .inspection-guidance-card {
+  --inspection-guidance-card-bg: var(--oe-lm-card);
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .inspection-guidance-card:hover {
+  --inspection-guidance-card-bg: var(--oe-lm-tile-hover);
+  background: var(--oe-lm-tile-hover) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .inspection-guidance-card--expanded,
+html[data-theme="light"] .inspection-guidance-card--expanded:hover {
+  --inspection-guidance-card-bg: var(--oe-lm-card);
+  background: var(--oe-lm-card) !important;
+  box-shadow: 0 0 0 1px rgba(201, 151, 22, 0.16) !important;
+}
+
+html[data-theme="light"] .inspection-item-guidance__inspect {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .inspection-item-guidance__inspect-label {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .inspection-general-standards {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .inspection-general-standards__toggle,
+html[data-theme="light"] .inspection-general-standards__body {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-route .inspection-failed-details {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-inspections-route .inspection-failed-details-note,
+html[data-theme="light"] .one-eyrie-inspections-route .one-eyrie-failed-item-field {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}

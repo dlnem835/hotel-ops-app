@@ -124,7 +124,9 @@ export default function MobileInspectionItemCard({
               <button
                 key={value}
                 type="button"
-                className="one-eyrie-mobile-inspection-outcome-btn"
+                className={`one-eyrie-mobile-inspection-outcome-btn one-eyrie-mobile-inspection-outcome-btn--${value}${
+                  active ? " one-eyrie-mobile-inspection-outcome-btn--selected" : ""
+                }`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onOutcomeChange(
@@ -146,7 +148,7 @@ export default function MobileInspectionItemCard({
         </div>
       ) : outcome ? (
         <div
-          className="one-eyrie-mobile-inspection-item__readonly-outcome"
+          className={`one-eyrie-mobile-inspection-item__readonly-outcome one-eyrie-mobile-inspection-item__readonly-outcome--${outcome}`}
           style={{
             color:
               outcome === "pass"

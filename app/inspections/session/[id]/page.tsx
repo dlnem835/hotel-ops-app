@@ -518,6 +518,7 @@ export default function InspectionSessionPage() {
                   <div key={item.key} style={{ marginBottom: "8px" }}>
                     <div
                       className={[
+                        "inspection-session-item-card",
                         isMobileLayout ? "inspection-mobile-item-card" : "",
                         guidance ? "inspection-guidance-card" : "",
                         guidanceExpanded ? "inspection-guidance-card--expanded" : "",

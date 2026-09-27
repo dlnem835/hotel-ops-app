@@ -37,6 +37,7 @@ import {
 import "../../maintenance-responsive.css";
 import "../../maintenance-light-theme.css";
 import "@/app/inspections/inspections-responsive.css";
+import "@/app/mobile/mobile-light-theme.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -68,6 +69,7 @@ function targetDisplay(
 function HeaderFact({ label, value }: { label: string; value: string }) {
   return (
     <div
+      className="pm-program-header-fact"
       style={{
         minWidth: 0,
         padding: "10px 12px",
@@ -77,6 +79,7 @@ function HeaderFact({ label, value }: { label: string; value: string }) {
       }}
     >
       <div
+        className="pm-program-header-fact__label"
         style={{
           color: ONE_EYRIE.textSubtle,
           fontSize: "11px",
@@ -89,6 +92,7 @@ function HeaderFact({ label, value }: { label: string; value: string }) {
         {label}
       </div>
       <div
+        className="pm-program-header-fact__value"
         style={{
           color: ONE_EYRIE.text,
           fontSize: "13px",
@@ -381,12 +385,16 @@ export default function PmProgramPage() {
 
   return (
     <main
-      className={fromMobile ? undefined : `${APP_SHELL_CLASS} one-eyrie-maintenance-route`}
+      className={
+        fromMobile
+          ? "one-eyrie-maintenance-route maintenance-pm-program maintenance-pm-program--mobile"
+          : `${APP_SHELL_CLASS} one-eyrie-maintenance-route maintenance-pm-program`
+      }
       style={pageStyle}
     >
       {!fromMobile ? <OneEyrieSidebar active="Maintenance" /> : null}
       <section
-        className={fromMobile ? undefined : "one-eyrie-maintenance-page"}
+        className={fromMobile ? "maintenance-pm-program__inner" : "one-eyrie-maintenance-page"}
         style={
           fromMobile
             ? { padding: "20px 16px 36px" }
@@ -395,6 +403,7 @@ export default function PmProgramPage() {
       >
         <Link
           href={returnPath}
+          className="maintenance-pm-program__back"
           style={{
             color: ONE_EYRIE.gold,
             fontWeight: 700,
@@ -405,7 +414,7 @@ export default function PmProgramPage() {
         </Link>
 
         {loading ? (
-          <div style={{ color: ONE_EYRIE.textMuted, marginTop: "24px" }}>
+          <div className="pm-session-status-text" style={{ color: ONE_EYRIE.textMuted, marginTop: "24px" }}>
             Loading PM…
           </div>
         ) : error && !session ? (
@@ -447,6 +456,7 @@ export default function PmProgramPage() {
             </header>
 
             <section
+              className="pm-program-checklist"
               style={{
                 borderRadius: "12px",
                 border: `1px solid ${ONE_EYRIE.border}`,
@@ -464,6 +474,7 @@ export default function PmProgramPage() {
                 PM Checklist (Read Only)
               </h2>
               <p
+                className="pm-program-checklist__intro"
                 style={{
                   color: ONE_EYRIE.textMuted,
                   fontSize: "13px",
@@ -484,6 +495,7 @@ export default function PmProgramPage() {
                   <div
                     key={step.key}
                     role="listitem"
+                    className="pm-program-checklist__item"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "18px minmax(0, 1fr)",
@@ -536,6 +548,7 @@ export default function PmProgramPage() {
                   Items
                 </h2>
                 <span
+                  className="pm-program-progress"
                   style={{
                     color: ONE_EYRIE.gold,
                     fontSize: "13px",
@@ -601,6 +614,7 @@ export default function PmProgramPage() {
               <>
                 <label style={{ display: "block", marginTop: "18px" }}>
                   <span
+                    className="pm-session-notes-label"
                     style={{
                       display: "block",
                       color: ONE_EYRIE.textSubtle,
@@ -674,6 +688,7 @@ export default function PmProgramPage() {
                   </button>
                   {saveMessage ? (
                     <span
+                      className="pm-session-save-message"
                       style={{
                         color: ONE_EYRIE.textMuted,
                         fontSize: "13px",

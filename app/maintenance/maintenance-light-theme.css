@@ -618,12 +618,15 @@ html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance
   color: var(--mnt-lm-text) !important;
 }
 
-html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata > div {
-  color: var(--mnt-lm-row-text-muted) !important;
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata > div,
+html[data-theme="light"] main.one-eyrie-maintenance-route .maintenance-wo-detail-metadata__line,
+html[data-theme="light"] main.one-eyrie-maintenance-route .maintenance-audit-metadata-line {
+  color: var(--oe-lm-secondary) !important;
 }
 
-html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata span {
-  color: var(--mnt-lm-text-subtle) !important;
+html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance-detail-modal .maintenance-wo-detail-metadata span,
+html[data-theme="light"] main.one-eyrie-maintenance-route .maintenance-audit-metadata-line__label {
+  color: var(--oe-lm-charcoal) !important;
 }
 
 html[data-theme="light"] main.one-eyrie-maintenance-route .maintenance-wo-detail-description {
@@ -688,4 +691,157 @@ html[data-theme="light"] main.one-eyrie-maintenance-route .one-eyrie-maintenance
   html[data-theme="light"] .one-eyrie-maintenance-page .maintenance-work-order-panel .dashboard-list-card {
     border-radius: 12px;
   }
+}
+
+/* ── PM session + PM program (desktop + Field Operations) ── */
+
+html[data-theme="light"] .maintenance-pm-session,
+html[data-theme="light"] .maintenance-pm-program,
+html[data-theme="light"] .maintenance-pm-session--mobile,
+html[data-theme="light"] .maintenance-pm-program--mobile {
+  background: var(--oe-lm-page) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session h1,
+html[data-theme="light"] .maintenance-pm-program h1,
+html[data-theme="light"] .maintenance-pm-program h2 {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session__back,
+html[data-theme="light"] .maintenance-pm-program__back,
+html[data-theme="light"] .maintenance-pm-session--mobile .one-eyrie-mobile-back {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .pm-session-metadata__line,
+html[data-theme="light"] .pm-session-status-text,
+html[data-theme="light"] .pm-session-notes-label,
+html[data-theme="light"] .pm-session-save-message,
+html[data-theme="light"] .pm-program-checklist__intro,
+html[data-theme="light"] .pm-program-target-row__location {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .pm-session-metadata__label,
+html[data-theme="light"] .pm-program-header-fact__label {
+  color: var(--oe-lm-charcoal) !important;
+}
+
+html[data-theme="light"] .pm-program-header-fact {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .pm-program-header-fact__value {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .pm-program-checklist {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .pm-program-checklist__item {
+  color: var(--oe-lm-ink) !important;
+  border-bottom-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .pm-program-progress {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item,
+html[data-theme="light"] .pm-program-target-row {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item--alt,
+html[data-theme="light"] .pm-program-target-row--alt {
+  background: var(--oe-lm-tile) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__label,
+html[data-theme="light"] .pm-program-target-row__name {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome {
+  color: var(--oe-lm-secondary) !important;
+  background: transparent !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--pass {
+  border-color: var(--oe-lm-forest-border) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--fail {
+  border-color: var(--oe-lm-urgent-border) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--na {
+  border-color: var(--oe-lm-border-strong) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--pass.pm-checklist-item__outcome--selected {
+  background: var(--oe-lm-forest-bg) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-forest-text) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--fail.pm-checklist-item__outcome--selected {
+  background: var(--oe-lm-urgent-bg) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-urgent-text) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__outcome--na.pm-checklist-item__outcome--selected {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__readonly--pass {
+  color: var(--oe-lm-forest-text) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__readonly--fail {
+  color: var(--oe-lm-urgent-text) !important;
+}
+
+html[data-theme="light"] .pm-checklist-item__readonly--na {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session .inspection-failed-details,
+html[data-theme="light"] .maintenance-pm-program .inspection-failed-details {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session .inspection-failed-details-note,
+html[data-theme="light"] .maintenance-pm-program .inspection-failed-details-note,
+html[data-theme="light"] .maintenance-pm-session .one-eyrie-failed-item-field,
+html[data-theme="light"] .maintenance-pm-program .one-eyrie-failed-item-field {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session .inspection-failed-details-note::placeholder,
+html[data-theme="light"] .maintenance-pm-program .inspection-failed-details-note::placeholder,
+html[data-theme="light"] .maintenance-pm-session .one-eyrie-inspection-session-field::placeholder,
+html[data-theme="light"] .maintenance-pm-program .one-eyrie-inspection-session-field::placeholder {
+  color: var(--oe-lm-muted) !important;
+}
+
+html[data-theme="light"] .maintenance-pm-session .work-order-modal.one-eyrie-modal,
+html[data-theme="light"] .maintenance-pm-program .work-order-modal.one-eyrie-modal {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
 }

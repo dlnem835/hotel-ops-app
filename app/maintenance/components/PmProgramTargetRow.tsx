@@ -44,6 +44,7 @@ export default function PmProgramTargetRow({
 }: PmProgramTargetRowProps) {
   return (
     <div
+      className={`pm-program-target-row${index % 2 === 1 ? " pm-program-target-row--alt" : ""}`}
       style={{
         padding: "12px",
         borderRadius: "8px",
@@ -69,6 +70,7 @@ export default function PmProgramTargetRow({
       >
         <div style={{ flex: 1, minWidth: "200px" }}>
           <div
+            className="pm-program-target-row__name"
             style={{
               color: ONE_EYRIE.text,
               fontWeight: 800,
@@ -79,6 +81,7 @@ export default function PmProgramTargetRow({
           </div>
           {location ? (
             <div
+              className="pm-program-target-row__location"
               style={{
                 color: ONE_EYRIE.textMuted,
                 fontSize: "12px",
@@ -117,6 +120,9 @@ export default function PmProgramTargetRow({
                 <button
                   key={value}
                   type="button"
+                  className={`pm-checklist-item__outcome pm-checklist-item__outcome--${value}${
+                    active ? " pm-checklist-item__outcome--selected" : ""
+                  }`}
                   onClick={() =>
                     onOutcomeChange(
                       toggleSelectedOutcome(outcome, value) ?? null
@@ -148,6 +154,7 @@ export default function PmProgramTargetRow({
           </div>
         ) : outcome ? (
           <div
+            className={`pm-checklist-item__readonly pm-checklist-item__readonly--${outcome}`}
             style={{
               color:
                 outcome === "pass"

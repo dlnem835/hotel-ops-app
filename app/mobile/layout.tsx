@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import MobileAuthGuard from "./components/MobileAuthGuard";
 import "./mobile.css";
+import "./mobile-light-theme.css";
 
 export const metadata: Metadata = {
   title: "One Eyrie · Field Operations",

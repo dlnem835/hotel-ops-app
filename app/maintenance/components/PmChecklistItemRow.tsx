@@ -70,6 +70,7 @@ export default function PmChecklistItemRow({
 }: PmChecklistItemRowProps) {
   return (
     <div
+      className={`pm-checklist-item${index % 2 === 1 ? " pm-checklist-item--alt" : ""}`}
       style={{
         padding: "12px",
         borderRadius: "8px",
@@ -87,7 +88,10 @@ export default function PmChecklistItemRow({
         }}
       >
         <div style={{ flex: 1, minWidth: "200px" }}>
-          <div style={{ fontWeight: 700, lineHeight: 1.45, color: ONE_EYRIE.text }}>
+          <div
+            className="pm-checklist-item__label"
+            style={{ fontWeight: 700, lineHeight: 1.45, color: ONE_EYRIE.text }}
+          >
             {step.label}
           </div>
         </div>
@@ -111,6 +115,9 @@ export default function PmChecklistItemRow({
                 <button
                   key={value}
                   type="button"
+                  className={`pm-checklist-item__outcome pm-checklist-item__outcome--${value}${
+                    active ? " pm-checklist-item__outcome--selected" : ""
+                  }`}
                   onClick={() =>
                     onOutcomeChange(
                       toggleSelectedOutcome(outcome, value) ?? null
@@ -142,6 +149,7 @@ export default function PmChecklistItemRow({
 
         {readOnly && outcome && (
           <div
+            className={`pm-checklist-item__readonly pm-checklist-item__readonly--${outcome}`}
             style={{
               fontWeight: 800,
               fontSize: "12px",

@@ -122,7 +122,10 @@ export default function WorkOrderPhotosSection({
       </div>
 
       {!hasAny ? (
-        <p style={{ margin: "0 0 10px", color: ONE_EYRIE.textMuted, fontSize: "13px" }}>
+        <p
+          className="maintenance-wo-photo-meta"
+          style={{ margin: "0 0 10px", color: ONE_EYRIE.textMuted, fontSize: "13px" }}
+        >
           No photos attached.
         </p>
       ) : null}
@@ -136,6 +139,7 @@ export default function WorkOrderPhotosSection({
           <div key={photo.id}>
             <WorkOrderPhotoAttachment photoUrl={photo.photoUrl} label="Photo" />
             <p
+              className="maintenance-wo-photo-meta"
               style={{
                 margin: "6px 0 0",
                 color: ONE_EYRIE.textMuted,
