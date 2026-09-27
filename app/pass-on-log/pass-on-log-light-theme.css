@@ -318,13 +318,122 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-viewed-by-row stro
 /* ── Draft card ── */
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card {
-  background: var(--pol-lm-surface) !important;
-  border: 1px dashed rgba(200, 169, 106, 0.55) !important;
-  box-shadow: 0 1px 3px var(--pol-lm-shadow) !important;
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px var(--oe-shadow) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__header {
+  margin-bottom: 12px;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__hint {
-  color: var(--pol-lm-text-muted-soft) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-form-grid--pass-on {
+  gap: 12px;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-field,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card select.one-eyrie-field {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-field::placeholder {
+  color: var(--oe-lm-muted) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-field:hover,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-field:focus,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-field:focus-visible {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: 0 0 0 3px rgba(201, 151, 22, 0.14) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-form-grid--pass-on__message {
+  border-color: #c4c8ce !important;
+  min-height: 110px;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .one-eyrie-form-grid--pass-on__message::placeholder {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-date-wrap {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  box-shadow: none !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-date-wrap:hover,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-date-wrap:focus-within {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: 0 0 0 3px rgba(201, 151, 22, 0.14) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-date-wrap input[type="date"] {
+  color: var(--oe-lm-ink) !important;
+  background: transparent !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-date-wrap button {
+  color: var(--oe-gold-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-attach-action {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-attach-action svg {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-attach-action:disabled,
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card .pass-on-attach-action:disabled svg {
+  color: var(--oe-lm-disabled) !important;
+  border-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-discard-btn {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-discard-btn:hover:not(:disabled) {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-outline-btn:not(:disabled) {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: #5a4508 !important;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-outline-btn:disabled {
+  background: var(--oe-lm-tile) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-disabled) !important;
+  opacity: 0.55;
+}
+
+html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-publish-btn:not(:disabled) {
+  background: var(--oe-gold-primary) !important;
+  border-color: var(--oe-gold-border) !important;
+  color: var(--oe-lm-ink) !important;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-maintenance-suggestion {
@@ -346,16 +455,14 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-maintenance-sugges
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__actions {
-  border-top-color: var(--pol-lm-border) !important;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top-color: var(--oe-lm-border) !important;
 }
 
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__actions-status,
 html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card__actions-status-text {
-  color: var(--pol-lm-row-text-muted) !important;
-}
-
-html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-discard-btn:hover:not(:disabled) {
-  background: var(--pol-lm-action-hover) !important;
+  color: var(--oe-lm-secondary) !important;
 }
 
 /* ── Desktop refinements ── */
@@ -385,8 +492,10 @@ html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-discard-btn:
   }
 
   html[data-theme="light"] .one-eyrie-pass-on-log-page .pass-on-draft-card {
-    background: var(--pol-lm-surface) !important;
-    box-shadow: 0 1px 4px var(--pol-lm-shadow) !important;
+    background: var(--oe-lm-card) !important;
+    border: 1px solid var(--oe-lm-border-strong) !important;
+    box-shadow: 0 1px 3px var(--oe-shadow) !important;
+    padding: 16px 18px;
   }
 
   html[data-theme="light"] .one-eyrie-pass-on-log-page .one-eyrie-pass-on-day-entries .one-eyrie-list-row {

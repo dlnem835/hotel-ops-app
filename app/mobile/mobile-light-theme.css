@@ -72,10 +72,16 @@ html[data-theme="light"] .one-eyrie-mobile-search-wrap .pass-on-search-wrap__ico
   color: var(--oe-lm-muted);
 }
 
-html[data-theme="light"] .one-eyrie-mobile-work-orders__create-btn {
-  background: var(--oe-lm-forest-bg);
-  border-color: var(--oe-lm-forest-border);
-  color: var(--oe-lm-forest-text);
+html[data-theme="light"] .one-eyrie-mobile-work-orders .one-eyrie-mobile-work-orders__create-btn {
+  background: var(--oe-gold-primary) !important;
+  border: 1px solid var(--oe-gold-border) !important;
+  color: #111111 !important;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 html[data-theme="light"] .one-eyrie-mobile-pass-on-group__title,
@@ -516,4 +522,189 @@ html[data-theme="light"] .maintenance-pm-program--mobile h2 {
 html[data-theme="light"] .one-eyrie-mobile-work-order-detail__comments textarea::placeholder,
 html[data-theme="light"] .one-eyrie-mobile-field textarea::placeholder {
   color: var(--oe-lm-muted);
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form {
+  background: var(--oe-lm-card);
+  border: 1px solid var(--oe-lm-border-strong);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 3px var(--oe-shadow);
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field {
+  margin-bottom: 12px;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field label {
+  color: var(--oe-lm-secondary);
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field input,
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field select,
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field textarea {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field textarea {
+  border-color: #c4c8ce !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field input::placeholder,
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field textarea::placeholder {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field input:focus,
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field select:focus,
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-field textarea:focus {
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: 0 0 0 3px rgba(201, 151, 22, 0.14);
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .pass-on-attach-action {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .pass-on-attach-action svg {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-actions {
+  margin-top: 12px;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-btn--gold {
+  background: var(--oe-gold-primary);
+  border-color: var(--oe-gold-border);
+  color: #111111;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-form .one-eyrie-mobile-btn--link {
+  color: var(--oe-lm-secondary);
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal-overlay {
+  background: rgba(17, 24, 39, 0.4);
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  border-radius: 14px;
+  color: var(--oe-lm-ink) !important;
+  box-shadow: 0 18px 48px rgba(17, 24, 39, 0.18);
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__header {
+  border-bottom-color: var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__title {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__subtitle {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal .one-eyrie-modal__close--desktop-only {
+  display: inline-flex !important;
+  color: var(--oe-lm-ink) !important;
+  background: transparent !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__label,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal .work-order-photo-field > div:first-child {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__input,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__select,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea {
+  background: var(--oe-lm-card) !important;
+  color: var(--oe-lm-ink) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__input::placeholder,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea::placeholder {
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__input:hover,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__select:hover,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea:hover,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__input:focus,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__select:focus,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea:focus,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__input:focus-visible,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__select:focus-visible,
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea:focus-visible {
+  border-color: var(--oe-gold-border) !important;
+  box-shadow: 0 0 0 3px rgba(201, 151, 22, 0.14) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__select {
+  background-image: none;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__textarea {
+  min-height: 88px !important;
+  max-height: none !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-location-field__list {
+  background: var(--oe-lm-card) !important;
+  border-color: var(--oe-lm-border-strong) !important;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-location-field__option {
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-location-field__option:hover,
+html[data-theme="light"] .one-eyrie-mobile .work-order-location-field__option:focus-visible {
+  background: var(--oe-lm-tile) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal .work-order-photo-field__btn {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-secondary) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal .work-order-photo-field__thumb {
+  border-color: var(--oe-lm-border-strong) !important;
+  background: var(--oe-lm-tile) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__error {
+  background: var(--oe-lm-urgent-bg) !important;
+  border-color: var(--oe-lm-urgent-border) !important;
+  color: var(--oe-lm-urgent-text) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__footer {
+  background: var(--oe-lm-card) !important;
+  border-top: 1px solid var(--oe-lm-border) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__btn--cancel {
+  background: var(--oe-lm-card) !important;
+  border: 1px solid var(--oe-lm-border-strong) !important;
+  color: var(--oe-lm-ink) !important;
+}
+
+html[data-theme="light"] .one-eyrie-mobile .work-order-modal__btn--submit {
+  background: var(--oe-gold-primary) !important;
+  border: 1px solid var(--oe-gold-border) !important;
+  color: #111111 !important;
 }
