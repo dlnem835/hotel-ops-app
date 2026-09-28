@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/app/maintenance/lib/pm-db";
 import {
   createScheduledReportSchedule,
   listScheduledReportSchedules,
@@ -9,27 +8,34 @@ import type {
   ReportScheduleContext,
   ReportScheduleFormValues,
 } from "@/app/reports/lib/report-schedule-types";
+import {
+  resolveTenantRequest,
+  tenantErrorResponse,
+} from "@/app/lib/tenant/server/resolve-tenant-request";
 
 type CreateScheduleBody = {
   schedule: ReportScheduleFormValues;
   context: ReportScheduleContext;
   timezone: string;
-  createdBy?: string | null;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = getSupabaseAdmin();
-    const schedules = await listScheduledReportSchedules(supabase);
+    const { supabase, organizationId, propertyId } = await resolveTenantRequest(request);
+    const schedules = await listScheduledReportSchedules(supabase, {
+      organizationId,
+      propertyId,
+    });
     return NextResponse.json({ schedules });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to load schedules.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const { supabase, organizationId, propertyId, user } =
+      await resolveTenantRequest(request);
     const body = (await request.json()) as CreateScheduleBody;
     if (!body.schedule?.recipients?.trim()) {
       return NextResponse.json({ error: "At least one recipient email is required." }, { status: 400 });
@@ -54,9 +60,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
     const schedule = await createScheduledReportSchedule(supabase, {
-      createdBy: body.createdBy ?? null,
+      createdBy: user.id,
+      organizationId,
+      propertyId,
       schedule: body.schedule,
       context: body.context,
       timezone: body.timezone,
@@ -65,7 +72,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ schedule });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to save schedule.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return tenantErrorResponse(error);
   }
 }

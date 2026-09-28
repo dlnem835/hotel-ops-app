@@ -1,3 +1,4 @@
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import type {
   ReportScheduleContext,
   ReportScheduleFormValues,
@@ -32,7 +33,7 @@ function clearLegacySchedules() {
 }
 
 async function fetchSavedReportSchedulesFromApi(): Promise<SavedReportSchedule[]> {
-  const response = await fetch("/api/reports/schedules", { cache: "no-store" });
+  const response = await tenantFetch("/api/reports/schedules", { cache: "no-store" });
   const payload = await response.json();
   if (!response.ok) {
     throw new Error(payload.error || "Unable to load scheduled reports.");
@@ -51,7 +52,7 @@ async function migrateLegacySchedulesIfNeeded(): Promise<void> {
   }
 
   for (const entry of legacy) {
-    await fetch("/api/reports/schedules", {
+    await tenantFetch("/api/reports/schedules", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -75,7 +76,7 @@ export async function saveReportSchedule(input: {
   context: ReportScheduleContext;
   timezone: string;
 }): Promise<SavedReportSchedule> {
-  const response = await fetch("/api/reports/schedules", {
+  const response = await tenantFetch("/api/reports/schedules", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -89,7 +90,7 @@ export async function saveReportSchedule(input: {
 }
 
 export async function deleteReportSchedule(id: string): Promise<void> {
-  const response = await fetch(`/api/reports/schedules/${id}`, { method: "DELETE" });
+  const response = await tenantFetch(`/api/reports/schedules/${id}`, { method: "DELETE" });
   const payload = await response.json();
   if (!response.ok) {
     throw new Error(payload.error || "Unable to delete schedule.");
@@ -103,7 +104,7 @@ export async function sendScheduledReportTest(id: string): Promise<{
   testSentAt?: string | null;
   error?: string | null;
 }> {
-  const response = await fetch(`/api/reports/schedules/${id}/send-test`, {
+  const response = await tenantFetch(`/api/reports/schedules/${id}/send-test`, {
     method: "POST",
   });
   const payload = await response.json();

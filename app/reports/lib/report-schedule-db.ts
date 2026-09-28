@@ -5,8 +5,14 @@ import type {
   SavedReportSchedule,
 } from "@/app/reports/lib/report-schedule-types";
 
+export type ReportScheduleTenantScope = {
+  organizationId: number;
+  propertyId: number;
+};
+
 export type ScheduledReportScheduleRow = {
   id: string;
+  organization_id: number;
   property_id: number;
   created_by: string | null;
   report_module: string;
@@ -43,6 +49,8 @@ export type ScheduledReportScheduleRow = {
 
 export type CreateScheduledReportInput = {
   createdBy: string | null;
+  organizationId: number;
+  propertyId: number;
   schedule: ReportScheduleFormValues;
   context: ReportScheduleContext;
   timezone: string;
@@ -98,40 +106,57 @@ function rowToSavedSchedule(row: ScheduledReportScheduleRow): SavedReportSchedul
 }
 
 export async function listScheduledReportSchedules(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  scope: ReportScheduleTenantScope
 ): Promise<SavedReportScheduleWithMeta[]> {
   const { data, error } = await supabase
     .from("scheduled_report_schedules")
     .select("*")
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return ((data || []) as ScheduledReportScheduleRow[]).map(rowToSavedSchedule);
 }
 
-export async function getScheduledReportScheduleById(
+export async function getScheduledReportScheduleRowForTenant(
   supabase: SupabaseClient,
-  id: string
-): Promise<SavedReportScheduleWithMeta | null> {
+  id: string,
+  scope: ReportScheduleTenantScope
+): Promise<ScheduledReportScheduleRow | null> {
   const { data, error } = await supabase
     .from("scheduled_report_schedules")
     .select("*")
     .eq("id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) return null;
-  return rowToSavedSchedule(data as ScheduledReportScheduleRow);
+  return (data as ScheduledReportScheduleRow | null) ?? null;
+}
+
+export async function getScheduledReportScheduleById(
+  supabase: SupabaseClient,
+  id: string,
+  scope: ReportScheduleTenantScope
+): Promise<SavedReportScheduleWithMeta | null> {
+  const row = await getScheduledReportScheduleRowForTenant(supabase, id, scope);
+  return row ? rowToSavedSchedule(row) : null;
 }
 
 export async function createScheduledReportSchedule(
   supabase: SupabaseClient,
   input: CreateScheduledReportInput
 ): Promise<SavedReportScheduleWithMeta> {
-  const { schedule, context, timezone, nextRunAt, createdBy } = input;
+  const { schedule, context, timezone, nextRunAt, createdBy, organizationId, propertyId } =
+    input;
   const { data, error } = await supabase
     .from("scheduled_report_schedules")
     .insert({
+      organization_id: organizationId,
+      property_id: propertyId,
       created_by: createdBy,
       report_module: context.reportModule,
       report_id: context.reportId,
@@ -166,10 +191,19 @@ export async function createScheduledReportSchedule(
 
 export async function deleteScheduledReportSchedule(
   supabase: SupabaseClient,
-  id: string
-): Promise<void> {
-  const { error } = await supabase.from("scheduled_report_schedules").delete().eq("id", id);
+  id: string,
+  scope: ReportScheduleTenantScope
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("scheduled_report_schedules")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId)
+    .select("id");
+
   if (error) throw new Error(error.message);
+  return (data?.length ?? 0) > 0;
 }
 
 export async function claimDueScheduledReportSchedules(

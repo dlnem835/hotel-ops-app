@@ -273,7 +273,9 @@ check("manual workflow still present with remapped statuses", () => {
   const send = fs.readFileSync(path.join(root, "app/api/send-email/route.ts"), "utf8");
   const upload = fs.readFileSync(path.join(root, "app/api/upload-label/route.ts"), "utf8");
   assert.ok(send.includes("Awaiting Guest Action"));
-  assert.ok(upload.includes("Ready to Ship"));
+  assert.ok(upload.includes("status: 410") || upload.includes("{ status: 410 }"));
+  assert.ok(!upload.includes('.from("lost_items")'));
+  assert.ok(!upload.includes("Ready to Ship"));
   assert.ok(fs.existsSync(path.join(root, "app/SendLabelRequestForm.tsx")));
 });
 
