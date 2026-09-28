@@ -17,19 +17,15 @@ function getServiceClient() {
 }
 
 /**
- * GET: ensure Shippo track_updated webhook is registered (idempotent).
- * Safe to hit after deploying env vars; also called automatically after label purchase.
+ * GET previously registered the Shippo track_updated webhook with no auth.
+ * Disabled: setup is the offline script plus ensure-after-label-purchase.
+ * Inbound tracking remains POST.
  */
 export async function GET() {
-  if (getShippingProviderMode() !== "shippo") {
-    return NextResponse.json({
-      ok: true,
-      action: "skipped",
-      message: "SHIPPING_PROVIDER is not shippo",
-    });
-  }
-  const result = await ensureShippoTrackUpdatedWebhook();
-  return NextResponse.json(result, { status: result.ok ? 200 : 500 });
+  return NextResponse.json(
+    { error: "This endpoint is no longer available." },
+    { status: 410 }
+  );
 }
 
 /**
