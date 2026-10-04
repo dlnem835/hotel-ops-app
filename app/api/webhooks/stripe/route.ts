@@ -6,7 +6,6 @@ import {
 } from "@/app/lib/payments/process-stripe-webhook";
 import { logFulfillment } from "@/app/lib/payments/fulfillment-log";
 import { getStripeCheckoutStatus } from "@/app/lib/payments/stripe-env";
-import { redactStripeId } from "@/app/lib/payments/types";
 
 export const runtime = "nodejs";
 
@@ -92,17 +91,13 @@ export async function POST(request: Request) {
   }
 }
 
-/** Safe probe — confirms the route is deployed (Stripe uses POST). */
+/**
+ * GET previously advertised Stripe mode and webhook-secret presence.
+ * Disabled. Inbound payments remain POST /api/webhooks/stripe.
+ */
 export async function GET() {
-  const stripeStatus = getStripeCheckoutStatus();
-  return NextResponse.json({
-    ok: true,
-    endpoint: "/api/webhooks/stripe",
-    method: "POST",
-    stripeMode: stripeStatus.mode,
-    webhookSecretConfigured: Boolean(
-      (process.env.STRIPE_WEBHOOK_SECRET || "").trim().startsWith("whsec_")
-    ),
-    sampleEventRef: redactStripeId("evt_example"),
-  });
+  return NextResponse.json(
+    { error: "This endpoint is no longer available." },
+    { status: 410 }
+  );
 }
