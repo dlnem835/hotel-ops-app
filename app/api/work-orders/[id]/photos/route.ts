@@ -27,7 +27,10 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const photos = await fetchWorkOrderPhotos(supabase, Number(id), scope);
-    const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+    const memberResolver = await fetchMemberDisplayNameResolver(
+      supabase,
+      organizationId
+    );
     return NextResponse.json({
       photos: photos.map((photo) => ({
         ...photo,
@@ -86,7 +89,10 @@ export async function POST(request: Request, context: RouteContext) {
     // Touch updated_at without changing other fields.
     const updated = await updateWorkOrder(supabase, workOrderId, {}, scope);
     const photos = await fetchWorkOrderPhotos(supabase, workOrderId, scope);
-    const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+    const memberResolver = await fetchMemberDisplayNameResolver(
+      supabase,
+      organizationId
+    );
 
     return NextResponse.json({
       photo: {

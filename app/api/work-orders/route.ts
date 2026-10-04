@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         scope,
         ...(openOnly ? { status: ["Open", "In Progress"] } : {}),
       }),
-      fetchMemberDisplayNameResolver(supabase),
+      fetchMemberDisplayNameResolver(supabase, organizationId),
     ]);
 
     const enrichedWorkOrders = workOrders.map((order) => ({

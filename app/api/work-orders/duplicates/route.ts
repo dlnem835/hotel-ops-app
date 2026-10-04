@@ -55,7 +55,10 @@ export async function POST(request: Request) {
       scope: { organizationId, propertyId },
     });
 
-    const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+    const memberResolver = await fetchMemberDisplayNameResolver(
+      supabase,
+      organizationId
+    );
     const enriched = active.map((wo) => ({
       ...wo,
       createdByLabel: wo.createdBy

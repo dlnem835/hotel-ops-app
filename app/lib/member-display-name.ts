@@ -100,11 +100,18 @@ export function buildMemberDisplayNameResolver(
 }
 
 export async function fetchMemberDisplayNameResolver(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  organizationId?: number
 ): Promise<MemberDisplayNameResolver> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("team_members")
     .select("id, auth_user_id, username, first_name, last_name");
+
+  if (organizationId != null) {
+    query = query.eq("organization_id", organizationId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(error.message);
   return buildMemberDisplayNameResolver(data || []);

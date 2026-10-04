@@ -24,7 +24,10 @@ async function enrichWorkOrder(
   workOrder: WorkOrder,
   scope: { organizationId: number; propertyId: number }
 ) {
-  const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+  const memberResolver = await fetchMemberDisplayNameResolver(
+    supabase,
+    scope.organizationId
+  );
   const photos = await fetchWorkOrderPhotos(supabase, workOrder.id, scope);
 
   return {

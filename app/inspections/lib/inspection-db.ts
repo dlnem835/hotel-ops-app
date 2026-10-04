@@ -271,12 +271,13 @@ function latestSessionsInPeriod(
 
 async function loadMemberNames(
   supabase: SupabaseClient,
-  memberIds: string[]
+  memberIds: string[],
+  organizationId?: number
 ): Promise<Map<string, string>> {
   const members = new Map<string, string>();
   if (memberIds.length === 0) return members;
 
-  const resolver = await fetchMemberDisplayNameResolver(supabase);
+  const resolver = await fetchMemberDisplayNameResolver(supabase, organizationId);
 
   for (const id of memberIds) {
     members.set(id, resolver.displayForMemberId(id) || "Unknown");
@@ -481,7 +482,11 @@ export async function buildDashboard(
     if (session.inspector_id) memberIdSet.add(session.inspector_id);
     if (session.associate_id) memberIdSet.add(session.associate_id);
   }
-  const memberNames = await loadMemberNames(supabase, [...memberIdSet]);
+  const memberNames = await loadMemberNames(
+    supabase,
+    [...memberIdSet],
+    scope?.organizationId
+  );
 
   const vrMap = latestSessionsInPeriod(
     completedSessions,
@@ -711,7 +716,11 @@ export async function fetchRoomHistory(
   }
 
   const memberIds = [...inspectorIds, ...associateIds];
-  const members = await loadMemberNames(supabase, memberIds);
+  const members = await loadMemberNames(
+    supabase,
+    memberIds,
+    scope?.organizationId
+  );
 
   const sessionIds = limitedSessions.map((row) => Number(row.id));
   const failedBySession = new Map<

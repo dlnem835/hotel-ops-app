@@ -418,7 +418,10 @@ export async function buildMaintenanceDashboard(
     ((workOrderResult.data || []) as WorkOrderRow[]).map(normalizeWorkOrder)
   );
 
-  const memberResolver = await fetchMemberDisplayNameResolver(supabase);
+  const memberResolver = await fetchMemberDisplayNameResolver(
+    supabase,
+    scope?.organizationId
+  );
 
   const workOrdersWithLabels = workOrders.map((order) => ({
     ...order,
