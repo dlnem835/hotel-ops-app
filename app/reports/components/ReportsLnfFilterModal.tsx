@@ -40,6 +40,7 @@ import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOut
 import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import { LOST_FOUND_AGING_RETENTION_LABEL } from "@/app/reports/lib/report-property";
 import {
   applyDefaultReportDateRange,
@@ -81,6 +82,7 @@ export default function ReportsLnfFilterModal({
   });
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { isCurrentRequest, markLoaded } = useTenantScopedReportSnapshot(scope);
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -121,18 +123,20 @@ export default function ReportsLnfFilterModal({
 
     if (!tenantReady || !scope) return;
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadFilterOptions() {
       try {
         const supabase = createReportsSupabaseClient();
-        const source = await fetchLostFoundReportSource(supabase, scope);
-        if (cancelled) return;
+        const source = await fetchLostFoundReportSource(supabase, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
         setFilterOptions(buildLostFoundFilterOptions(source.items));
+        markLoaded(requestScope);
       } catch {
-        if (!cancelled) {
-          setFilterOptions({ foundBy: ["All"], createdBy: ["All"] });
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setFilterOptions({ foundBy: ["All"], createdBy: ["All"] });
+        markLoaded(requestScope);
       }
     }
 
@@ -141,7 +145,7 @@ export default function ReportsLnfFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId, propertyName, tenantReady, scope]);
+  }, [open, reportId, propertyName, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 

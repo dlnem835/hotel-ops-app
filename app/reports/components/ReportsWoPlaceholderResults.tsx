@@ -8,6 +8,7 @@ import {
 } from "@/app/reports/lib/report-definitions";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import {
   buildWorkOrdersBySourceRows,
   calculateAverageCompletionTimeHours,
@@ -37,12 +38,15 @@ export default function ReportsWoPlaceholderResults({
 
   const activeFilters = filters ?? DEFAULT_WORK_ORDER_REPORT_FILTERS;
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
+    useTenantScopedReportSnapshot(scope);
 
   useEffect(() => {
     if (!tenantReady || !scope) {
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadReportData() {
@@ -51,18 +55,19 @@ export default function ReportsWoPlaceholderResults({
       setItems([]);
 
       try {
-        const rows = await fetchWorkOrderReportSource(undefined, scope);
-        if (!cancelled) {
-          setItems(rows);
-        }
+        const rows = await fetchWorkOrderReportSource(undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setItems(rows);
+        markLoaded(requestScope);
       } catch (loadError) {
-        if (cancelled) return;
+        if (cancelled || !isCurrentRequest(requestScope)) return;
         const message =
           loadError instanceof Error ? loadError.message : "Unable to load work order data.";
         setError(message);
         setItems([]);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && isCurrentRequest(requestScope)) {
           setLoading(false);
         }
       }
@@ -73,19 +78,23 @@ export default function ReportsWoPlaceholderResults({
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters, tenantReady, scope]);
+  }, [reportId, filters, tenantReady, scope, isCurrentRequest, markLoaded]);
 
+  const scopedItems = useMemo(
+    () => (belongsToCurrentScope ? items : []),
+    [belongsToCurrentScope, items]
+  );
   const filteredItems = useMemo(
-    () => filterWorkOrdersForReport(items, activeFilters),
-    [items, activeFilters]
+    () => filterWorkOrdersForReport(scopedItems, activeFilters),
+    [scopedItems, activeFilters]
   );
   const bySourceRows = useMemo(
     () => buildWorkOrdersBySourceRows(filteredItems),
     [filteredItems]
   );
   const completedRows = useMemo(
-    () => filterWorkOrdersForAverageCompletionTimeReport(items, activeFilters),
-    [items, activeFilters]
+    () => filterWorkOrdersForAverageCompletionTimeReport(scopedItems, activeFilters),
+    [scopedItems, activeFilters]
   );
   const averageHours = useMemo(
     () => calculateAverageCompletionTimeHours(completedRows),
@@ -93,11 +102,11 @@ export default function ReportsWoPlaceholderResults({
   );
   const averageCompletionTime = formatAverageCompletionTime(averageHours);
   const resolutionRows = useMemo(
-    () => filterWorkOrdersForResolutionReport(items, activeFilters),
-    [items, activeFilters]
+    () => filterWorkOrdersForResolutionReport(scopedItems, activeFilters),
+    [scopedItems, activeFilters]
   );
 
-  if (loading) {
+  if (loading || !belongsToCurrentScope) {
     return <ReportStateMessage message="Loading work order report data…" />;
   }
 

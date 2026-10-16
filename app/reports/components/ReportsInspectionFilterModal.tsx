@@ -41,6 +41,7 @@ import {
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 
 type ReportsInspectionFilterModalProps = {
   open: boolean;
@@ -70,6 +71,7 @@ export default function ReportsInspectionFilterModal({
   const [inspectorOptions, setInspectorOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { isCurrentRequest, markLoaded } = useTenantScopedReportSnapshot(scope);
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -90,21 +92,22 @@ export default function ReportsInspectionFilterModal({
   useEffect(() => {
     if (!open || !target || !tenantReady || !scope) return;
 
+    const requestScope = scope;
     let cancelled = false;
     const variant = target.variant;
 
     async function loadFilterOptions() {
       try {
-        const source = await fetchInspectionReportSource(variant, undefined, scope);
-        if (!cancelled) {
-          setAssociateOptions(source.associateOptions);
-          setInspectorOptions(source.inspectorOptions);
-        }
+        const source = await fetchInspectionReportSource(variant, undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setAssociateOptions(source.associateOptions);
+        setInspectorOptions(source.inspectorOptions);
+        markLoaded(requestScope);
       } catch {
-        if (!cancelled) {
-          setAssociateOptions(["All"]);
-          setInspectorOptions(["All"]);
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setAssociateOptions(["All"]);
+        setInspectorOptions(["All"]);
+        markLoaded(requestScope);
       }
     }
 
@@ -113,7 +116,7 @@ export default function ReportsInspectionFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, target, tenantReady, scope]);
+  }, [open, target, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   if (!open || !target) return null;
 

@@ -8,6 +8,7 @@ import ReportsPmFailedItemsResults from "@/app/reports/components/ReportsPmFaile
 import type { PmReportFilters, PmReportId } from "@/app/reports/lib/report-definitions";
 import { fetchPmReportSource } from "@/app/reports/lib/pm-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import {
   buildCompletedPmReportRows,
   buildFailedPmItemReportRows,
@@ -30,12 +31,15 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
     null
   );
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
+    useTenantScopedReportSnapshot(scope);
 
   useEffect(() => {
     if (!tenantReady || !scope) {
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadSource() {
@@ -44,18 +48,19 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
       setSource(null);
 
       try {
-        const data = await fetchPmReportSource(undefined, scope);
-        if (!cancelled) {
-          setSource(data);
-        }
+        const data = await fetchPmReportSource(undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setSource(data);
+        markLoaded(requestScope);
       } catch (loadError) {
-        if (cancelled) return;
+        if (cancelled || !isCurrentRequest(requestScope)) return;
         setError(
           loadError instanceof Error ? loadError.message : "Unable to load PM report data."
         );
         setSource(null);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && isCurrentRequest(requestScope)) {
           setLoading(false);
         }
       }
@@ -66,23 +71,27 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
     return () => {
       cancelled = true;
     };
-  }, [filters, reportId, reloadKey, tenantReady, scope]);
+  }, [filters, reportId, reloadKey, tenantReady, scope, isCurrentRequest, markLoaded]);
 
+  const scopedSource = useMemo(
+    () => (belongsToCurrentScope ? source : null),
+    [belongsToCurrentScope, source]
+  );
   const completedRows = useMemo(
-    () => (source ? buildCompletedPmReportRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildCompletedPmReportRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const missedRows = useMemo(
-    () => (source ? buildMissedPmReportRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildMissedPmReportRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const failedRows = useMemo(
-    () => (source ? buildFailedPmItemReportRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildFailedPmItemReportRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const overview = useMemo(
-    () => (source ? buildPmCompletionOverviewReport(source, filters) : null),
-    [source, filters]
+    () => (scopedSource ? buildPmCompletionOverviewReport(scopedSource, filters) : null),
+    [scopedSource, filters]
   );
 
   function openPmRecord(occurrenceId: number | null) {
@@ -90,7 +99,7 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
     router.push(pmSessionUrl(occurrenceId));
   }
 
-  if (loading) {
+  if (loading || !belongsToCurrentScope) {
     return <ReportStateMessage message="Loading preventive maintenance report data…" />;
   }
 

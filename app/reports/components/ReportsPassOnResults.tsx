@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import ReportsPassOnEntryDetailModal from "@/app/reports/components/ReportsPassOnEntryDetailModal";
 import { fetchPassOnReportSource } from "@/app/reports/lib/pass-on-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import {
   buildEditedEntryRows,
   buildEntriesByAssociateGroups,
@@ -134,6 +135,8 @@ export default function ReportsPassOnResults({
     null
   );
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
+    useTenantScopedReportSnapshot(scope);
 
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [openingEntryId, setOpeningEntryId] = useState<number | null>(null);
@@ -180,30 +183,33 @@ export default function ReportsPassOnResults({
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       setSource(null);
       try {
-        const data = await fetchPassOnReportSource(undefined, scope);
-        if (!cancelled) setSource(data);
+        const data = await fetchPassOnReportSource(undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setSource(data);
+        markLoaded(requestScope);
       } catch (loadError) {
-        if (!cancelled) {
-          setError(
-            loadError instanceof Error ? loadError.message : "Unable to load Pass-On report data."
-          );
-          setSource(null);
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setError(
+          loadError instanceof Error ? loadError.message : "Unable to load Pass-On report data."
+        );
+        setSource(null);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && isCurrentRequest(requestScope)) setLoading(false);
       }
     }
     void load();
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters, unreadFilters, tenantReady, scope]);
+  }, [reportId, filters, unreadFilters, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   useEffect(() => {
     if (selectedEntryId) return;
@@ -214,26 +220,30 @@ export default function ReportsPassOnResults({
     });
   }, [selectedEntryId]);
 
+  const scopedSource = useMemo(
+    () => (belongsToCurrentScope ? source : null),
+    [belongsToCurrentScope, source]
+  );
   const associateGroups = useMemo(
-    () => (source ? buildEntriesByAssociateGroups(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildEntriesByAssociateGroups(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const shiftGroups = useMemo(
-    () => (source ? buildEntriesByShiftGroups(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildEntriesByShiftGroups(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const editedRows = useMemo(
-    () => (source ? buildEditedEntryRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildEditedEntryRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const keywordRows = useMemo(
-    () => (source ? buildKeywordSearchRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildKeywordSearchRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const unreadRows = useMemo(
     () =>
-      source && unreadFilters ? buildUnreadByUserRows(source, unreadFilters) : [],
-    [source, unreadFilters]
+      scopedSource && unreadFilters ? buildUnreadByUserRows(scopedSource, unreadFilters) : [],
+    [scopedSource, unreadFilters]
   );
 
   const sortedAssociateGroups = useMemo(
@@ -355,7 +365,7 @@ export default function ReportsPassOnResults({
       />
     ) : null;
 
-  if (loading) {
+  if (loading || !belongsToCurrentScope) {
     return <p className="reports-pm-results__lead">Loading Pass-On report data…</p>;
   }
 

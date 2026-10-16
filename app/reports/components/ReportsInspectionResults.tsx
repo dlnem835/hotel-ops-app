@@ -7,6 +7,7 @@ import ReportsInspectionSessionDetailModal from "@/app/reports/components/Report
 import type { InspectionReportModalTarget } from "@/app/reports/lib/report-definitions";
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import {
   buildAssociateRankingRows,
   buildAverageTimeGroups,
@@ -115,6 +116,8 @@ export default function ReportsInspectionResults({
     null
   );
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
+    useTenantScopedReportSnapshot(scope);
 
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [highlightItemKey, setHighlightItemKey] = useState<string | null>(null);
@@ -154,30 +157,33 @@ export default function ReportsInspectionResults({
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       setSource(null);
       try {
-        const data = await fetchInspectionReportSource(variant, undefined, scope);
-        if (!cancelled) setSource(data);
+        const data = await fetchInspectionReportSource(variant, undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setSource(data);
+        markLoaded(requestScope);
       } catch (loadError) {
-        if (!cancelled) {
-          setError(
-            loadError instanceof Error ? loadError.message : "Unable to load inspection report data."
-          );
-          setSource(null);
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setError(
+          loadError instanceof Error ? loadError.message : "Unable to load inspection report data."
+        );
+        setSource(null);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && isCurrentRequest(requestScope)) setLoading(false);
       }
     }
     void load();
     return () => {
       cancelled = true;
     };
-  }, [variant, filters, reportId, reloadKey, tenantReady, scope]);
+  }, [variant, filters, reportId, reloadKey, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   useEffect(() => {
     if (selectedSessionId) return;
@@ -188,37 +194,41 @@ export default function ReportsInspectionResults({
     });
   }, [selectedSessionId]);
 
+  const scopedSource = useMemo(
+    () => (belongsToCurrentScope ? source : null),
+    [belongsToCurrentScope, source]
+  );
   const associateRows = useMemo(
-    () => (source ? buildAssociateRankingRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildAssociateRankingRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const averageTime = useMemo(
-    () => (source ? buildAverageTimeGroups(source, filters) : null),
-    [source, filters]
+    () => (scopedSource ? buildAverageTimeGroups(scopedSource, filters) : null),
+    [scopedSource, filters]
   );
   const roomsDoneRows = useMemo(
-    () => (source ? buildRoomsDoneRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildRoomsDoneRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const roomsNotDoneRows = useMemo(
-    () => (source ? buildRoomsNotDoneRows(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildRoomsNotDoneRows(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const failedSectionGroups = useMemo(
-    () => (source ? buildFailedSectionGroups(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildFailedSectionGroups(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const failedItemGroups = useMemo(
-    () => (source ? buildFailedItemGroups(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildFailedItemGroups(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
   const inspectorShare = useMemo(
-    () => (source ? buildInspectorRoomShareRows(source, filters) : { rows: [], totalCompleted: 0 }),
-    [source, filters]
+    () => (scopedSource ? buildInspectorRoomShareRows(scopedSource, filters) : { rows: [], totalCompleted: 0 }),
+    [scopedSource, filters]
   );
   const scoresByRoomGroups = useMemo(
-    () => (source ? buildScoresByRoomGroups(source, filters) : []),
-    [source, filters]
+    () => (scopedSource ? buildScoresByRoomGroups(scopedSource, filters) : []),
+    [scopedSource, filters]
   );
 
   const sortedAssociateRows = useMemo(
@@ -366,7 +376,7 @@ export default function ReportsInspectionResults({
     setInspectorShareSortDirection(column === "percent" ? "desc" : "asc");
   }
 
-  if (loading) {
+  if (loading || !belongsToCurrentScope) {
     return (
       <div className="reports-wo-results">
         <p className="reports-pm-results__lead">Loading inspection report data…</p>

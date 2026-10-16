@@ -43,6 +43,7 @@ import {
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 
 type ReportsWoFilterModalProps = {
   open: boolean;
@@ -74,6 +75,7 @@ export default function ReportsWoFilterModal({
   const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { isCurrentRequest, markLoaded } = useTenantScopedReportSnapshot(scope);
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -89,6 +91,7 @@ export default function ReportsWoFilterModal({
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadLocationOptions() {
@@ -98,38 +101,41 @@ export default function ReportsWoFilterModal({
         if (!response.ok) {
           throw new Error(result.error || "Unable to load areas");
         }
-        if (cancelled) return;
+        if (cancelled || (requestScope && !isCurrentRequest(requestScope))) return;
         setLocationOptions(
           buildWorkOrderLocationOptions((result.areas ?? []) as BuildingArea[])
         );
       } catch {
-        if (!cancelled) {
+        if (!cancelled && (!requestScope || isCurrentRequest(requestScope))) {
           setLocationOptions(buildWorkOrderLocationOptions([]));
         }
       }
     }
 
     void loadLocationOptions();
-    if (tenantReady && scope) {
-      void fetchWorkOrderReportSource(undefined, scope)
+    if (tenantReady && requestScope) {
+      void fetchWorkOrderReportSource(undefined, requestScope)
         .then((rows) => {
-          if (cancelled) return;
+          if (cancelled || !isCurrentRequest(requestScope)) return;
           setCompletedByOptions([
             "All",
             ...Array.from(
               new Set(rows.map((row) => row.completedBy).filter((name): name is string => Boolean(name)))
             ).sort((a, b) => a.localeCompare(b)),
           ]);
+          markLoaded(requestScope);
         })
         .catch(() => {
-          if (!cancelled) setCompletedByOptions(["All"]);
+          if (cancelled || !isCurrentRequest(requestScope)) return;
+          setCompletedByOptions(["All"]);
+          markLoaded(requestScope);
         });
     }
 
     return () => {
       cancelled = true;
     };
-  }, [open, reportId, tenantReady, scope]);
+  }, [open, reportId, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   if (!open || !reportId) return null;
 

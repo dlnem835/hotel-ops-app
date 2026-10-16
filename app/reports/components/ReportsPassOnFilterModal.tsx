@@ -28,6 +28,7 @@ import {
 } from "@/app/reports/lib/report-definitions";
 import { fetchPassOnReportSource } from "@/app/reports/lib/pass-on-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPassOnResults from "@/app/reports/components/ReportsPassOnResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
@@ -73,6 +74,7 @@ export default function ReportsPassOnFilterModal({
   const [userOptions, setUserOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { isCurrentRequest, markLoaded } = useTenantScopedReportSnapshot(scope);
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -92,24 +94,26 @@ export default function ReportsPassOnFilterModal({
 
   useEffect(() => {
     if (!open || !tenantReady || !scope) return;
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadFilterOptions() {
       setFilterOptionsLoading(true);
       try {
-        const source = await fetchPassOnReportSource(undefined, scope);
-        if (cancelled) return;
+        const source = await fetchPassOnReportSource(undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
         setCreatedByOptions(source.filterOptions.createdByOptions);
         setDepartmentOptions(source.filterOptions.departmentOptions);
         setUserOptions(["All", ...source.filterOptions.userOptions.map((user) => user.displayName)]);
+        markLoaded(requestScope);
       } catch {
-        if (!cancelled) {
-          setCreatedByOptions(["All"]);
-          setDepartmentOptions(["All"]);
-          setUserOptions(["All"]);
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setCreatedByOptions(["All"]);
+        setDepartmentOptions(["All"]);
+        setUserOptions(["All"]);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) setFilterOptionsLoading(false);
+        if (!cancelled && isCurrentRequest(requestScope)) setFilterOptionsLoading(false);
       }
     }
 
@@ -117,7 +121,7 @@ export default function ReportsPassOnFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId, tenantReady, scope]);
+  }, [open, reportId, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   if (!open || !reportId) return null;
 

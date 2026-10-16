@@ -35,6 +35,7 @@ import {
 } from "@/app/reports/lib/report-date-presets";
 import { fetchPmReportSource } from "@/app/reports/lib/pm-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsPmFilterModalProps = {
@@ -64,6 +65,7 @@ export default function ReportsPmFilterModal({
   const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { isCurrentRequest, markLoaded } = useTenantScopedReportSnapshot(scope);
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -83,18 +85,19 @@ export default function ReportsPmFilterModal({
   useEffect(() => {
     if (!open || reportId !== "completed-pms" || !tenantReady || !scope) return;
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadCompletedByOptions() {
       try {
-        const source = await fetchPmReportSource(undefined, scope);
-        if (!cancelled) {
-          setCompletedByOptions(source.completedByOptions);
-        }
+        const source = await fetchPmReportSource(undefined, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setCompletedByOptions(source.completedByOptions);
+        markLoaded(requestScope);
       } catch {
-        if (!cancelled) {
-          setCompletedByOptions(["All"]);
-        }
+        if (cancelled || !isCurrentRequest(requestScope)) return;
+        setCompletedByOptions(["All"]);
+        markLoaded(requestScope);
       }
     }
 
@@ -103,7 +106,7 @@ export default function ReportsPmFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId, tenantReady, scope]);
+  }, [open, reportId, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   if (!open || !reportId) return null;
 

@@ -24,6 +24,18 @@ export function reportTenantScopeFromIds(
   return isValidReportTenantScope(scope) ? scope : null;
 }
 
+export function reportTenantScopesEqual(
+  left: ReportTenantScope | null | undefined,
+  right: ReportTenantScope | null | undefined
+): boolean {
+  return (
+    isValidReportTenantScope(left) &&
+    isValidReportTenantScope(right) &&
+    left.organizationId === right.organizationId &&
+    left.propertyId === right.propertyId
+  );
+}
+
 export function reportTenantScopeFromScheduleRow(row: {
   organization_id?: number | null;
   property_id?: number | null;

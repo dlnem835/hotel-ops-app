@@ -14,6 +14,7 @@ import {
   fetchLostFoundReportSource,
 } from "@/app/reports/lib/lost-found-report-data";
 import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
+import { useTenantScopedReportSnapshot } from "@/app/reports/hooks/useTenantScopedReportSnapshot";
 import {
   filterLostFoundAllItemsReportRows,
   filterLostFoundAgingReportRows,
@@ -45,6 +46,8 @@ export default function ReportsLnfPlaceholderResults({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { scope, ready: tenantReady } = useReportTenantScope();
+  const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
+    useTenantScopedReportSnapshot(scope);
 
   useEffect(() => {
     setSelectedAssociate(null);
@@ -55,6 +58,7 @@ export default function ReportsLnfPlaceholderResults({
       return;
     }
 
+    const requestScope = scope;
     let cancelled = false;
 
     async function loadReportData() {
@@ -65,20 +69,22 @@ export default function ReportsLnfPlaceholderResults({
 
       try {
         const supabase = createReportsSupabaseClient();
-        const source = await fetchLostFoundReportSource(supabase, scope);
-        if (cancelled) return;
+        const source = await fetchLostFoundReportSource(supabase, requestScope);
+        if (cancelled || !isCurrentRequest(requestScope)) return;
 
         setItems(source.items);
         setTeamMembers(source.teamMembers);
+        markLoaded(requestScope);
       } catch (loadError) {
-        if (cancelled) return;
+        if (cancelled || !isCurrentRequest(requestScope)) return;
         const message =
           loadError instanceof Error ? loadError.message : "Unable to load Lost & Found data.";
         setError(message);
         setItems([]);
         setTeamMembers([]);
+        markLoaded(requestScope);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && isCurrentRequest(requestScope)) {
           setLoading(false);
         }
       }
@@ -89,24 +95,32 @@ export default function ReportsLnfPlaceholderResults({
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters, foundByFilters, tenantReady, scope]);
+  }, [reportId, filters, foundByFilters, tenantReady, scope, isCurrentRequest, markLoaded]);
 
   const activeAllItemsFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
   const activeFoundByFilters = foundByFilters ?? DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS;
   const sharedFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
 
+  const scopedItems = useMemo(
+    () => (belongsToCurrentScope ? items : []),
+    [belongsToCurrentScope, items]
+  );
+  const scopedTeamMembers = useMemo(
+    () => (belongsToCurrentScope ? teamMembers : []),
+    [belongsToCurrentScope, teamMembers]
+  );
   const allItems = useMemo(
-    () => filterLostFoundAllItemsReportRows(items, activeAllItemsFilters),
-    [items, activeAllItemsFilters]
+    () => filterLostFoundAllItemsReportRows(scopedItems, activeAllItemsFilters),
+    [scopedItems, activeAllItemsFilters]
   );
   const foundBySourceItems = useMemo(
-    () => filterLostFoundItemsForFoundByReport(items, activeFoundByFilters),
-    [items, activeFoundByFilters]
+    () => filterLostFoundItemsForFoundByReport(scopedItems, activeFoundByFilters),
+    [scopedItems, activeFoundByFilters]
   );
 
   const foundByRows = useMemo(
-    () => buildLostFoundFoundByRows(foundBySourceItems, teamMembers),
-    [foundBySourceItems, teamMembers]
+    () => buildLostFoundFoundByRows(foundBySourceItems, scopedTeamMembers),
+    [foundBySourceItems, scopedTeamMembers]
   );
 
   const foundByReportRows = useMemo(
@@ -114,30 +128,30 @@ export default function ReportsLnfPlaceholderResults({
     [foundByRows, activeFoundByFilters]
   );
   const shippingItems = useMemo(
-    () => filterLostFoundShippingReportRows(items, sharedFilters),
-    [items, sharedFilters]
+    () => filterLostFoundShippingReportRows(scopedItems, sharedFilters),
+    [scopedItems, sharedFilters]
   );
   const agingItems = useMemo(
     () =>
-      filterLostFoundAgingReportRows(items, {
+      filterLostFoundAgingReportRows(scopedItems, {
         status: sharedFilters.status,
         foundBy: sharedFilters.foundBy,
       }),
-    [items, sharedFilters.status, sharedFilters.foundBy]
+    [scopedItems, sharedFilters.status, sharedFilters.foundBy]
   );
   const selectedAssociateItems = useMemo(
     () =>
       selectedAssociate == null
         ? []
         : filterLostFoundItemsForAssociateDrillDown(
-            items,
+            scopedItems,
             selectedAssociate,
             activeFoundByFilters
           ),
-    [items, selectedAssociate, activeFoundByFilters]
+    [scopedItems, selectedAssociate, activeFoundByFilters]
   );
 
-  if (loading) {
+  if (loading || !belongsToCurrentScope) {
     return <ReportStateMessage message="Loading Lost & Found report data…" />;
   }
 
