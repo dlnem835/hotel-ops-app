@@ -73,14 +73,16 @@ export default function ReportsPmFilterModal({
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
-  useEffect(() => {
+  const [modalOpen, setModalOpen] = useState(open);
+  if (modalOpen !== open) {
+    setModalOpen(open);
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_PM_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
       setCompletedByOptions(["All"]);
     }
-  }, [open, reportId]);
+  }
 
   useEffect(() => {
     if (!open || reportId !== "completed-pms" || !tenantReady || !scope) return;

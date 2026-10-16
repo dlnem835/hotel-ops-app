@@ -1,4 +1,4 @@
-import type { InspectionModuleReportId, InspectionReportModalTarget } from "@/app/reports/lib/report-definitions";
+import type { InspectionReportModalTarget } from "@/app/reports/lib/report-definitions";
 import {
   getInspectionReportLabels,
   SAMPLE_ASSOCIATE_RANKING,
@@ -218,7 +218,6 @@ export default function ReportsInspectionPlaceholderResults({
 
 function GroupedCountResults({
   lead,
-  labelHeader,
   rows,
 }: {
   lead: string;

@@ -20,7 +20,6 @@ import {
   EDITED_ENTRY_SORT_COLUMNS,
   KEYWORD_SEARCH_SORT_COLUMNS,
   SHIFT_DETAIL_SORT_COLUMNS,
-  SHIFT_GROUP_SORT_COLUMNS,
   sortAssociateDetailRows,
   sortAssociateGroups,
   sortEditedEntryRows,
@@ -75,14 +74,14 @@ function SortableHeader<T extends string>({
 }: SortableHeaderProps<T>) {
   const isActive = sortColumn === column.key;
   return (
-    <th scope="col">
+    <th
+      scope="col"
+      aria-sort={isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+    >
       <button
         type="button"
         className="reports-all-work-orders__sort-btn"
         onClick={() => onSort(column.key)}
-        aria-sort={
-          isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none"
-        }
       >
         <span>{column.label}</span>
         {isActive ? (
@@ -152,10 +151,8 @@ export default function ReportsPassOnResults({
   const [associateDetailSortDirection, setAssociateDetailSortDirection] =
     useState<PassOnReportSortDirection>("desc");
 
-  const [shiftGroupSortColumn, setShiftGroupSortColumn] =
-    useState<ShiftGroupSortColumn>("shiftName");
-  const [shiftGroupSortDirection, setShiftGroupSortDirection] =
-    useState<PassOnReportSortDirection>("asc");
+  const [shiftGroupSortColumn] = useState<ShiftGroupSortColumn>("shiftName");
+  const [shiftGroupSortDirection] = useState<PassOnReportSortDirection>("asc");
   const [shiftDetailSortColumn, setShiftDetailSortColumn] =
     useState<ShiftDetailSortColumn>("createdAt");
   const [shiftDetailSortDirection, setShiftDetailSortDirection] =
@@ -301,15 +298,6 @@ export default function ReportsPassOnResults({
     }
     setAssociateDetailSortColumn(column);
     setAssociateDetailSortDirection("asc");
-  }
-
-  function toggleShiftGroupSort(column: ShiftGroupSortColumn) {
-    if (shiftGroupSortColumn === column) {
-      setShiftGroupSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setShiftGroupSortColumn(column);
-    setShiftGroupSortDirection(column === "shiftName" ? "asc" : "desc");
   }
 
   function toggleShiftDetailSort(column: ShiftDetailSortColumn) {

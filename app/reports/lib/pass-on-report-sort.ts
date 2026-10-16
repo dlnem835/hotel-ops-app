@@ -113,7 +113,7 @@ function compareNumber(left: number, right: number): number {
   return left - right;
 }
 
-function applyDirection<T>(value: number, direction: PassOnReportSortDirection): number {
+function applyDirection(value: number, direction: PassOnReportSortDirection): number {
   return direction === "asc" ? value : -value;
 }
 

@@ -9,20 +9,29 @@ import { usePropertyContext } from "@/app/components/TenantContextProviders";
 
 export function useReportPropertyName() {
   const { propertyId } = usePropertyContext();
-  const [propertyName, setPropertyName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const activePropertyId = propertyId ?? null;
+  const [snapshot, setSnapshot] = useState<{
+    propertyId: number | null;
+    propertyName: string;
+    loading: boolean;
+  }>(() => ({
+    propertyId: activePropertyId,
+    propertyName: "",
+    loading: true,
+  }));
 
   useEffect(() => {
     let cancelled = false;
     clearReportPropertyNameCache();
-    setPropertyName("");
-    setLoading(true);
 
     async function loadPropertyName() {
       const name = await loadReportPropertyNameCached();
       if (!cancelled) {
-        setPropertyName(name);
-        setLoading(false);
+        setSnapshot({
+          propertyId: propertyId ?? null,
+          propertyName: name,
+          loading: false,
+        });
       }
     }
 
@@ -33,7 +42,11 @@ export function useReportPropertyName() {
     };
   }, [propertyId]);
 
-  return { propertyName, loading };
+  const belongsToCurrentProperty = snapshot.propertyId === activePropertyId;
+  return {
+    propertyName: belongsToCurrentProperty ? snapshot.propertyName : "",
+    loading: belongsToCurrentProperty ? snapshot.loading : true,
+  };
 }
 
 /** Re-apply hotel property name when a report modal opens or the name finishes loading. */

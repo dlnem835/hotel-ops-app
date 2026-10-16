@@ -44,18 +44,21 @@ export default function ReportsPmCompletedResults({ rows }: ReportsPmCompletedRe
                 const isActive = sortColumn === column.key;
 
                 return (
-                  <th key={column.key} scope="col">
+                  <th
+                    key={column.key}
+                    scope="col"
+                    aria-sort={
+                      isActive
+                        ? sortDirection === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
                     <button
                       type="button"
                       className="reports-all-work-orders__sort-btn"
                       onClick={() => handleSort(column.key)}
-                      aria-sort={
-                        isActive
-                          ? sortDirection === "asc"
-                            ? "ascending"
-                            : "descending"
-                          : "none"
-                      }
                     >
                       <span>{column.label}</span>
                       {isActive ? (

@@ -79,7 +79,9 @@ export default function ReportsInspectionFilterModal({
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
-  useEffect(() => {
+  const [modalOpen, setModalOpen] = useState(open);
+  if (modalOpen !== open) {
+    setModalOpen(open);
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_INSPECTION_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
@@ -87,7 +89,7 @@ export default function ReportsInspectionFilterModal({
       setAssociateOptions(["All"]);
       setInspectorOptions(["All"]);
     }
-  }, [open, target]);
+  }
 
   useEffect(() => {
     if (!open || !target || !tenantReady || !scope) return;

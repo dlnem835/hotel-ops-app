@@ -42,11 +42,17 @@ export default function ReportsWorkOrderAreaField({
     return showAll ? [ALL_AREA_OPTION, ...filtered] : filtered;
   }, [options, query]);
 
-  useEffect(() => {
-    if (!open) {
+  const selectionKey = `${selectedId ?? "all"}:${selectedLabel}`;
+  const [appliedSelectionKey, setAppliedSelectionKey] = useState(selectionKey);
+  if (!open && query) {
+    setQuery("");
+  }
+  if (appliedSelectionKey !== selectionKey) {
+    setAppliedSelectionKey(selectionKey);
+    if (query) {
       setQuery("");
     }
-  }, [selectedId, selectedLabel, open]);
+  }
 
   useEffect(() => {
     return () => {

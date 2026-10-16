@@ -23,10 +23,7 @@ import {
   filterLostFoundItemsForFoundByReport,
   filterLostFoundShippingReportRows,
 } from "@/app/reports/lib/lost-found-report-filters";
-import type {
-  LostFoundFoundByRow,
-  LostFoundReportItem,
-} from "@/app/reports/lib/lost-found-report-types";
+import type { LostFoundReportItem } from "@/app/reports/lib/lost-found-report-types";
 import type { TeamMemberRow } from "@/app/reports/lib/lost-found-report-data";
 
 type ReportsLnfPlaceholderResultsProps = {
@@ -49,9 +46,19 @@ export default function ReportsLnfPlaceholderResults({
   const { belongsToCurrentScope, isCurrentRequest, markLoaded } =
     useTenantScopedReportSnapshot(scope);
 
-  useEffect(() => {
+  const [selectionScope, setSelectionScope] = useState({
+    reportId,
+    filters,
+    foundByFilters,
+  });
+  if (
+    selectionScope.reportId !== reportId ||
+    selectionScope.filters !== filters ||
+    selectionScope.foundByFilters !== foundByFilters
+  ) {
+    setSelectionScope({ reportId, filters, foundByFilters });
     setSelectedAssociate(null);
-  }, [reportId, filters, foundByFilters]);
+  }
 
   useEffect(() => {
     if (!tenantReady || !scope) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import {
   ONE_EYRIE_MODAL_BOX,
@@ -56,8 +56,18 @@ export default function ReportsScheduleModal({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const [appliedSession, setAppliedSession] = useState<{
+    open: boolean;
+    context: ReportScheduleContext | null;
+    propertyName: string;
+  } | null>(null);
 
-  useEffect(() => {
+  if (
+    appliedSession?.open !== open ||
+    appliedSession.context !== context ||
+    appliedSession.propertyName !== propertyName
+  ) {
+    setAppliedSession({ open, context, propertyName });
     if (open && context) {
       setForm({
         ...buildDefaultScheduleForm(context),
@@ -65,7 +75,7 @@ export default function ReportsScheduleModal({
       });
       setSaveMessage(null);
     }
-  }, [open, context, propertyName]);
+  }
 
   if (!open || !context || !form) return null;
 

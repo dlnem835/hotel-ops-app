@@ -83,14 +83,16 @@ export default function ReportsPassOnFilterModal({
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
-  useEffect(() => {
+  const [modalOpen, setModalOpen] = useState(open);
+  if (modalOpen !== open) {
+    setModalOpen(open);
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_PASS_ON_REPORT_FILTERS));
       setUnreadFilters(applyDefaultReportDateRange(DEFAULT_PASS_ON_UNREAD_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
     }
-  }, [open, reportId]);
+  }
 
   useEffect(() => {
     if (!open || !tenantReady || !scope) return;
@@ -123,10 +125,30 @@ export default function ReportsPassOnFilterModal({
     };
   }, [open, reportId, tenantReady, scope, isCurrentRequest, markLoaded]);
 
-  if (!open || !reportId) return null;
-
   const isUnreadReport = reportId === "unread-entries-by-user";
   const isKeywordReport = reportId === "keyword-search";
+  const passOnFilterLines = useMemo(() => {
+    if (isUnreadReport) {
+      return [
+        `Department: ${unreadFilters.department}`,
+        `User: ${unreadFilters.user}`,
+        `Shift: ${unreadFilters.shift}`,
+      ];
+    }
+
+    const lines = [
+      `Created By: ${filters.associate}`,
+      `Shift: ${filters.shift}`,
+      `Priority: ${filters.priority}`,
+    ];
+    if (isKeywordReport && filters.keyword.trim()) {
+      lines.push(`Keyword: ${filters.keyword.trim()}`);
+    }
+    return lines;
+  }, [filters, isKeywordReport, isUnreadReport, unreadFilters]);
+
+  if (!open || !reportId) return null;
+
   const activePropertyName =
     propertyName || (isUnreadReport ? unreadFilters.propertyName : filters.propertyName);
 
@@ -170,26 +192,6 @@ export default function ReportsPassOnFilterModal({
 
   const activeDateStart = isUnreadReport ? unreadFilters.dateStart : filters.dateStart;
   const activeDateEnd = isUnreadReport ? unreadFilters.dateEnd : filters.dateEnd;
-
-  const passOnFilterLines = useMemo(() => {
-    if (isUnreadReport) {
-      return [
-        `Department: ${unreadFilters.department}`,
-        `User: ${unreadFilters.user}`,
-        `Shift: ${unreadFilters.shift}`,
-      ];
-    }
-
-    const lines = [
-      `Created By: ${filters.associate}`,
-      `Shift: ${filters.shift}`,
-      `Priority: ${filters.priority}`,
-    ];
-    if (isKeywordReport && filters.keyword.trim()) {
-      lines.push(`Keyword: ${filters.keyword.trim()}`);
-    }
-    return lines;
-  }, [filters, isKeywordReport, isUnreadReport, unreadFilters]);
 
   const canRunKeywordReport = !isKeywordReport || filters.keyword.trim().length > 0;
 

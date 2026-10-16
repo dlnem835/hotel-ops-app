@@ -15,7 +15,6 @@ import {
   formatInspectionProgramLabel,
   matchesInspectionReportFilters,
   programInVariantScope,
-  sessionMatchesVariantProgram,
 } from "@/app/reports/lib/inspection-report-filter-utils";
 import type {
   InspectionReportFilters,

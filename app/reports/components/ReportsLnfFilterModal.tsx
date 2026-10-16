@@ -89,16 +89,16 @@ export default function ReportsLnfFilterModal({
     setFoundByFilters((prev) => ({ ...prev, propertyName: name }));
   }, []);
 
-  useEffect(() => {
+  const filterSessionKey = !open ? "closed" : `${reportId ?? "none"}:${propertyName}`;
+  const [appliedFilterSessionKey, setAppliedFilterSessionKey] = useState(filterSessionKey);
+  if (appliedFilterSessionKey !== filterSessionKey) {
+    setAppliedFilterSessionKey(filterSessionKey);
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_LOST_FOUND_REPORT_FILTERS));
       setFoundByFilters(applyDefaultReportDateRange(DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
-      return;
-    }
-
-    if (reportId === "ready-to-discard") {
+    } else if (reportId === "ready-to-discard") {
       setFilters({
         ...DEFAULT_LOST_FOUND_AGING_REPORT_FILTERS,
         propertyName,
@@ -120,7 +120,10 @@ export default function ReportsLnfFilterModal({
       );
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
     }
+  }
 
+  useEffect(() => {
+    if (!open) return;
     if (!tenantReady || !scope) return;
 
     const requestScope = scope;

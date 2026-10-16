@@ -14,7 +14,6 @@ import {
   getActiveGuestRooms,
   sessionMatchesVariantProgram,
 } from "@/app/reports/lib/inspection-report-filter-utils";
-import type { InspectionReportVariant } from "@/app/reports/lib/inspection-report-sample-data";
 import type {
   InspectionAssociateRankingRow,
   InspectionAverageTimeGroupRow,

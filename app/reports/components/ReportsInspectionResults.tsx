@@ -77,14 +77,14 @@ function SortableHeader<T extends string>({
 }: SortableHeaderProps<T>) {
   const isActive = sortColumn === column.key;
   return (
-    <th scope="col">
+    <th
+      scope="col"
+      aria-sort={isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+    >
       <button
         type="button"
         className="reports-all-work-orders__sort-btn"
         onClick={() => onSort(column.key)}
-        aria-sort={
-          isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none"
-        }
       >
         <span>{column.label}</span>
         {isActive ? (

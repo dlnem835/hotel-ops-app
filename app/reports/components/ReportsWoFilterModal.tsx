@@ -83,11 +83,18 @@ export default function ReportsWoFilterModal({
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 
-  useEffect(() => {
+  const [modalOpen, setModalOpen] = useState(open);
+  if (modalOpen !== open) {
+    setModalOpen(open);
     if (!open) {
       setFilters(applyDefaultReportDateRange(DEFAULT_WORK_ORDER_REPORT_FILTERS));
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
       setShowResults(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!open) {
       return;
     }
 

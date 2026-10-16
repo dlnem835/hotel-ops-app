@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import DashboardWorkOrderDetailModal from "@/app/dashboard/components/DashboardWorkOrderDetailModal";
 import { WorkOrder } from "@/app/maintenance/lib/maintenance-types";
-import type { WorkOrderReportFilters } from "@/app/reports/lib/report-definitions";
 import {
   ALL_WORK_ORDERS_SORT_COLUMNS,
   sortAllWorkOrdersReportRows,
@@ -159,18 +158,21 @@ export default function ReportsAllWorkOrdersResults({
                   const isActive = sortColumn === column.key;
 
                   return (
-                    <th key={column.key} scope="col">
+                    <th
+                      key={column.key}
+                      scope="col"
+                      aria-sort={
+                        isActive
+                          ? sortDirection === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
+                    >
                       <button
                         type="button"
                         className="reports-all-work-orders__sort-btn"
                         onClick={() => handleSort(column.key)}
-                        aria-sort={
-                          isActive
-                            ? sortDirection === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : "none"
-                        }
                       >
                         <span>{column.label}</span>
                         {isActive ? (
