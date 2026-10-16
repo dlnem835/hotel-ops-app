@@ -39,6 +39,7 @@ import ReportsLnfPlaceholderResults from "@/app/reports/components/ReportsLnfPla
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
 import ReportsPropertyNameField from "@/app/reports/components/ReportsPropertyNameField";
 import { useReportPropertyName, useSyncReportPropertyName } from "@/app/reports/hooks/useReportPropertyName";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import { LOST_FOUND_AGING_RETENTION_LABEL } from "@/app/reports/lib/report-property";
 import {
   applyDefaultReportDateRange,
@@ -79,6 +80,7 @@ export default function ReportsLnfFilterModal({
     createdBy: ["All"],
   });
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -117,12 +119,14 @@ export default function ReportsLnfFilterModal({
       setDatePreset(DEFAULT_REPORT_DATE_PRESET);
     }
 
+    if (!tenantReady || !scope) return;
+
     let cancelled = false;
 
     async function loadFilterOptions() {
       try {
         const supabase = createReportsSupabaseClient();
-        const source = await fetchLostFoundReportSource(supabase);
+        const source = await fetchLostFoundReportSource(supabase, scope);
         if (cancelled) return;
         setFilterOptions(buildLostFoundFilterOptions(source.items));
       } catch {
@@ -137,7 +141,7 @@ export default function ReportsLnfFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId, propertyName]);
+  }, [open, reportId, propertyName, tenantReady, scope]);
 
   useSyncReportPropertyName(open, propertyName, syncPropertyName);
 

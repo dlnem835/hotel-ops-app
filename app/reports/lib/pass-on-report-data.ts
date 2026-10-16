@@ -13,6 +13,7 @@ import type {
   PassOnReportSourceEntry,
   PassOnReportTeamMember,
 } from "@/app/reports/lib/pass-on-report-types";
+import type { ReportTenantScope } from "@/app/reports/lib/report-tenant-scope";
 
 type PassOnLogRow = {
   id: number;
@@ -88,18 +89,28 @@ function mapEntryRow(
 }
 
 export async function fetchPassOnReportSource(
-  supabase: SupabaseClient = createReportsSupabaseClient()
+  supabase: SupabaseClient = createReportsSupabaseClient(),
+  scope?: ReportTenantScope | null
 ): Promise<PassOnReportSource> {
+  let entriesQuery = supabase
+    .from("pass_on_log")
+    .select("*, pass_on_log_replies(created_at), pass_on_log_views(auth_user_id, viewed_at)")
+    .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false });
+  let membersQuery = supabase
+    .from("team_members")
+    .select("auth_user_id, username, first_name, last_name, department");
+
+  if (scope) {
+    entriesQuery = entriesQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    membersQuery = membersQuery.eq("organization_id", scope.organizationId);
+  }
 
   const [entriesResult, membersResult] = await Promise.all([
-    supabase
-      .from("pass_on_log")
-      .select("*, pass_on_log_replies(created_at), pass_on_log_views(auth_user_id, viewed_at)")
-      .order("entry_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("team_members")
-      .select("auth_user_id, username, first_name, last_name, department"),
+    entriesQuery,
+    membersQuery,
   ]);
 
   if (entriesResult.error) {
@@ -114,7 +125,6 @@ export async function fetchPassOnReportSource(
     mapEntryRow(row, teamMembers)
   );
 
-  // Property filter is UI-only until pass_on_log gains property_id.
   const createdByOptions = ["All", ...uniqueSorted(entries.map((entry) => entry.authorDisplay))];
   const departmentOptions = [
     "All",
@@ -144,18 +154,28 @@ export async function fetchPassOnReportSource(
 }
 
 export async function fetchPassOnReportEntryById(
-  entryId: number
+  entryId: number,
+  scope?: ReportTenantScope | null
 ): Promise<PassOnReportSourceEntry | null> {
   const supabase = createReportsSupabaseClient();
+  let entryQuery = supabase
+    .from("pass_on_log")
+    .select("*, pass_on_log_replies(created_at), pass_on_log_views(auth_user_id, viewed_at)")
+    .eq("id", entryId);
+  let membersQuery = supabase
+    .from("team_members")
+    .select("auth_user_id, username, first_name, last_name, department");
+
+  if (scope) {
+    entryQuery = entryQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    membersQuery = membersQuery.eq("organization_id", scope.organizationId);
+  }
+
   const [entryResult, membersResult] = await Promise.all([
-    supabase
-      .from("pass_on_log")
-      .select("*, pass_on_log_replies(created_at), pass_on_log_views(auth_user_id, viewed_at)")
-      .eq("id", entryId)
-      .maybeSingle(),
-    supabase
-      .from("team_members")
-      .select("auth_user_id, username, first_name, last_name, department"),
+    entryQuery.maybeSingle(),
+    membersQuery,
   ]);
 
   if (entryResult.error) throw new Error(entryResult.error.message);

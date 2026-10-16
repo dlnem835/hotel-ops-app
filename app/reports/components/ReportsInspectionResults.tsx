@@ -6,6 +6,7 @@ import ReportsInspectionFailedDetailTable from "@/app/reports/components/Reports
 import ReportsInspectionSessionDetailModal from "@/app/reports/components/ReportsInspectionSessionDetailModal";
 import type { InspectionReportModalTarget } from "@/app/reports/lib/report-definitions";
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import {
   buildAssociateRankingRows,
   buildAverageTimeGroups,
@@ -113,6 +114,7 @@ export default function ReportsInspectionResults({
   const [source, setSource] = useState<Awaited<ReturnType<typeof fetchInspectionReportSource>> | null>(
     null
   );
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [highlightItemKey, setHighlightItemKey] = useState<string | null>(null);
@@ -148,12 +150,17 @@ export default function ReportsInspectionResults({
     useState<InspectionReportSortDirection>("desc");
 
   useEffect(() => {
+    if (!tenantReady || !scope) {
+      return;
+    }
+
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
+      setSource(null);
       try {
-        const data = await fetchInspectionReportSource(variant);
+        const data = await fetchInspectionReportSource(variant, undefined, scope);
         if (!cancelled) setSource(data);
       } catch (loadError) {
         if (!cancelled) {
@@ -170,7 +177,7 @@ export default function ReportsInspectionResults({
     return () => {
       cancelled = true;
     };
-  }, [variant, filters, reportId, reloadKey]);
+  }, [variant, filters, reportId, reloadKey, tenantReady, scope]);
 
   useEffect(() => {
     if (selectedSessionId) return;

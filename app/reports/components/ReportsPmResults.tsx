@@ -7,6 +7,7 @@ import ReportsPmCompletedResults from "@/app/reports/components/ReportsPmComplet
 import ReportsPmFailedItemsResults from "@/app/reports/components/ReportsPmFailedItemsResults";
 import type { PmReportFilters, PmReportId } from "@/app/reports/lib/report-definitions";
 import { fetchPmReportSource } from "@/app/reports/lib/pm-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import {
   buildCompletedPmReportRows,
   buildFailedPmItemReportRows,
@@ -28,16 +29,22 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
   const [source, setSource] = useState<Awaited<ReturnType<typeof fetchPmReportSource>> | null>(
     null
   );
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   useEffect(() => {
+    if (!tenantReady || !scope) {
+      return;
+    }
+
     let cancelled = false;
 
     async function loadSource() {
       setLoading(true);
       setError(null);
+      setSource(null);
 
       try {
-        const data = await fetchPmReportSource();
+        const data = await fetchPmReportSource(undefined, scope);
         if (!cancelled) {
           setSource(data);
         }
@@ -59,7 +66,7 @@ export default function ReportsPmResults({ reportId, filters }: ReportsPmResults
     return () => {
       cancelled = true;
     };
-  }, [filters, reportId, reloadKey]);
+  }, [filters, reportId, reloadKey, tenantReady, scope]);
 
   const completedRows = useMemo(
     () => (source ? buildCompletedPmReportRows(source, filters) : []),

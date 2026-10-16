@@ -24,6 +24,7 @@ import type {
   InspectionReportSourceRoom,
   InspectionReportSourceSession,
 } from "@/app/reports/lib/inspection-report-types";
+import type { ReportTenantScope } from "@/app/reports/lib/report-tenant-scope";
 
 type SessionRow = {
   id: number;
@@ -130,32 +131,51 @@ function buildFilterOptions(
 
 export async function fetchInspectionReportSource(
   variant: InspectionReportVariant,
-  supabase: SupabaseClient = createReportsSupabaseClient()
+  supabase: SupabaseClient = createReportsSupabaseClient(),
+  scope?: ReportTenantScope | null
 ): Promise<InspectionReportSource> {
   const client = supabase;
 
+  let sessionsQuery = client
+    .from("inspection_sessions")
+    .select(
+      "id, area_id, inspection_program, inspector_id, associate_id, started_at, completed_at, completed_by, score_percent, earned_points, possible_points, failed_item_count, template_snapshot, status"
+    )
+    .eq("status", "completed")
+    .not("completed_at", "is", null);
+  let failedResponsesQuery = client
+    .from("inspection_item_responses")
+    .select("id, inspection_id, category_key, item_key, label_snapshot, item_notes, outcome")
+    .eq("outcome", "fail");
+  let areasQuery = client
+    .from("buildings_and_areas")
+    .select("id, name, status, inspection_enabled")
+    .eq("area_type", "Guest Room")
+    .order("name");
+  let membersQuery = client
+    .from("team_members")
+    .select("id, auth_user_id, username, first_name, last_name");
+
+  if (scope) {
+    sessionsQuery = sessionsQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    failedResponsesQuery = failedResponsesQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    areasQuery = areasQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    membersQuery = membersQuery.eq("organization_id", scope.organizationId);
+  }
+
   const [sessionsResult, failedResponsesResult, areasResult, membersResult, memberResolver] =
     await Promise.all([
-      client
-        .from("inspection_sessions")
-        .select(
-          "id, area_id, inspection_program, inspector_id, associate_id, started_at, completed_at, completed_by, score_percent, earned_points, possible_points, failed_item_count, template_snapshot, status"
-        )
-        .eq("status", "completed")
-        .not("completed_at", "is", null),
-      client
-        .from("inspection_item_responses")
-        .select("id, inspection_id, category_key, item_key, label_snapshot, item_notes, outcome")
-        .eq("outcome", "fail"),
-      client
-        .from("buildings_and_areas")
-        .select("id, name, status, inspection_enabled")
-        .eq("area_type", "Guest Room")
-        .order("name"),
-      client
-        .from("team_members")
-        .select("id, auth_user_id, username, first_name, last_name"),
-      fetchMemberDisplayNameResolver(client),
+      sessionsQuery,
+      failedResponsesQuery,
+      areasQuery,
+      membersQuery,
+      fetchMemberDisplayNameResolver(client, scope?.organizationId),
     ]);
 
   if (sessionsResult.error) throw new Error(sessionsResult.error.message);

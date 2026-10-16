@@ -13,6 +13,7 @@ import {
   createReportsSupabaseClient,
   fetchLostFoundReportSource,
 } from "@/app/reports/lib/lost-found-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import {
   filterLostFoundAllItemsReportRows,
   filterLostFoundAgingReportRows,
@@ -43,21 +44,28 @@ export default function ReportsLnfPlaceholderResults({
   const [teamMembers, setTeamMembers] = useState<TeamMemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   useEffect(() => {
     setSelectedAssociate(null);
   }, [reportId, filters, foundByFilters]);
 
   useEffect(() => {
+    if (!tenantReady || !scope) {
+      return;
+    }
+
     let cancelled = false;
 
     async function loadReportData() {
       setLoading(true);
       setError(null);
+      setItems([]);
+      setTeamMembers([]);
 
       try {
         const supabase = createReportsSupabaseClient();
-        const source = await fetchLostFoundReportSource(supabase);
+        const source = await fetchLostFoundReportSource(supabase, scope);
         if (cancelled) return;
 
         setItems(source.items);
@@ -81,7 +89,7 @@ export default function ReportsLnfPlaceholderResults({
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters, foundByFilters]);
+  }, [reportId, filters, foundByFilters, tenantReady, scope]);
 
   const activeAllItemsFilters = filters ?? DEFAULT_LOST_FOUND_REPORT_FILTERS;
   const activeFoundByFilters = foundByFilters ?? DEFAULT_LOST_FOUND_FOUND_BY_REPORT_FILTERS;

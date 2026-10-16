@@ -12,6 +12,7 @@ import type {
   PmReportSourceOccurrence,
   PmReportSourceSchedule,
 } from "@/app/reports/lib/pm-report-types";
+import type { ReportTenantScope } from "@/app/reports/lib/report-tenant-scope";
 
 type TemplateRow = {
   id: number;
@@ -115,25 +116,40 @@ function resolveAreaLabel(
 }
 
 export async function fetchPmReportSource(
-  supabase: SupabaseClient = createReportsSupabaseClient()
+  supabase: SupabaseClient = createReportsSupabaseClient(),
+  scope?: ReportTenantScope | null
 ): Promise<PmReportSource> {
+  let templatesQuery = supabase.from("pm_templates").select("*, pm_schedule_assignments(*)");
+  let areasQuery = supabase.from("buildings_and_areas").select("id, name").order("name");
+  let occurrencesQuery = supabase
+    .from("pm_occurrences")
+    .select(
+      "id, template_id, assignment_id, due_date, status, responses, completed_at, completed_by"
+    );
+  let membersQuery = supabase
+    .from("team_members")
+    .select("id, auth_user_id, username, first_name, last_name, job_title, role");
+
+  if (scope) {
+    templatesQuery = templatesQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    areasQuery = areasQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    occurrencesQuery = occurrencesQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    membersQuery = membersQuery.eq("organization_id", scope.organizationId);
+  }
 
   const [templatesResult, areasResult, occurrencesResult, membersResult, memberResolver] =
     await Promise.all([
-      supabase.from("pm_templates").select("*, pm_schedule_assignments(*)"),
-      supabase
-        .from("buildings_and_areas")
-        .select("id, name")
-        .order("name"),
-      supabase
-        .from("pm_occurrences")
-        .select(
-          "id, template_id, assignment_id, due_date, status, responses, completed_at, completed_by"
-        ),
-      supabase
-        .from("team_members")
-        .select("id, auth_user_id, username, first_name, last_name, job_title, role"),
-      fetchMemberDisplayNameResolver(supabase),
+      templatesQuery,
+      areasQuery,
+      occurrencesQuery,
+      membersQuery,
+      fetchMemberDisplayNameResolver(supabase, scope?.organizationId),
     ]);
 
   if (templatesResult.error) {

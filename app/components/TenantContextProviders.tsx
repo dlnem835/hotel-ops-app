@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -51,17 +52,25 @@ export function useTenantContextInternal() {
   return value;
 }
 
+type LoadedTenantContext = {
+  context: TenantContextResponse | null;
+  userId: string | null;
+};
+
 async function loadTenantContext(
   requestedPropertyId?: number | null
-): Promise<TenantContextResponse | null> {
+): Promise<LoadedTenantContext> {
   const session =
     (await waitForInitialAuthSession()) ??
     (await supabase.auth.getSession()).data.session;
   if (!session?.access_token) {
-    return null;
+    return { context: null, userId: session?.user.id ?? null };
   }
 
-  return fetchTenantContext(session.access_token, requestedPropertyId);
+  return {
+    context: await fetchTenantContext(session.access_token, requestedPropertyId),
+    userId: session.user.id,
+  };
 }
 
 function toActiveProperty(
@@ -87,35 +96,60 @@ export function TenantContextInternalProvider({
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const writeEpochRef = useRef(0);
+  const inFlightRefreshRef = useRef<Promise<void> | null>(null);
+  const settledUserIdRef = useRef<string | null>(null);
 
   const clearSwitchError = useCallback(() => {
     setSwitchError(null);
   }, []);
 
   const refresh = useCallback(async (requestedPropertyId?: number | null) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const nextContext = await loadTenantContext(requestedPropertyId);
-      if (!nextContext) {
-        setContext(null);
-        clearStoredActivePropertyId();
-        return;
-      }
-
-      setContext(nextContext);
-      persistActivePropertyId(nextContext.activeProperty.id);
-    } catch (loadError) {
-      const message =
-        loadError instanceof Error
-          ? loadError.message
-          : "Unable to load tenant context";
-      setError(message);
-      setContext(null);
-    } finally {
-      setLoading(false);
+    if (inFlightRefreshRef.current) {
+      return inFlightRefreshRef.current;
     }
+
+    const run = (async () => {
+      const epoch = writeEpochRef.current;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { context: nextContext, userId } = await loadTenantContext(
+          requestedPropertyId
+        );
+        if (userId) {
+          settledUserIdRef.current = userId;
+        }
+        if (epoch !== writeEpochRef.current) {
+          return;
+        }
+        if (!nextContext) {
+          setContext(null);
+          clearStoredActivePropertyId();
+          return;
+        }
+
+        setContext(nextContext);
+        persistActivePropertyId(nextContext.activeProperty.id);
+      } catch (loadError) {
+        if (epoch !== writeEpochRef.current) {
+          return;
+        }
+        const message =
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load tenant context";
+        setError(message);
+        setContext(null);
+      } finally {
+        inFlightRefreshRef.current = null;
+        setLoading(false);
+      }
+    })();
+
+    inFlightRefreshRef.current = run;
+    return run;
   }, []);
 
   const switchActiveProperty = useCallback(async (propertyId: number) => {
@@ -138,6 +172,9 @@ export function TenantContextInternalProvider({
       return;
     }
 
+    writeEpochRef.current += 1;
+    const switchEpoch = writeEpochRef.current;
+
     setSwitching(true);
     setSwitchError(null);
     clearReportPropertyNameCache();
@@ -152,7 +189,10 @@ export function TenantContextInternalProvider({
     });
 
     try {
-      const nextContext = await loadTenantContext(propertyId);
+      const { context: nextContext } = await loadTenantContext(propertyId);
+      if (switchEpoch !== writeEpochRef.current) {
+        return;
+      }
       if (!nextContext || nextContext.activeProperty.id !== propertyId) {
         throw new Error("Unauthorized or missing property context");
       }
@@ -161,6 +201,9 @@ export function TenantContextInternalProvider({
       setContext(nextContext);
       persistActivePropertyId(nextContext.activeProperty.id);
     } catch {
+      if (switchEpoch !== writeEpochRef.current) {
+        return;
+      }
       if (previousPropertyId != null) {
         persistActivePropertyId(previousPropertyId);
       } else {
@@ -169,7 +212,9 @@ export function TenantContextInternalProvider({
       setContext(previousContext);
       setSwitchError(SWITCH_ERROR_MESSAGE);
     } finally {
-      setSwitching(false);
+      if (switchEpoch === writeEpochRef.current) {
+        setSwitching(false);
+      }
     }
   }, [context, switching]);
 
@@ -186,6 +231,8 @@ export function TenantContextInternalProvider({
 
     const unsubscribe = subscribeAuthSession((session) => {
       if (!session) {
+        writeEpochRef.current += 1;
+        settledUserIdRef.current = null;
         setContext(null);
         setError(null);
         setSwitchError(null);
@@ -196,7 +243,26 @@ export function TenantContextInternalProvider({
         return;
       }
 
+      const userId = session.user.id;
+      if (settledUserIdRef.current === userId) {
+        return;
+      }
+
+      const previousUserId = settledUserIdRef.current;
+      settledUserIdRef.current = userId;
       const storedPropertyId = readStoredActivePropertyId();
+
+      if (inFlightRefreshRef.current) {
+        if (!previousUserId || previousUserId === userId) {
+          return;
+        }
+        writeEpochRef.current += 1;
+        void inFlightRefreshRef.current.finally(() => {
+          void refresh(storedPropertyId);
+        });
+        return;
+      }
+
       void refresh(storedPropertyId);
     });
 

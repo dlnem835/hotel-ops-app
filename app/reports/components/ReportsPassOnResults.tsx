@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import ReportsPassOnEntryDetailModal from "@/app/reports/components/ReportsPassOnEntryDetailModal";
 import { fetchPassOnReportSource } from "@/app/reports/lib/pass-on-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import {
   buildEditedEntryRows,
   buildEntriesByAssociateGroups,
@@ -132,6 +133,7 @@ export default function ReportsPassOnResults({
   const [source, setSource] = useState<Awaited<ReturnType<typeof fetchPassOnReportSource>> | null>(
     null
   );
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [openingEntryId, setOpeningEntryId] = useState<number | null>(null);
@@ -174,12 +176,17 @@ export default function ReportsPassOnResults({
     useState<PassOnReportSortDirection>("desc");
 
   useEffect(() => {
+    if (!tenantReady || !scope) {
+      return;
+    }
+
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
+      setSource(null);
       try {
-        const data = await fetchPassOnReportSource();
+        const data = await fetchPassOnReportSource(undefined, scope);
         if (!cancelled) setSource(data);
       } catch (loadError) {
         if (!cancelled) {
@@ -196,7 +203,7 @@ export default function ReportsPassOnResults({
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters, unreadFilters]);
+  }, [reportId, filters, unreadFilters, tenantReady, scope]);
 
   useEffect(() => {
     if (selectedEntryId) return;

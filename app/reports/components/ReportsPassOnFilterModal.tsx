@@ -27,6 +27,7 @@ import {
   type PassOnUnreadReportFilters,
 } from "@/app/reports/lib/report-definitions";
 import { fetchPassOnReportSource } from "@/app/reports/lib/pass-on-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import ReportsDateRangeField from "@/app/reports/components/ReportsDateRangeField";
 import ReportsPassOnResults from "@/app/reports/components/ReportsPassOnResults";
 import ReportsPrintableOutput from "@/app/reports/components/ReportsPrintableOutput";
@@ -71,6 +72,7 @@ export default function ReportsPassOnFilterModal({
   const [departmentOptions, setDepartmentOptions] = useState<string[]>(["All"]);
   const [userOptions, setUserOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -89,13 +91,13 @@ export default function ReportsPassOnFilterModal({
   }, [open, reportId]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !tenantReady || !scope) return;
     let cancelled = false;
 
     async function loadFilterOptions() {
       setFilterOptionsLoading(true);
       try {
-        const source = await fetchPassOnReportSource();
+        const source = await fetchPassOnReportSource(undefined, scope);
         if (cancelled) return;
         setCreatedByOptions(source.filterOptions.createdByOptions);
         setDepartmentOptions(source.filterOptions.departmentOptions);
@@ -115,7 +117,7 @@ export default function ReportsPassOnFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId]);
+  }, [open, reportId, tenantReady, scope]);
 
   if (!open || !reportId) return null;
 

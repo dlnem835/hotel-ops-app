@@ -34,6 +34,7 @@ import {
   type ReportDatePreset,
 } from "@/app/reports/lib/report-date-presets";
 import { fetchPmReportSource } from "@/app/reports/lib/pm-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 
 type ReportsPmFilterModalProps = {
@@ -62,6 +63,7 @@ export default function ReportsPmFilterModal({
   const [showResults, setShowResults] = useState(false);
   const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -79,13 +81,13 @@ export default function ReportsPmFilterModal({
   }, [open, reportId]);
 
   useEffect(() => {
-    if (!open || reportId !== "completed-pms") return;
+    if (!open || reportId !== "completed-pms" || !tenantReady || !scope) return;
 
     let cancelled = false;
 
     async function loadCompletedByOptions() {
       try {
-        const source = await fetchPmReportSource();
+        const source = await fetchPmReportSource(undefined, scope);
         if (!cancelled) {
           setCompletedByOptions(source.completedByOptions);
         }
@@ -101,7 +103,7 @@ export default function ReportsPmFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, reportId]);
+  }, [open, reportId, tenantReady, scope]);
 
   if (!open || !reportId) return null;
 

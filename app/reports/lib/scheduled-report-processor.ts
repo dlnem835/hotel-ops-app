@@ -18,6 +18,7 @@ import {
   parseScheduleRecipients,
 } from "@/app/reports/lib/scheduled-report-email";
 import { generateScheduledReportPayload } from "@/app/reports/lib/scheduled-report-generate";
+import { reportTenantScopeFromScheduleRow } from "@/app/reports/lib/report-tenant-scope";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -92,7 +93,12 @@ export async function processScheduledReportRow(
 
   let payload;
   try {
-    payload = await generateScheduledReportPayload(context, runAt, supabase);
+    payload = await generateScheduledReportPayload(
+      context,
+      runAt,
+      supabase,
+      reportTenantScopeFromScheduleRow(row)
+    );
   } catch (error) {
     const message = logAndMapDeliveryError(row.id, error, "report");
     await recordScheduleRunSafely(supabase, row, {

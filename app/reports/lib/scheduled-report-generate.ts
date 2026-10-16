@@ -68,6 +68,10 @@ import {
   formatAverageCompletionTime,
 } from "@/app/reports/lib/work-order-report-filters";
 import type { WorkOrderReportFilters } from "@/app/reports/lib/report-definitions";
+import {
+  requireReportTenantScope,
+  type ReportTenantScope,
+} from "@/app/reports/lib/report-tenant-scope";
 
 export type ScheduledReportPayload = {
   reportName: string;
@@ -137,10 +141,21 @@ function normalizeScheduledReportId(context: ReportScheduleContext): string {
 export async function generateScheduledReportPayload(
   context: ReportScheduleContext,
   runAt = new Date(),
-  supabase?: SupabaseClient
+  supabase?: SupabaseClient,
+  scope?: ReportTenantScope | null
 ): Promise<ScheduledReportPayload> {
+  const tenantScope = requireReportTenantScope(
+    scope,
+    "Scheduled report is missing organization or property."
+  );
   const dateRange = resolveScheduledReportDateRange(context, runAt);
-  const tables = await buildScheduledReportTables(context, dateRange, runAt, supabase);
+  const tables = await buildScheduledReportTables(
+    context,
+    dateRange,
+    runAt,
+    supabase,
+    tenantScope
+  );
 
   return {
     reportName: context.reportName,
@@ -156,19 +171,20 @@ async function buildScheduledReportTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
   runAt: Date,
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   switch (context.reportModule) {
     case "pm":
-      return buildPmTables(context, dateRange, supabase);
+      return buildPmTables(context, dateRange, supabase, scope);
     case "wo":
-      return buildWorkOrderTables(context, dateRange, supabase);
+      return buildWorkOrderTables(context, dateRange, supabase, scope);
     case "inspection":
-      return buildInspectionTables(context, dateRange, supabase);
+      return buildInspectionTables(context, dateRange, supabase, scope);
     case "lnf":
-      return buildLostFoundTables(context, dateRange, supabase);
+      return buildLostFoundTables(context, dateRange, supabase, scope);
     case "pass-on":
-      return buildPassOnTables(context, dateRange, runAt, supabase);
+      return buildPassOnTables(context, dateRange, runAt, supabase, scope);
     default:
       return buildEmptyReportPdfTables();
   }
@@ -177,7 +193,8 @@ async function buildScheduledReportTables(
 function buildPmTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const filters: PmReportFilters = {
@@ -188,7 +205,7 @@ function buildPmTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchPmReportSource(supabase).then((source) => {
+  return fetchPmReportSource(supabase, scope).then((source) => {
     switch (context.reportId) {
       case "completed-pms": {
         const rows = buildCompletedPmReportRows(source, filters);
@@ -269,7 +286,8 @@ function buildPmTables(
 function buildWorkOrderTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const filters: WorkOrderReportFilters = {
@@ -286,7 +304,7 @@ function buildWorkOrderTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchWorkOrderReportSource(supabase).then((rows) => {
+  return fetchWorkOrderReportSource(supabase, scope).then((rows) => {
     switch (context.reportId) {
       case "all-work-orders": {
         const filtered = filterWorkOrdersForReport(rows, filters);
@@ -408,7 +426,8 @@ function buildWorkOrderTables(
 function buildInspectionTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   const variant = context.inspectionVariant === "rpm" ? "rpm" : "room";
   const snapshot = context.filterSnapshot as Record<string, unknown>;
@@ -422,7 +441,7 @@ function buildInspectionTables(
     dateEnd: dateRange.dateEnd,
   };
 
-  return fetchInspectionReportSource(variant, supabase).then((source) => {
+  return fetchInspectionReportSource(variant, supabase, scope).then((source) => {
     switch (reportId) {
       case "associate-ranking": {
         const rows = buildAssociateRankingRows(source, filters);
@@ -525,11 +544,12 @@ function buildInspectionTables(
 function buildLostFoundTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
 
-  return fetchLostFoundReportSource(supabase).then((source) => {
+  return fetchLostFoundReportSource(supabase, scope).then((source) => {
     if (context.reportId === "found-by") {
       const filters: LostFoundFoundByReportFilters = {
         propertyName: context.propertyName,
@@ -615,12 +635,13 @@ function buildPassOnTables(
   context: ReportScheduleContext,
   dateRange: { dateStart: string; dateEnd: string },
   runAt: Date,
-  supabase?: SupabaseClient
+  supabase: SupabaseClient | undefined,
+  scope: ReportTenantScope
 ): Promise<ReportPdfTable[]> {
   const snapshot = context.filterSnapshot as Record<string, unknown>;
   const reportVariant = snapshotString(snapshot, "reportVariant", context.reportId);
 
-  return fetchPassOnReportSource(supabase).then((source) => {
+  return fetchPassOnReportSource(supabase, scope).then((source) => {
     if (reportVariant === "unread-entries-by-user") {
       const filters: PassOnUnreadReportFilters = {
         propertyName: context.propertyName,

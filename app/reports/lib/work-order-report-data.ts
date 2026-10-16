@@ -11,6 +11,7 @@ import {
   type WorkOrderReportRow,
 } from "@/app/reports/lib/work-order-report-types";
 import { classifyWorkOrderItemIssue } from "@/app/maintenance/lib/work-order-item-issues";
+import type { ReportTenantScope } from "@/app/reports/lib/report-tenant-scope";
 
 function formatDisplayDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -95,11 +96,22 @@ export function mapWorkOrderRowToReportItem(
 }
 
 export async function fetchWorkOrderReportSource(
-  supabase: SupabaseClient = createReportsSupabaseClient()
+  supabase: SupabaseClient = createReportsSupabaseClient(),
+  scope?: ReportTenantScope | null
 ): Promise<WorkOrderReportRow[]> {
+  let ordersQuery = supabase
+    .from("work_orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (scope) {
+    ordersQuery = ordersQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
   const [ordersResult, memberResolver] = await Promise.all([
-    supabase.from("work_orders").select("*").order("created_at", { ascending: false }),
-    fetchMemberDisplayNameResolver(supabase),
+    ordersQuery,
+    fetchMemberDisplayNameResolver(supabase, scope?.organizationId),
   ]);
 
   if (ordersResult.error) {

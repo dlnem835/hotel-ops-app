@@ -40,6 +40,7 @@ import {
 } from "@/app/reports/lib/report-date-presets";
 import { fetchInspectionReportSource } from "@/app/reports/lib/inspection-report-data";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 
 type ReportsInspectionFilterModalProps = {
   open: boolean;
@@ -68,6 +69,7 @@ export default function ReportsInspectionFilterModal({
   const [associateOptions, setAssociateOptions] = useState<string[]>(["All"]);
   const [inspectorOptions, setInspectorOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -86,14 +88,14 @@ export default function ReportsInspectionFilterModal({
   }, [open, target]);
 
   useEffect(() => {
-    if (!open || !target) return;
+    if (!open || !target || !tenantReady || !scope) return;
 
     let cancelled = false;
     const variant = target.variant;
 
     async function loadFilterOptions() {
       try {
-        const source = await fetchInspectionReportSource(variant);
+        const source = await fetchInspectionReportSource(variant, undefined, scope);
         if (!cancelled) {
           setAssociateOptions(source.associateOptions);
           setInspectorOptions(source.inspectorOptions);
@@ -111,7 +113,7 @@ export default function ReportsInspectionFilterModal({
     return () => {
       cancelled = true;
     };
-  }, [open, target]);
+  }, [open, target, tenantReady, scope]);
 
   if (!open || !target) return null;
 

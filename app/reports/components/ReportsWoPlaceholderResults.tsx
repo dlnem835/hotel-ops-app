@@ -7,6 +7,7 @@ import {
   type WorkOrderReportId,
 } from "@/app/reports/lib/report-definitions";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 import {
   buildWorkOrdersBySourceRows,
   calculateAverageCompletionTimeHours,
@@ -35,16 +36,22 @@ export default function ReportsWoPlaceholderResults({
   const [error, setError] = useState<string | null>(null);
 
   const activeFilters = filters ?? DEFAULT_WORK_ORDER_REPORT_FILTERS;
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   useEffect(() => {
+    if (!tenantReady || !scope) {
+      return;
+    }
+
     let cancelled = false;
 
     async function loadReportData() {
       setLoading(true);
       setError(null);
+      setItems([]);
 
       try {
-        const rows = await fetchWorkOrderReportSource();
+        const rows = await fetchWorkOrderReportSource(undefined, scope);
         if (!cancelled) {
           setItems(rows);
         }
@@ -66,7 +73,7 @@ export default function ReportsWoPlaceholderResults({
     return () => {
       cancelled = true;
     };
-  }, [reportId, filters]);
+  }, [reportId, filters, tenantReady, scope]);
 
   const filteredItems = useMemo(
     () => filterWorkOrdersForReport(items, activeFilters),

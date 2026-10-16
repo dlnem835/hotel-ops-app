@@ -42,6 +42,7 @@ import {
 } from "@/app/reports/lib/report-date-presets";
 import { formatReportDateRangeLabel } from "@/app/reports/lib/report-output-utils";
 import { fetchWorkOrderReportSource } from "@/app/reports/lib/work-order-report-data";
+import { useReportTenantScope } from "@/app/reports/hooks/useReportTenantScope";
 
 type ReportsWoFilterModalProps = {
   open: boolean;
@@ -72,6 +73,7 @@ export default function ReportsWoFilterModal({
   );
   const [completedByOptions, setCompletedByOptions] = useState<string[]>(["All"]);
   const { propertyName, loading: propertyLoading } = useReportPropertyName();
+  const { scope, ready: tenantReady } = useReportTenantScope();
 
   const syncPropertyName = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, propertyName: name }));
@@ -108,24 +110,26 @@ export default function ReportsWoFilterModal({
     }
 
     void loadLocationOptions();
-    void fetchWorkOrderReportSource()
-      .then((rows) => {
-        if (cancelled) return;
-        setCompletedByOptions([
-          "All",
-          ...Array.from(
-            new Set(rows.map((row) => row.completedBy).filter((name): name is string => Boolean(name)))
-          ).sort((a, b) => a.localeCompare(b)),
-        ]);
-      })
-      .catch(() => {
-        if (!cancelled) setCompletedByOptions(["All"]);
-      });
+    if (tenantReady && scope) {
+      void fetchWorkOrderReportSource(undefined, scope)
+        .then((rows) => {
+          if (cancelled) return;
+          setCompletedByOptions([
+            "All",
+            ...Array.from(
+              new Set(rows.map((row) => row.completedBy).filter((name): name is string => Boolean(name)))
+            ).sort((a, b) => a.localeCompare(b)),
+          ]);
+        })
+        .catch(() => {
+          if (!cancelled) setCompletedByOptions(["All"]);
+        });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [open, reportId]);
+  }, [open, reportId, tenantReady, scope]);
 
   if (!open || !reportId) return null;
 

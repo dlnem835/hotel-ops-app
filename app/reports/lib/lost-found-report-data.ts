@@ -5,6 +5,7 @@ import type {
   LostFoundFoundByRow,
   LostFoundReportItem,
 } from "@/app/reports/lib/lost-found-report-types";
+import type { ReportTenantScope } from "@/app/reports/lib/report-tenant-scope";
 
 export type LostItemRow = {
   id: number | string;
@@ -176,14 +177,22 @@ function mapLostItemRowToReportItem(
 }
 
 export async function fetchLostFoundReportSource(
-  supabase: SupabaseClient = createReportsSupabaseClient()
+  supabase: SupabaseClient = createReportsSupabaseClient(),
+  scope?: ReportTenantScope | null
 ): Promise<{ items: LostFoundReportItem[]; teamMembers: TeamMemberRow[] }> {
-  const [itemsResult, teamResult] = await Promise.all([
-    supabase.from("lost_items").select("*").order("created_at", { ascending: false }),
-    supabase
-      .from("team_members")
-      .select("auth_user_id, first_name, last_name, username, department"),
-  ]);
+  let itemsQuery = supabase.from("lost_items").select("*").order("created_at", { ascending: false });
+  let teamQuery = supabase
+    .from("team_members")
+    .select("auth_user_id, first_name, last_name, username, department");
+
+  if (scope) {
+    itemsQuery = itemsQuery
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+    teamQuery = teamQuery.eq("organization_id", scope.organizationId);
+  }
+
+  const [itemsResult, teamResult] = await Promise.all([itemsQuery, teamQuery]);
 
   if (itemsResult.error) {
     throw new Error(itemsResult.error.message);
@@ -198,7 +207,6 @@ export async function fetchLostFoundReportSource(
     mapLostItemRowToReportItem(row, teamMembers)
   );
 
-  // Property filter is UI-only until lost_items gains property_id.
   return { items, teamMembers };
 }
 
