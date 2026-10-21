@@ -64,6 +64,16 @@ const RPM_ITEM_GUIDANCE: Record<string, ItemGuidance> = {
     label: "Ceiling / Walls",
     inspect: ["Ceiling", "Walls", "Baseboards", "Corners", "Signs of Water Intrusion"],
   },
+  "bedroom::carpet-flooring": {
+    label: "Carpet / Flooring",
+    inspect: [
+      "Carpet / Area Rugs",
+      "Stains / Spots",
+      "Shampoo / Steam / Extraction",
+      "Hard-Surface Floors",
+      "Treatment Appropriate to Floor Type",
+    ],
+  },
   "closet::safe": {
     label: "Safe",
     inspect: ["Interior", "Door", "Hinges", "Keypad", "Instructions", "Reset Status"],

@@ -592,7 +592,7 @@
     },
     {
       "key": "rpm-guest-room",
-      "version": "2.0",
+      "version": "2.1",
       "name": "RPM Guest Room",
       "templateType": "RPM",
       "description": "Routine preventative maintenance inspection for guest rooms.",
@@ -753,6 +753,15 @@
               "label": {
                 "en": "Ceiling/Walls: Are ceiling, walls, and baseboards free of damage or water stains?",
                 "es": "Techo/Paredes: ¿Techo, paredes y zócalos sin daños ni manchas de agua?"
+              },
+              "pointValue": 3,
+              "required": true
+            },
+            {
+              "key": "carpet-flooring",
+              "label": {
+                "en": "Carpet/Flooring: Have carpets and floors been deep cleaned, shampooed, steam cleaned, or treated as appropriate for the flooring type?",
+                "es": "Alfombra/Piso: ¿Se han limpiado en profundidad, champuneado, vaporizado o tratado las alfombras y pisos según el tipo de piso?"
               },
               "pointValue": 3,
               "required": true
