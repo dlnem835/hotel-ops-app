@@ -1,65 +1,52 @@
 "use client";
 
+import OneEyrieSegmentedToggle from "@/app/components/OneEyrieSegmentedToggle";
 import { useOneEyrieTheme } from "@/app/components/ThemeProvider";
+import { useAppShellPreference } from "@/app/lib/use-app-shell-preference";
 import type { OneEyrieTheme } from "@/app/lib/one-eyrie-theme";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import type { AppShell } from "@/app/lib/viewport-interface";
 
-const OPTIONS: { value: OneEyrieTheme; label: string }[] = [
+const THEME_OPTIONS: { value: OneEyrieTheme; label: string }[] = [
   { value: "dark", label: "Dark" },
   { value: "light", label: "Light" },
 ];
 
-export default function PreferredInterfaceSection({
-  panelStyle,
-}: {
-  panelStyle: React.CSSProperties;
-}) {
+const SHELL_OPTIONS: { value: AppShell; label: string }[] = [
+  { value: "desktop", label: "Desktop" },
+  { value: "mobile", label: "Mobile" },
+];
+
+export default function PreferredInterfaceSection() {
   const { theme, setTheme } = useOneEyrieTheme();
+  const { shell, setPreferredShell } = useAppShellPreference();
 
   return (
-    <div style={panelStyle}>
-      <div style={{ color: ONE_EYRIE.gold, fontWeight: 800, fontSize: "15px" }}>
-        Theme
+    <section className="one-eyrie-settings-appearance" aria-label="Appearance and interface">
+      <div className="one-eyrie-settings-appearance__group">
+        <div className="one-eyrie-settings-appearance__title">Theme</div>
+        <p className="one-eyrie-settings-appearance__lead">
+          Dark is the default. Light applies the approved Light Mode theme.
+        </p>
+        <OneEyrieSegmentedToggle
+          value={theme}
+          options={THEME_OPTIONS}
+          onChange={setTheme}
+          ariaLabel="Theme"
+        />
       </div>
-      <div
-        style={{
-          color: ONE_EYRIE.textMuted,
-          fontSize: "13px",
-          marginTop: "6px",
-          marginBottom: "16px",
-        }}
-      >
-        Dark is the default. Light applies the approved Light Mode theme.
+
+      <div className="one-eyrie-settings-appearance__group">
+        <div className="one-eyrie-settings-appearance__title">Interface</div>
+        <p className="one-eyrie-settings-appearance__lead">
+          Desktop and Mobile stay the same shells. This only chooses which one opens.
+        </p>
+        <OneEyrieSegmentedToggle
+          value={shell}
+          options={SHELL_OPTIONS}
+          onChange={setPreferredShell}
+          ariaLabel="Interface"
+        />
       </div>
-      <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}
-        role="group"
-        aria-label="Theme"
-      >
-        {OPTIONS.map((option) => {
-          const selected = theme === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => setTheme(option.value)}
-              style={{
-                minHeight: "46px",
-                borderRadius: "12px",
-                border: `1px solid ${selected ? ONE_EYRIE.gold : ONE_EYRIE.border}`,
-                background: selected ? "rgba(200, 169, 106, 0.14)" : "#1A1815",
-                color: selected ? ONE_EYRIE.gold : ONE_EYRIE.text,
-                fontWeight: 800,
-                fontSize: "15px",
-                cursor: "pointer",
-              }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    </section>
   );
 }

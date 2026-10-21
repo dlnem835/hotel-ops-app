@@ -333,6 +333,91 @@ html[data-theme="light"] .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--acti
   flex-direction: column;
 }
 
+.one-eyrie-profile-prefs__switches {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 2px 4px;
+}
+
+.one-eyrie-ios-switch-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--oe-text-primary);
+  cursor: pointer;
+}
+
+.one-eyrie-ios-switch-row:hover {
+  background: var(--oe-bg-elevated);
+}
+
+.one-eyrie-ios-switch-row__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--oe-text-muted);
+  flex-shrink: 0;
+}
+
+.one-eyrie-ios-switch-row--on .one-eyrie-ios-switch-row__icon {
+  color: var(--oe-gold);
+}
+
+.one-eyrie-ios-switch-row__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.one-eyrie-ios-switch {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #3a3a3c;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transition: background-color 180ms ease;
+}
+
+.one-eyrie-ios-switch-row--on .one-eyrie-ios-switch {
+  background: var(--oe-gold);
+}
+
+.one-eyrie-ios-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 1px 1px rgba(0, 0, 0, 0.12);
+  transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.one-eyrie-ios-switch-row--on .one-eyrie-ios-switch__thumb {
+  transform: translateX(18px);
+}
+
+.one-eyrie-ios-switch-row:focus-visible {
+  outline: 2px solid var(--oe-gold);
+  outline-offset: 1px;
+}
+
 .one-eyrie-user-profile-menu__appearance-label {
   padding: 8px 10px 6px;
   font-size: 11px;
@@ -347,6 +432,105 @@ html[data-theme="light"] .one-eyrie-nav-item:hover:not(.one-eyrie-nav-item--acti
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 0 6px 8px;
+}
+
+.one-eyrie-user-profile-menu__theme-toggle--segmented {
+  display: block;
+  padding: 0 8px 10px;
+}
+
+.one-eyrie-segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--oe-segment-count, 2), minmax(0, 1fr));
+  align-items: stretch;
+  min-height: 36px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 169, 106, 0.22);
+  background: rgba(17, 17, 17, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.one-eyrie-segmented__thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--oe-segment-count, 2));
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(224, 196, 123, 0.28) 0%,
+    rgba(200, 169, 106, 0.2) 100%
+  );
+  border: 1px solid rgba(200, 169, 106, 0.45);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  transform: translateX(calc(var(--oe-segment-index, 0) * 100%));
+  transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.one-eyrie-segmented__option {
+  position: relative;
+  z-index: 1;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--oe-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.one-eyrie-segmented__option:hover:not(.one-eyrie-segmented__option--selected) {
+  color: var(--oe-text-secondary);
+}
+
+.one-eyrie-segmented__option--selected {
+  color: var(--oe-gold-soft);
+}
+
+.one-eyrie-segmented__option:focus-visible {
+  outline: 2px solid var(--oe-gold);
+  outline-offset: 2px;
+}
+
+.one-eyrie-settings-appearance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 28px;
+  max-width: 1100px;
+  padding: 20px 22px;
+  border: 1px solid var(--oe-border);
+  border-radius: 16px;
+  background: var(--oe-bg-card);
+}
+
+.one-eyrie-settings-appearance__group {
+  min-width: 0;
+}
+
+.one-eyrie-settings-appearance__title {
+  color: var(--oe-gold);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.one-eyrie-settings-appearance__lead {
+  margin: 6px 0 14px;
+  color: var(--oe-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .one-eyrie-settings-appearance {
+    grid-template-columns: 1fr;
+  }
 }
 
 .one-eyrie-user-profile-menu__theme-btn {

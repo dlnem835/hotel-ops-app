@@ -1,45 +1,18 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Moon, Smartphone } from "lucide-react";
 import { signOutAndRedirect } from "@/app/lib/auth";
 import { useOneEyrieTheme } from "@/app/components/ThemeProvider";
-import { useRoleAccess } from "@/app/components/RoleAccessProvider";
+import OneEyrieIosSwitch from "@/app/components/OneEyrieIosSwitch";
 import { useCurrentUserProfile } from "@/app/lib/use-current-user-profile";
+import { useAppShellPreference } from "@/app/lib/use-app-shell-preference";
 import type { OneEyrieTheme } from "@/app/lib/one-eyrie-theme";
-import { resolveHomeForPermissions } from "@/app/lib/resolve-app-home";
-import {
-  persistInterfacePreference,
-  resolvePreferredShell,
-  type AppShell,
-} from "@/app/lib/viewport-interface";
+import type { AppShell } from "@/app/lib/viewport-interface";
 
 type OneEyrieUserProfileMenuProps = {
   variant?: "sidebar" | "mobile" | "header";
 };
-
-type PreferenceOptionProps = {
-  label: string;
-  selected: boolean;
-  onSelect: () => void;
-};
-
-function PreferenceOption({ label, selected, onSelect }: PreferenceOptionProps) {
-  return (
-    <button
-      type="button"
-      role="menuitemradio"
-      aria-checked={selected}
-      className={`one-eyrie-user-profile-menu__theme-btn${
-        selected ? " one-eyrie-user-profile-menu__theme-btn--selected" : ""
-      }`}
-      onClick={onSelect}
-    >
-      {label}
-    </button>
-  );
-}
 
 type ProfilePreferencePanelProps = {
   theme: OneEyrieTheme;
@@ -58,39 +31,18 @@ function ProfilePreferencePanel({
 }: ProfilePreferencePanelProps) {
   return (
     <div className="one-eyrie-profile-prefs">
-      <div className="one-eyrie-user-profile-menu__appearance-label">Appearance</div>
-      <div
-        className="one-eyrie-user-profile-menu__theme-toggle"
-        role="group"
-        aria-label="Appearance"
-      >
-        <PreferenceOption
-          label="Light"
-          selected={theme === "light"}
-          onSelect={() => onThemeSelect("light")}
+      <div className="one-eyrie-profile-prefs__switches" role="group" aria-label="Display preferences">
+        <OneEyrieIosSwitch
+          checked={theme === "dark"}
+          label="Dark Mode"
+          icon={<Moon size={15} strokeWidth={1.8} />}
+          onChange={(enabled) => onThemeSelect(enabled ? "dark" : "light")}
         />
-        <PreferenceOption
-          label="Dark"
-          selected={theme === "dark"}
-          onSelect={() => onThemeSelect("dark")}
-        />
-      </div>
-
-      <div className="one-eyrie-user-profile-menu__appearance-label">Interface</div>
-      <div
-        className="one-eyrie-user-profile-menu__theme-toggle"
-        role="group"
-        aria-label="Interface"
-      >
-        <PreferenceOption
-          label="Desktop"
-          selected={shell === "desktop"}
-          onSelect={() => onInterfaceSelect("desktop")}
-        />
-        <PreferenceOption
-          label="Mobile"
-          selected={shell === "mobile"}
-          onSelect={() => onInterfaceSelect("mobile")}
+        <OneEyrieIosSwitch
+          checked={shell === "mobile"}
+          label="Mobile Interface"
+          icon={<Smartphone size={15} strokeWidth={1.8} />}
+          onChange={(enabled) => onInterfaceSelect(enabled ? "mobile" : "desktop")}
         />
       </div>
 
@@ -98,7 +50,6 @@ function ProfilePreferencePanel({
 
       <button
         type="button"
-        role="menuitem"
         className="one-eyrie-user-profile-menu__item"
         onClick={onLogout}
       >
@@ -113,20 +64,14 @@ export default function OneEyrieUserProfileMenu({
 }: OneEyrieUserProfileMenuProps) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
   const { theme, setTheme } = useOneEyrieTheme();
-  const { permissions } = useRoleAccess();
   const { profile, loading } = useCurrentUserProfile();
+  const { shell, setPreferredShell } = useAppShellPreference();
   const [open, setOpen] = useState(false);
-  const [shell, setShell] = useState<AppShell>("desktop");
 
   const displayName = profile?.displayName ?? "User";
   const jobTitle = profile?.jobTitle ?? "Team Member";
   const initials = profile?.initials ?? "U";
-
-  useEffect(() => {
-    setShell(resolvePreferredShell());
-  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -151,29 +96,6 @@ export default function OneEyrieUserProfileMenu({
     };
   }, [open]);
 
-  function handleThemeSelect(next: OneEyrieTheme) {
-    setTheme(next);
-  }
-
-  function handleInterfaceSelect(next: AppShell) {
-    persistInterfacePreference(next);
-    setShell(next);
-
-    const onMobile =
-      pathname === "/mobile" || (pathname?.startsWith("/mobile/") ?? false);
-    const alreadyOnShell =
-      (next === "mobile" && onMobile) || (next === "desktop" && !onMobile);
-    if (alreadyOnShell) return;
-
-    const target = permissions
-      ? resolveHomeForPermissions(permissions, next)
-      : next === "mobile"
-        ? "/mobile"
-        : "/";
-
-    window.location.replace(target);
-  }
-
   return (
     <div
       ref={rootRef}
@@ -184,7 +106,7 @@ export default function OneEyrieUserProfileMenu({
         className="one-eyrie-user-profile-menu__trigger"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="true"
         aria-controls={menuId}
         disabled={loading}
       >
@@ -207,15 +129,14 @@ export default function OneEyrieUserProfileMenu({
       {open ? (
         <div
           id={menuId}
-          role="menu"
           className="one-eyrie-user-profile-menu__dropdown"
           aria-label="User menu"
         >
           <ProfilePreferencePanel
             theme={theme}
             shell={shell}
-            onThemeSelect={handleThemeSelect}
-            onInterfaceSelect={handleInterfaceSelect}
+            onThemeSelect={setTheme}
+            onInterfaceSelect={setPreferredShell}
             onLogout={() => {
               setOpen(false);
               void signOutAndRedirect();

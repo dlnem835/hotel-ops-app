@@ -46,6 +46,7 @@ import {
   X,
 } from "lucide-react";
 import InspectionTemplatesSection from "./components/InspectionTemplatesSection";
+import PreferredInterfaceSection from "./components/PreferredInterfaceSection";
 import PmTemplatesSection from "./components/PmTemplatesSection";
 import "./settings-light-theme.css";
 import PropertyShippingSettingsPanel from "./components/PropertyShippingSettingsPanel";
@@ -635,6 +636,7 @@ async function saveItem() {
 
         {activeSection === "home" ? (
           <div style={settingsList}>
+            <PreferredInterfaceSection />
             {settingsCards.map((card) => (
               <button
                 key={card.id}
