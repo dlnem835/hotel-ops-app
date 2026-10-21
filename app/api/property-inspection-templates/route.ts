@@ -5,6 +5,7 @@ import {
 } from "@/app/inspections/lib/property-template-db";
 import { getStandardSummaries } from "@/app/inspections/standards";
 import { getStandardVersion } from "@/app/inspections/standards/index";
+import { assertCanManagePropertyInspectionTemplates } from "@/app/lib/tenant/server/property-inspection-template-access";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -49,9 +50,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { user, supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertCanManagePropertyInspectionTemplates(supabase, user.id, {
+      organizationId,
+      propertyId,
+    });
     const scope = { organizationId, propertyId };
     const body = await request.json();
 
@@ -74,7 +78,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return tenantErrorResponse(error);
   }
 }

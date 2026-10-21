@@ -3,6 +3,7 @@ import {
   fetchPropertyTemplateById,
   restorePropertyTemplateFromStandard,
 } from "@/app/inspections/lib/property-template-db";
+import { assertCanManagePropertyInspectionTemplates } from "@/app/lib/tenant/server/property-inspection-template-access";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -12,9 +13,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { user, supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertCanManagePropertyInspectionTemplates(supabase, user.id, {
+      organizationId,
+      propertyId,
+    });
     const { id } = await context.params;
     const template = await restorePropertyTemplateFromStandard(
       supabase,
@@ -23,8 +27,7 @@ export async function POST(request: Request, context: RouteContext) {
     );
     return NextResponse.json({ template });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return tenantErrorResponse(error);
   }
 }
 

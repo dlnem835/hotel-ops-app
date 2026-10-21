@@ -3,7 +3,6 @@ import {
   deletePropertyTemplate,
   duplicatePropertyTemplate,
   fetchPropertyTemplateById,
-  restorePropertyTemplateFromStandard,
   savePropertyTemplate,
   setPropertyTemplateStatus,
 } from "@/app/inspections/lib/property-template-db";
@@ -12,6 +11,7 @@ import {
   TemplateStatus,
   TemplateType,
 } from "@/app/inspections/standards/types";
+import { assertCanManagePropertyInspectionTemplates } from "@/app/lib/tenant/server/property-inspection-template-access";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -37,9 +37,12 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { user, supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertCanManagePropertyInspectionTemplates(supabase, user.id, {
+      organizationId,
+      propertyId,
+    });
     const { id } = await context.params;
     const body = await request.json();
     const scope = { organizationId, propertyId };
@@ -87,9 +90,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { user, supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertCanManagePropertyInspectionTemplates(supabase, user.id, {
+      organizationId,
+      propertyId,
+    });
     const { id } = await context.params;
     await deletePropertyTemplate(supabase, Number(id), {
       organizationId,
@@ -103,9 +109,12 @@ export async function DELETE(request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { supabase, organizationId, propertyId } = await resolveTenantRequest(
-      request
-    );
+    const { user, supabase, organizationId, propertyId } =
+      await resolveTenantRequest(request);
+    await assertCanManagePropertyInspectionTemplates(supabase, user.id, {
+      organizationId,
+      propertyId,
+    });
     const { id } = await context.params;
     const template = await duplicatePropertyTemplate(supabase, Number(id), {
       organizationId,
