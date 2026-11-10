@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
+import type { OperationalPhotoParent } from "@/app/lib/storage/operational-photo-types";
+import { useOperationalPhotoParent } from "@/app/lib/storage/operational-photo-parent";
+import {
+  refreshOperationalPhotoSrc,
+  useRefreshedPhotoUrl,
+} from "@/app/lib/storage/use-refreshed-photo-url";
 
 type WorkOrderPhotoFieldProps = {
   photoUrl: string | null;
@@ -11,6 +17,7 @@ type WorkOrderPhotoFieldProps = {
   disabled?: boolean;
   compact?: boolean;
   label?: string;
+  photoParent?: OperationalPhotoParent | null;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
 };
@@ -24,13 +31,25 @@ export default function WorkOrderPhotoField({
   disabled = false,
   compact = false,
   label = "Photo",
+  photoParent,
   onPhotoSelect,
   onPhotoRemove,
 }: WorkOrderPhotoFieldProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const libraryInputRef = useRef<HTMLInputElement>(null);
+  const contextParent = useOperationalPhotoParent();
+  const resolvedParent = photoParent ?? contextParent;
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const displayUrl = photoUrl || previewUrl;
+  const [errorOverride, setErrorOverride] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
+  const refreshedPhotoUrl = useRefreshedPhotoUrl(photoUrl, resolvedParent);
+  const storedDisplayUrl = refreshedPhotoUrl || previewUrl;
+  const displayUrl =
+    errorOverride && errorOverride.from === storedDisplayUrl
+      ? errorOverride.to
+      : storedDisplayUrl;
   const isBusy = uploading || disabled;
 
   useEffect(() => {
@@ -40,6 +59,16 @@ export default function WorkOrderPhotoField({
       }
     };
   }, [previewUrl]);
+
+  async function handleImageError() {
+    if (!displayUrl || displayUrl.startsWith("blob:") || displayUrl.startsWith("data:")) {
+      return;
+    }
+    const next = await refreshOperationalPhotoSrc(displayUrl, resolvedParent);
+    if (next && next !== displayUrl) {
+      setErrorOverride({ from: displayUrl, to: next });
+    }
+  }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -175,6 +204,9 @@ export default function WorkOrderPhotoField({
                 src={displayUrl}
                 alt="Work order attachment preview"
                 className={compact ? "work-order-photo-field__thumb" : undefined}
+                onError={() => {
+                  void handleImageError();
+                }}
                 style={
                   compact
                     ? {

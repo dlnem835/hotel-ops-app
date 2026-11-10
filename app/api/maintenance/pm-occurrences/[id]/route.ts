@@ -4,6 +4,7 @@ import {
   updatePmOccurrence,
 } from "@/app/maintenance/lib/pm-occurrence-db";
 import { PmOccurrenceResponses } from "@/app/maintenance/lib/maintenance-types";
+import { signPmOccurrence } from "@/app/lib/storage/server/operational-photo-display";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -22,7 +23,10 @@ export async function GET(request: Request, context: RouteContext) {
     if (!detail) {
       return NextResponse.json({ error: "PM session not found." }, { status: 404 });
     }
-    return NextResponse.json(detail);
+    return NextResponse.json({
+      ...detail,
+      occurrence: await signPmOccurrence(supabase, detail.occurrence, scope),
+    });
   } catch (error: unknown) {
     return tenantErrorResponse(error);
   }
@@ -51,10 +55,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (body.completed_by !== undefined) patch.completedBy = body.completed_by;
     if (body.saved_by !== undefined) patch.savedBy = body.saved_by;
 
-    const occurrence = await updatePmOccurrence(
+    const occurrence = await signPmOccurrence(
       supabase,
-      Number(id),
-      patch,
+      await updatePmOccurrence(supabase, Number(id), patch, scope),
       scope
     );
     return NextResponse.json({ occurrence });

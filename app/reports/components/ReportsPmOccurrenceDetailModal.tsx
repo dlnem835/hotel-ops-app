@@ -7,6 +7,8 @@ import PmSessionMetadata from "@/app/maintenance/components/PmSessionMetadata";
 import type { PmStoredTargetOutcome } from "@/app/maintenance/lib/maintenance-types";
 import { PM_FREQUENCY_LABELS, type PmChecklist, type PmStepOutcome } from "@/app/maintenance/lib/pm-types";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import {
   ONE_EYRIE_MODAL_BOX,
   ONE_EYRIE_MODAL_CLOSE_BUTTON,
@@ -74,7 +76,7 @@ export default function ReportsPmOccurrenceDetailModal({
       setError(null);
 
       try {
-        const response = await fetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
+        const response = await tenantFetch(`/api/maintenance/pm-occurrences/${occurrenceId}`);
         const result = await response.json();
 
         if (!response.ok) {
@@ -150,6 +152,9 @@ export default function ReportsPmOccurrenceDetailModal({
     null;
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "pm_occurrence", id: occurrenceId }}
+    >
     <div
       style={{ ...ONE_EYRIE_MODAL_OVERLAY, zIndex: 1200 }}
       role="presentation"
@@ -344,5 +349,6 @@ export default function ReportsPmOccurrenceDetailModal({
         </div>
       </div>
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

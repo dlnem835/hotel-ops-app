@@ -11,6 +11,10 @@ import {
   insertWorkOrderPhoto,
   isWorkOrderPhotoAddableStatus,
 } from "@/app/maintenance/lib/work-order-photos-db";
+import {
+  signWorkOrderPhotoFields,
+  signWorkOrderPhotoList,
+} from "@/app/lib/storage/server/operational-photo-display";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -26,7 +30,11 @@ export async function GET(request: Request, context: RouteContext) {
       throw new TenantRequestError(404, "Work order not found.");
     }
 
-    const photos = await fetchWorkOrderPhotos(supabase, Number(id), scope);
+    const photos = await signWorkOrderPhotoList(
+      supabase,
+      await fetchWorkOrderPhotos(supabase, Number(id), scope),
+      scope
+    );
     const memberResolver = await fetchMemberDisplayNameResolver(
       supabase,
       organizationId
@@ -75,20 +83,36 @@ export async function POST(request: Request, context: RouteContext) {
       throw new TenantRequestError(400, "photo_url is required.");
     }
 
-    const photo = await insertWorkOrderPhoto(
-      supabase,
-      {
-        workOrderId,
-        photoUrl,
-        storagePath: body?.storage_path ?? null,
-        uploadedBy: body?.uploaded_by ?? null,
-      },
-      scope
-    );
+    const photo = (
+      await signWorkOrderPhotoList(
+        supabase,
+        [
+          await insertWorkOrderPhoto(
+            supabase,
+            {
+              workOrderId,
+              photoUrl,
+              storagePath: body?.storage_path ?? null,
+              uploadedBy: body?.uploaded_by ?? null,
+            },
+            scope
+          ),
+        ],
+        scope
+      )
+    )[0];
 
     // Touch updated_at without changing other fields.
-    const updated = await updateWorkOrder(supabase, workOrderId, {}, scope);
-    const photos = await fetchWorkOrderPhotos(supabase, workOrderId, scope);
+    const updated = await signWorkOrderPhotoFields(
+      supabase,
+      await updateWorkOrder(supabase, workOrderId, {}, scope),
+      scope
+    );
+    const photos = await signWorkOrderPhotoList(
+      supabase,
+      await fetchWorkOrderPhotos(supabase, workOrderId, scope),
+      scope
+    );
     const memberResolver = await fetchMemberDisplayNameResolver(
       supabase,
       organizationId

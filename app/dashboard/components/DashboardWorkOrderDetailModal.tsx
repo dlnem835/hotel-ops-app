@@ -24,6 +24,7 @@ import {
   useMemberDisplayNameResolver,
 } from "@/app/lib/use-member-display-name";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import WorkOrderResolutionModal from "@/app/maintenance/components/WorkOrderResolutionModal";
 import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import WorkOrderItemIssueSelect from "@/app/maintenance/components/WorkOrderItemIssueSelect";
@@ -120,6 +121,9 @@ export default function DashboardWorkOrderDetailModal({
   }
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "work_order", id: currentWorkOrder.id }}
+    >
     <div style={ONE_EYRIE_MODAL_OVERLAY} onClick={onClose}>
       <div
         style={{
@@ -328,6 +332,7 @@ export default function DashboardWorkOrderDetailModal({
       {resolutionOpen ? (
         <WorkOrderResolutionModal
           open
+          workOrderId={currentWorkOrder.id}
           saving={completingWo}
           onClose={() => setResolutionOpen(false)}
           onSubmit={(resolution, resolutionPhotoUrl) =>
@@ -336,5 +341,6 @@ export default function DashboardWorkOrderDetailModal({
         />
       ) : null}
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

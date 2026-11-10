@@ -19,6 +19,7 @@ import {
 } from "./lib/work-order-shared";
 import WorkOrderPhotosSection from "@/app/maintenance/components/WorkOrderPhotosSection";
 import WorkOrderResolutionModal from "@/app/maintenance/components/WorkOrderResolutionModal";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import WorkOrderItemIssueSelect from "@/app/maintenance/components/WorkOrderItemIssueSelect";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
@@ -165,6 +166,9 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
   const isCompleted = workOrder.status === "Completed";
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "work_order", id: workOrder.id }}
+    >
     <div className="one-eyrie-mobile__inner one-eyrie-mobile-work-orders">
       <Link href="/mobile/work-orders" className="one-eyrie-mobile-back">
         ← Work Orders
@@ -279,6 +283,7 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
       {resolutionOpen ? (
         <WorkOrderResolutionModal
           open
+          workOrderId={workOrder.id}
           saving={completing}
           onClose={() => setResolutionOpen(false)}
           onSubmit={(resolution, resolutionPhotoUrl) =>
@@ -287,5 +292,6 @@ export default function MobileWorkOrderDetail({ workOrderId }: MobileWorkOrderDe
         />
       ) : null}
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

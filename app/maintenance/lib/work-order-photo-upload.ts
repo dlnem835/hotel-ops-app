@@ -10,6 +10,11 @@ type SignPhotoResponse = {
   storagePath?: string;
 };
 
+export type UploadedWorkOrderPhoto = {
+  photoUrl: string;
+  storagePath: string;
+};
+
 async function readJsonSafely(response: Response): Promise<SignPhotoResponse | null> {
   const text = await response.text();
   if (!text) return null;
@@ -32,7 +37,9 @@ async function readJsonSafely(response: Response): Promise<SignPhotoResponse | n
  * Uploads a work-order photo via signed URL (direct to Supabase Storage).
  * Never routes the binary through the Next.js/Vercel function body.
  */
-export async function uploadWorkOrderPhoto(file: File): Promise<string> {
+export async function uploadWorkOrderPhoto(
+  file: File
+): Promise<UploadedWorkOrderPhoto> {
   const signResponse = await tenantFetch("/api/work-orders/photo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -44,7 +51,12 @@ export async function uploadWorkOrderPhoto(file: File): Promise<string> {
   });
 
   const signed = await readJsonSafely(signResponse);
-  if (!signResponse.ok || !signed?.token || !signed?.path || !signed?.photoUrl) {
+  if (
+    !signResponse.ok ||
+    !signed?.token ||
+    !signed?.path ||
+    !signed?.photoUrl
+  ) {
     throw new Error(signed?.error || "Unable to prepare work order photo upload.");
   }
 
@@ -59,5 +71,8 @@ export async function uploadWorkOrderPhoto(file: File): Promise<string> {
     throw new Error(uploadError.message || "Unable to upload work order photo.");
   }
 
-  return String(signed.photoUrl);
+  return {
+    photoUrl: String(signed.photoUrl),
+    storagePath: String(signed.storagePath || signed.path),
+  };
 }

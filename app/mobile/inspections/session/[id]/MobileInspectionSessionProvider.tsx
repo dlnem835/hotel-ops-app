@@ -22,6 +22,7 @@ import {
 } from "@/app/inspections/lib/scoring";
 import { PropertyTemplateContent } from "@/app/inspections/standards/types";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 
 type Outcome = "pass" | "fail" | "na";
 type ResponseMap = Record<string, Outcome | undefined>;
@@ -510,8 +511,16 @@ export function MobileInspectionSessionProvider({
   };
 
   return (
-    <MobileInspectionSessionContext.Provider value={value}>
-      {children}
-    </MobileInspectionSessionContext.Provider>
+    <OperationalPhotoParentProvider
+      value={
+        Number.isFinite(sessionId)
+          ? { type: "inspection_session", id: sessionId }
+          : null
+      }
+    >
+      <MobileInspectionSessionContext.Provider value={value}>
+        {children}
+      </MobileInspectionSessionContext.Provider>
+    </OperationalPhotoParentProvider>
   );
 }

@@ -8,6 +8,10 @@ import { WorkOrderCategory } from "./work-order-categories";
 import { WORK_ORDER_PRIORITY_ORDER } from "@/app/lib/workOrderPriority";
 import { isGuestImpactingWorkOrder } from "./work-order-display";
 import { classifyWorkOrderItemIssue } from "./work-order-item-issues";
+import {
+  canonicalizeOperationalPhotoRef,
+  requireCanonicalOperationalPhotoForWrite,
+} from "@/app/lib/storage/server/operational-photo-access";
 
 export type WorkOrderRow = {
   id: number;
@@ -72,6 +76,24 @@ export type WorkOrderTenantScope = {
   propertyId: number;
 };
 
+function writeWorkOrderPhotoRef(
+  value: string | null | undefined,
+  scope: WorkOrderTenantScope | undefined,
+  existingRefs: Array<string | null | undefined>,
+  fieldName: string
+): string | null {
+  if (!scope) {
+    return canonicalizeOperationalPhotoRef(value, {
+      defaultBucket: "work-order-photos",
+    });
+  }
+  return requireCanonicalOperationalPhotoForWrite(value, scope, {
+    defaultBucket: "work-order-photos",
+    existingRefs,
+    fieldName,
+  });
+}
+
 export function sortWorkOrdersByPriority(orders: WorkOrder[]): WorkOrder[] {
   return [...orders].sort((a, b) => {
     const guestDiff =
@@ -126,7 +148,7 @@ export async function createWorkOrder(
     source_module: input.source_module ?? null,
     source_record_id: input.source_record_id ?? null,
     source_note: input.source_note ?? null,
-    photo_url: input.photo_url ?? null,
+    photo_url: writeWorkOrderPhotoRef(input.photo_url, scope, [], "photo_url"),
     category: input.category ?? null,
     item: input.item?.trim() || null,
     created_by: input.created_by ?? null,
@@ -176,10 +198,29 @@ export async function updateWorkOrder(
     payload.comments = patch.comments;
     payload.comments_updated_at = new Date().toISOString();
   }
-  if (patch.photo_url !== undefined) payload.photo_url = patch.photo_url;
-  if (patch.item !== undefined) payload.item = patch.item?.trim() || "Other";
-  if (patch.resolution_photo_url !== undefined) {
-    payload.resolution_photo_url = patch.resolution_photo_url;
+  if (patch.photo_url !== undefined || patch.resolution_photo_url !== undefined) {
+    const existing = scope
+      ? await fetchWorkOrderById(supabase, id, scope)
+      : null;
+    const existingRefs = existing
+      ? [existing.photoUrl, existing.resolutionPhotoUrl]
+      : [];
+    if (patch.photo_url !== undefined) {
+      payload.photo_url = writeWorkOrderPhotoRef(
+        patch.photo_url,
+        scope,
+        existingRefs,
+        "photo_url"
+      );
+    }
+    if (patch.resolution_photo_url !== undefined) {
+      payload.resolution_photo_url = writeWorkOrderPhotoRef(
+        patch.resolution_photo_url,
+        scope,
+        existingRefs,
+        "resolution_photo_url"
+      );
+    }
   }
 
   let updateQuery = supabase.from("work_orders").update(payload).eq("id", id);

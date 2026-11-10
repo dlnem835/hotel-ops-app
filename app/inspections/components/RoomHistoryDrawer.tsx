@@ -9,6 +9,7 @@ import {
   goldHoverHandlers,
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
+import OperationalPhoto from "@/app/lib/storage/OperationalPhoto";
 
 type RoomHistoryDrawerProps = {
   open: boolean;
@@ -238,24 +239,25 @@ export default function RoomHistoryDrawer({
                               </div>
                             )}
                             {failedItem.photoUrl && (
-                              <a
-                                href={failedItem.photoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ display: "inline-block", marginTop: "8px" }}
-                              >
-                                <img
-                                  src={failedItem.photoUrl}
-                                  alt={`Photo for ${failedItem.label}`}
-                                  style={{
-                                    width: "72px",
-                                    height: "72px",
-                                    objectFit: "cover",
-                                    borderRadius: "6px",
-                                    border: `1px solid ${ONE_EYRIE.border}`,
-                                  }}
-                                />
-                              </a>
+                              <OperationalPhoto
+                                src={failedItem.photoUrl}
+                                alt={`Photo for ${failedItem.label}`}
+                                parent={{
+                                  type: "inspection_session",
+                                  id: entry.id,
+                                }}
+                                linkStyle={{
+                                  display: "inline-block",
+                                  marginTop: "8px",
+                                }}
+                                imgStyle={{
+                                  width: "72px",
+                                  height: "72px",
+                                  objectFit: "cover",
+                                  borderRadius: "6px",
+                                  border: `1px solid ${ONE_EYRIE.border}`,
+                                }}
+                              />
                             )}
                           </div>
                         ))}

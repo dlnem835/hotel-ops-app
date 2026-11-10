@@ -15,10 +15,12 @@ import {
 } from "@/app/settings/lib/settings-ui-interactions";
 import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
 import WorkOrderPhotoField from "@/app/maintenance/components/WorkOrderPhotoField";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import { uploadWorkOrderPhoto } from "@/app/maintenance/lib/work-order-photo-upload";
 
 type WorkOrderResolutionModalProps = {
   open: boolean;
+  workOrderId: number;
   saving?: boolean;
   onClose: () => void;
   onSubmit: (resolution: string, resolutionPhotoUrl: string | null) => void;
@@ -26,6 +28,7 @@ type WorkOrderResolutionModalProps = {
 
 export default function WorkOrderResolutionModal({
   open,
+  workOrderId,
   saving = false,
   onClose,
   onSubmit,
@@ -49,7 +52,7 @@ export default function WorkOrderResolutionModal({
       let resolutionPhotoUrl: string | null = null;
       if (photo) {
         setUploadingPhoto(true);
-        resolutionPhotoUrl = await uploadWorkOrderPhoto(photo);
+        resolutionPhotoUrl = (await uploadWorkOrderPhoto(photo)).photoUrl;
       }
       onSubmit(value, resolutionPhotoUrl);
     } catch (uploadError) {
@@ -64,6 +67,9 @@ export default function WorkOrderResolutionModal({
   }
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "work_order", id: workOrderId }}
+    >
     <div
       role="dialog"
       aria-modal="true"
@@ -144,6 +150,7 @@ export default function WorkOrderResolutionModal({
             disabled={saving}
             compact
             label="Completion Photo"
+            photoParent={{ type: "work_order", id: workOrderId }}
             onPhotoSelect={setPhoto}
             onPhotoRemove={() => setPhoto(null)}
           />
@@ -195,5 +202,6 @@ export default function WorkOrderResolutionModal({
         </div>
       </div>
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

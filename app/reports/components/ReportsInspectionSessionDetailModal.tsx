@@ -9,6 +9,8 @@ import { formatInspectionProgramLabel } from "@/app/reports/lib/inspection-repor
 import { PropertyTemplateContent } from "@/app/inspections/standards/types";
 import { buildMemberDisplayNameResolver } from "@/app/lib/member-display-name";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import "@/app/inspections/inspections-responsive.css";
 
 type Outcome = "pass" | "fail" | "na";
@@ -121,7 +123,7 @@ export default function ReportsInspectionSessionDetailModal({
       setError(null);
 
       try {
-        const response = await fetch(`/api/inspections/sessions/${sessionId}`);
+        const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`);
         const result = await response.json();
         if (!response.ok) {
           throw new Error(result.error || "Unable to load inspection session.");
@@ -235,6 +237,9 @@ export default function ReportsInspectionSessionDetailModal({
   }
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "inspection_session", id: sessionId }}
+    >
     <div
       role="presentation"
       onClick={handleClose}
@@ -339,5 +344,6 @@ export default function ReportsInspectionSessionDetailModal({
         )}
       </div>
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

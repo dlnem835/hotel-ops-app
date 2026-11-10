@@ -8,6 +8,7 @@ import type {
   PmOccurrenceResponses,
   PmTargetOutcome,
 } from "@/app/maintenance/lib/maintenance-types";
+import { signPmProgramSessionPhotos } from "@/app/lib/storage/server/operational-photo-display";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -29,10 +30,15 @@ export async function GET(request: Request, context: RouteContext) {
     const { supabase, organizationId, propertyId } =
       await resolveTenantRequest(request);
     const { templateId: rawTemplateId } = await context.params;
-    const session = await fetchPmProgramSession(
+    const scope = { organizationId, propertyId };
+    const session = await signPmProgramSessionPhotos(
       supabase,
-      parseTemplateId(rawTemplateId),
-      { organizationId, propertyId }
+      await fetchPmProgramSession(
+        supabase,
+        parseTemplateId(rawTemplateId),
+        scope
+      ),
+      scope
     );
     return NextResponse.json({ session });
   } catch (error: unknown) {
@@ -45,11 +51,16 @@ export async function POST(request: Request, context: RouteContext) {
     const { supabase, organizationId, propertyId, user } =
       await resolveTenantRequest(request);
     const { templateId: rawTemplateId } = await context.params;
-    const session = await startPmProgramSession(
+    const scope = { organizationId, propertyId };
+    const session = await signPmProgramSessionPhotos(
       supabase,
-      parseTemplateId(rawTemplateId),
-      user.id,
-      { organizationId, propertyId }
+      await startPmProgramSession(
+        supabase,
+        parseTemplateId(rawTemplateId),
+        user.id,
+        scope
+      ),
+      scope
     );
     return NextResponse.json({ session });
   } catch (error: unknown) {
@@ -104,20 +115,25 @@ export async function PATCH(request: Request, context: RouteContext) {
       body.responses && Array.isArray(body.responses.steps)
         ? (body.responses as PmOccurrenceResponses)
         : { steps: [] };
-    const session = await savePmProgramSession(
+    const scope = { organizationId, propertyId };
+    const session = await signPmProgramSessionPhotos(
       supabase,
-      parseTemplateId(rawTemplateId),
-      {
-        responses,
-        sessionNotes:
-          body.session_notes == null ? null : String(body.session_notes),
-        targetOutcomes,
-        targetNotes,
-        targetPhotoUrls,
-        complete: body.status === "completed",
-        actor: user.id,
-      },
-      { organizationId, propertyId }
+      await savePmProgramSession(
+        supabase,
+        parseTemplateId(rawTemplateId),
+        {
+          responses,
+          sessionNotes:
+            body.session_notes == null ? null : String(body.session_notes),
+          targetOutcomes,
+          targetNotes,
+          targetPhotoUrls,
+          complete: body.status === "completed",
+          actor: user.id,
+        },
+        scope
+      ),
+      scope
     );
     return NextResponse.json({ session });
   } catch (error: unknown) {

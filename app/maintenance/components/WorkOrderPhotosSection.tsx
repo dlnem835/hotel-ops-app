@@ -9,6 +9,7 @@ import { isWorkOrderPhotoAddableStatus } from "@/app/maintenance/lib/maintenance
 import { uploadWorkOrderPhoto } from "@/app/maintenance/lib/work-order-photo-upload";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import WorkOrderPhotoAttachment from "./WorkOrderPhotoAttachment";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 
 const PHOTO_ACCEPT =
   "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -55,12 +56,13 @@ export default function WorkOrderPhotosSection({
     setUploading(true);
     setError(null);
     try {
-      const photoUrl = await uploadWorkOrderPhoto(file);
+      const uploaded = await uploadWorkOrderPhoto(file);
       const response = await tenantFetch(`/api/work-orders/${workOrder.id}/photos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          photo_url: photoUrl,
+          photo_url: uploaded.photoUrl,
+          storage_path: uploaded.storagePath,
           uploaded_by: uploadedBy || null,
         }),
       });
@@ -106,6 +108,9 @@ export default function WorkOrderPhotosSection({
   };
 
   return (
+    <OperationalPhotoParentProvider
+      value={{ type: "work_order", id: workOrder.id }}
+    >
     <div className={className} style={{ marginBottom: "18px" }}>
       <div
         className="oe-lm-secondary-text"
@@ -209,5 +214,6 @@ export default function WorkOrderPhotosSection({
         aria-hidden
       />
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

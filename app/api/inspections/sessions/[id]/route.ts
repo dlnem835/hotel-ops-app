@@ -5,6 +5,7 @@ import {
   fetchInspectionSession,
   saveInspectionProgress,
 } from "@/app/inspections/lib/inspection-db";
+import { signInspectionResponsePhotos } from "@/app/lib/storage/server/operational-photo-display";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -20,9 +21,9 @@ export async function GET(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const scope = { organizationId, propertyId };
     const session = await fetchInspectionSession(supabase, Number(id), scope);
-    const responses = await fetchInspectionResponses(
+    const responses = await signInspectionResponsePhotos(
       supabase,
-      Number(id),
+      await fetchInspectionResponses(supabase, Number(id), scope),
       scope
     );
     return NextResponse.json({ session, responses });

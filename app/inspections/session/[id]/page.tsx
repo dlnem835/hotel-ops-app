@@ -10,6 +10,7 @@ import FailedItemDetails from "../../components/FailedItemDetails";
 import InspectionCategorySection from "../../components/InspectionCategorySection";
 import { FOREST, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import { toggleSelectedOutcome } from "@/app/lib/outcome-toggle";
 import { useIsMobileInspectionLayout } from "../../lib/use-inspection-breakpoint";
 import "../../inspections-responsive.css";
@@ -368,6 +369,10 @@ export default function InspectionSessionPage() {
     router.push("/inspections");
   }
 
+  const inspectionPhotoParent = Number.isFinite(sessionId)
+    ? ({ type: "inspection_session" as const, id: sessionId })
+    : null;
+
   if (loading) {
     return (
       <main className="one-eyrie-inspections-route" style={{ minHeight: "100vh", background: ONE_EYRIE.black, color: ONE_EYRIE.text, padding: 40 }}>
@@ -378,6 +383,7 @@ export default function InspectionSessionPage() {
 
   if (isCompleted && content) {
     return (
+      <OperationalPhotoParentProvider value={inspectionPhotoParent}>
       <main
         className="one-eyrie-app-shell one-eyrie-inspections-route"
         style={{
@@ -409,6 +415,7 @@ export default function InspectionSessionPage() {
             expandedCategoryKey={expandedCategoryKey}
             onToggleCategory={toggleCategory}
             onBack={handleReviewBack}
+            photoParent={inspectionPhotoParent}
             backLabel={
               fromHistory && historyRoomName
                 ? `Back to Room ${historyRoomName} history`
@@ -419,10 +426,12 @@ export default function InspectionSessionPage() {
           />
         </section>
       </main>
+      </OperationalPhotoParentProvider>
     );
   }
 
   return (
+    <OperationalPhotoParentProvider value={inspectionPhotoParent}>
     <main
       className="one-eyrie-app-shell one-eyrie-inspections-route"
       style={{
@@ -836,5 +845,6 @@ export default function InspectionSessionPage() {
         onCreated={() => setWorkOrderModalOpen(false)}
       />
     </main>
+    </OperationalPhotoParentProvider>
   );
 }

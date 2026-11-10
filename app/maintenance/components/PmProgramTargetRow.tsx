@@ -8,6 +8,7 @@ import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interaction
 import type { PmTargetOutcome } from "../lib/maintenance-types";
 import CreateWorkOrderButton from "./CreateWorkOrderButton";
 import type { WorkOrderModalInitialValues } from "./WorkOrderModal";
+import type { OperationalPhotoParent } from "@/app/lib/storage/operational-photo-types";
 
 type PmProgramTargetRowProps = {
   index: number;
@@ -24,6 +25,7 @@ type PmProgramTargetRowProps = {
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
   onCreateWorkOrder: (initial: WorkOrderModalInitialValues) => void;
+  photoParent?: OperationalPhotoParent | null;
 };
 
 export default function PmProgramTargetRow({
@@ -41,6 +43,7 @@ export default function PmProgramTargetRow({
   onPhotoSelect,
   onPhotoRemove,
   onCreateWorkOrder,
+  photoParent,
 }: PmProgramTargetRowProps) {
   return (
     <div
@@ -180,6 +183,7 @@ export default function PmProgramTargetRow({
             readOnly={readOnly}
             uploading={uploading}
             photoEnabled
+            photoParent={photoParent}
             onNotesChange={onNotesChange}
             onPhotoSelect={onPhotoSelect}
             onPhotoRemove={onPhotoRemove}

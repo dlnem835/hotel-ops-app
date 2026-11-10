@@ -9,6 +9,7 @@ import {
   isWorkOrderItemIssue,
 } from "@/app/maintenance/lib/work-order-item-issues";
 import { fetchMemberDisplayNameResolver } from "@/app/lib/member-display-name";
+import { signWorkOrderPhotoFields } from "@/app/lib/storage/server/operational-photo-display";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -30,12 +31,14 @@ export async function GET(request: Request) {
       fetchMemberDisplayNameResolver(supabase, organizationId),
     ]);
 
-    const enrichedWorkOrders = workOrders.map((order) => ({
-      ...order,
-      createdByLabel: order.createdBy
-        ? memberResolver.resolveStoredValue(order.createdBy)
-        : null,
-    }));
+    const enrichedWorkOrders = await Promise.all(
+      workOrders.map(async (order) => ({
+        ...(await signWorkOrderPhotoFields(supabase, order, scope)),
+        createdByLabel: order.createdBy
+          ? memberResolver.resolveStoredValue(order.createdBy)
+          : null,
+      }))
+    );
 
     return NextResponse.json({ workOrders: enrichedWorkOrders });
   } catch (error: unknown) {
@@ -74,10 +77,12 @@ export async function POST(request: Request) {
           details: body.source_note,
         });
 
-    const workOrder = await createWorkOrder(supabase, body, {
-      organizationId,
-      propertyId,
-    });
+    const scope = { organizationId, propertyId };
+    const workOrder = await signWorkOrderPhotoFields(
+      supabase,
+      await createWorkOrder(supabase, body, scope),
+      scope
+    );
     return NextResponse.json({ workOrder });
   } catch (error: unknown) {
     return tenantErrorResponse(error);

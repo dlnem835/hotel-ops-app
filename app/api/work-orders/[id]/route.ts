@@ -16,6 +16,7 @@ import {
   isWorkOrderItemIssue,
 } from "@/app/maintenance/lib/work-order-item-issues";
 import { fetchWorkOrderPhotos } from "@/app/maintenance/lib/work-order-photos-db";
+import { signWorkOrderPhotoFields } from "@/app/lib/storage/server/operational-photo-display";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -29,16 +30,24 @@ async function enrichWorkOrder(
     scope.organizationId
   );
   const photos = await fetchWorkOrderPhotos(supabase, workOrder.id, scope);
+  const signed = await signWorkOrderPhotoFields(
+    supabase,
+    {
+      ...workOrder,
+      photos,
+    },
+    scope
+  );
 
   return {
-    ...workOrder,
+    ...signed,
     createdByLabel: workOrder.createdBy
       ? memberResolver.resolveStoredValue(workOrder.createdBy)
       : null,
     completedByLabel: workOrder.completedBy
       ? memberResolver.resolveStoredValue(workOrder.completedBy)
       : null,
-    photos: photos.map((photo) => ({
+    photos: (signed.photos || []).map((photo) => ({
       ...photo,
       uploadedByLabel: photo.uploadedBy
         ? memberResolver.resolveStoredValue(photo.uploadedBy)

@@ -1,3 +1,5 @@
+import OperationalPhoto from "@/app/lib/storage/OperationalPhoto";
+
 type WorkOrderPhotoAttachmentProps = {
   photoUrl: string;
   className?: string;
@@ -23,27 +25,21 @@ export default function WorkOrderPhotoAttachment({
       >
         {label}
       </div>
-      <a
-        href={photoUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ display: "inline-block", maxWidth: "100%" }}
-      >
-        <img
-          src={photoUrl}
-          alt="Work order attachment"
-          style={{
-            display: "block",
-            maxWidth: "100%",
-            maxHeight: "280px",
-            width: "auto",
-            borderRadius: "10px",
-            border: "1px solid #3A352E",
-            objectFit: "contain",
-            background: "#111111",
-          }}
-        />
-      </a>
+      <OperationalPhoto
+        src={photoUrl}
+        alt="Work order attachment"
+        linkStyle={{ display: "inline-block", maxWidth: "100%" }}
+        imgStyle={{
+          display: "block",
+          maxWidth: "100%",
+          maxHeight: "280px",
+          width: "auto",
+          borderRadius: "10px",
+          border: "1px solid #3A352E",
+          objectFit: "contain",
+          background: "#111111",
+        }}
+      />
     </div>
   );
 }

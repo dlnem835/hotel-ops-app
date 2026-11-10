@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchPmOccurrenceById } from "@/app/maintenance/lib/pm-occurrence-db";
+import { resolveOperationalPhotoDisplayUrl } from "@/app/lib/storage/server/operational-photo-access";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -84,10 +85,22 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    const { data } = supabase.storage.from("inspection-photos").getPublicUrl(filePath);
+    const photoUrl = await resolveOperationalPhotoDisplayUrl(
+      supabase,
+      filePath,
+      scope,
+      { defaultBucket: "inspection-photos" }
+    );
+
+    if (!photoUrl) {
+      return NextResponse.json(
+        { error: "Unable to sign uploaded photo." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
-      photoUrl: data.publicUrl,
+      photoUrl,
       storagePath: filePath,
     });
   } catch (error: unknown) {

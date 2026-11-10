@@ -13,6 +13,7 @@ import WorkOrderModal, {
 } from "../../components/WorkOrderModal";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT } from "@/app/lib/oneEyrieLayout";
 import { PmChecklist, PmStepOutcome, PM_FREQUENCY_LABELS } from "../../lib/pm-types";
 import { PmOccurrenceResponses } from "../../lib/maintenance-types";
@@ -294,6 +295,13 @@ export default function PmSessionPage() {
     PM_FREQUENCY_LABELS[frequency as keyof typeof PM_FREQUENCY_LABELS] || frequency || null;
 
   return (
+    <OperationalPhotoParentProvider
+      value={
+        Number.isFinite(occurrenceId)
+          ? { type: "pm_occurrence", id: occurrenceId }
+          : null
+      }
+    >
     <main
       className={
         isMobileSession
@@ -530,5 +538,6 @@ export default function PmSessionPage() {
         onCreated={() => setWorkOrderModalOpen(false)}
       />
     </main>
+    </OperationalPhotoParentProvider>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "@/app/reports/lib/pm-failed-items-report-sort";
 import type { PmReportSortDirection } from "@/app/reports/lib/pm-completed-report-sort";
 import type { PmReportFailedItemRow } from "@/app/reports/lib/pm-report-types";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type ReportsPmFailedItemsResultsProps = {
   rows: PmReportFailedItemRow[];
@@ -84,7 +85,7 @@ export default function ReportsPmFailedItemsResults({ rows }: ReportsPmFailedIte
     setOpeningOccurrenceId(row.occurrenceId);
 
     try {
-      const response = await fetch(`/api/maintenance/pm-occurrences/${row.occurrenceId}`);
+      const response = await tenantFetch(`/api/maintenance/pm-occurrences/${row.occurrenceId}`);
       const result = await response.json();
 
       if (!response.ok) {

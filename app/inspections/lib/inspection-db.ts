@@ -32,6 +32,10 @@ import {
 } from "./rpm-cycle";
 import { standardToPropertyContent } from "../standards/builders";
 import { PropertyInspectionTemplate, PropertyTemplateContent } from "../standards/types";
+import {
+  canonicalizeOperationalPhotoRef,
+  requireCanonicalOperationalPhotoForWrite,
+} from "@/app/lib/storage/server/operational-photo-access";
 import { getSupabaseAdmin, InspectionTenantScope, assertPropertyTemplateInTenant } from "./property-template-db";
 
 export { getSupabaseAdmin };
@@ -1029,6 +1033,46 @@ async function createDeficiencyForFail(
   ]);
 }
 
+async function loadExistingInspectionPhotoRefs(
+  supabase: SupabaseClient,
+  inspectionId: number,
+  scope?: InspectionTenantScope
+): Promise<string[]> {
+  let query = supabase
+    .from("inspection_item_responses")
+    .select("photo_url")
+    .eq("inspection_id", inspectionId)
+    .not("photo_url", "is", null);
+  if (scope) {
+    query = query
+      .eq("organization_id", scope.organizationId)
+      .eq("property_id", scope.propertyId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data || [])
+    .map((row) => String(row.photo_url || "").trim())
+    .filter(Boolean);
+}
+
+function writeInspectionPhotoRef(
+  value: string | null | undefined,
+  scope: InspectionTenantScope | undefined,
+  existingRefs: string[]
+): string | null {
+  if (!scope) {
+    return canonicalizeOperationalPhotoRef(value, {
+      defaultBucket: "inspection-photos",
+    });
+  }
+  return requireCanonicalOperationalPhotoForWrite(value, scope, {
+    defaultBucket: "inspection-photos",
+    existingRefs,
+    fieldName: "photo_url",
+  });
+}
+
 export async function completeInspectionSession(
   supabase: SupabaseClient,
   id: number,
@@ -1043,6 +1087,11 @@ export async function completeInspectionSession(
   if (session.status === "completed") {
     throw new Error("Inspection already completed");
   }
+  const existingPhotoRefs = await loadExistingInspectionPhotoRefs(
+    supabase,
+    id,
+    scope
+  );
 
   const snapshot = session.template_snapshot as {
     content?: PropertyTemplateContent;
@@ -1088,7 +1137,11 @@ export async function completeInspectionSession(
         outcome,
         points_earned: pointsEarned,
         item_notes: response.itemNotes || null,
-        photo_url: response.photoUrl || null,
+        photo_url: writeInspectionPhotoRef(
+          response.photoUrl,
+          scope,
+          existingPhotoRefs
+        ),
         sort_order: sortOrder++,
       });
 
@@ -1186,6 +1239,11 @@ export async function saveInspectionProgress(
   if (session.status === "completed") {
     throw new Error("Inspection already completed");
   }
+  const existingPhotoRefs = await loadExistingInspectionPhotoRefs(
+    supabase,
+    id,
+    scope
+  );
 
   const snapshot = session.template_snapshot as { content?: PropertyTemplateContent };
   const content = snapshot.content;
@@ -1216,7 +1274,11 @@ export async function saveInspectionProgress(
         outcome: response.outcome,
         points_earned: response.outcome === "pass" ? item.pointValue : 0,
         item_notes: response.itemNotes || null,
-        photo_url: response.photoUrl || null,
+        photo_url: writeInspectionPhotoRef(
+          response.photoUrl,
+          scope,
+          existingPhotoRefs
+        ),
         sort_order: sortOrder++,
       });
     }

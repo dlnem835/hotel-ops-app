@@ -18,6 +18,11 @@ import {
 } from "../lib/work-order-location";
 import WorkOrderLocationField from "./WorkOrderLocationField";
 import WorkOrderPhotoField from "./WorkOrderPhotoField";
+import type { OperationalPhotoParent } from "@/app/lib/storage/operational-photo-types";
+import {
+  OperationalPhotoParentProvider,
+  useOperationalPhotoParent,
+} from "@/app/lib/storage/operational-photo-parent";
 import WorkOrderDuplicateWarningModal from "./WorkOrderDuplicateWarningModal";
 import { uploadWorkOrderPhoto } from "@/app/maintenance/lib/work-order-photo-upload";
 import type { DuplicateWorkOrderCandidate } from "@/app/maintenance/lib/work-order-duplicate-types";
@@ -34,6 +39,7 @@ type WorkOrderModalProps = {
   open: boolean;
   initialValues?: WorkOrderModalInitialValues;
   createdBy?: string | null;
+  photoParent?: OperationalPhotoParent | null;
   onClose: () => void;
   onCreated?: () => void;
   onViewExistingWorkOrder?: (id: number) => void;
@@ -43,10 +49,13 @@ export default function WorkOrderModal({
   open,
   initialValues,
   createdBy,
+  photoParent,
   onClose,
   onCreated,
   onViewExistingWorkOrder,
 }: WorkOrderModalProps) {
+  const contextParent = useOperationalPhotoParent();
+  const resolvedPhotoParent = photoParent ?? contextParent;
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [item, setItem] = useState<WorkOrderItemIssue | "">("");
@@ -147,8 +156,8 @@ export default function WorkOrderModal({
     setError(null);
 
     try {
-      const uploadedUrl = await uploadWorkOrderPhoto(file);
-      setPhotoUrl(uploadedUrl);
+      const uploaded = await uploadWorkOrderPhoto(file);
+      setPhotoUrl(uploaded.photoUrl);
     } catch (uploadError) {
       setPhotoUrl(null);
       setError(
@@ -287,6 +296,7 @@ export default function WorkOrderModal({
   const submitDisabled = saving || uploadingPhoto || duplicateWarningOpen;
 
   return (
+    <OperationalPhotoParentProvider value={resolvedPhotoParent}>
     <>
     <div className="work-order-modal-overlay one-eyrie-modal-overlay" onClick={onClose}>
       <div
@@ -417,6 +427,7 @@ export default function WorkOrderModal({
                 photoUrl={photoUrl}
                 uploading={uploadingPhoto}
                 disabled={saving}
+                photoParent={resolvedPhotoParent}
                 onPhotoSelect={(file) => void handlePhotoSelect(file)}
                 onPhotoRemove={() => setPhotoUrl(null)}
               />
@@ -479,5 +490,6 @@ export default function WorkOrderModal({
       />
     ) : null}
     </>
+    </OperationalPhotoParentProvider>
   );
 }

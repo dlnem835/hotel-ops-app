@@ -572,6 +572,11 @@ export default function PmProgramPage() {
                       outcome={outcome}
                       notes={targetNotes[target.assignmentId] || ""}
                       photoUrl={targetPhotos[target.assignmentId] || null}
+                      photoParent={
+                        target.occurrenceId
+                          ? { type: "pm_occurrence", id: target.occurrenceId }
+                          : null
+                      }
                       readOnly={Boolean(isCompleted)}
                       uploading={Boolean(
                         targetUploading[target.assignmentId]

@@ -9,6 +9,12 @@ import { AMBER, FLAT_RED, FOREST, NEUTRAL_PILL, ONE_EYRIE } from "@/app/lib/oneE
 import { formatInspectionScoreDisplay } from "../lib/scoring";
 import { PropertyTemplateContent } from "../standards/types";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
+import OperationalPhoto from "@/app/lib/storage/OperationalPhoto";
+import type { OperationalPhotoParent } from "@/app/lib/storage/operational-photo-types";
+import {
+  OperationalPhotoParentProvider,
+  useOperationalPhotoParent,
+} from "@/app/lib/storage/operational-photo-parent";
 
 type Outcome = "pass" | "fail" | "na";
 
@@ -40,6 +46,7 @@ type CompletedInspectionReviewProps = {
   embeddedScrollLayout?: boolean;
   /** Show every checklist section expanded (report viewer). */
   expandAllCategories?: boolean;
+  photoParent?: OperationalPhotoParent | null;
 };
 
 function itemKey(categoryKey: string, itemKeyValue: string) {
@@ -91,7 +98,10 @@ export default function CompletedInspectionReview({
   highlightItemKey = null,
   embeddedScrollLayout = false,
   expandAllCategories = false,
+  photoParent,
 }: CompletedInspectionReviewProps) {
+  const contextParent = useOperationalPhotoParent();
+  const resolvedPhotoParent = photoParent ?? contextParent;
   const [failuresOnly, setFailuresOnly] = useState(false);
   const [showItemHighlight, setShowItemHighlight] = useState(Boolean(highlightItemKey));
   const bodyScrollRef = useRef<HTMLDivElement | null>(null);
@@ -200,6 +210,7 @@ export default function CompletedInspectionReview({
   }
 
   return (
+    <OperationalPhotoParentProvider value={resolvedPhotoParent}>
     <div
       className="inspection-review-print-root"
       style={
@@ -268,6 +279,7 @@ export default function CompletedInspectionReview({
 
             <button
               type="button"
+              className="inspection-review-no-print"
               onClick={() => window.print()}
               style={{
                 ...SETTINGS_BUTTON_BASE,
@@ -517,24 +529,18 @@ export default function CompletedInspectionReview({
                         </div>
                       )}
                       {item.photoUrl && (
-                        <a
-                          href={item.photoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ display: "inline-block" }}
-                        >
-                          <img
-                            src={item.photoUrl}
-                            alt={`Photo for ${item.label}`}
-                            style={{
-                              width: "88px",
-                              height: "88px",
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                              border: `1px solid ${ONE_EYRIE.border}`,
-                            }}
-                          />
-                        </a>
+                        <OperationalPhoto
+                          src={item.photoUrl}
+                          alt={`Photo for ${item.label}`}
+                          parent={resolvedPhotoParent}
+                          imgStyle={{
+                            width: "88px",
+                            height: "88px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: `1px solid ${ONE_EYRIE.border}`,
+                          }}
+                        />
                       )}
                     </div>
                   )}
@@ -715,5 +721,6 @@ export default function CompletedInspectionReview({
         )}
       </div>
     </div>
+    </OperationalPhotoParentProvider>
   );
 }

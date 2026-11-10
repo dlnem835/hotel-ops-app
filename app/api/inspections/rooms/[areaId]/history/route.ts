@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchRoomHistory } from "@/app/inspections/lib/inspection-db";
+import { signRoomHistoryPhotos } from "@/app/lib/storage/server/operational-photo-display";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -13,11 +14,12 @@ export async function GET(request: Request, context: RouteContext) {
       request
     );
     const { areaId } = await context.params;
-    const result = await fetchRoomHistory(supabase, Number(areaId), {
-      organizationId,
-      propertyId,
+    const scope = { organizationId, propertyId };
+    const result = await fetchRoomHistory(supabase, Number(areaId), scope);
+    return NextResponse.json({
+      ...result,
+      history: await signRoomHistoryPhotos(supabase, result.history, scope),
     });
-    return NextResponse.json(result);
   } catch (error: unknown) {
     return tenantErrorResponse(error);
   }

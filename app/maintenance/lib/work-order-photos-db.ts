@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  parseOperationalPhotoRef,
+  requireCanonicalOperationalPhotoForWrite,
+} from "@/app/lib/storage/server/operational-photo-access";
+import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
 import type { WorkOrderPhoto } from "./maintenance-types";
 
 export type WorkOrderPhotoRow = {
@@ -56,14 +61,47 @@ export async function insertWorkOrderPhoto(
   },
   scope: { organizationId: number; propertyId: number }
 ): Promise<WorkOrderPhoto> {
+  const canonicalUrl = requireCanonicalOperationalPhotoForWrite(
+    input.photoUrl,
+    scope,
+    {
+      defaultBucket: "work-order-photos",
+      existingRefs: [],
+      fieldName: "photo_url",
+    }
+  );
+  if (!canonicalUrl) {
+    throw new TenantRequestError(400, "Invalid photo_url reference.");
+  }
+
+  const parsedPhoto = parseOperationalPhotoRef(canonicalUrl, {
+    defaultBucket: "work-order-photos",
+  });
+  if (!parsedPhoto) {
+    throw new TenantRequestError(400, "Invalid photo_url reference.");
+  }
+
+  if (input.storagePath) {
+    const parsedStorage = parseOperationalPhotoRef(input.storagePath, {
+      defaultBucket: "work-order-photos",
+    });
+    if (
+      !parsedStorage ||
+      parsedStorage.bucket !== parsedPhoto.bucket ||
+      parsedStorage.path !== parsedPhoto.path
+    ) {
+      throw new TenantRequestError(400, "Invalid storage_path reference.");
+    }
+  }
+
   const { data, error } = await supabase
     .from("work_order_photos")
     .insert({
       work_order_id: input.workOrderId,
       organization_id: scope.organizationId,
       property_id: scope.propertyId,
-      photo_url: input.photoUrl,
-      storage_path: input.storagePath ?? null,
+      photo_url: canonicalUrl,
+      storage_path: parsedPhoto.path,
       uploaded_by: input.uploadedBy ?? null,
     })
     .select("*")

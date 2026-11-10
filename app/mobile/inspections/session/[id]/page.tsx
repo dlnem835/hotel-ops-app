@@ -72,6 +72,11 @@ export default function MobileInspectionSessionHubPage() {
           onToggleCategory={() => undefined}
           onBack={() => router.push(listHref)}
           backLabel={`Back to ${listLabel.toLowerCase()}`}
+          photoParent={
+            Number.isFinite(Number(sessionId))
+              ? { type: "inspection_session", id: Number(sessionId) }
+              : null
+          }
         />
       </div>
     );

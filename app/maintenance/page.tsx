@@ -38,6 +38,7 @@ import WorkOrderModal, {
 import WorkOrderPhotosSection from "./components/WorkOrderPhotosSection";
 import WorkOrderDetailMetadata from "./components/WorkOrderDetailMetadata";
 import WorkOrderResolutionModal from "./components/WorkOrderResolutionModal";
+import { OperationalPhotoParentProvider } from "@/app/lib/storage/operational-photo-parent";
 import WorkOrderItemIssueSelect from "./components/WorkOrderItemIssueSelect";
 import {
   MaintenanceDashboardPayload,
@@ -366,6 +367,9 @@ export default function MaintenancePage() {
         ) : null}
 
         {selectedWorkOrder && (
+          <OperationalPhotoParentProvider
+            value={{ type: "work_order", id: selectedWorkOrder.id }}
+          >
           <div
             className="one-eyrie-modal-overlay one-eyrie-maintenance-detail-modal-overlay"
             style={ONE_EYRIE_MODAL_OVERLAY}
@@ -571,6 +575,7 @@ export default function MaintenancePage() {
               {resolutionOpen ? (
                 <WorkOrderResolutionModal
                   open
+                  workOrderId={selectedWorkOrder.id}
                   saving={completingWo}
                   onClose={() => setResolutionOpen(false)}
                   onSubmit={(resolution, resolutionPhotoUrl) =>
@@ -580,6 +585,7 @@ export default function MaintenancePage() {
               ) : null}
             </div>
           </div>
+          </OperationalPhotoParentProvider>
         )}
       </section>
     </main>

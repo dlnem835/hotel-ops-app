@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveOperationalPhotoDisplayUrl } from "@/app/lib/storage/server/operational-photo-access";
 import {
   resolveTenantRequest,
   tenantErrorResponse,
@@ -84,15 +85,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: publicData } = supabase.storage
-      .from("work-order-photos")
-      .getPublicUrl(data.path);
+    const photoUrl = await resolveOperationalPhotoDisplayUrl(
+      supabase,
+      data.path,
+      { organizationId, propertyId },
+      { defaultBucket: "work-order-photos" }
+    );
+
+    if (!photoUrl) {
+      return NextResponse.json(
+        { error: "Unable to sign uploaded photo." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       signedUrl: data.signedUrl,
       token: data.token,
       path: data.path,
-      photoUrl: publicData.publicUrl,
+      photoUrl,
       storagePath: data.path,
       maxBytes: MAX_FILE_BYTES,
     });

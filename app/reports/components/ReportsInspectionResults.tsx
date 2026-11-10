@@ -39,6 +39,7 @@ import {
   type RoomsDoneSortColumn,
   type RoomsNotDoneSortColumn,
 } from "@/app/reports/lib/inspection-report-sort";
+import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 
 type ReportsInspectionResultsProps = {
   target: InspectionReportModalTarget;
@@ -310,7 +311,7 @@ export default function ReportsInspectionResults({
     setOpenError(null);
     setOpeningSessionId(sessionId);
     try {
-      const response = await fetch(`/api/inspections/sessions/${sessionId}`);
+      const response = await tenantFetch(`/api/inspections/sessions/${sessionId}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to open inspection session.");
       setSelectedSessionId(sessionId);

@@ -5,6 +5,12 @@ import { Camera, Loader2, X } from "lucide-react";
 import { FLAT_RED, ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { SETTINGS_BUTTON_BASE } from "@/app/settings/lib/settings-ui-interactions";
 import { useInspectionBreakpoint } from "../lib/use-inspection-breakpoint";
+import type { OperationalPhotoParent } from "@/app/lib/storage/operational-photo-types";
+import { useOperationalPhotoParent } from "@/app/lib/storage/operational-photo-parent";
+import {
+  refreshOperationalPhotoSrc,
+  useRefreshedPhotoUrl,
+} from "@/app/lib/storage/use-refreshed-photo-url";
 
 type FailedItemDetailsProps = {
   notes: string;
@@ -15,6 +21,7 @@ type FailedItemDetailsProps = {
   onNotesChange: (value: string) => void;
   onPhotoSelect: (file: File) => void;
   onPhotoRemove: () => void;
+  photoParent?: OperationalPhotoParent | null;
 };
 
 const NOTE_MAX_LENGTH = 240;
@@ -29,12 +36,23 @@ export default function FailedItemDetails({
   onNotesChange,
   onPhotoSelect,
   onPhotoRemove,
+  photoParent,
 }: FailedItemDetailsProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const breakpoint = useInspectionBreakpoint();
   const preferCamera = breakpoint === "mobile" || breakpoint === "tablet";
+  const contextParent = useOperationalPhotoParent();
+  const resolvedParent = photoParent ?? contextParent;
+  const refreshedPhotoUrl = useRefreshedPhotoUrl(photoUrl, resolvedParent);
+  const [override, setOverride] = useState<{ from: string; to: string } | null>(
+    null
+  );
+  const storedDisplayUrl =
+    override && override.from === (photoUrl || "")
+      ? override.to
+      : refreshedPhotoUrl;
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -65,7 +83,15 @@ export default function FailedItemDetails({
     fileInputRef.current?.click();
   }
 
-  const displayUrl = photoUrl || previewUrl;
+  const displayUrl = storedDisplayUrl || previewUrl;
+
+  async function handlePhotoError() {
+    if (!storedDisplayUrl) return;
+    const next = await refreshOperationalPhotoSrc(storedDisplayUrl, resolvedParent);
+    if (next && next !== storedDisplayUrl) {
+      setOverride({ from: photoUrl || "", to: next });
+    }
+  }
 
   const noteFieldStyle: CSSProperties = {
     width: "100%",
@@ -109,6 +135,9 @@ export default function FailedItemDetails({
                 src={displayUrl}
                 alt="Deficiency photo"
                 className="inspection-failed-details-thumb"
+                onError={() => {
+                  void handlePhotoError();
+                }}
                 style={{
                   width: "44px",
                   height: "44px",
@@ -152,6 +181,9 @@ export default function FailedItemDetails({
                     src={displayUrl}
                     alt="Deficiency photo"
                     className="inspection-failed-details-thumb"
+                    onError={() => {
+                      void handlePhotoError();
+                    }}
                     style={{
                       width: "28px",
                       height: "28px",

@@ -6,6 +6,7 @@ import {
 } from "./maintenance-types";
 import { fetchPmTemplateById, PmTenantScope } from "./pm-db";
 import { getActiveDueDate } from "./schedule-engine";
+import { canonicalizePmOccurrenceResponses } from "@/app/lib/storage/server/operational-photo-display";
 
 type OccurrenceRow = {
   id: number;
@@ -215,7 +216,16 @@ export async function updatePmOccurrence(
 
   const payload: Record<string, unknown> = {};
 
-  if (patch.responses !== undefined) payload.responses = patch.responses;
+  if (patch.responses !== undefined) {
+    const existing = scope
+      ? await fetchPmOccurrenceById(supabase, id, scope)
+      : null;
+    payload.responses = canonicalizePmOccurrenceResponses(
+      patch.responses,
+      scope,
+      existing?.responses
+    );
+  }
   if (patch.sessionNotes !== undefined) payload.session_notes = patch.sessionNotes;
   if (patch.savedBy !== undefined) {
     payload.last_saved_by = patch.savedBy;
