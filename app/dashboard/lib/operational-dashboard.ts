@@ -5,7 +5,7 @@ import { PmTile } from "@/app/maintenance/lib/maintenance-types";
 import { getHotelBusinessDateString } from "@/app/lib/hotel-business-date";
 import {
   getPassOnReadBaseline,
-  listPassOnEntries,
+  listPassOnEntriesForKpi,
 } from "@/app/pass-on-log/lib/pass-on-server-db";
 import { countPassOnKpisForUser } from "@/app/pass-on-log/lib/pass-on-kpi";
 import { isStoredToday } from "./date-utils";
@@ -32,13 +32,14 @@ export async function buildOperationalDashboard(
     await Promise.all([
       buildMaintenanceDashboard(supabase, scope),
       buildInspectionDashboard(supabase, "today", "rpm", null, null, scope),
-      listPassOnEntries(supabase, scope),
+      listPassOnEntriesForKpi(supabase, scope),
       getPassOnReadBaseline(supabase, authUserId, scope.propertyId),
       (() => {
         let query = supabase.from("lost_items").select("id, status, created_at");
         query = query
           .eq("organization_id", scope.organizationId)
-          .eq("property_id", scope.propertyId);
+          .eq("property_id", scope.propertyId)
+          .in("status", ["Ready to Ship", "Ready to be shipped", "Stored"]);
         return query;
       })(),
     ]);

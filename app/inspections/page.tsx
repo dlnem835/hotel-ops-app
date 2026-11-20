@@ -42,6 +42,7 @@ import {
   SETTINGS_BUTTON_BASE,
 } from "@/app/settings/lib/settings-ui-interactions";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import OneEyriePageSkeleton from "@/app/components/OneEyriePageSkeleton";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -431,9 +432,7 @@ export default function InspectionsPage() {
         )}
 
         {loading || !dashboard ? (
-          <div className="inspections-loading-text" style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
-            Loading inspection dashboard...
-          </div>
+          <OneEyriePageSkeleton />
         ) : (
           <>
             <InspectionMetricCards metrics={dashboard.metrics} program={program} />

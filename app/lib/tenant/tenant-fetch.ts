@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/app/supabaseClient";
+import { getResolvedAuthSession } from "@/app/lib/auth-session";
 import { readStoredActivePropertyId } from "@/app/lib/tenant/active-property-storage";
 import { ONE_EYRIE_PROPERTY_HEADER } from "@/app/lib/tenant/server/tenant-headers";
 
@@ -13,9 +14,11 @@ export async function tenantFetch(
   input: RequestInfo | URL,
   init: RequestInit = {}
 ): Promise<Response> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const resolvedSession = getResolvedAuthSession();
+  const session =
+    resolvedSession !== undefined
+      ? resolvedSession
+      : (await supabase.auth.getSession()).data.session;
 
   const headers = new Headers(init.headers);
 

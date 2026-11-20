@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import OneEyrieSidebar from "@/app/components/OneEyrieSidebar";
 import OneEyriePageHeader from "@/app/components/OneEyriePageHeader";
-import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { APP_SHELL, APP_SHELL_CLASS, MAIN_CONTENT, MAIN_CONTENT_CLASS } from "@/app/lib/oneEyrieLayout";
 import { waitForInitialAuthSession } from "@/app/lib/auth-session";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import OneEyriePageSkeleton from "./components/OneEyriePageSkeleton";
 import { OperationalDashboardPayload } from "./dashboard/lib/operational-types";
 import LostFoundSummaryCard from "./dashboard/components/LostFoundSummaryCard";
 import PassOnKpiSection from "./dashboard/components/PassOnKpiSection";
@@ -74,9 +74,7 @@ export default function DashboardPage() {
         )}
 
         {loading || !dashboard ? (
-          <div style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }} className="dashboard-dashboard-loading">
-            Loading operational dashboard...
-          </div>
+          <OneEyriePageSkeleton />
         ) : (
           <div
             className="one-eyrie-dashboard-page"

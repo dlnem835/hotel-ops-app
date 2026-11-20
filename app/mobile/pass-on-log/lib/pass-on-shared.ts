@@ -206,6 +206,15 @@ export async function markPassOnAsViewed(entryId: number): Promise<void> {
   await tenantFetch(`/api/pass-on/${entryId}/views`, { method: "POST" });
 }
 
+export async function markAllPassOnAsViewed(): Promise<{ marked: number }> {
+  const response = await tenantFetch("/api/pass-on/views", { method: "POST" });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || "Unable to mark pass-on entries as read");
+  }
+  return { marked: Number(result.marked) || 0 };
+}
+
 export async function createPassOnEntry(input: {
   subject: string;
   message: string;

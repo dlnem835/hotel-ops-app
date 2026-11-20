@@ -1277,3 +1277,52 @@
   font-weight: 600;
   line-height: 1.35;
 }
+
+.one-eyrie-page-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 24px;
+}
+
+.one-eyrie-skeleton {
+  display: block;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    #2a2723 0%,
+    #35322e 42%,
+    #2a2723 84%
+  );
+  background-size: 180% 100%;
+  animation: one-eyrie-skeleton-pulse 1.35s ease-in-out infinite;
+}
+
+.one-eyrie-skeleton--card {
+  height: 124px;
+}
+
+.one-eyrie-skeleton--row {
+  height: 64px;
+}
+
+.one-eyrie-page-skeleton .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes one-eyrie-skeleton-pulse {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -80% 0;
+  }
+}

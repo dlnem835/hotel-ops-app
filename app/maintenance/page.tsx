@@ -55,6 +55,7 @@ import {
 } from "./lib/work-order-list-filters";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
 import { useModalScrollLock } from "@/app/lib/use-modal-scroll-lock";
+import OneEyriePageSkeleton from "@/app/components/OneEyriePageSkeleton";
 import "./maintenance-responsive.css";
 import "./maintenance-light-theme.css";
 
@@ -281,9 +282,7 @@ export default function MaintenancePage() {
         ) : null}
 
         {loading || !dashboard ? (
-          <div className="maintenance-dashboard-loading" style={{ color: ONE_EYRIE.textMuted, padding: "24px 0" }}>
-            Loading maintenance dashboard...
-          </div>
+          <OneEyriePageSkeleton />
         ) : (
           <div className="maintenance-workspaces-grid maintenance-mobile-dashboard-grid one-eyrie-split-grid">
             <div className="maintenance-pm-workspace">

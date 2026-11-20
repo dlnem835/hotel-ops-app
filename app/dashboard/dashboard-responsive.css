@@ -38,6 +38,17 @@
   color: #ffffff;
 }
 
+.dashboard-pass-on-read-all {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
+
+.dashboard-pass-on-kpi-card--has-read-all > div:first-child {
+  padding-right: 108px;
+}
+
 @media (min-width: 769px) {
   .one-eyrie-dashboard-page .dashboard-todays-work-section > div:first-child > div:first-child {
     color: #e0c47b;

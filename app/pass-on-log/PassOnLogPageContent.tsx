@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
+  Check,
   SlidersHorizontal,
   Send,
   X,
@@ -37,7 +38,11 @@ import {
   buildPassOnDraftWorkOrderPrefill,
   buildPassOnEntryWorkOrderPrefill,
 } from "@/app/maintenance/lib/work-order-prefill";
-import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
+import {
+  isPassOnReadByUser,
+  withPassOnUserView,
+  withPassOnUserViewOnUnread,
+} from "@/app/pass-on-log/lib/pass-on-views";
 import {
   matchesPassOnKpiFocus,
   parsePassOnKpiFocus,
@@ -76,6 +81,8 @@ import {
   type PassOnDateFilter,
 } from "@/app/lib/hotel-business-date";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import OneEyriePageSkeleton from "@/app/components/OneEyriePageSkeleton";
+import { markAllPassOnAsViewed } from "@/app/mobile/pass-on-log/lib/pass-on-shared";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -155,6 +162,8 @@ export default function PassOnLogPageContent() {
   const [loadingMoreDays, setLoadingMoreDays] = useState(false);
   const [canDeleteAnyPassOn, setCanDeleteAnyPassOn] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
   /** Entry IDs that matched the Dashboard KPI when this filtered session started. */
   const [kpiFocusStickyIds, setKpiFocusStickyIds] = useState<Set<number> | null>(
     null
@@ -282,11 +291,15 @@ async function updateReply(replyId: number) {
 
 
   async function fetchEntries() {
-    const response = await tenantFetch("/api/pass-on");
-    const result = await response.json().catch(() => ({}));
-    if (response.ok) {
-      setEntries(result.entries || []);
-      setReadBaseline(result.readBaseline ?? null);
+    try {
+      const response = await tenantFetch("/api/pass-on");
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setEntries(result.entries || []);
+        setReadBaseline(result.readBaseline ?? null);
+      }
+    } finally {
+      setEntriesLoaded(true);
     }
   }
 
@@ -303,33 +316,39 @@ async function markAsViewed(entryId: number) {
   const userId = session.user.id;
 
   setEntries((prev) =>
-    prev.map((entry) => {
-      if (entry.id !== entryId) return entry;
-
-      const views = entry.pass_on_log_views || [];
-      const existingIndex = views.findIndex(
-        (view: { auth_user_id: string }) =>
-          String(view.auth_user_id).trim() === String(userId).trim()
-      );
-
-      if (existingIndex >= 0) {
-        const nextViews = [...views];
-        nextViews[existingIndex] = {
-          ...nextViews[existingIndex],
-          viewed_at: viewedAt,
-        };
-        return { ...entry, pass_on_log_views: nextViews };
-      }
-
-      return {
-        ...entry,
-        pass_on_log_views: [
-          ...views,
-          { entry_id: entryId, auth_user_id: userId, viewed_at: viewedAt },
-        ],
-      };
-    })
+    prev.map((entry) =>
+      entry.id === entryId ? withPassOnUserView(entry, userId, viewedAt) : entry
+    )
   );
+}
+
+async function markAllAsRead() {
+  if (!currentAuthUserId || markingAllRead) return;
+
+  const unreadEntries = entries.filter(
+    (entry) => !isPassOnReadByUser(entry, currentAuthUserId, readBaseline)
+  );
+  if (unreadEntries.length === 0) return;
+
+  const viewedAt = new Date().toISOString();
+  const previous = entries;
+  setMarkingAllRead(true);
+  setEntries((prev) =>
+    withPassOnUserViewOnUnread(prev, currentAuthUserId, viewedAt, readBaseline)
+  );
+
+  try {
+    await markAllPassOnAsViewed();
+  } catch (error) {
+    setEntries(previous);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Unable to mark pass-on entries as read"
+    );
+  } finally {
+    setMarkingAllRead(false);
+  }
 }
 
   function resetDraftFeedbackState() {
@@ -642,36 +661,33 @@ async function markAsViewed(entryId: number) {
 
     setCurrentAuthUserId(session.user.id);
 
-    const { data: teamMember } = await supabase
-      .from("team_members")
-      .select("first_name, last_name, username")
-      .eq("auth_user_id", session.user.id)
-      .single();
+    const [teamMemberResult, accessResult, allTeamMembersResult] = await Promise.all([
+      supabase
+        .from("team_members")
+        .select("first_name, last_name, username")
+        .eq("auth_user_id", session.user.id)
+        .single(),
+      tenantFetch("/api/org-admin/access")
+        .then(async (accessRes) => {
+          const access = await accessRes.json().catch(() => ({}));
+          return Boolean(access.hasAccess);
+        })
+        .catch(() => false),
+      supabase
+        .from("team_members")
+        .select("auth_user_id, first_name, last_name, username"),
+      fetchEntries(),
+    ]);
 
-    if (teamMember) {
-      setCurrentUserName(
-        teamMember.username || "unknown"
-      );
+    if (teamMemberResult.data) {
+      setCurrentUserName(teamMemberResult.data.username || "unknown");
     }
 
-    try {
-      const accessRes = await tenantFetch("/api/org-admin/access");
-      const access = await accessRes.json().catch(() => ({}));
-      setCanDeleteAnyPassOn(Boolean(access.hasAccess));
-    } catch {
-      setCanDeleteAnyPassOn(false);
-    }
-
-   const { data: allTeamMembers } = await supabase
-  .from("team_members")
-  .select("auth_user_id, first_name, last_name, username");
-
-setTeamMembers(allTeamMembers || []);
-    
-    fetchEntries();
+    setCanDeleteAnyPassOn(accessResult);
+    setTeamMembers(allTeamMembersResult.data || []);
   }
 
-  checkAuth();
+  void checkAuth();
 }, []);
 
   useEffect(() => {
@@ -1098,6 +1114,9 @@ const groupedEntries = filteredEntries.reduce((acc: any, entry: any) => {
 // when a specific date filter is active, so search always spans full history
 // and does not duplicate already-shown entries.
 const groupedEntryPairs = Object.entries(groupedEntries) as [string, any[]][];
+const unreadCount = entries.filter(
+  (entry) => !isPassOnReadByUser(entry, currentAuthUserId, readBaseline)
+).length;
 const isSearching = search.trim().length > 0;
 const dayWindowActive = !isSearching && dateFilter === "All";
 const visibleGroupedEntryPairs = dayWindowActive
@@ -1505,6 +1524,44 @@ function dateHeader(dateString: string) {
               flex-wrap: wrap;
               justify-content: flex-start;
             }
+
+            .pass-on-read-all-row {
+              margin-top: 4px;
+            }
+          }
+
+          .pass-on-read-all-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+          }
+
+          .pass-on-read-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0;
+            padding: 2px 2px 2px 0;
+            border: none;
+            background: transparent;
+            color: #c8a96a;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            line-height: 1.2;
+            cursor: pointer;
+            opacity: 0.72;
+            transition: opacity 0.18s ease, color 0.18s ease;
+          }
+
+          .pass-on-read-all:hover:not(:disabled) {
+            opacity: 1;
+            color: #e0c47b;
+          }
+
+          .pass-on-read-all:disabled {
+            opacity: 0.45;
+            cursor: wait;
           }
         `}
       </style>
@@ -1603,6 +1660,21 @@ function dateHeader(dateString: string) {
   <option value="Yesterday">Yesterday</option>
 </select>
   </div>
+
+            {unreadCount > 0 ? (
+              <div className="pass-on-read-all-row">
+                <button
+                  type="button"
+                  className="pass-on-read-all"
+                  onClick={() => void markAllAsRead()}
+                  disabled={markingAllRead}
+                  aria-label="Read all"
+                >
+                  <Check size={13} strokeWidth={2.25} aria-hidden />
+                  {markingAllRead ? "Marking…" : "Read all"}
+                </button>
+              </div>
+            ) : null}
 
             {kpiFocus ? (
               <div
@@ -1830,7 +1902,9 @@ function dateHeader(dateString: string) {
               }`}
               style={{ marginTop: showDraftCard ? "0" : "18px" }}
             >
-              {!filteredEntries.length ? (
+              {!entriesLoaded ? (
+                <OneEyriePageSkeleton variant="list" />
+              ) : !filteredEntries.length ? (
                 <p style={{ color: "#9CA3AF" }}>
                   {kpiFocus
                     ? "No matching entries for this filter."

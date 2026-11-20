@@ -102,6 +102,12 @@ html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-todays-work-sectio
   color: #52525b !important;
 }
 
+html[data-theme="light"] .one-eyrie-dashboard-page .dashboard-pass-on-read-all {
+  color: var(--oe-gold-text) !important;
+  border-color: var(--oe-gold-border) !important;
+  background: transparent !important;
+}
+
 html[data-theme="light"] .one-eyrie-dashboard-page .maintenance-work-order-panel {
   background: transparent !important;
   border: none !important;

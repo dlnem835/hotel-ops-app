@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TenantRequestError } from "@/app/lib/tenant/server/resolve-tenant-request";
+import { isPassOnReadByUser } from "@/app/pass-on-log/lib/pass-on-views";
 
 export type PassOnScope = {
   organizationId: number;
@@ -8,6 +9,11 @@ export type PassOnScope = {
 
 const ENTRY_SELECT =
   "*, pass_on_log_replies(*), pass_on_log_views(*), pass_on_log_attachments(id, entry_id, reply_id, original_filename, content_type, byte_size, created_at)";
+
+const KPI_ENTRY_SELECT =
+  "id, created_at, pass_on_log_replies(created_at), pass_on_log_views(auth_user_id, viewed_at)";
+
+const VIEW_UPSERT_CHUNK = 200;
 
 /** Verifies a pass-on entry belongs to the active tenant, else throws 404. */
 export async function assertEntryInTenant(
@@ -175,6 +181,19 @@ export async function listPassOnEntries(supabase: SupabaseClient, scope: PassOnS
     .eq("property_id", scope.propertyId)
     .order("entry_date", { ascending: false })
     .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function listPassOnEntriesForKpi(
+  supabase: SupabaseClient,
+  scope: PassOnScope
+) {
+  const { data, error } = await supabase
+    .from("pass_on_log")
+    .select(KPI_ENTRY_SELECT)
+    .eq("organization_id", scope.organizationId)
+    .eq("property_id", scope.propertyId);
   if (error) throw new Error(error.message);
   return data ?? [];
 }
@@ -370,4 +389,40 @@ export async function markPassOnViewed(
     { onConflict: "entry_id,auth_user_id" }
   );
   if (error) throw new Error(error.message);
+}
+
+export async function markUnreadPassOnViewed(
+  supabase: SupabaseClient,
+  scope: PassOnScope,
+  authUserId: string
+): Promise<number> {
+  const [entries, readBaseline] = await Promise.all([
+    listPassOnEntriesForKpi(supabase, scope),
+    getPassOnReadBaseline(supabase, authUserId, scope.propertyId),
+  ]);
+
+  const unreadIds = entries
+    .filter((entry) => !isPassOnReadByUser(entry, authUserId, readBaseline))
+    .map((entry) => Number(entry.id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  if (unreadIds.length === 0) return 0;
+
+  const viewedAt = new Date().toISOString();
+  const rows = unreadIds.map((entry_id) => ({
+    entry_id,
+    auth_user_id: authUserId,
+    viewed_at: viewedAt,
+  }));
+
+  for (let i = 0; i < rows.length; i += VIEW_UPSERT_CHUNK) {
+    const { error } = await supabase
+      .from("pass_on_log_views")
+      .upsert(rows.slice(i, i + VIEW_UPSERT_CHUNK), {
+        onConflict: "entry_id,auth_user_id",
+      });
+    if (error) throw new Error(error.message);
+  }
+
+  return unreadIds.length;
 }

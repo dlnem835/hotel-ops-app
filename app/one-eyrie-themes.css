@@ -646,3 +646,13 @@ html[data-theme="light"] .one-eyrie-modal {
   background: var(--oe-bg-elevated);
   color: var(--oe-text-primary);
 }
+
+html[data-theme="light"] .one-eyrie-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--oe-lm-tile) 0%,
+    #e4e6ea 42%,
+    var(--oe-lm-tile) 84%
+  );
+  background-size: 180% 100%;
+}

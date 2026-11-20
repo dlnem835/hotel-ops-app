@@ -101,6 +101,12 @@ export function applySignedInSession(session: Session | null): void {
   notifySubscribers(session);
 }
 
+/** Returns the in-memory session once INITIAL_SESSION has settled. */
+export function getResolvedAuthSession(): Session | null | undefined {
+  if (typeof window === "undefined" || !initialResolved) return undefined;
+  return initialSession;
+}
+
 export function waitForInitialAuthSession(): Promise<Session | null> {
   if (typeof window === "undefined") {
     return Promise.resolve(null);

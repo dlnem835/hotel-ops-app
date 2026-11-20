@@ -154,6 +154,40 @@
   margin-bottom: 12px;
 }
 
+.one-eyrie-mobile-pass-on-read-all {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 12px;
+}
+
+.one-eyrie-mobile-pass-on-read-all .pass-on-read-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 2px 2px 2px 0;
+  border: none;
+  background: transparent;
+  color: #c8a96a;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.18s ease, color 0.18s ease;
+}
+
+.one-eyrie-mobile-pass-on-read-all .pass-on-read-all:hover:not(:disabled) {
+  opacity: 1;
+  color: #e0c47b;
+}
+
+.one-eyrie-mobile-pass-on-read-all .pass-on-read-all:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
 .one-eyrie-mobile-pm-search-wrap {
   margin-bottom: 10px;
 }

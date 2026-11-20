@@ -131,6 +131,16 @@ html[data-theme="light"] .one-eyrie-mobile-pass-on-read-dot--read {
   background: var(--oe-lm-disabled);
 }
 
+html[data-theme="light"] .one-eyrie-mobile-pass-on-read-all .pass-on-read-all {
+  color: var(--oe-gold-text);
+  opacity: 0.78;
+}
+
+html[data-theme="light"] .one-eyrie-mobile-pass-on-read-all .pass-on-read-all:hover:not(:disabled) {
+  color: var(--oe-gold-hover);
+  opacity: 1;
+}
+
 html[data-theme="light"] .one-eyrie-mobile-pass-on-row__chevron,
 html[data-theme="light"] .one-eyrie-mobile-work-order-card__chevron,
 html[data-theme="light"] .one-eyrie-mobile-pm-queue-row__chevron,

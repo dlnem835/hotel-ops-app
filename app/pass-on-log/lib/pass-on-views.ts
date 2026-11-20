@@ -107,3 +107,44 @@ export function isPassOnReadByUser(
 
   return new Date(viewedAt).getTime() >= new Date(latestReplyAt).getTime();
 }
+
+export function withPassOnUserView<T extends { pass_on_log_views?: PassOnViewRef[] | null }>(
+  entry: T,
+  authUserId: string,
+  viewedAt: string
+): T {
+  const views = [...(entry.pass_on_log_views || [])];
+  const existingIndex = views.findIndex(
+    (view) => String(view.auth_user_id).trim() === String(authUserId).trim()
+  );
+
+  if (existingIndex >= 0) {
+    views[existingIndex] = {
+      ...views[existingIndex],
+      viewed_at: viewedAt,
+    };
+  } else {
+    views.push({ auth_user_id: authUserId, viewed_at: viewedAt });
+  }
+
+  return { ...entry, pass_on_log_views: views };
+}
+
+export function withPassOnUserViewOnUnread<
+  T extends {
+    created_at?: string | null;
+    pass_on_log_views?: PassOnViewRef[] | null;
+    pass_on_log_replies?: PassOnReplyRef[] | null;
+  },
+>(
+  entries: T[],
+  authUserId: string,
+  viewedAt: string,
+  readBaseline?: string | null
+): T[] {
+  return entries.map((entry) =>
+    isPassOnReadByUser(entry, authUserId, readBaseline)
+      ? entry
+      : withPassOnUserView(entry, authUserId, viewedAt)
+  );
+}

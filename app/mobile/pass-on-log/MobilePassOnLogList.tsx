@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Search } from "lucide-react";
+import { Check, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getClientSession } from "@/app/lib/auth";
 import { priorityClassName } from "./lib/pass-on-priority";
@@ -13,10 +13,15 @@ import {
   filterRecentPassOnEntries,
   groupEntriesByDate,
   isPassOnReadByUser,
+  markAllPassOnAsViewed,
   PASS_ON_DAYS_PER_PAGE,
   PassOnEntry,
   resolvePassOnAuthorDisplay,
 } from "./lib/pass-on-shared";
+import {
+  withPassOnUserViewOnUnread,
+} from "@/app/pass-on-log/lib/pass-on-views";
+import OneEyriePageSkeleton from "@/app/components/OneEyriePageSkeleton";
 
 export default function MobilePassOnLogList() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
@@ -27,6 +32,7 @@ export default function MobilePassOnLogList() {
   const [teamMembers, setTeamMembers] = useState<Awaited<ReturnType<typeof fetchTeamMembers>>>([]);
   const [visibleDayCount, setVisibleDayCount] = useState(PASS_ON_DAYS_PER_PAGE);
   const [loadingMoreDays, setLoadingMoreDays] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   const filteredEntries = useMemo(
     () => filterPassOnEntriesBySearch(entries, search),
@@ -46,6 +52,31 @@ export default function MobilePassOnLogList() {
     ? groupedEntries.slice(0, visibleDayCount)
     : groupedEntries;
   const hasMoreDays = dayWindowActive && groupedEntries.length > visibleDayCount;
+  const unreadCount = useMemo(
+    () =>
+      entries.filter((entry) => !isPassOnReadByUser(entry, authUserId, readBaseline))
+        .length,
+    [entries, authUserId, readBaseline]
+  );
+
+  async function markAllAsRead() {
+    if (!authUserId || markingAllRead || unreadCount === 0) return;
+
+    const viewedAt = new Date().toISOString();
+    const previous = entries;
+    setMarkingAllRead(true);
+    setEntries((prev) =>
+      withPassOnUserViewOnUnread(prev, authUserId, viewedAt, readBaseline)
+    );
+
+    try {
+      await markAllPassOnAsViewed();
+    } catch {
+      setEntries(previous);
+    } finally {
+      setMarkingAllRead(false);
+    }
+  }
 
   function loadMoreDays() {
     setLoadingMoreDays(true);
@@ -79,7 +110,7 @@ export default function MobilePassOnLogList() {
   }, []);
 
   if (!loaded) {
-    return <div className="one-eyrie-mobile-status">Loading pass-on log…</div>;
+    return <OneEyriePageSkeleton variant="list" />;
   }
 
   if (entries.length === 0) {
@@ -101,6 +132,21 @@ export default function MobilePassOnLogList() {
           aria-label="Search pass-on entries"
         />
       </div>
+
+      {unreadCount > 0 ? (
+        <div className="one-eyrie-mobile-pass-on-read-all">
+          <button
+            type="button"
+            className="pass-on-read-all"
+            onClick={() => void markAllAsRead()}
+            disabled={markingAllRead}
+            aria-label="Read all"
+          >
+            <Check size={13} strokeWidth={2.25} aria-hidden />
+            {markingAllRead ? "Marking…" : "Read all"}
+          </button>
+        </div>
+      ) : null}
 
       {groupedEntries.length === 0 ? (
         <div className="one-eyrie-mobile-status">No pass-on entries match your search.</div>
