@@ -5,6 +5,10 @@ import { createPortal } from "react-dom";
 import { MoreVertical } from "lucide-react";
 import { tenantFetch, readTenantJson } from "@/app/lib/tenant/tenant-fetch";
 import {
+  fetchStaffShippingLabelUrl,
+  openStaffShippingLabelTab,
+} from "@/app/lost-and-found/lib/open-staff-shipping-label";
+import {
   LOST_ITEM_STATUS,
   normalizeLostItemStatus,
 } from "@/app/lib/lost-found-shipping/status";
@@ -15,7 +19,7 @@ type LostFoundItemActionsMenuProps = {
     item_name?: string | null;
     guest_last_name?: string | null;
     status?: string | null;
-    label_url?: string | null;
+    has_historical_shipping_label?: boolean | null;
     comments?: string | null;
   };
   open: boolean;
@@ -129,7 +133,7 @@ export default function LostFoundItemActionsMenu({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open, busy, canDelete, status, item.comments, item.label_url]);
+  }, [open, busy, canDelete, status, item.comments, item.has_historical_shipping_label]);
 
   useEffect(() => {
     if (!open) return;
@@ -245,7 +249,8 @@ export default function LostFoundItemActionsMenu({
     status === LOST_ITEM_STATUS.shipped ||
     status === LOST_ITEM_STATUS.delivered;
   const showPrintLabel =
-    status === LOST_ITEM_STATUS.readyToShip || Boolean(item.label_url);
+    status === LOST_ITEM_STATUS.readyToShip ||
+    Boolean(item.has_historical_shipping_label);
 
   const menu =
     open && mounted
@@ -404,35 +409,24 @@ export default function LostFoundItemActionsMenu({
                 disabled={busy}
                 onClick={() =>
                   void withBusy(async () => {
-                    if (item.label_url) {
-                      window.open(
-                        String(item.label_url),
-                        "_blank",
-                        "noopener,noreferrer"
-                      );
+                    const request = await loadActiveRequest();
+                    const hasPrivateLabel = Boolean(request?.labelStoragePath);
+                    if (hasPrivateLabel && request?.id) {
+                      const url = await fetchStaffShippingLabelUrl({
+                        itemId: item.id,
+                        shippingRequestId: request.id,
+                      });
+                      openStaffShippingLabelTab(url);
                       return;
                     }
-                    const request = await loadActiveRequest();
-                    if (!request?.id) {
-                      throw new Error("No shipping label is available.");
+                    if (item.has_historical_shipping_label) {
+                      const url = await fetchStaffShippingLabelUrl({
+                        itemId: item.id,
+                      });
+                      openStaffShippingLabelTab(url);
+                      return;
                     }
-                    const response = await tenantFetch(
-                      `/api/lost-and-found/${item.id}/shipping-requests/${request.id}/label`
-                    );
-                    const result = await readTenantJson<{
-                      error?: string;
-                      url?: string;
-                    }>(response);
-                    if (!response.ok || !result.url) {
-                      throw new Error(
-                        result.error || "Unable to open shipping label"
-                      );
-                    }
-                    window.open(
-                      String(result.url),
-                      "_blank",
-                      "noopener,noreferrer"
-                    );
+                    throw new Error("No shipping label is available.");
                   })
                 }
               >

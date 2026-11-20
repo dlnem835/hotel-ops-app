@@ -7,6 +7,7 @@ import {
   listLostItems,
   createLostItem,
 } from "@/app/lost-and-found/lib/lost-found-server-db";
+import { redactLostItemLabelUrlForClient } from "@/app/lib/lost-found-shipping/historical-label-path";
 import {
   coerceLostItemStatusForWrite,
   LOST_ITEM_STATUS,
@@ -23,10 +24,12 @@ export async function GET(request: Request) {
       propertyId,
       lostItemIds: items.map((item) => Number(item.id)).filter(Number.isFinite),
     });
-    const enriched = items.map((item) => ({
-      ...item,
-      hasLiveShippingTracking: Boolean(trackingMap[Number(item.id)]),
-    }));
+    const enriched = items.map((item) =>
+      redactLostItemLabelUrlForClient({
+        ...item,
+        hasLiveShippingTracking: Boolean(trackingMap[Number(item.id)]),
+      })
+    );
     return NextResponse.json({ items: enriched });
   } catch (error) {
     return tenantErrorResponse(error);
@@ -55,7 +58,9 @@ export async function POST(request: Request) {
     }
 
     const item = await createLostItem(supabase, { organizationId, propertyId }, payload);
-    return NextResponse.json({ item });
+    return NextResponse.json({
+      item: redactLostItemLabelUrlForClient(item as Record<string, unknown>),
+    });
   } catch (error) {
     return tenantErrorResponse(error);
   }

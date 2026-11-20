@@ -1,47 +1,11 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { Suspense } from "react";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 
-export function LabelUploadPageContent() {
-  const searchParams = useSearchParams();
-  const itemId = searchParams.get("id");
-
-  const [file, setFile] = useState<File | null>(null);
-  const [message, setMessage] = useState("");
-
-  async function uploadLabel() {
-    if (!file) {
-      setMessage("Please select a file first.");
-      return;
-    }
-
-    if (!itemId) {
-      setMessage("Missing item ID. Please use the link from the email.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("itemId", itemId);
-
-    const response = await fetch("/api/upload-label", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-  setMessage("✅ Label uploaded successfully. The hotel can now ship your item.");
-} else {
-  setMessage(`❌ Upload failed: ${data.error}`);
-}
-  }
-
+/**
+ * Retired guest prepaid-label upload page.
+ * Old email links still resolve here so guests see a clear replacement message.
+ */
+export default function LabelUploadRetiredPage() {
   return (
     <main
       style={{
@@ -89,7 +53,7 @@ export function LabelUploadPageContent() {
         </div>
 
         <div style={{ padding: "32px 28px" }}>
-          <h2
+          <h1
             style={{
               margin: "0 0 12px",
               fontSize: "24px",
@@ -97,108 +61,22 @@ export function LabelUploadPageContent() {
               fontWeight: 800,
             }}
           >
-            Upload Shipping Label
-          </h2>
-
+            This upload link is no longer available
+          </h1>
           <p
             style={{
-              margin: "0 0 22px",
+              margin: 0,
               color: ONE_EYRIE.textMuted,
               lineHeight: 1.6,
               fontSize: "15px",
             }}
           >
-            Please upload your prepaid UPS, FedEx, or USPS shipping label so the
-            hotel team can prepare your item for shipment.
-          </p>
-
-          <label
-            style={{
-              display: "block",
-              padding: "15px 20px",
-              background: ONE_EYRIE.gold,
-              color: ONE_EYRIE.black,
-              borderRadius: "12px",
-              cursor: "pointer",
-              marginBottom: "16px",
-              fontWeight: 800,
-              boxShadow: `0 10px 24px ${ONE_EYRIE.goldGlow}`,
-            }}
-          >
-            Upload Shipping Label
-            <input
-              type="file"
-              accept="application/pdf,image/*"
-              style={{ display: "none" }}
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-          </label>
-
-          <div
-            style={{
-              minHeight: "24px",
-              marginBottom: "18px",
-              color: file ? ONE_EYRIE.gold : ONE_EYRIE.textSubtle,
-              fontSize: "14px",
-              wordBreak: "break-word",
-            }}
-          >
-            {file ? `Selected file: ${file.name}` : "No file selected yet"}
-          </div>
-
-          <button
-            onClick={uploadLabel}
-            style={{
-              width: "100%",
-              padding: "15px 20px",
-              background: ONE_EYRIE.row,
-              color: ONE_EYRIE.text,
-              borderRadius: "12px",
-              cursor: "pointer",
-              border: `1px solid ${ONE_EYRIE.border}`,
-              fontWeight: 800,
-              fontSize: "15px",
-            }}
-          >
-            Submit Label
-          </button>
-
-          {message && (
-            <div
-              style={{
-                marginTop: "22px",
-                padding: "14px",
-                borderRadius: "12px",
-                background: message.includes("✅") ? "#102216" : "#2A1111",
-                color: message.includes("✅") ? "#A7F3B5" : "#FFB4B4",
-                fontSize: "14px",
-                lineHeight: 1.5,
-              }}
-            >
-              {message}
-            </div>
-          )}
-
-          <p
-            style={{
-              marginTop: "22px",
-              marginBottom: 0,
-              color: ONE_EYRIE.textSubtle,
-              fontSize: "12px",
-              lineHeight: 1.5,
-            }}
-          >
-            Accepted file types: PDF or image file.
+            Please use the shipping request link from your email to pay for
+            shipping and track your item. Contact the hotel front desk if you
+            need a new link.
           </p>
         </div>
       </div>
     </main>
-  );
-}
-export default function LabelUploadPage() {
-  return (
-    <Suspense fallback={<p>Loading...</p>}>
-      <LabelUploadPageContent />
-    </Suspense>
   );
 }

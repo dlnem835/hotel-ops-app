@@ -101,6 +101,15 @@ check("legacy POST /send-label is disabled and cannot call Resend", () => {
   assert.ok(!sendLabel.includes("body.email"));
 });
 
+const sendEmail = read("app/api/send-email/route.ts");
+check("legacy POST /api/send-email is disabled and cannot mutate lost_items", () => {
+  assert.ok(sendEmail.includes("status: 410") || sendEmail.includes("{ status: 410 }"));
+  assert.ok(!sendEmail.includes("Resend"));
+  assert.ok(!sendEmail.includes("emails.send"));
+  assert.ok(!sendEmail.includes('.from("lost_items")'));
+  assert.ok(!sendEmail.includes("/label"));
+});
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);

@@ -7,13 +7,18 @@ import {
   normalizeLostItemStatus,
 } from "@/app/lib/lost-found-shipping/status";
 import { tenantFetch } from "@/app/lib/tenant/tenant-fetch";
+import {
+  fetchStaffShippingLabelUrl,
+  openStaffShippingLabelTab,
+} from "@/app/lost-and-found/lib/open-staff-shipping-label";
+
 type LostFoundShippingSectionProps = {
   itemId: number;
   itemName?: string;
   guestLastName?: string;
   itemStatus?: string | null;
-  /** Manual prepaid label URL on the lost item, when present. */
-  itemLabelUrl?: string | null;
+  /** True when a historical prepaid label exists for staff reprint. */
+  hasHistoricalShippingLabel?: boolean;
   onItemMayHaveChanged?: () => void;
 };
 
@@ -109,13 +114,8 @@ function labelStatusLabel(request: ShippingRequestListItem): string {
   return "Not created";
 }
 
-function hasUsableLabel(
-  request: ShippingRequestListItem | null,
-  itemLabelUrl?: string | null
-): boolean {
-  if (itemLabelUrl) return true;
-  if (!request) return false;
-  return Boolean(request.labelStoragePath);
+function hasPrivateLabel(request: ShippingRequestListItem | null): boolean {
+  return Boolean(request?.labelStoragePath);
 }
 
 function SummaryField({
@@ -152,7 +152,7 @@ function linkButtonStyle(): CSSProperties {
 export default function LostFoundShippingSection({
   itemId,
   itemStatus,
-  itemLabelUrl,
+  hasHistoricalShippingLabel = false,
   onItemMayHaveChanged,
 }: LostFoundShippingSectionProps) {
   const [requests, setRequests] = useState<ShippingRequestListItem[]>([]);
@@ -371,10 +371,38 @@ export default function LostFoundShippingSection({
         ) : error ? (
           <p className="lnf-shipping-section__error">{error}</p>
         ) : !activeRequest ? (
-          <p className="lnf-shipping-section__empty">
-            No shipping request yet. Use Actions → Send Shipping Request when
-            the guest is ready to arrange return shipping.
-          </p>
+          <div>
+            <p className="lnf-shipping-section__empty">
+              No shipping request yet. Use Actions → Send Shipping Request when
+              the guest is ready to arrange return shipping.
+            </p>
+            {hasHistoricalShippingLabel ? (
+              <button
+                type="button"
+                style={linkButtonStyle()}
+                disabled={actionBusy === "print-label"}
+                onClick={() => {
+                  void (async () => {
+                    setActionBusy("print-label");
+                    try {
+                      const url = await fetchStaffShippingLabelUrl({ itemId });
+                      openStaffShippingLabelTab(url);
+                    } catch (labelError) {
+                      setError(
+                        labelError instanceof Error
+                          ? labelError.message
+                          : "Unable to open shipping label"
+                      );
+                    } finally {
+                      setActionBusy(null);
+                    }
+                  })();
+                }}
+              >
+                Print Label
+              </button>
+            ) : null}
+          </div>
         ) : (
           <div className="lnf-shipping-summary">
             {(activeRequest.returnedToSender ||
@@ -524,7 +552,7 @@ export default function LostFoundShippingSection({
                     : "Retry Label Creation"}
                 </button>
               ) : null}
-              {hasUsableLabel(activeRequest, itemLabelUrl) &&
+              {hasPrivateLabel(activeRequest) &&
               !activeRequest.labelPrintedAt &&
               workflowStatus === LOST_ITEM_STATUS.readyToShip ? (
                 <button
@@ -536,7 +564,7 @@ export default function LostFoundShippingSection({
                   {actionBusy === "printed" ? "Saving…" : "Mark Label Printed"}
                 </button>
               ) : null}
-              {hasUsableLabel(activeRequest, itemLabelUrl) ? (
+              {hasPrivateLabel(activeRequest) || hasHistoricalShippingLabel ? (
                 <button
                   type="button"
                   style={linkButtonStyle()}
@@ -545,22 +573,13 @@ export default function LostFoundShippingSection({
                     void (async () => {
                       setActionBusy("print-label");
                       try {
-                        const response = await tenantFetch(
-                          `/api/lost-and-found/${itemId}/shipping-requests/${activeRequest.id}/label`
-                        );
-                        const result = await response.json();
-                        if (!response.ok) {
-                          throw new Error(
-                            result.error || "Unable to open shipping label"
-                          );
-                        }
-                        if (result.url) {
-                          window.open(
-                            String(result.url),
-                            "_blank",
-                            "noopener,noreferrer"
-                          );
-                        }
+                        const url = await fetchStaffShippingLabelUrl({
+                          itemId,
+                          shippingRequestId: hasPrivateLabel(activeRequest)
+                            ? activeRequest.id
+                            : null,
+                        });
+                        openStaffShippingLabelTab(url);
                       } catch (labelError) {
                         setError(
                           labelError instanceof Error

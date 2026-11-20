@@ -9,6 +9,7 @@ import {
   updateLostItem,
   deleteLostItem,
 } from "@/app/lost-and-found/lib/lost-found-server-db";
+import { redactLostItemLabelUrlForClient } from "@/app/lib/lost-found-shipping/historical-label-path";
 import {
   coerceLostItemStatusForWrite,
   isShippoOwnedLostItemStatus,
@@ -72,7 +73,9 @@ export async function PATCH(
       { organizationId, propertyId },
       patch
     );
-    return NextResponse.json({ item });
+    return NextResponse.json({
+      item: redactLostItemLabelUrlForClient(item as Record<string, unknown>),
+    });
   } catch (error) {
     return tenantErrorResponse(error);
   }
