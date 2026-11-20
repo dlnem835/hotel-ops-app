@@ -17,7 +17,6 @@ export type LostItemRow = {
   created_by: string | null;
   comments: string | null;
   created_at: string | null;
-  label_url: string | null;
   label_requested_at: string | null;
   label_sent_at: string | null;
 };
@@ -169,7 +168,6 @@ function mapLostItemRowToReportItem(
     createdAt: formatDisplayDateTime(createdAt),
     createdAtIso: toDateOnly(createdAt),
     createdAtSource: createdAt,
-    labelUrl: row.label_url ?? null,
     labelSentAt: row.label_sent_at ? formatDisplayDateTime(row.label_sent_at) : null,
     shippedAt,
     daysStored: computeDaysStored(createdAt),
@@ -180,7 +178,12 @@ export async function fetchLostFoundReportSource(
   supabase: SupabaseClient = createReportsSupabaseClient(),
   scope?: ReportTenantScope | null
 ): Promise<{ items: LostFoundReportItem[]; teamMembers: TeamMemberRow[] }> {
-  let itemsQuery = supabase.from("lost_items").select("*").order("created_at", { ascending: false });
+  let itemsQuery = supabase
+    .from("lost_items")
+    .select(
+      "id, item_name, room_number, guest_last_name, found_by, status, created_by, comments, created_at, label_requested_at, label_sent_at"
+    )
+    .order("created_at", { ascending: false });
   let teamQuery = supabase
     .from("team_members")
     .select("auth_user_id, first_name, last_name, username, department");

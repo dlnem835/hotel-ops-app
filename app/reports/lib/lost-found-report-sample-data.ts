@@ -11,7 +11,6 @@ export type SampleLostFoundItem = {
   createdAt: string;
   createdAtIso: string;
   updatedAt: string;
-  labelUrl: string | null;
   labelUploadedAt: string | null;
   shippedAt: string | null;
   updatedBy: string | null;
@@ -56,7 +55,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jul 6, 2026 · 9:12 AM",
     createdAtIso: "2026-07-06",
     updatedAt: "Jul 6, 2026 · 9:12 AM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",
@@ -78,7 +76,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jul 1, 2026 · 2:40 PM",
     createdAtIso: "2026-07-01",
     updatedAt: "Jul 5, 2026 · 11:05 AM",
-    labelUrl: "https://example.com/labels/lnf-1002",
     labelUploadedAt: "Jul 5, 2026 · 11:05 AM",
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",
@@ -100,7 +97,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jun 28, 2026 · 8:20 AM",
     createdAtIso: "2026-06-28",
     updatedAt: "Jul 2, 2026 · 4:15 PM",
-    labelUrl: "https://example.com/labels/lnf-1003",
     labelUploadedAt: "Jun 30, 2026 · 10:00 AM",
     shippedAt: "Jul 2, 2026 · 4:15 PM",
     updatedBy: "J. Martinez",
@@ -122,7 +118,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jul 4, 2026 · 7:55 PM",
     createdAtIso: "2026-07-04",
     updatedAt: "Jul 5, 2026 · 9:30 AM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",
@@ -144,7 +139,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Dec 12, 2025 · 3:10 PM",
     createdAtIso: "2025-12-12",
     updatedAt: "Dec 12, 2025 · 3:10 PM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Rosa",
@@ -166,7 +160,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Nov 3, 2025 · 1:00 PM",
     createdAtIso: "2025-11-03",
     updatedAt: "Jul 1, 2026 · 10:00 AM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",
@@ -188,7 +181,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jul 2, 2026 · 11:45 AM",
     createdAtIso: "2026-07-02",
     updatedAt: "Jul 5, 2026 · 2:20 PM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",
@@ -210,7 +202,6 @@ export const SAMPLE_LOST_FOUND_ITEMS: SampleLostFoundItem[] = [
     createdAt: "Jul 7, 2026 · 8:30 AM",
     createdAtIso: "2026-07-07",
     updatedAt: "Jul 7, 2026 · 8:30 AM",
-    labelUrl: null,
     labelUploadedAt: null,
     shippedAt: null,
     updatedBy: "Front Desk — John Smith",

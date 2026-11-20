@@ -940,7 +940,9 @@ setTeamMembers(allTeamMembers || []);
           itemName={selectedItem.item_name}
           guestLastName={selectedItem.guest_last_name}
           itemStatus={selectedItem.status}
-          itemLabelUrl={selectedItem.label_url || null}
+          hasHistoricalShippingLabel={Boolean(
+            selectedItem.has_historical_shipping_label
+          )}
           onItemMayHaveChanged={() => {
             void fetchItems();
           }}

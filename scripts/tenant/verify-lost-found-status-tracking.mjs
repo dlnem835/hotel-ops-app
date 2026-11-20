@@ -269,10 +269,13 @@ check("UI no longer offers Found / Awaiting Guest Payment / Ready to be shipped"
   assert.ok(modal.includes("Ready to Ship"));
 });
 
-check("manual workflow still present with remapped statuses", () => {
+check("legacy manual label email and upload are disabled", () => {
   const send = fs.readFileSync(path.join(root, "app/api/send-email/route.ts"), "utf8");
   const upload = fs.readFileSync(path.join(root, "app/api/upload-label/route.ts"), "utf8");
-  assert.ok(send.includes("Awaiting Guest Action"));
+  assert.ok(send.includes("status: 410") || send.includes("{ status: 410 }"));
+  assert.ok(!send.includes("Awaiting Guest Action"));
+  assert.ok(!send.includes('.from("lost_items")'));
+  assert.ok(!send.includes("Resend"));
   assert.ok(upload.includes("status: 410") || upload.includes("{ status: 410 }"));
   assert.ok(!upload.includes('.from("lost_items")'));
   assert.ok(!upload.includes("Ready to Ship"));
