@@ -8,30 +8,29 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
-import type { AuthError, EmailOtpType } from "@supabase/supabase-js";
+import type { AuthError } from "@supabase/supabase-js";
 import OneEyrieWordmark from "@/app/components/OneEyrieWordmark";
+import { waitForInitialAuthSession } from "@/app/lib/auth-session";
 import {
-  ACCOUNT_SETUP_PATH,
-  fetchAccountSetupState,
-} from "@/app/lib/account-setup/account-setup-client";
+  clearPasswordResetSuccess,
+  markPasswordResetSucceeded,
+  parseRecoverySearchParams,
+  passwordResetSucceededInSession,
+  recoveryHashIndicatesFailure,
+  type RecoveryTokenHash,
+} from "@/app/lib/auth/password-reset-recovery";
 import { ONE_EYRIE } from "@/app/lib/oneEyrieColors";
 import { supabase } from "@/app/supabaseClient";
 
-type PageState = "loading" | "confirm" | "ready" | "invalid" | "success";
+type PageState = "loading" | "ready" | "invalid" | "success";
 
-type PendingRecovery = {
-  tokenHash: string;
-  type: EmailOtpType;
-};
+type PendingRecovery =
+  | { kind: "token_hash"; tokenHash: string; type: RecoveryTokenHash["type"] }
+  | { kind: "recovery_session" };
 
-function readRecoveryParams(): PendingRecovery | null {
+function readRecoveryParams(): RecoveryTokenHash | null {
   if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  const tokenHash = params.get("token_hash")?.trim() || null;
-  const rawType = (params.get("type")?.trim() || "recovery") as EmailOtpType;
-  if (!tokenHash) return null;
-  if (rawType !== "recovery") return null;
-  return { tokenHash, type: rawType };
+  return parseRecoverySearchParams(window.location.search);
 }
 
 function clearRecoveryParamsFromUrl(): void {
@@ -61,94 +60,101 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const verifyInFlightRef = useRef(false);
+  const submitInFlightRef = useRef(false);
+  const successLockRef = useRef(false);
+
+  function applyPageState(next: PageState) {
+    if (successLockRef.current || passwordResetSucceededInSession()) {
+      successLockRef.current = true;
+      setPageState("success");
+      return;
+    }
+    setPageState(next);
+  }
+
+  function lockSuccessfulPasswordUpdate() {
+    successLockRef.current = true;
+    markPasswordResetSucceeded();
+    clearRecoveryParamsFromUrl();
+    setPageState("success");
+  }
 
   useEffect(() => {
     let mounted = true;
-    let recoveryDetected = false;
-    let unsubscribe: (() => void) | undefined;
+    let recoverySession = false;
 
     const fromLink = readRecoveryParams();
     if (fromLink) {
-      // Do NOT call verifyOtp on mount. Auto-verify is consumed by React Strict
-      // Mode remounts and by email-security prefetchers that execute page JS.
-      setPending(fromLink);
-      setPageState("confirm");
+      // A fresh recovery link always wins over a prior success marker.
+      clearPasswordResetSuccess();
+      successLockRef.current = false;
+      // Keep the hashed token until the user submits a new password.
+      // Do not call verifyOtp on load — prefetchers and Strict Mode remounts
+      // would consume the one-time recovery token.
+      const readyId = window.setTimeout(() => {
+        if (!mounted) return;
+        setPending({
+          kind: "token_hash",
+          tokenHash: fromLink.tokenHash,
+          type: fromLink.type,
+        });
+        applyPageState("ready");
+      }, 0);
       return () => {
         mounted = false;
+        window.clearTimeout(readyId);
+      };
+    }
+
+    if (passwordResetSucceededInSession()) {
+      successLockRef.current = true;
+      const successId = window.setTimeout(() => {
+        if (!mounted) return;
+        setPageState("success");
+      }, 0);
+      return () => {
+        mounted = false;
+        window.clearTimeout(successId);
+      };
+    }
+
+    if (recoveryHashIndicatesFailure(window.location.hash)) {
+      const invalidId = window.setTimeout(() => {
+        if (!mounted) return;
+        applyPageState("invalid");
+      }, 0);
+      return () => {
+        mounted = false;
+        window.clearTimeout(invalidId);
       };
     }
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (!mounted || successLockRef.current) return;
       if (event === "PASSWORD_RECOVERY") {
-        recoveryDetected = true;
-        setPageState("ready");
-        return;
-      }
-
-      if (event === "INITIAL_SESSION") {
-        if (session) {
-          recoveryDetected = true;
-          setPageState("ready");
-        } else {
-          window.setTimeout(() => {
-            if (!mounted || recoveryDetected) return;
-            setPageState("invalid");
-          }, 2500);
-        }
+        recoverySession = true;
+        setPending({ kind: "recovery_session" });
+        applyPageState("ready");
       }
     });
-    unsubscribe = () => subscription.unsubscribe();
+
+    void waitForInitialAuthSession().then(() => {
+      window.setTimeout(() => {
+        if (!mounted || recoverySession || successLockRef.current) return;
+        setPageState((current) => {
+          if (successLockRef.current || current === "success") return "success";
+          return current === "loading" ? "invalid" : current;
+        });
+      }, 400);
+    });
 
     return () => {
       mounted = false;
-      unsubscribe?.();
+      subscription.unsubscribe();
     };
   }, []);
-
-  async function handleConfirmRecovery() {
-    if (!pending || verifyInFlightRef.current) return;
-    verifyInFlightRef.current = true;
-    setVerifying(true);
-    setError(null);
-
-    console.info("[auth-reset] verifyOtp starting", {
-      type: pending.type,
-      tokenHashPresent: Boolean(pending.tokenHash),
-      tokenHashLength: pending.tokenHash.length,
-      queryKeys: Array.from(
-        new URLSearchParams(window.location.search).keys()
-      ),
-    });
-
-    const { data, error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: pending.tokenHash,
-      type: pending.type,
-    });
-
-    if (verifyError) {
-      logVerifyOtpError(verifyError);
-      setPageState("invalid");
-      setVerifying(false);
-      verifyInFlightRef.current = false;
-      return;
-    }
-
-    console.info("[auth-reset] verifyOtp succeeded", {
-      sessionPresent: Boolean(data.session),
-      userPresent: Boolean(data.user),
-    });
-
-    clearRecoveryParamsFromUrl();
-    setPending(null);
-    setPageState("ready");
-    setVerifying(false);
-  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -162,55 +168,76 @@ export default function ResetPasswordPage() {
       setError("Passwords do not match.");
       return;
     }
+    if (!pending || submitInFlightRef.current) {
+      return;
+    }
 
+    submitInFlightRef.current = true;
     setSubmitting(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    setSubmitting(false);
 
-    if (updateError) {
-      setError(
-        updateError.message || "Unable to update password. The link may have expired."
-      );
-      return;
+    try {
+      if (pending.kind === "token_hash") {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: pending.tokenHash,
+          type: pending.type,
+        });
+
+        if (verifyError || !data.session) {
+          if (verifyError) logVerifyOtpError(verifyError);
+          applyPageState("invalid");
+          return;
+        }
+
+        clearRecoveryParamsFromUrl();
+        setPending({ kind: "recovery_session" });
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (updateError) {
+        setError(
+          updateError.message ||
+            "Unable to update password. The link may have expired."
+        );
+        return;
+      }
+
+      lockSuccessfulPasswordUpdate();
+      await supabase.auth.signOut();
+    } finally {
+      setSubmitting(false);
+      submitInFlightRef.current = false;
     }
-
-    // Invited users who never finished username setup should continue there
-    // while still signed in (e.g. recovery after an email-link prefetch).
-    const setupState = await fetchAccountSetupState();
-    if (setupState && !setupState.accountSetupComplete) {
-      window.location.replace(ACCOUNT_SETUP_PATH);
-      return;
-    }
-
-    setPageState("success");
-    await supabase.auth.signOut();
   }
 
   return (
     <main style={pageStyle}>
       <div style={cardStyle}>
         <OneEyrieWordmark className="one-eyrie-wordmark--sidebar one-eyrie-wordmark--login" />
-        <p style={{ color: ONE_EYRIE.gold, marginTop: 0 }}>Reset password</p>
+
+        {pageState === "success" ? (
+          <div>
+            <h1 style={successHeadingStyle}>Password Changed Successfully</h1>
+            <p style={successMessageStyle}>
+              Your password has been updated. You can now sign in using your new
+              password.
+            </p>
+            <a
+              href="/login"
+              style={buttonStyle}
+              onClick={() => clearPasswordResetSuccess()}
+            >
+              Return to Login
+            </a>
+          </div>
+        ) : (
+          <p style={{ color: ONE_EYRIE.gold, marginTop: 0 }}>Reset password</p>
+        )}
 
         {pageState === "loading" ? (
           <p style={{ color: ONE_EYRIE.textMuted }}>Checking reset link…</p>
-        ) : null}
-
-        {pageState === "confirm" ? (
-          <div>
-            <p style={{ color: ONE_EYRIE.textMuted, lineHeight: 1.5, marginTop: 0 }}>
-              Click below to continue resetting your One Eyrie password. This
-              confirms the request and opens the password form.
-            </p>
-            <button
-              type="button"
-              disabled={verifying || !pending}
-              style={buttonStyle}
-              onClick={() => void handleConfirmRecovery()}
-            >
-              {verifying ? "Verifying…" : "Continue to reset password"}
-            </button>
-          </div>
         ) : null}
 
         {pageState === "invalid" ? (
@@ -226,25 +253,14 @@ export default function ResetPasswordPage() {
           </div>
         ) : null}
 
-        {pageState === "success" ? (
-          <div style={noticeStyle}>
-            <p style={{ margin: 0, lineHeight: 1.5 }}>
-              Your password has been updated. You can now sign in.
-            </p>
-            <p style={{ margin: "14px 0 0" }}>
-              <Link href="/login" style={linkStyle}>
-                Go to sign in
-              </Link>
-            </p>
-          </div>
-        ) : null}
-
         {pageState === "ready" ? (
           <form onSubmit={(event) => void handleSubmit(event)}>
             <p style={{ color: ONE_EYRIE.textMuted, lineHeight: 1.5, marginTop: 0 }}>
               Choose a new password for your One Eyrie account.
             </p>
-            {error ? <div style={{ ...noticeStyle, marginBottom: 14 }}>{error}</div> : null}
+            {error ? (
+              <div style={{ ...noticeStyle, marginBottom: 14 }}>{error}</div>
+            ) : null}
             <input
               type="password"
               required
@@ -265,7 +281,7 @@ export default function ResetPasswordPage() {
               className="one-eyrie-login-field"
               style={inputStyle}
             />
-            <button type="submit" disabled={submitting} style={buttonStyle}>
+            <button type="submit" disabled={submitting || !pending} style={buttonStyle}>
               {submitting ? "Saving…" : "Update password"}
             </button>
           </form>
@@ -314,6 +330,27 @@ const buttonStyle: CSSProperties = {
   color: "#111111",
   fontWeight: 800,
   cursor: "pointer",
+  display: "block",
+  textAlign: "center",
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
+const successHeadingStyle: CSSProperties = {
+  color: ONE_EYRIE.gold,
+  marginTop: 0,
+  marginBottom: 14,
+  fontSize: 22,
+  fontWeight: 800,
+  lineHeight: 1.3,
+};
+
+const successMessageStyle: CSSProperties = {
+  color: ONE_EYRIE.text,
+  lineHeight: 1.5,
+  marginTop: 0,
+  marginBottom: 22,
+  fontSize: 15,
 };
 
 const noticeStyle: CSSProperties = {

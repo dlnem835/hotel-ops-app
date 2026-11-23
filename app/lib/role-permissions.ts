@@ -276,6 +276,10 @@ export function isPublicAppPath(pathname: string): boolean {
   return (
     path === "/login" ||
     path.startsWith("/login") ||
+    path === "/forgot-password" ||
+    path.startsWith("/forgot-password") ||
+    path === "/auth/reset-password" ||
+    path.startsWith("/auth/reset-password") ||
     path === "/shipping-request" ||
     path.startsWith("/shipping-request/")
   );
@@ -293,8 +297,9 @@ export function isPlatformAdminAppPath(pathname: string): boolean {
 
 /**
  * Routes an authenticated-but-incomplete user is still allowed to reach:
- * first-login account setup and the auth callback. Login/logout is handled by
- * isPublicAppPath. Everything else is gated until setup is complete.
+ * first-login account setup and the auth callback. Login, forgot password,
+ * and recovery are handled by isPublicAppPath. Everything else is gated
+ * until setup is complete.
  */
 export function isAccountOnboardingPath(pathname: string): boolean {
   const path = pathname.split("?")[0] ?? pathname;

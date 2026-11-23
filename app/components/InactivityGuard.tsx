@@ -25,8 +25,7 @@ import {
   INACTIVITY_WARNING_MS,
   storeInactivityLogoutMessage,
 } from "@/app/lib/inactivity-logout";
-
-const PUBLIC_PATHS = new Set(["/login"]);
+import { isPublicAppPath } from "@/app/lib/role-permissions";
 
 export default function InactivityGuard() {
   const pathname = usePathname();
@@ -69,7 +68,7 @@ export default function InactivityGuard() {
     clearTimers();
     setWarningOpen(false);
 
-    if (!active || PUBLIC_PATHS.has(pathname)) {
+    if (!active || isPublicAppPath(pathname)) {
       return;
     }
 
@@ -83,7 +82,7 @@ export default function InactivityGuard() {
   }, [active, clearTimers, pathname, performLogout]);
 
   const handleActivity = useCallback(() => {
-    if (!active || PUBLIC_PATHS.has(pathname) || loggingOutRef.current) {
+    if (!active || isPublicAppPath(pathname) || loggingOutRef.current) {
       return;
     }
 
@@ -102,7 +101,7 @@ export default function InactivityGuard() {
     void waitForInitialAuthSession().then((session) => {
       if (!mounted) return;
 
-      const shouldTrack = Boolean(session) && !PUBLIC_PATHS.has(pathname);
+      const shouldTrack = Boolean(session) && !isPublicAppPath(pathname);
       setActive(shouldTrack);
 
       if (!shouldTrack) {
@@ -114,7 +113,7 @@ export default function InactivityGuard() {
     const unsubscribe = subscribeAuthSession((session) => {
       if (!mounted) return;
 
-      const shouldTrack = Boolean(session) && !PUBLIC_PATHS.has(pathname);
+      const shouldTrack = Boolean(session) && !isPublicAppPath(pathname);
       setActive(shouldTrack);
 
       if (!shouldTrack) {
@@ -131,17 +130,20 @@ export default function InactivityGuard() {
   }, [pathname, clearTimers]);
 
   useEffect(() => {
-    if (!active || PUBLIC_PATHS.has(pathname)) {
+    if (!active || isPublicAppPath(pathname)) {
       return;
     }
 
-    resetTimers();
+    const armId = window.setTimeout(() => {
+      resetTimers();
+    }, 0);
 
     for (const eventName of INACTIVITY_ACTIVITY_EVENTS) {
       window.addEventListener(eventName, handleActivity, { passive: true });
     }
 
     return () => {
+      window.clearTimeout(armId);
       clearTimers();
       for (const eventName of INACTIVITY_ACTIVITY_EVENTS) {
         window.removeEventListener(eventName, handleActivity);
