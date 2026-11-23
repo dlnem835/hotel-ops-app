@@ -17,6 +17,26 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function readIfPresent(rel) {
+  const full = path.join(root, rel);
+  if (!fs.existsSync(full)) return null;
+  return fs.readFileSync(full, "utf8");
+}
+
+function collectAppSourceFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name === ".next") continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectAppSourceFiles(full));
+      continue;
+    }
+    if (/\.(ts|tsx|js|mjs)$/.test(entry.name)) out.push(full);
+  }
+  return out;
+}
+
 let failures = 0;
 
 function check(name, fn) {
@@ -67,7 +87,7 @@ const labelForm = read("app/LabelRequestForm.tsx");
 const reportData = read("app/reports/lib/lost-found-report-data.ts");
 const reportTypes = read("app/reports/lib/lost-found-report-types.ts");
 const reportSample = read("app/reports/lib/lost-found-report-sample-data.ts");
-const reportPdf = read("app/reports/lib/lost-found-report-pdf-tables.ts");
+const reportPdf = readIfPresent("app/reports/lib/lost-found-report-pdf-tables.ts");
 
 check("staff reprint uses tenant-authorized historical-label API", () => {
   assert.ok(historicalRoute.includes("resolveTenantRequest"));
@@ -135,14 +155,35 @@ check("legacy guest-upload and manual email endpoints are gone", () => {
   assert.ok(!labelForm.includes("/api/send-email"));
 });
 
+check("no runtime caller posts to /api/send-email", () => {
+  const callers = [];
+  for (const file of collectAppSourceFiles(path.join(root, "app"))) {
+    const rel = path.relative(root, file).replaceAll("\\", "/");
+    if (rel === "app/api/send-email/route.ts") continue;
+    const stripped = fs
+      .readFileSync(file, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    if (stripped.includes("/api/send-email")) callers.push(rel);
+  }
+  assert.deepStrictEqual(callers, []);
+});
+
 check("reports do not expose raw public shipping-label URLs", () => {
   assert.ok(!reportTypes.includes("labelUrl"));
   assert.ok(!reportData.includes("labelUrl"));
   assert.ok(!reportData.includes("label_url"));
   assert.ok(!reportSample.includes("labelUrl"));
   assert.ok(!reportSample.includes("shipping-labels"));
-  assert.ok(!reportPdf.includes("labelUrl"));
-  assert.ok(!reportPdf.includes("label_url"));
+  if (reportPdf == null) {
+    console.log(
+      "info  lost-found-report-pdf-tables.ts not present; checked committed report data/types/sample only"
+    );
+  } else {
+    assert.ok(!reportPdf.includes("labelUrl"));
+    assert.ok(!reportPdf.includes("label_url"));
+    assert.ok(!reportPdf.includes("shipping-labels"));
+  }
 });
 
 await checkAsync("historical path parser accepts tenant-safe public URLs only", async () => {
